@@ -7,17 +7,15 @@ set(GLFW_INSTALL        OFF CACHE BOOL "Generate glfw installation target" FORCE
 add_subdirectory(glfw)
 set_target_properties(glfw PROPERTIES FOLDER libs)
 
-# All viewer library cpp files which don't have their own target
-add_library(viewerlibs OBJECT
+add_library(imgui_glfw_gl2
         imgui/imgui.cpp
         imgui/imgui_draw.cpp
         imgui/imgui_widgets.cpp
         imgui/imgui_demo.cpp
         imgui/examples/imgui_impl_glfw.cpp
         imgui/examples/imgui_impl_opengl2.cpp)
-target_include_directories(viewerlibs SYSTEM PUBLIC glfw/include)
-target_include_directories(viewerlibs SYSTEM PRIVATE imgui)
-set_target_properties(viewerlibs PROPERTIES FOLDER libs)
-set_property(TARGET viewerlibs glfw APPEND_STRING PROPERTY COMPILE_FLAGS " -w")
+target_include_directories(imgui_glfw_gl2 SYSTEM PUBLIC imgui imgui/examples)
+target_link_libraries(imgui_glfw_gl2 PUBLIC glfw OpenGL::GL)
+set_target_properties(imgui_glfw_gl2 PROPERTIES FOLDER libs)
 
-set(VIEWERLIBS $<TARGET_OBJECTS:viewerlibs> PARENT_SCOPE)
+set_property(TARGET imgui_glfw_gl2 glfw APPEND_STRING PROPERTY COMPILE_FLAGS " -w")
