@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.1)
+
+project(quickViewer CXX)
+
+# default to Release build
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug, Release or RelWithDebInfo" FORCE)
+endif()
+
+set(OpenGL_GL_PREFERENCE GLVND)
+find_package(OpenGL)
+
+# add third party libraries
+add_subdirectory(vendor)
+
+
+# use ccache if available for faster compile times
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    message(STATUS "Enabled ccache: ${CCACHE_PROGRAM}")
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
+
+
+
+# require c++14
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_executable(quickViewer src/main.cpp)
