@@ -12,7 +12,7 @@ find_package(OpenGL)
 
 # add third party libraries
 add_subdirectory(vendor)
-
+include_directories(SYSTEM vendor)
 
 # use ccache if available for faster compile times
 find_program(CCACHE_PROGRAM ccache)
@@ -29,4 +29,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(quickViewer src/main.cpp)
-target_link_libraries(quickViewer imgui_glfw_gl2)
+target_link_libraries(quickViewer imgui_glfw_gl2 fmt OpenGL::GLU)

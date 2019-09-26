@@ -18,4 +18,8 @@ target_include_directories(imgui_glfw_gl2 SYSTEM PUBLIC imgui imgui/examples)
 target_link_libraries(imgui_glfw_gl2 PUBLIC glfw OpenGL::GL)
 set_target_properties(imgui_glfw_gl2 PROPERTIES FOLDER libs)
 
-set_property(TARGET imgui_glfw_gl2 glfw APPEND_STRING PROPERTY COMPILE_FLAGS " -w")
+# fmt
+add_subdirectory(fmt)
+set_target_properties(fmt PROPERTIES FOLDER libs)
+
+set_property(TARGET imgui_glfw_gl2 glfw fmt APPEND_STRING PROPERTY COMPILE_FLAGS " -w")
