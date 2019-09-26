@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/glfw/glfw.git
+	branch = master
+	commit = 243b1bc292a2e3f8c9aee8884574c1c7f4354402
+	parent = b7fa6ccc735cee0e6b6db3ed761cac30140122bf
+	method = merge
+	cmdver = 0.4.0
