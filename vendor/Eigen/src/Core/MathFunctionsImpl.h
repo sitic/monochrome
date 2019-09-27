@@ -29,12 +29,7 @@ T generic_fast_tanh_float(const T& a_x)
   // this range is +/-1.0f in single-precision.
   const T plus_9 = pset1<T>(9.f);
   const T minus_9 = pset1<T>(-9.f);
-  // NOTE GCC prior to 6.3 might improperly optimize this max/min
-  //      step such that if a_x is nan, x will be either 9 or -9,
-  //      and tanh will return 1 or -1 instead of nan.
-  //      This is supposed to be fixed in gcc6.3,
-  //      see: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=72867
-  const T x = pmax(minus_9,pmin(plus_9,a_x));
+  const T x = pmax(pmin(a_x, plus_9), minus_9);
   // The monomial coefficients of the numerator polynomial (odd).
   const T alpha_1 = pset1<T>(4.89352455891786e-03f);
   const T alpha_3 = pset1<T>(6.37261928875436e-04f);
@@ -71,8 +66,60 @@ T generic_fast_tanh_float(const T& a_x)
   return pdiv(p, q);
 }
 
+/** \internal \returns the error function of \a a (coeff-wise)
+    Doesn't do anything fancy, just a 13/8-degree rational interpolant which
+    is accurate up to a couple of ulp in the range [-4, 4], outside of which
+    fl(erf(x)) = +/-1.
+
+    This implementation works on both scalars and Ts.
+*/
+template <typename T>
+T generic_fast_erf_float(const T& a_x) {
+  // Clamp the inputs to the range [-4, 4] since anything outside
+  // this range is +/-1.0f in single-precision.
+  const T plus_4 = pset1<T>(4.f);
+  const T minus_4 = pset1<T>(-4.f);
+  const T x = pmax(pmin(a_x, plus_4), minus_4);
+  // The monomial coefficients of the numerator polynomial (odd).
+  const T alpha_1 = pset1<T>(-1.60960333262415e-02f);
+  const T alpha_3 = pset1<T>(-2.95459980854025e-03f);
+  const T alpha_5 = pset1<T>(-7.34990630326855e-04f);
+  const T alpha_7 = pset1<T>(-5.69250639462346e-05f);
+  const T alpha_9 = pset1<T>(-2.10102402082508e-06f);
+  const T alpha_11 = pset1<T>(2.77068142495902e-08f);
+  const T alpha_13 = pset1<T>(-2.72614225801306e-10f);
+
+  // The monomial coefficients of the denominator polynomial (even).
+  const T beta_0 = pset1<T>(-1.42647390514189e-02f);
+  const T beta_2 = pset1<T>(-7.37332916720468e-03f);
+  const T beta_4 = pset1<T>(-1.68282697438203e-03f);
+  const T beta_6 = pset1<T>(-2.13374055278905e-04f);
+  const T beta_8 = pset1<T>(-1.45660718464996e-05f);
+
+  // Since the polynomials are odd/even, we need x^2.
+  const T x2 = pmul(x, x);
+
+  // Evaluate the numerator polynomial p.
+  T p = pmadd(x2, alpha_13, alpha_11);
+  p = pmadd(x2, p, alpha_9);
+  p = pmadd(x2, p, alpha_7);
+  p = pmadd(x2, p, alpha_5);
+  p = pmadd(x2, p, alpha_3);
+  p = pmadd(x2, p, alpha_1);
+  p = pmul(x, p);
+
+  // Evaluate the denominator polynomial p.
+  T q = pmadd(x2, beta_8, beta_6);
+  q = pmadd(x2, q, beta_4);
+  q = pmadd(x2, q, beta_2);
+  q = pmadd(x2, q, beta_0);
+
+  // Divide the numerator by the denominator.
+  return pdiv(p, q);
+}
+
 template<typename RealScalar>
-EIGEN_STRONG_INLINE
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
 RealScalar positive_real_hypot(const RealScalar& x, const RealScalar& y)
 {
   EIGEN_USING_STD_MATH(sqrt);
@@ -87,7 +134,8 @@ template<typename Scalar>
 struct hypot_impl
 {
   typedef typename NumTraits<Scalar>::Real RealScalar;
-  static inline RealScalar run(const Scalar& x, const Scalar& y)
+  static EIGEN_DEVICE_FUNC
+  inline RealScalar run(const Scalar& x, const Scalar& y)
   {
     EIGEN_USING_STD_MATH(abs);
     return positive_real_hypot<RealScalar>(abs(x), abs(y));

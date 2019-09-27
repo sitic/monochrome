@@ -29,4 +29,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(quickViewer src/main.cpp)
-target_link_libraries(quickViewer imgui_glfw_gl2 fmt OpenGL::GLU)
+target_link_libraries(quickViewer imgui_glfw_gl2 fmt)
