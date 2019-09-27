@@ -11,11 +11,12 @@
 #include <GL/glu.h>
 #include <cstdio>
 #include <cstdlib>
-#include <fmt/format.h>
-#include <fmt/printf.h>
 #include <string>
+#include <vector>
+#include <fstream>
 
-#include "Eigen/Dense"
+#include <fmt/format.h>
+#include <Eigen/Dense>
 
 using pix_val_t = uint16_t;
 
@@ -23,14 +24,88 @@ using Vec2f = Eigen::Vector2f;
 using Vec3f = Eigen::Vector3f;
 using PixArray = Eigen::Matrix<pix_val_t, Eigen::Dynamic, Eigen::Dynamic>;
 
+static GLFWwindow *main_window = nullptr;
+
+class Recording {
+  std::string _path;
+  std::ifstream _in;
+
+  void parse_bmp_metadata(){};
+
+public:
+  PixArray frame;
+  GLFWwindow *window = nullptr;
+
+  Recording(std::string path) : _path(path), _in(path, std::ios::binary) { load_frame(0); }
+  ~Recording(){fmt::print("deleted\n");}
+
+  void load_frame(long t) { frame = PixArray::Random(512, 512); }
+
+  long Nx() { return frame.cols(); }
+  long Ny() { return frame.rows(); }
+  long length() { return 1; }
+};
+
+static std::vector<std::shared_ptr<Recording>> recordings = {};
+
+void recordings_window_close_callback(GLFWwindow* window) {
+  recordings.erase(
+      std::remove_if(recordings.begin(), recordings.end(), [window](auto r) {
+        return r->window == window;
+      }), recordings.end());
+  glfwDestroyWindow(window);
+}
+
+void load_new_file(const std::string &path) {
+  fmt::print("Loading {} ...\n", path);
+
+  recordings.emplace_back(std::make_shared<Recording>(path));
+  auto rec = recordings.back();
+
+  auto title = fmt::format("Window {}", recordings.size() + 1);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  GLFWwindow *window =
+      glfwCreateWindow(rec->Nx(), rec->Ny(), title.c_str(), NULL, NULL);
+  if (!window) {
+    fmt::print("ERROR: window created failed for {}\n", path);
+  }
+  glfwMakeContextCurrent(window);
+  glfwSwapInterval(1); // wait until the current frame has been drawn before
+  rec->window = window;
+  glfwSetWindowCloseCallback(window, recordings_window_close_callback);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity(); // Reset The Projection Matrix
+  gluOrtho2D(0, rec->Nx(), 0, rec->Ny());
+  glMatrixMode(GL_MODELVIEW); // Select The Modelview Matrix
+  glLoadIdentity();           // Reset The Modelview Matrix
+
+  glClearColor(0, 0, 0, 1);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  glfwMakeContextCurrent(main_window);
+}
+
+void drop_callback(GLFWwindow *window, int count, const char **paths) {
+  for (int i = 0; i < count; i++) {
+    load_new_file(paths[i]);
+  }
+}
+
 static void glfw_error_callback(int error, const char *description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
 Vec3f val_to_color(const pix_val_t &val, const pix_val_t &min,
                    const pix_val_t &max) {
-  const float factor = (max - min) / (static_cast<pix_val_t>(2));
-  const float x = (val - min) / factor - 1;
+  float x = static_cast<float>(val - min) / static_cast<float>(max);
+
+  if (x < 0) {
+    x = 0;
+  } else if (x > 1) {
+    x = 1;
+  }
 
   return {x, x, x};
 }
@@ -66,17 +141,17 @@ void draw2dArray(const PixArray &arr, const Vec2f &position, float scale,
   }
 }
 
-void display(GLFWwindow *window) {
-
+void display() {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
 
   // Our state
-  bool show_demo_window = true;
+  bool show_demo_window = false;
   bool show_another_window = false;
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-  while (!glfwWindowShouldClose(window)) {
+  // keep running until main window is closed
+  while (!glfwWindowShouldClose(main_window)) {
     // Poll and handle events (inputs, window resize, etc.)
     // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to
     // tell if dear imgui wants to use your inputs.
@@ -148,7 +223,7 @@ void display(GLFWwindow *window) {
     // Rendering
     ImGui::Render();
     int display_w, display_h;
-    glfwGetFramebufferSize(window, &display_w, &display_h);
+    glfwGetFramebufferSize(main_window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -173,41 +248,35 @@ void display(GLFWwindow *window) {
       ImGui::RenderPlatformWindowsDefault();
       glfwMakeContextCurrent(backup_current_context);
     }
+    glfwSwapBuffers(main_window);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();							// Reset The Projection Matrix
-    gluOrtho2D(0,600,0,600);
-    glMatrixMode(GL_MODELVIEW);						// Select The Modelview Matrix
-    glLoadIdentity();							// Reset The Modelview Matrix
+    for (auto &recording : recordings) {
+        glfwMakeContextCurrent(recording->window);
 
-    Vec2f offset = {0, 0};
-    PixArray arr = PixArray::Random(512, 512);
-    draw2dArray(arr, offset, 1, 0, std::numeric_limits<pix_val_t>::max());
+        recording->load_frame(0);
 
-    glfwSwapBuffers(window);
-  }
-}
+        Vec2f offset = {0, 0};
+        draw2dArray(recording->frame, offset, 1, 0,
+                    std::numeric_limits<pix_val_t>::max());
+        glfwSwapBuffers(recording->window);
+    }
 
-void drop_callback(GLFWwindow *window, int count, const char **paths) {
-  for (int i = 0; i < count; i++) {
-    std::string path = paths[i];
-    fprintf(stderr, "drop %d: %s\n", i, path.c_str());
+    glfwMakeContextCurrent(main_window);
   }
 }
 
 int main(int, char **) {
-  GLFWwindow *window;
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit())
     exit(EXIT_FAILURE);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  window = glfwCreateWindow(640, 640, "Simple example", NULL, NULL);
-  if (!window) {
+  main_window = glfwCreateWindow(640, 640, "Simple example", NULL, NULL);
+  if (!main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
-  glfwMakeContextCurrent(window);
+  glfwMakeContextCurrent(main_window);
   glfwSwapInterval(1); // wait until the current frame has been drawn before
                        // drawing the next one
 
@@ -237,10 +306,10 @@ int main(int, char **) {
   }
 
   // Setup Platform/Renderer bindings
-  ImGui_ImplGlfw_InitForOpenGL(window, true);
+  ImGui_ImplGlfw_InitForOpenGL(main_window, true);
   ImGui_ImplOpenGL2_Init();
 
-  glfwSetDropCallback(window, drop_callback);
+  glfwSetDropCallback(main_window, drop_callback);
 
   // Load Fonts
   // - If no fonts are loaded, dear imgui will use the default font. You can
@@ -266,9 +335,12 @@ int main(int, char **) {
   // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f,
   // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
 
-  display(window);
+  display();
 
-  glfwDestroyWindow(window);
+  glfwDestroyWindow(main_window);
+  for (auto recording : recordings) {
+    glfwDestroyWindow(recording->window);
+  }
   glfwTerminate();
   exit(EXIT_SUCCESS);
 }
