@@ -3,7 +3,6 @@
 #endif
 
 #include <cstdlib>
-#include <filesystem>
 #include <vector>
 
 #include <GLFW/glfw3.h>
