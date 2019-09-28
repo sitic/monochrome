@@ -62,7 +62,7 @@ stages:
     - echo "CMAKE_PARAMS=${CMAKE_PARAMS}"
     - cmake -H. -Bbuild -G "${CMAKE_GENERATOR}" -DCMAKE_GENERATOR_PLATFORM="${CMAKE_GENERATOR_PLATFORM}" ${CMAKE_PARAMS[@]} -Wdev
     - cd build
-    - cmake --build . --config ${BUILD_TYPE} --parallel 4
+    - cmake --build . --config ${BUILD_TYPE}
   dependencies: []
 
 
