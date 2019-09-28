@@ -23,10 +23,10 @@ endif()
 
 
 
-# require c++14
-set(CMAKE_CXX_STANDARD 14)
+# require c++17
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(quickViewer src/main.cpp)
+add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h)
 target_link_libraries(quickViewer imgui_glfw_gl2 fmt)

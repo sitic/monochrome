@@ -2,3 +2,5 @@
 build
 Debug
 Release
+
+*.dat
