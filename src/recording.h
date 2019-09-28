@@ -8,7 +8,7 @@
 extern GLFWwindow *main_window;
 
 class Recording {
-  std::filesystem::path _path;
+  filesystem::path _path;
 
   BMPheader fileheader;
   int _t = 0;
@@ -18,7 +18,7 @@ public:
   PixArray frame;
   GLFWwindow *window = nullptr;
 
-  Recording(std::string path)
+  Recording(filesystem::path path)
       : _path(path), fileheader(path), frame(fileheader.Nx(), fileheader.Ny()) {
     load_frame(0);
   }
@@ -27,7 +27,7 @@ public:
   int Nx() { return frame.cols(); }
   int Ny() { return frame.rows(); }
   int length() { return fileheader.length(); }
-  std::filesystem::path path() { return _path; }
+  filesystem::path path() { return _path; }
   std::string date() { return fileheader.date(); };
   std::string comment() { return fileheader.comment(); };
 

@@ -53,20 +53,20 @@ void reshape_recording_window(std::shared_ptr<Recording> rec) {
   glfwMakeContextCurrent(main_window);
 }
 
-void load_new_file(std::filesystem::path path) {
+void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
 
-  if (!std::filesystem::is_regular_file(path)) {
-    fmt::print("ERROR: {} does not appear to be a file, skipping\n",
-               path.string());
-    return;
-  }
-
-  if (path.extension() != ".dat") {
-    fmt::print("ERROR: {} does not have extension '.dat', skipping\n",
-               path.string());
-    return;
-  }
+  //if (!filesystem::is_regular_file(path)) {
+  //  fmt::print("ERROR: {} does not appear to be a file, skipping\n",
+  //             path.string());
+  //  return;
+  //}
+  //
+  //if (path.extension() != ".dat") {
+  //  fmt::print("ERROR: {} does not have extension '.dat', skipping\n",
+  //             path.string());
+  //  return;
+  //}
 
   recordings.emplace_back(std::make_shared<Recording>(path));
   auto rec = recordings.back();

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <filesystem>
 #include <fstream>
 
+#include "filesystem/filesystem.hpp"
 #include "definitions.h"
 
 class BMPheader {
@@ -41,8 +41,8 @@ public:
   const size_t FrameTailLength = sizeof(uint64);
   const std::string DateFormat = "yyyy-MM-dd hh:mm:ss:zzz";
 
-  BMPheader(std::filesystem::path path)
-      : _in(path, std::ios::in | std::ios::binary) {
+  BMPheader(filesystem::path path)
+      : _in(path.string(), std::ios::in | std::ios::binary) {
     _in.exceptions(std::ifstream::eofbit | std::ifstream::failbit |
                    std::ifstream::badbit);
 
