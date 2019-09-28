@@ -16,14 +16,14 @@ public:
   template <typename Container> void compute(const Container &container) {
     data.fill(0);
 
-    uint bin_size = (_max + 1) / bin_count;
+    pixel bin_size = (_max + 1) / bin_count;
 
     for (auto val : container) {
       if (val > _max) {
         val = _max;
       }
 
-      const uint index = val / bin_size;
+      const unsigned int index = val / bin_size;
       data[index] += 1;
     }
   }
