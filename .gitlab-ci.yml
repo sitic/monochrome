@@ -1,0 +1,111 @@
+stages:
+- linux
+- testrun
+- macOS
+- windows
+
+.linux: &linux
+  stage: linux
+  image: docker.gitlab.gwdg.de/jlebert/emsim
+  tags:
+    - docker
+
+.gcc: &gcc
+  <<: [*linux]
+  image: docker.gitlab.gwdg.de/jlebert/emsim/gcc
+  cache:
+    key: docker-gcc
+    paths:
+      - .ccache
+
+.clang: &clang
+  <<: [*linux]
+  image: docker.gitlab.gwdg.de/jlebert/emsim/clang
+  cache:
+    key: docker-clang
+    paths:
+      - .ccache
+
+.osx: &osx
+  stage: macOS
+  tags:
+    - osx
+
+.windows: &windows
+  stage: windows
+  tags:
+    - windows
+
+.xcode_generator: &xcode_generator
+  CMAKE_GENERATOR: 'Xcode'
+
+.vs_generator: &vs_generator
+  CMAKE_GENERATOR: 'Visual Studio 16 2019'
+  CMAKE_GENERATOR_PLATFORM: 'x64'
+
+.build_make: &build_make
+  script:
+    - JOB_NAME=( $CI_JOB_NAME )
+    - export BUILD_TYPE=${JOB_NAME[@]:(-1)}
+    - echo "BUILD_TYPE=${BUILD_TYPE}"
+    - echo "CMAKE_PARAMS=${CMAKE_PARAMS}"
+    - cmake -H. -Bbuild -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_PARAMS[@]} -Wdev
+    - cd build
+    - cmake --build . --parallel 4
+  dependencies: []
+
+.build_config_generator: &build_config_generator
+  script:
+    - JOB_NAME=( $CI_JOB_NAME )
+    - export BUILD_TYPE=${JOB_NAME[@]:(-1)}
+    - echo "BUILD_TYPE=${BUILD_TYPE}"
+    - echo "CMAKE_PARAMS=${CMAKE_PARAMS}"
+    - cmake -H. -Bbuild -G "${CMAKE_GENERATOR}" -DCMAKE_GENERATOR_PLATFORM="${CMAKE_GENERATOR_PLATFORM}" ${CMAKE_PARAMS[@]} -Wdev
+    - cd build
+    - cmake --build . --config ${BUILD_TYPE} --parallel 4
+  dependencies: []
+
+
+
+.docker_build: &docker_build
+  <<: [*build_make]
+  before_script:
+    - export CCACHE_DIR=`pwd`/.ccache
+    - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
+    - ccache -s
+  artifacts:
+    paths:
+      - build/quickViewer
+    expire_in: 1 day
+
+gcc Release:
+  <<: [*gcc, *docker_build]
+
+gcc Debug:
+  <<: [*gcc, *docker_build]
+
+clang Release:
+  <<: [*clang, *docker_build]
+
+clang Debug:
+  <<: [*clang, *docker_build]
+
+osx Release:
+  <<: [*osx, *build_config_generator]
+  variables:
+    <<: *xcode_generator
+
+osx Debug:
+  <<: [*osx, *build_config_generator]
+  variables:
+    <<: *xcode_generator
+
+windows Release:
+  <<: [*windows, *build_config_generator]
+  variables:
+    <<: *vs_generator
+
+windows Debug:
+ <<: [*windows, *build_config_generator]
+ variables:
+   <<: *vs_generator
