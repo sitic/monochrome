@@ -71,9 +71,9 @@ void draw2dArray(const PixArray &arr, const Vec2f &position, float scale,
       auto val = arr(x, y);
       auto c = val_to_color(val, min, max);
 
-      if (std::isnan(val)) {
-        c = {1, 0, 0};
-      }
+      //if (std::isnan(val)) {
+      //  c = {1, 0, 0};
+      //}
 
       glBegin(GL_QUADS);
       glColor3fv(c.data());
