@@ -55,17 +55,17 @@ void reshape_recording_window(std::shared_ptr<Recording> rec) {
 void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
 
-  //if (!filesystem::is_regular_file(path)) {
-  //  fmt::print("ERROR: {} does not appear to be a file, skipping\n",
-  //             path.string());
-  //  return;
-  //}
-  //
-  //if (path.extension() != ".dat") {
-  //  fmt::print("ERROR: {} does not have extension '.dat', skipping\n",
-  //             path.string());
-  //  return;
-  //}
+  if (!filesystem::is_regular_file(path)) {
+    fmt::print("ERROR: {} does not appear to be a file, skipping\n",
+               path.string());
+    return;
+  }
+
+  if (path.extension().string() != ".dat") {
+    fmt::print("ERROR: {} does not have extension '.dat', skipping\n",
+               path.string());
+    return;
+  }
 
   recordings.emplace_back(std::make_shared<Recording>(path));
   auto rec = recordings.back();
@@ -128,13 +128,14 @@ void display() {
       auto flags = ImGuiWindowFlags_NoCollapse |
                    ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings;
-      ImGui::Begin("Drag & drop MultiRecorder .dat files into this window", nullptr, flags);
+      ImGui::Begin("Drag & drop MultiRecorder .dat files into this window",
+                   nullptr, flags);
 
       {
         ImGui::Columns(2);
-        ImGui::SliderFloat("speed", &prm::speed, 0, 10);
+        ImGui::SliderFloat("speed", &prm::speed, 0, 5);
         ImGui::NextColumn();
-        if (ImGui::SliderFloat("scale", &prm::scale_fct, 0.5, 10)) {
+        if (ImGui::SliderFloat("scale", &prm::scale_fct, 0.5, 5)) {
           for (const auto &r : recordings) {
             reshape_recording_window(r);
           }
@@ -160,8 +161,10 @@ void display() {
         ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                             ImVec2(FLT_MAX, FLT_MAX));
         ImGui::Begin(recording->path().filename().c_str());
-        auto progress_label = fmt::format("{}/{}", recording->current_frame() + 1, recording->length());
-        ImGui::ProgressBar(recording->progress(), ImVec2(-1,0), progress_label.c_str());
+        auto progress_label = fmt::format(
+            "{}/{}", recording->current_frame() + 1, recording->length());
+        ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
+                           progress_label.c_str());
         {
           ImGui::Separator();
           ImGui::Columns(3);

@@ -1,6 +1,7 @@
 #pragma once
-// Based on https://gist.github.com/kevinkreiser/ab938517c0568ceff52bc793048aa575
-// Sadly std::filesystem is not yet available on MacOS
+// Based on
+// https://gist.github.com/kevinkreiser/ab938517c0568ceff52bc793048aa575 Sadly
+// std::filesystem is not yet available on MacOS
 
 #include <functional>
 #include <iostream>
@@ -23,10 +24,11 @@ namespace filesystem = std::experimental::filesystem;
 #endif
 
 /**
- * NOTE: This is a slim version of std::filesystem (boost::filesytem) containing just
- * the parts that we need for recursive directory listing, file types and exists check
- * we've just stubbed out the interface such that its basically a subset of the official
- * version missing the stuff we dont make use of. it should work on posix and windows
+ * NOTE: This is a slim version of std::filesystem (boost::filesytem) containing
+ * just the parts that we need for recursive directory listing, file types and
+ * exists check we've just stubbed out the interface such that its basically a
+ * subset of the official version missing the stuff we dont make use of. it
+ * should work on posix and windows
  */
 namespace filesystem {
 
@@ -37,12 +39,12 @@ public:
 #else
   static constexpr char preferred_separator = L'/';
 #endif
-  path(const char* path_name) : path(std::string(path_name)) {
-  }
-  path(const std::string& path_name) : path_name_(path_name) {
+  path(const char *path_name) : path(std::string(path_name)) {}
+  path(const std::string &path_name) : path_name_(path_name) {
     // TODO: squash repeated separators
     // delineate the path
-    for (size_t npos = path_name_.find_first_of(preferred_separator); npos != std::string::npos;
+    for (size_t npos = path_name_.find_first_of(preferred_separator);
+         npos != std::string::npos;
          npos = path_name_.find_first_of(preferred_separator, npos + 1))
       separators_.push_back(npos);
   }
@@ -51,13 +53,14 @@ public:
       return *this;
     return path(path_name_.substr(separators_.back() + 1));
   }
-  const char* c_str() const {
-    return path_name_.c_str();
-  }
-  const std::string& string() const {
-    return path_name_;
-  }
-  path& replace_filename(const path& filename) {
+  const char *c_str() const { return path_name_.c_str(); }
+  const std::string &string() const { return path_name_; }
+
+  path stem() const { return split_filename().first; }
+
+  path extension() const { return split_filename().second; }
+
+  path &replace_filename(const path &filename) {
     // empty or just a file name then copy
     if (separators_.empty())
       return *this = filename;
@@ -69,10 +72,14 @@ public:
     separators_.pop_back();
     return *this /= filename;
   }
-  bool operator==(const path& rhs) const {
+  bool operator==(const path &rhs) const {
     return path_name_ == rhs.path_name_;
   }
-  path& operator/=(const path& rhs) {
+  bool operator!=(const path &rhs) const {
+    return path_name_ != rhs.path_name_;
+  }
+
+  path &operator/=(const path &rhs) {
     if (!rhs.path_name_.empty()) {
       // update the path
       auto len = path_name_.size();
@@ -85,7 +92,8 @@ public:
       path_name_ += rhs.path_name_;
       // update the parts bookkeeping
       auto sep_len = separators_.size();
-      separators_.insert(separators_.end(), rhs.separators_.begin(), rhs.separators_.end());
+      separators_.insert(separators_.end(), rhs.separators_.begin(),
+                         rhs.separators_.end());
       for (auto i = separators_.begin() + sep_len; i != separators_.end(); ++i)
         (*i) += len;
     }
@@ -95,42 +103,44 @@ public:
 private:
   std::string path_name_;
   std::vector<size_t> separators_;
+
+  std::pair<std::string, std::string> split_filename() const {
+    auto fn = this->filename().string();
+    std::size_t found = fn.find_first_of('.');
+
+    if (found == std::string::npos) {
+      return {fn, ""};
+    } else {
+      return {fn.substr(0, found), fn.substr(found, std::string::npos)};
+    }
+  }
 };
 
 class recursive_directory_iterator;
 class directory_entry {
 public:
-  directory_entry(const filesystem::path& path) : directory_entry(path, false) {
-  }
-  bool exists() const {
-    return entry_ != nullptr;
-  }
-  bool is_directory() const {
-    return exists() && entry_->d_type == DT_DIR;
-  }
-  bool is_regular_file() const {
-    return exists() && entry_->d_type == DT_REG;
-  }
-  bool is_symlink() const {
-    return exists() && entry_->d_type == DT_LNK;
-  }
-  const filesystem::path& path() const {
-    return path_;
-  }
-  bool operator==(const directory_entry& rhs) const {
-    return (!entry_ && !rhs.entry_) || memcmp(entry_.get(), rhs.entry_.get(), sizeof(dirent)) == 0;
+  directory_entry(const filesystem::path &path)
+      : directory_entry(path, false) {}
+  bool exists() const { return entry_ != nullptr; }
+  bool is_directory() const { return exists() && entry_->d_type == DT_DIR; }
+  bool is_regular_file() const { return exists() && entry_->d_type == DT_REG; }
+  bool is_symlink() const { return exists() && entry_->d_type == DT_LNK; }
+  const filesystem::path &path() const { return path_; }
+  bool operator==(const directory_entry &rhs) const {
+    return (!entry_ && !rhs.entry_) ||
+           memcmp(entry_.get(), rhs.entry_.get(), sizeof(dirent)) == 0;
   }
 
 private:
   friend recursive_directory_iterator;
-  directory_entry(const filesystem::path& path, bool iterate)
+  directory_entry(const filesystem::path &path, bool iterate)
       : dir_(nullptr), entry_(nullptr), path_(path) {
     // stat it first in case its not a directory
     struct stat s;
     if (stat(path_.c_str(), &s) == 0) {
       // if it is a directory and we are going to iterate over it
       if (S_ISDIR(s.st_mode) && iterate) {
-        dir_.reset(opendir(path_.c_str()), [](DIR* d) { closedir(d); });
+        dir_.reset(opendir(path_.c_str()), [](DIR *d) { closedir(d); });
         return;
       }
       // make a dirent from stat info for starting out
@@ -164,14 +174,15 @@ private:
     else
       return DT_UNKNOWN;
   }
-  dirent* next() {
+  dirent *next() {
     // if we can scan
     if (dir_) {
       bool first_entry = entry_ == nullptr;
       // we have to skip . and ..
       do {
-        entry_.reset(readdir(dir_.get()), [](dirent*) {});
-      } while (entry_ && (strcmp(entry_->d_name, ".") == 0 || strcmp(entry_->d_name, "..") == 0));
+        entry_.reset(readdir(dir_.get()), [](dirent *) {});
+      } while (entry_ && (strcmp(entry_->d_name, ".") == 0 ||
+                          strcmp(entry_->d_name, "..") == 0));
       // update the path
       if (entry_) {
         if (first_entry)
@@ -194,7 +205,7 @@ private:
 // NOTE: follows links by default..
 class recursive_directory_iterator {
 public:
-  recursive_directory_iterator(const filesystem::path& path) {
+  recursive_directory_iterator(const filesystem::path &path) {
     stack_.emplace_back(new directory_entry(path, true));
     // if this was an iteratable directory go to the first entry
     if (stack_.back()->dir_)
@@ -203,15 +214,10 @@ public:
     else
       stack_.clear();
   }
-  recursive_directory_iterator() {
-  }
-  const directory_entry& operator*() const {
-    return *stack_.back();
-  }
-  const directory_entry* operator->() const {
-    return stack_.back().get();
-  }
-  recursive_directory_iterator& operator++() {
+  recursive_directory_iterator() {}
+  const directory_entry &operator*() const { return *stack_.back(); }
+  const directory_entry *operator->() const { return stack_.back().get(); }
+  recursive_directory_iterator &operator++() {
     // if we have something to iterate
     if (!stack_.empty()) {
       // if its a directory we deepen our depth first search
@@ -226,28 +232,31 @@ public:
 
 private:
   std::vector<std::shared_ptr<directory_entry>> stack_;
-  friend bool operator==(const recursive_directory_iterator& lhs,
-                         const recursive_directory_iterator& rhs);
+  friend bool operator==(const recursive_directory_iterator &lhs,
+                         const recursive_directory_iterator &rhs);
 };
 
-inline bool operator==(const recursive_directory_iterator& lhs,
-                       const recursive_directory_iterator& rhs) {
-  // somewhat weak check but for practical purposes should be fine given inode is unique
+inline bool operator==(const recursive_directory_iterator &lhs,
+                       const recursive_directory_iterator &rhs) {
+  // somewhat weak check but for practical purposes should be fine given inode
+  // is unique
   return lhs.stack_.size() == rhs.stack_.size() &&
          (lhs.stack_.empty() || *lhs.stack_.back() == *rhs.stack_.back());
 }
 
-inline bool operator!=(const recursive_directory_iterator& lhs,
-                       const recursive_directory_iterator& rhs) {
+inline bool operator!=(const recursive_directory_iterator &lhs,
+                       const recursive_directory_iterator &rhs) {
   return !(lhs == rhs);
 }
 
-inline bool exists(const path& p) {
-  return directory_entry(p).exists();
+inline bool exists(const path &p) { return directory_entry(p).exists(); }
+
+inline bool is_directory(const path &p) {
+  return directory_entry(p).is_directory();
 }
 
-inline bool is_directory(const path& p) {
-  return directory_entry(p).is_directory();
+inline bool is_regular_file(const path &p) {
+  return directory_entry(p).is_regular_file();
 }
 
 } // namespace filesystem

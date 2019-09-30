@@ -55,6 +55,10 @@ Vec3f val_to_color(const T &val, const T &min, const T &max) {
   return {x, x, x};
 }
 
+void pixel_normalize(PixArray&arr, PixArray& minmax) {
+
+}
+
 void draw2dArray(const PixArray &arr, const Vec2f &position, float scale,
                  pixel min, pixel max) {
   auto image_width = arr.rows();

@@ -16,10 +16,12 @@ class Recording {
 
 public:
   PixArray frame;
+  Pix2Array minmax;
   GLFWwindow *window = nullptr;
 
   Recording(filesystem::path path)
-      : _path(path), fileheader(path), frame(fileheader.Nx(), fileheader.Ny()) {
+      : _path(path), fileheader(path), frame(fileheader.Nx(), fileheader.Ny()),
+        minmax(fileheader.Nx(), fileheader.Ny()) {
     load_frame(0);
   }
 
