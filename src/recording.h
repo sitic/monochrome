@@ -16,11 +16,16 @@ class Recording {
 
 public:
   PixArray frame;
+  //Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> tmp;
+  PixArray tmp;
+  PixArray prev_frame;
   Pix2Array minmax;
   GLFWwindow *window = nullptr;
 
   Recording(filesystem::path path)
       : _path(path), fileheader(path), frame(fileheader.Nx(), fileheader.Ny()),
+        tmp(fileheader.Nx(), fileheader.Ny()),
+        prev_frame(fileheader.Nx(), fileheader.Ny()),
         minmax(fileheader.Nx(), fileheader.Ny()) {
     load_frame(0);
   }

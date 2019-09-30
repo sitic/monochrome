@@ -26,6 +26,7 @@ static float speed = 1;
 static float scale_fct = 1;
 static int min = 0;
 static int max = 4096;
+static bool diff_frames = false;
 
 static int main_window_width = 500;
 static int main_window_height = 500;
@@ -141,6 +142,7 @@ void display() {
           }
         }
         ImGui::Columns(1);
+        ImGui::Checkbox("Show Diff", &prm::diff_frames);
       }
 
       ImGui::Text("Application average %.1f FPS", ImGui::GetIO().Framerate);
@@ -153,7 +155,14 @@ void display() {
       recording->load_next_frame(prm::speed);
 
       Vec2f offset = {0, 0};
-      draw2dArray(recording->frame, offset, 1, prm::min, prm::max);
+      if (prm::diff_frames) {
+        //recording->tmp = recording->frame.cast<float>() - recording->prev_frame.cast<float>();
+        recording->tmp = recording->frame - recording->prev_frame;
+        recording->prev_frame = recording->frame;
+        draw2dArray(recording->tmp, offset, 1, prm::min, prm::max);
+      } else {
+        draw2dArray(recording->frame, offset, 1, prm::min, prm::max);
+      }
       glfwSwapBuffers(recording->window);
 
       glfwMakeContextCurrent(main_window);
@@ -182,7 +191,7 @@ void display() {
                              histogram.data.size(), 0, nullptr, 0,
                              histogram.max_value(), ImVec2(0, 80));
 
-        ImGui::SliderInt("min", &prm::min, 0, 4096);
+        ImGui::SliderInt("min", &prm::min, prm::diff_frames ? -4096 : 0, 4096);
         ImGui::SliderInt("max", &prm::max, 0, 4096);
         ImGui::End();
       }

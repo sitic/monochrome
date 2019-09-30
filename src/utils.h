@@ -59,8 +59,9 @@ void pixel_normalize(PixArray&arr, PixArray& minmax) {
 
 }
 
-void draw2dArray(const PixArray &arr, const Vec2f &position, float scale,
-                 pixel min, pixel max) {
+template <typename T>
+void draw2dArray(const  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr, const Vec2f &position, float scale,
+                 float min, float max) {
   auto image_width = arr.rows();
   auto image_height = arr.cols();
 
@@ -73,7 +74,7 @@ void draw2dArray(const PixArray &arr, const Vec2f &position, float scale,
       pos4 = Vec2f(y, image_width - (x + 1)) * scale + position;
 
       auto val = arr(x, y);
-      auto c = val_to_color(val, min, max);
+      auto c = val_to_color<T>(val, min, max);
 
       //if (std::isnan(val)) {
       //  c = {1, 0, 0};
