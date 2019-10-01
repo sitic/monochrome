@@ -16,18 +16,25 @@ class Recording {
 
 public:
   PixArray frame;
-  //Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> tmp;
+  // Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> tmp;
   PixArray tmp;
   PixArray prev_frame;
   Pix2Array minmax;
   GLFWwindow *window = nullptr;
+
+  int auto_min = 0;
+  int auto_max = 0;
 
   Recording(filesystem::path path)
       : _path(path), fileheader(path), frame(fileheader.Nx(), fileheader.Ny()),
         tmp(fileheader.Nx(), fileheader.Ny()),
         prev_frame(fileheader.Nx(), fileheader.Ny()),
         minmax(fileheader.Nx(), fileheader.Ny()) {
-    load_frame(0);
+
+    // load a frame from the middle to calculate auto min/max
+    load_frame(length() / 2);
+    auto_min = frame.minCoeff();
+    auto_max = frame.maxCoeff();
   }
 
   bool good() { return fileheader.good(); }
@@ -72,6 +79,8 @@ void recordings_window_close_callback(GLFWwindow *window) {
 void recording_window_callback(GLFWwindow *window, int key, int scancode,
                                int action, int mods) {
   if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_PRESS) {
-    recordings_window_close_callback(window);
+    // Don't call recordings_window_close_callback() directly here,
+    // causes a segfault in glfw
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
   }
 }

@@ -22,14 +22,23 @@ GLFWwindow *main_window = nullptr;
 std::vector<std::shared_ptr<Recording>> recordings = {};
 
 namespace prm {
-static float speed = 1;
-static float scale_fct = 1;
-static int min = 0;
-static int max = 4096;
-static bool diff_frames = false;
+static int calc_bitrange(bool is_12bit) {
+  return is_12bit ? (1 << 12) - 1 : (1 << 16) - 1;
+}
 
 static int main_window_width = 500;
 static int main_window_height = 500;
+
+static bool auto_scale = true;
+static bool is_idscam = true;
+static bool diff_frames = false;
+
+static int bitrange = calc_bitrange(is_idscam);
+static int min = 0;
+static int max = bitrange;
+
+static float speed = 1;
+static float scale_fct = 1;
 } // namespace prm
 
 void reshape_recording_window(std::shared_ptr<Recording> rec) {
@@ -76,6 +85,16 @@ void load_new_file(filesystem::path path) {
     return;
   }
 
+  if ((rec->Nx() == 128) && (rec->Ny() == 128)) {
+    if (prm::is_idscam) {
+      fmt::print("Looks like we are loading a PVCam file, setting bitrange to "
+                 "16bit\n");
+      prm::is_idscam = false;
+      prm::bitrange = prm::calc_bitrange(prm::is_idscam);
+      prm::max = prm::bitrange;
+    }
+  }
+
   auto title = path.filename().string();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -102,7 +121,7 @@ void display() {
   // Our state
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-  Histogram<float, 256> histogram(4096);
+  Histogram<float, 256> histogram(prm::bitrange);
 
   // keep running until main window is closed
   while (!glfwWindowShouldClose(main_window)) {
@@ -141,12 +160,27 @@ void display() {
             reshape_recording_window(r);
           }
         }
+        ImGui::NextColumn();
+        ImGui::Checkbox("Auto min max", &prm::auto_scale);
+        ImGui::NextColumn();
+        if (ImGui::Checkbox("12bit file", &prm::is_idscam)) {
+          prm::bitrange = prm::calc_bitrange(prm::is_idscam);
+          prm::max = prm::bitrange;
+        }
+        ImGui::NextColumn();
+        ImGui::Checkbox("Show frame difference", &prm::diff_frames);
         ImGui::Columns(1);
-        ImGui::Checkbox("Show Diff", &prm::diff_frames);
       }
 
       ImGui::Text("Application average %.1f FPS", ImGui::GetIO().Framerate);
       ImGui::End();
+    }
+
+    // Check if recording window should close
+    for (auto &recording : recordings) {
+      if (glfwWindowShouldClose(recording->window)) {
+        recordings_window_close_callback(recording->window);
+      }
     }
 
     for (auto &recording : recordings) {
@@ -154,14 +188,17 @@ void display() {
 
       recording->load_next_frame(prm::speed);
 
-      Vec2f offset = {0, 0};
+      int &min = prm::auto_scale ? recording->auto_min : prm::min;
+      int &max = prm::auto_scale ? recording->auto_max : prm::max;
+
       if (prm::diff_frames) {
-        //recording->tmp = recording->frame.cast<float>() - recording->prev_frame.cast<float>();
+        // recording->tmp = recording->frame.cast<float>() -
+        // recording->prev_frame.cast<float>();
         recording->tmp = recording->frame - recording->prev_frame;
         recording->prev_frame = recording->frame;
-        draw2dArray(recording->tmp, offset, 1, prm::min, prm::max);
+        draw2dArray(recording->tmp, {0, 0}, 1, min, max);
       } else {
-        draw2dArray(recording->frame, offset, 1, prm::min, prm::max);
+        draw2dArray(recording->frame, {0, 0}, 1, min, max);
       }
       glfwSwapBuffers(recording->window);
 
@@ -169,12 +206,11 @@ void display() {
       {
         ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                             ImVec2(FLT_MAX, FLT_MAX));
-        ImGui::Begin(recording->path().filename().c_str());
-        auto progress_label = fmt::format(
-            "{}/{}", recording->current_frame() + 1, recording->length());
-        ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
-                           progress_label.c_str());
+        ImGui::Begin(recording->path().filename().c_str(), nullptr,
+                     ImGuiWindowFlags_AlwaysAutoResize);
         {
+          ImGui::Text("Date: %s", recording->date().c_str());
+          ImGui::Text("Comment: %s", recording->comment().c_str());
           ImGui::Separator();
           ImGui::Columns(3);
           ImGui::Text("Width  %d", recording->Nx());
@@ -186,13 +222,19 @@ void display() {
           ImGui::Separator();
         }
 
+        ImGui::PushItemWidth(prm::main_window_width * 0.75f);
         histogram.compute(recording->frame.reshaped());
         ImGui::PlotHistogram("Histogram", histogram.data.data(),
                              histogram.data.size(), 0, nullptr, 0,
-                             histogram.max_value(), ImVec2(0, 80));
+                             histogram.max_value(), ImVec2(0, 100));
 
-        ImGui::SliderInt("min", &prm::min, prm::diff_frames ? -4096 : 0, 4096);
-        ImGui::SliderInt("max", &prm::max, 0, 4096);
+        ImGui::SliderInt("min", &min, prm::diff_frames ? -prm::bitrange : 0,
+                         prm::bitrange);
+        ImGui::SliderInt("max", &max, 0, prm::bitrange);
+        auto progress_label = fmt::format(
+            "Frame {}/{}", recording->current_frame() + 1, recording->length());
+        ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
+                           progress_label.c_str());
         ImGui::End();
       }
     }
@@ -312,7 +354,7 @@ int main(int, char **) {
   display();
 
   glfwDestroyWindow(main_window);
-  for (auto recording : recordings) {
+  for (const auto &recording : recordings) {
     glfwDestroyWindow(recording->window);
   }
   glfwTerminate();
