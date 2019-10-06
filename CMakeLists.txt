@@ -22,11 +22,22 @@ if(CCACHE_PROGRAM)
 endif()
 
 
-
 # require c++14
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(MSVC)
+    # Fix strange windows defaults
+    set(CMAKE_WIN32_EXECUTABLE 0 CACHE INTERNAL "")
+    set(COMPILER_WARNINGS "/wd4018 /wd4244 /wd4305 /wd4267")
+    set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} ${COMPILER_WARNINGS} /utf-8")
+
+    add_definitions(-DUNICODE -D_UNICODE)
+    add_definitions(-D_USE_MATH_DEFINES)
+    add_definitions(-DNOMINMAX)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
 
 add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h)
 target_link_libraries(quickViewer imgui_glfw_gl2 fmt)
