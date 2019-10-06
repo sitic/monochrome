@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include <GLFW/glfw3.h>
 #include <Eigen/Dense>
+#include <GLFW/glfw3.h>
 
 #include "bmp.h"
 
@@ -21,7 +21,7 @@ class Recording {
 public:
   Eigen::MatrixXf frame;
   Eigen::MatrixXf prev_frame;
-  Eigen::MatrixXf tmp;
+  Eigen::MatrixXf frame_diff;
 
   GLFWwindow *window = nullptr;
 
@@ -36,7 +36,7 @@ public:
         raw_frame(fileheader.Nx(), fileheader.Ny()),
         frame(fileheader.Nx(), fileheader.Ny()),
         prev_frame(fileheader.Nx(), fileheader.Ny()),
-        tmp(fileheader.Nx(), fileheader.Ny()) {
+        frame_diff(fileheader.Nx(), fileheader.Ny()) {
 
     // load a frame from the middle to calculate auto min/max
     load_frame(length() / 2);
@@ -45,10 +45,10 @@ public:
 
     prev_frame = frame;
     load_frame(length() / 2 + 1);
-    tmp = frame - prev_frame;
+    frame_diff = frame - prev_frame;
 
-    auto_diff_max =
-        std::max(std::abs(tmp.minCoeff()), std::abs(tmp.maxCoeff()));
+    auto_diff_max = std::max(std::abs(frame_diff.minCoeff()),
+                             std::abs(frame_diff.maxCoeff()));
     auto_diff_min = -auto_diff_max;
   }
 

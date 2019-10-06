@@ -232,12 +232,12 @@ void display() {
                      : prm::auto_scale ? recording->auto_max : prm::max;
 
       if (prm::diff_frames) {
-        recording->tmp = recording->frame - recording->prev_frame;
-        std::swap(recording->frame, recording->prev_frame);
-        draw2dArray(recording->tmp, {0, 0}, 1, recording->auto_diff_min,
+        recording->frame_diff = recording->frame - recording->prev_frame;
+        recording->frame.swap(recording->prev_frame);
+        draw2dArray(recording->frame_diff, recording->auto_diff_min,
                     recording->auto_diff_max);
       } else {
-        draw2dArray(recording->frame, {0, 0}, 1, min, max);
+        draw2dArray(recording->frame, min, max);
       }
       glfwSwapBuffers(recording->window);
 
@@ -269,8 +269,8 @@ void display() {
 
         ImGui::PushItemWidth(prm::main_window_width * 0.75f);
         if (prm::diff_frames) {
-          histogram.compute(recording->tmp.reshaped(), -prm::bitrange / 10,
-                            prm::bitrange / 10);
+          histogram.compute(recording->frame_diff.reshaped(),
+                            -prm::bitrange / 10, prm::bitrange / 10);
         } else {
           histogram.compute(recording->frame.reshaped(), 0, prm::bitrange);
         }
@@ -377,7 +377,7 @@ int main(int, char **) {
   }
 
   // TODO: HIDIP handling
-  //style.ScaleAllSizes(2);
+  // style.ScaleAllSizes(2);
 
   // Setup Platform/Renderer bindings
   ImGui_ImplGlfw_InitForOpenGL(main_window, true);

@@ -59,16 +59,16 @@ Vec3f val_to_color(const T &val, const T &min, const T &max) {
 
 template <typename T>
 void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr,
-                 const Vec2f &position, float scale, float min, float max) {
+                 float min, float max) {
   auto image_width = arr.rows();
   auto image_height = arr.cols();
 
   for (long x = 0; x < image_width; x++) {
     for (long y = 0; y < image_height; y++) {
-      const Vec2f pos1 = Vec2f(y, image_width - x) * scale + position;
-      const Vec2f pos2 = Vec2f(y + 1, image_width - x) * scale + position;
-      const Vec2f pos3 = Vec2f(y + 1, image_width - (x + 1)) * scale + position;
-      const Vec2f pos4 = Vec2f(y, image_width - (x + 1)) * scale + position;
+      const Vec2f pos1 = Vec2f(y, image_width - x);
+      const Vec2f pos2 = Vec2f(y + 1, image_width - x);
+      const Vec2f pos3 = Vec2f(y + 1, image_width - (x + 1));
+      const Vec2f pos4 = Vec2f(y, image_width - (x + 1));
 
       auto val = arr(x, y);
       auto c = val_to_color<T>(val, min, max);
