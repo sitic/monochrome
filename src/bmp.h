@@ -1,9 +1,11 @@
 #pragma once
 
+#include <chrono>
 #include <fstream>
+using namespace std::chrono_literals;
 
-#include "filesystem/filesystem.hpp"
 #include "definitions.h"
+#include "filesystem/filesystem.hpp"
 
 class BMPheader {
 private:
@@ -21,14 +23,26 @@ private:
 
   uint64 mFirstFrameTime = 0;
   uint64 mLastFrameTime = 0;
-  uint64 mRecordingPeriod = 0;
+  std::chrono::duration<float> mRecordingLength;
+  float mFPS = 0;
 
-  size_t mFrameSize = 0;
-  size_t mBytesPerPixel = sizeof(pixel);
+  size_t mFrameBytes = 0;
 
   template <typename T> bool read(T &x) {
     _in.read(reinterpret_cast<char *>(&x), sizeof(T));
     return _in.good();
+  }
+
+  std::string read_string() {
+    char data;
+    std::vector<char> vec;
+    do {
+      _in.read(&data, sizeof(char));
+      if (data != '\0') {
+        vec.push_back(data);
+      }
+    } while (data != '\0');
+    return std::string(vec.begin(), vec.end());
   }
 
   bool _good = false;
@@ -37,9 +51,7 @@ public:
   const char Version = 'f';
   const uint32 ByteOrderMark = 0x1A2B3C4D;
   const size_t HeaderLength = 1024;
-  const size_t TrailerLength = 0;
   const size_t FrameTailLength = sizeof(uint64);
-  const std::string DateFormat = "yyyy-MM-dd hh:mm:ss:zzz";
 
   BMPheader(filesystem::path path)
       : _in(path.string(), std::ios::in | std::ios::binary) {
@@ -54,61 +66,34 @@ public:
 
     char mVersion;
     if (!read(mVersion) || mVersion != Version) {
-      fmt::print("Read failed, not a bmp recording?\n");
+      fmt::print("Parsing '{}' failed, not a bmp recording?\n", path.string());
       return;
     }
 
     uint32 mByteOrderMark;
     if (!read(mByteOrderMark) || mByteOrderMark != ByteOrderMark) {
-      fmt::print("Read failed, not a bmp recording?\n");
+      fmt::print("Parsing '{}' failed, not a bmp recording?\n", path.string());
       return;
     }
 
-    if (!read(mNumFrames)) {
-      return;
-    }
-
-    if (!read(mFrameWidth)) {
-      return;
-    }
-
-    if (!read(mFrameHeight)) {
-      return;
-    }
-
-    if (!read(mFormat)) {
-      return;
-    }
-    if (mFormat == 0) {
-      mFormat = 1;
-    }
-
+    read(mNumFrames);
+    read(mFrameWidth);
+    read(mFrameHeight);
+    read(mFormat);
     if (mFormat != 3) {
       throw std::runtime_error("Only uint16 data supported currently!");
     }
-
-    mFrameSize = (mFrameWidth * mFrameHeight);
+    mFrameBytes = (mFrameWidth * mFrameHeight) * sizeof(uint16);
 
     uint32 bin = 0;
     read(bin);
     read(mFrequency);
 
-    auto read_string = [this]() {
-      char data;
-      std::vector<char> vec;
-      do {
-        _in.read(&data, sizeof(char));
-        if (data != '\0') {
-          vec.push_back(data);
-        }
-      } while (data != '\0');
-      return std::string(vec.begin(), vec.end());
-    };
     mDate = read_string();
     mComment = read_string();
 
-    //// calculate the recording period, firstFrametime and lastFramtime;
-    _in.seekg(HeaderLength + mFrameSize, std::ios::beg);
+    // calculate the recording period, firstFrametime and lastFramtime;
+    _in.seekg(HeaderLength + mFrameBytes, std::ios::beg);
     read(mFirstFrameTime);
 
     _in.seekg(0, std::ios::end);
@@ -116,33 +101,24 @@ public:
     _in.seekg(file_size - sizeof(uint64), std::ios::beg);
     read(mLastFrameTime);
 
-    mRecordingPeriod = mFirstFrameTime - mLastFrameTime;
-    // mFrequency = mRecordingPeriod / 1000 / mNumFrames;
-
-    auto num_frames = (file_size - HeaderLength) /
-                      (mFrameSize * mBytesPerPixel + FrameTailLength);
+    auto num_frames =
+        (file_size - HeaderLength) / (mFrameBytes + FrameTailLength);
     if (num_frames != mNumFrames) {
       fmt::print("WARNING: Expected {} frames, but only {} present in file!\n",
                  mNumFrames, num_frames);
       mNumFrames = num_frames;
     }
 
+    mRecordingLength =
+        std::chrono::milliseconds(mLastFrameTime - mFirstFrameTime);
+    mFPS = mNumFrames / mRecordingLength.count();
+
     // if we got to this point, this is a valid MultiRecoder header
     _good = _in.good();
   };
 
+  // Does it appear to be a valid MultiRecorder file?
   bool good() { return _good; }
-
-  void read_frame(long t, pixel *data) {
-    if (!data) {
-      throw std::runtime_error("WTF");
-    }
-
-    _in.seekg(HeaderLength +
-                  t * (mFrameSize * mBytesPerPixel + FrameTailLength),
-              std::ios::beg);
-    _in.read(reinterpret_cast<char *>(data), mFrameSize * mBytesPerPixel);
-  }
 
   uint32 Nx() { return mFrameWidth; }
   uint32 Ny() { return mFrameHeight; }
@@ -150,4 +126,16 @@ public:
 
   std::string date() { return mDate; };
   std::string comment() { return mComment; };
+  std::chrono::duration<float> duration() { return mRecordingLength; };
+  float fps() { return mFPS; }
+
+  void read_frame(long t, uint16 *data) {
+    if (!data) {
+      throw std::runtime_error("read_frame() called with nullptr as argument");
+    }
+
+    _in.seekg(HeaderLength + t * (mFrameBytes + FrameTailLength),
+              std::ios::beg);
+    _in.read(reinterpret_cast<char *>(data), mFrameBytes);
+  }
 };

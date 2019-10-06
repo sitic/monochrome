@@ -21,9 +21,26 @@ GLFWwindow *main_window = nullptr;
 
 std::vector<std::shared_ptr<Recording>> recordings = {};
 
+enum class HistRange { FLOAT, U8, U12, U16 };
+
+constexpr static int bitrange(HistRange x) noexcept {
+  switch (x) {
+  case HistRange::FLOAT:
+    return 1;
+  case HistRange::U8:
+    return (1 << 8) - 1;
+  case HistRange::U12:
+    return (1 << 12) - 1;
+  case HistRange::U16:
+    return (1 << 16) - 1;
+  }
+
+  return 0; // silence compile warning
+}
+
 namespace prm {
-static int calc_bitrange(bool is_12bit) {
-  return is_12bit ? (1 << 12) - 1 : (1 << 16) - 1;
+constexpr static int calc_bitrange(bool is_12bit) noexcept {
+  return is_12bit ? bitrange(HistRange::U12) : bitrange(HistRange::U16);
 }
 
 static int main_window_width = 500;
@@ -41,13 +58,21 @@ static float speed = 1;
 static float scale_fct = 1;
 } // namespace prm
 
-void reshape_recording_window(std::shared_ptr<Recording> rec) {
-  auto window = rec->window;
-  int width = std::ceil(prm::scale_fct * rec->Nx());
-  int height = std::ceil(prm::scale_fct * rec->Ny());
+void recording_reshape_callback(GLFWwindow *window, int w, int h) {
+  std::shared_ptr<Recording> rec;
+  for (auto r : recordings) {
+    if (r->window == window) {
+      rec = r;
+    }
+  }
+
+  if (!rec) {
+    throw std::runtime_error("Error in recording_reshape_callback, could not "
+                             "find associated recording");
+  }
 
   glfwMakeContextCurrent(window);
-  glfwSetWindowSize(window, width, height);
+  glViewport(0, 0, w, h);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity(); // Reset The Projection Matrix
   glOrtho(0, rec->Nx(), 0, rec->Ny(), -1, 1);
@@ -60,6 +85,15 @@ void reshape_recording_window(std::shared_ptr<Recording> rec) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   glfwMakeContextCurrent(main_window);
+}
+
+void resize_recording_window(std::shared_ptr<Recording> rec) {
+  auto window = rec->window;
+  int width = std::ceil(prm::scale_fct * rec->Nx());
+  int height = std::ceil(prm::scale_fct * rec->Ny());
+
+  glfwSetWindowSize(window, width, height);
+  recording_reshape_callback(window, width, height);
 }
 
 void load_new_file(filesystem::path path) {
@@ -109,8 +143,10 @@ void load_new_file(filesystem::path path) {
   rec->window = window;
   glfwSetWindowCloseCallback(window, recordings_window_close_callback);
   glfwSetKeyCallback(window, recording_window_callback);
+  glfwSetWindowSizeCallback(window, recording_reshape_callback);
+  glfwSetWindowAspectRatio(window, rec->Nx(), rec->Ny());
 
-  reshape_recording_window(rec);
+  resize_recording_window(rec);
   glfwMakeContextCurrent(main_window);
 }
 
@@ -121,7 +157,7 @@ void display() {
   // Our state
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-  Histogram<float, 256> histogram(prm::bitrange);
+  Histogram<float, 256> histogram;
 
   // keep running until main window is closed
   while (!glfwWindowShouldClose(main_window)) {
@@ -157,7 +193,7 @@ void display() {
         ImGui::NextColumn();
         if (ImGui::SliderFloat("scale", &prm::scale_fct, 0.5, 5)) {
           for (const auto &r : recordings) {
-            reshape_recording_window(r);
+            resize_recording_window(r);
           }
         }
         ImGui::NextColumn();
@@ -188,15 +224,18 @@ void display() {
 
       recording->load_next_frame(prm::speed);
 
-      int &min = prm::auto_scale ? recording->auto_min : prm::min;
-      int &max = prm::auto_scale ? recording->auto_max : prm::max;
+      int &min = prm::diff_frames
+                     ? recording->auto_diff_min
+                     : prm::auto_scale ? recording->auto_min : prm::min;
+      int &max = prm::diff_frames
+                     ? recording->auto_diff_max
+                     : prm::auto_scale ? recording->auto_max : prm::max;
 
       if (prm::diff_frames) {
-        // recording->tmp = recording->frame.cast<float>() -
-        // recording->prev_frame.cast<float>();
         recording->tmp = recording->frame - recording->prev_frame;
         recording->prev_frame = recording->frame;
-        draw2dArray(recording->tmp, {0, 0}, 1, min, max);
+        draw2dArray(recording->tmp, {0, 0}, 1, recording->auto_diff_min,
+                    recording->auto_diff_max);
       } else {
         draw2dArray(recording->frame, {0, 0}, 1, min, max);
       }
@@ -210,27 +249,45 @@ void display() {
                      ImGuiWindowFlags_AlwaysAutoResize);
         {
           ImGui::Text("Date: %s", recording->date().c_str());
-          ImGui::Text("Comment: %s", recording->comment().c_str());
-          ImGui::Separator();
+
+          if (!recording->comment().empty()) {
+            ImGui::Text("Comment: %s", recording->comment().c_str());
+          }
+
           ImGui::Columns(3);
+          ImGui::Text("Duration  %.3fs", recording->duration().count());
+          ImGui::NextColumn();
+          ImGui::Text("FPS  %.3f", recording->fps());
+          ImGui::NextColumn();
+          ImGui::Text("Frames %d", recording->length());
+          ImGui::NextColumn();
           ImGui::Text("Width  %d", recording->Nx());
           ImGui::NextColumn();
           ImGui::Text("Height %d", recording->Ny());
-          ImGui::NextColumn();
-          ImGui::Text("Frames %d", recording->length());
           ImGui::Columns(1);
-          ImGui::Separator();
         }
 
         ImGui::PushItemWidth(prm::main_window_width * 0.75f);
-        histogram.compute(recording->frame.reshaped());
+        if (prm::diff_frames) {
+          histogram.compute(recording->tmp.reshaped(), -prm::bitrange / 10,
+                            prm::bitrange / 10);
+        } else {
+          histogram.compute(recording->frame.reshaped(), 0, prm::bitrange);
+        }
+
         ImGui::PlotHistogram("Histogram", histogram.data.data(),
                              histogram.data.size(), 0, nullptr, 0,
                              histogram.max_value(), ImVec2(0, 100));
 
-        ImGui::SliderInt("min", &min, prm::diff_frames ? -prm::bitrange : 0,
-                         prm::bitrange);
-        ImGui::SliderInt("max", &max, 0, prm::bitrange);
+        if (!prm::diff_frames) {
+          ImGui::SliderInt("min", &min, 0, prm::bitrange);
+          ImGui::SliderInt("max", &max, 0, prm::bitrange);
+        } else {
+          ImGui::SliderInt("min", &min, -prm::bitrange / 10,
+                           prm::bitrange / 10);
+          ImGui::SliderInt("max", &max, -prm::bitrange / 10,
+                           prm::bitrange / 10);
+        }
         auto progress_label = fmt::format(
             "Frame {}/{}", recording->current_frame() + 1, recording->length());
         ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
@@ -310,7 +367,6 @@ int main(int, char **) {
 
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
-  // ImGui::StyleColorsClassic();
 
   // When viewports are enabled we tweak WindowRounding/WindowBg so platform
   // windows can look identical to regular ones.
@@ -319,6 +375,9 @@ int main(int, char **) {
     style.WindowRounding = 0.0f;
     style.Colors[ImGuiCol_WindowBg].w = 1.0f;
   }
+
+  // TODO: HIDIP handling
+  //style.ScaleAllSizes(2);
 
   // Setup Platform/Renderer bindings
   ImGui_ImplGlfw_InitForOpenGL(main_window, true);

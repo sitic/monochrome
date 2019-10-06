@@ -1,7 +1,9 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
 #include <string>
+
+#include <GLFW/glfw3.h>
+#include <Eigen/Dense>
 
 #include "bmp.h"
 
@@ -14,27 +16,40 @@ class Recording {
   int _t = 0;
   float _tf = 0;
 
+  Eigen::Matrix<uint16, Eigen::Dynamic, Eigen::Dynamic> raw_frame;
+
 public:
-  PixArray frame;
-  // Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> tmp;
-  PixArray tmp;
-  PixArray prev_frame;
-  Pix2Array minmax;
+  Eigen::MatrixXf frame;
+  Eigen::MatrixXf prev_frame;
+  Eigen::MatrixXf tmp;
+
   GLFWwindow *window = nullptr;
 
-  int auto_min = 0;
   int auto_max = 0;
+  int auto_min = 0;
+
+  int auto_diff_max = 0;
+  int auto_diff_min = 0;
 
   Recording(filesystem::path path)
-      : _path(path), fileheader(path), frame(fileheader.Nx(), fileheader.Ny()),
-        tmp(fileheader.Nx(), fileheader.Ny()),
+      : _path(path), fileheader(path),
+        raw_frame(fileheader.Nx(), fileheader.Ny()),
+        frame(fileheader.Nx(), fileheader.Ny()),
         prev_frame(fileheader.Nx(), fileheader.Ny()),
-        minmax(fileheader.Nx(), fileheader.Ny()) {
+        tmp(fileheader.Nx(), fileheader.Ny()) {
 
     // load a frame from the middle to calculate auto min/max
     load_frame(length() / 2);
-    auto_min = frame.minCoeff();
     auto_max = frame.maxCoeff();
+    auto_min = frame.minCoeff();
+
+    prev_frame = frame;
+    load_frame(length() / 2 + 1);
+    tmp = frame - prev_frame;
+
+    auto_diff_max =
+        std::max(std::abs(tmp.minCoeff()), std::abs(tmp.maxCoeff()));
+    auto_diff_min = -auto_diff_max;
   }
 
   bool good() { return fileheader.good(); }
@@ -44,8 +59,13 @@ public:
   filesystem::path path() { return _path; }
   std::string date() { return fileheader.date(); };
   std::string comment() { return fileheader.comment(); };
+  std::chrono::duration<float> duration() { return fileheader.duration(); }
+  float fps() { return fileheader.fps(); }
 
-  void load_frame(long t) { fileheader.read_frame(t, frame.data()); }
+  void load_frame(long t) {
+    fileheader.read_frame(t, raw_frame.data());
+    frame = raw_frame.cast<float>();
+  }
 
   void load_next_frame(float speed = 1) {
     _tf += speed;

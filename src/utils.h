@@ -1,7 +1,7 @@
 #pragma once
 
-#include <array>
 #include <GLFW/glfw3.h>
+#include <array>
 
 #include "definitions.h"
 
@@ -9,21 +9,23 @@ template <typename T, size_t bin_count> class Histogram {
 public:
   std::array<T, bin_count> data = {};
 
-  pixel _max;
+  Histogram() = default;
 
-  Histogram(pixel max) : _max(max){};
-
-  template <typename Container> void compute(const Container &container) {
+  template <typename Container>
+  void compute(const Container &container, T min, T max) {
     data.fill(0);
 
-    pixel bin_size = (_max + 1) / bin_count;
+    const unsigned int bin_size = (max - min + 1) / bin_count;
 
     for (auto val : container) {
-      if (val > _max) {
-        val = _max;
+
+      if (val > max) {
+        val = max;
+      } else if (val < min) {
+        val = min;
       }
 
-      const unsigned int index = val / bin_size;
+      const unsigned int index = (val - min) / bin_size;
       data[index] += 1;
     }
   }
@@ -55,30 +57,21 @@ Vec3f val_to_color(const T &val, const T &min, const T &max) {
   return {x, x, x};
 }
 
-void pixel_normalize(PixArray&arr, PixArray& minmax) {
-
-}
-
 template <typename T>
-void draw2dArray(const  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr, const Vec2f &position, float scale,
-                 float min, float max) {
+void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr,
+                 const Vec2f &position, float scale, float min, float max) {
   auto image_width = arr.rows();
   auto image_height = arr.cols();
 
-  Vec2f pos1, pos2, pos3, pos4;
   for (long x = 0; x < image_width; x++) {
     for (long y = 0; y < image_height; y++) {
-      pos1 = Vec2f(y, image_width - x) * scale + position;
-      pos2 = Vec2f(y + 1, image_width - x) * scale + position;
-      pos3 = Vec2f(y + 1, image_width - (x + 1)) * scale + position;
-      pos4 = Vec2f(y, image_width - (x + 1)) * scale + position;
+      const Vec2f pos1 = Vec2f(y, image_width - x) * scale + position;
+      const Vec2f pos2 = Vec2f(y + 1, image_width - x) * scale + position;
+      const Vec2f pos3 = Vec2f(y + 1, image_width - (x + 1)) * scale + position;
+      const Vec2f pos4 = Vec2f(y, image_width - (x + 1)) * scale + position;
 
       auto val = arr(x, y);
       auto c = val_to_color<T>(val, min, max);
-
-      //if (std::isnan(val)) {
-      //  c = {1, 0, 0};
-      //}
 
       glBegin(GL_QUADS);
       glColor3fv(c.data());
