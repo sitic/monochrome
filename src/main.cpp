@@ -233,7 +233,7 @@ void display() {
 
       if (prm::diff_frames) {
         recording->tmp = recording->frame - recording->prev_frame;
-        recording->prev_frame = recording->frame;
+        std::swap(recording->frame, recording->prev_frame);
         draw2dArray(recording->tmp, {0, 0}, 1, recording->auto_diff_min,
                     recording->auto_diff_max);
       } else {
