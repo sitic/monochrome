@@ -43,6 +43,5 @@ add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h 
 target_link_libraries(quickViewer imgui_glfw_gl2 fmt)
 if(CMAKE_COMPILER_IS_GNUCXX)
     # Hotfix so that is shows up in the file explorer as executable, see https://stackoverflow.com/questions/41398444/
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -no-pie")
     target_link_options(quickViewer PRIVATE "-no-pie")
 endif()

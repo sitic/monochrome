@@ -10,6 +10,7 @@
 extern GLFWwindow *main_window;
 
 class Recording {
+protected:
   filesystem::path _path;
 
   BMPheader fileheader;
@@ -17,6 +18,9 @@ class Recording {
   float _tf = 0;
 
   Eigen::Matrix<uint16, Eigen::Dynamic, Eigen::Dynamic> raw_frame;
+
+  long t_frame = 0;
+  long t_prev_frame = 0;
 
 public:
   Eigen::MatrixXf frame;
@@ -45,7 +49,7 @@ public:
 
     prev_frame = frame;
     load_frame(length() / 2 + 1);
-    frame_diff = frame - prev_frame;
+    compute_frame_diff();
 
     auto_diff_max = std::max(std::abs(frame_diff.minCoeff()),
                              std::abs(frame_diff.maxCoeff()));
@@ -65,6 +69,7 @@ public:
   void load_frame(long t) {
     fileheader.read_frame(t, raw_frame.data());
     frame = raw_frame.cast<float>();
+    t_frame = t;
   }
 
   void load_next_frame(float speed = 1) {
@@ -82,25 +87,74 @@ public:
     load_frame(_t);
   }
 
+  void compute_frame_diff() {
+    if (t_prev_frame != t_frame) {
+      frame_diff = frame - prev_frame;
+      frame.swap(prev_frame);
+      t_prev_frame = t_frame;
+    }
+  }
+
   int current_frame() { return _t; }
   float progress() { return _t / static_cast<float>(length() - 1); }
 };
 
 extern std::vector<std::shared_ptr<Recording>> recordings;
 
-void recordings_window_close_callback(GLFWwindow *window) {
-  recordings.erase(
-      std::remove_if(recordings.begin(), recordings.end(),
-                     [window](auto r) { return r->window == window; }),
-      recordings.end());
-  glfwDestroyWindow(window);
-}
+class RecordingWindow {
+public:
+  static void resize_window(std::shared_ptr<Recording> rec, float scale = 1) {
+    auto window = rec->window;
+    int width = std::ceil(scale * rec->Nx());
+    int height = std::ceil(scale * rec->Ny());
 
-void recording_window_callback(GLFWwindow *window, int key, int scancode,
-                               int action, int mods) {
-  if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_PRESS) {
-    // Don't call recordings_window_close_callback() directly here,
-    // causes a segfault in glfw
-    glfwSetWindowShouldClose(window, GLFW_TRUE);
+    glfwSetWindowSize(window, width, height);
+    RecordingWindow::reshape_callback(window, width, height);
   }
-}
+
+  static void reshape_callback(GLFWwindow *window, int w, int h) {
+    std::shared_ptr<Recording> rec;
+    for (auto r : recordings) {
+      if (r->window == window) {
+        rec = r;
+      }
+    }
+
+    if (!rec) {
+      throw std::runtime_error("Error in RecordingWindow::reshape_callback, "
+                               "could not find associated recording");
+    }
+
+    glfwMakeContextCurrent(window);
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity(); // Reset The Projection Matrix
+    glOrtho(0, rec->Nx(), 0, rec->Ny(), -1, 1);
+    // https://docs.microsoft.com/en-us/previous-versions//ms537249(v=vs.85)?redirectedfrom=MSDN
+    // http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
+    glMatrixMode(GL_MODELVIEW); // Select The Modelview Matrix
+    glLoadIdentity();           // Reset The Modelview Matrix
+
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glfwMakeContextCurrent(main_window);
+  }
+
+  static void close_callback(GLFWwindow *window) {
+    recordings.erase(
+        std::remove_if(recordings.begin(), recordings.end(),
+                       [window](auto r) { return r->window == window; }),
+        recordings.end());
+    glfwDestroyWindow(window);
+  }
+
+  static void key_callback(GLFWwindow *window, int key, int scancode,
+                           int action, int mods) {
+    if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_PRESS) {
+      // Don't call RecordingWindow::close_callback() directly here,
+      // causes a segfault in glfw
+      glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+  }
+};

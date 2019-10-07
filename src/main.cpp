@@ -13,7 +13,6 @@
 
 #include <fmt/format.h>
 
-#include "definitions.h"
 #include "recording.h"
 #include "utils.h"
 
@@ -57,44 +56,6 @@ static int max = bitrange;
 static float speed = 1;
 static float scale_fct = 1;
 } // namespace prm
-
-void recording_reshape_callback(GLFWwindow *window, int w, int h) {
-  std::shared_ptr<Recording> rec;
-  for (auto r : recordings) {
-    if (r->window == window) {
-      rec = r;
-    }
-  }
-
-  if (!rec) {
-    throw std::runtime_error("Error in recording_reshape_callback, could not "
-                             "find associated recording");
-  }
-
-  glfwMakeContextCurrent(window);
-  glViewport(0, 0, w, h);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity(); // Reset The Projection Matrix
-  glOrtho(0, rec->Nx(), 0, rec->Ny(), -1, 1);
-  // https://docs.microsoft.com/en-us/previous-versions//ms537249(v=vs.85)?redirectedfrom=MSDN
-  // http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
-  glMatrixMode(GL_MODELVIEW); // Select The Modelview Matrix
-  glLoadIdentity();           // Reset The Modelview Matrix
-
-  glClearColor(0, 0, 0, 1);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  glfwMakeContextCurrent(main_window);
-}
-
-void resize_recording_window(std::shared_ptr<Recording> rec) {
-  auto window = rec->window;
-  int width = std::ceil(prm::scale_fct * rec->Nx());
-  int height = std::ceil(prm::scale_fct * rec->Ny());
-
-  glfwSetWindowSize(window, width, height);
-  recording_reshape_callback(window, width, height);
-}
 
 void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
@@ -141,12 +102,12 @@ void load_new_file(filesystem::path path) {
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1); // wait until the current frame has been drawn before
   rec->window = window;
-  glfwSetWindowCloseCallback(window, recordings_window_close_callback);
-  glfwSetKeyCallback(window, recording_window_callback);
-  glfwSetWindowSizeCallback(window, recording_reshape_callback);
+  glfwSetWindowCloseCallback(window, RecordingWindow::close_callback);
+  glfwSetKeyCallback(window, RecordingWindow::key_callback);
+  glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
   glfwSetWindowAspectRatio(window, rec->Nx(), rec->Ny());
 
-  resize_recording_window(rec);
+  RecordingWindow::resize_window(rec, prm::scale_fct);
   glfwMakeContextCurrent(main_window);
 }
 
@@ -193,7 +154,7 @@ void display() {
         ImGui::NextColumn();
         if (ImGui::SliderFloat("scale", &prm::scale_fct, 0.5, 5)) {
           for (const auto &r : recordings) {
-            resize_recording_window(r);
+            RecordingWindow::resize_window(r, prm::scale_fct);
           }
         }
         ImGui::NextColumn();
@@ -215,7 +176,7 @@ void display() {
     // Check if recording window should close
     for (auto &recording : recordings) {
       if (glfwWindowShouldClose(recording->window)) {
-        recordings_window_close_callback(recording->window);
+        RecordingWindow::close_callback(recording->window);
       }
     }
 
@@ -232,12 +193,18 @@ void display() {
                      : prm::auto_scale ? recording->auto_max : prm::max;
 
       if (prm::diff_frames) {
-        recording->frame_diff = recording->frame - recording->prev_frame;
-        recording->frame.swap(recording->prev_frame);
-        draw2dArray(recording->frame_diff, recording->auto_diff_min,
-                    recording->auto_diff_max);
+        recording->compute_frame_diff();
+        draw2dArray(recording->frame_diff, min, max);
+
+        histogram.min = -prm::bitrange / 10.f;
+        histogram.max = prm::bitrange / 10.f;
+        histogram.compute(recording->frame_diff.reshaped());
       } else {
         draw2dArray(recording->frame, min, max);
+
+        histogram.min = 0;
+        histogram.max = prm::bitrange;
+        histogram.compute(recording->frame.reshaped());
       }
       glfwSwapBuffers(recording->window);
 
@@ -268,26 +235,13 @@ void display() {
         }
 
         ImGui::PushItemWidth(prm::main_window_width * 0.75f);
-        if (prm::diff_frames) {
-          histogram.compute(recording->frame_diff.reshaped(),
-                            -prm::bitrange / 10, prm::bitrange / 10);
-        } else {
-          histogram.compute(recording->frame.reshaped(), 0, prm::bitrange);
-        }
-
         ImGui::PlotHistogram("Histogram", histogram.data.data(),
                              histogram.data.size(), 0, nullptr, 0,
                              histogram.max_value(), ImVec2(0, 100));
 
-        if (!prm::diff_frames) {
-          ImGui::SliderInt("min", &min, 0, prm::bitrange);
-          ImGui::SliderInt("max", &max, 0, prm::bitrange);
-        } else {
-          ImGui::SliderInt("min", &min, -prm::bitrange / 10,
-                           prm::bitrange / 10);
-          ImGui::SliderInt("max", &max, -prm::bitrange / 10,
-                           prm::bitrange / 10);
-        }
+        ImGui::SliderInt("min", &min, histogram.min, histogram.max);
+        ImGui::SliderInt("max", &max, histogram.min, histogram.max);
+
         auto progress_label = fmt::format(
             "Frame {}/{}", recording->current_frame() + 1, recording->length());
         ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
@@ -338,6 +292,13 @@ int main(int, char **) {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit())
     exit(EXIT_FAILURE);
+
+  auto primary_monitor = glfwGetPrimaryMonitor();
+  auto mode = glfwGetVideoMode(primary_monitor);
+
+  prm::main_window_width = 500;
+  prm::main_window_height = prm::main_window_width;
+
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   main_window =
@@ -376,8 +337,10 @@ int main(int, char **) {
     style.Colors[ImGuiCol_WindowBg].w = 1.0f;
   }
 
-  // TODO: HIDIP handling
-  // style.ScaleAllSizes(2);
+  // TODO: Better HIDIP handling
+  float xscale, yscale;
+  glfwGetMonitorContentScale(primary_monitor, &xscale, &yscale);
+  style.ScaleAllSizes(xscale);
 
   // Setup Platform/Renderer bindings
   ImGui_ImplGlfw_InitForOpenGL(main_window, true);

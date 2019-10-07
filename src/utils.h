@@ -9,10 +9,14 @@ template <typename T, size_t bin_count> class Histogram {
 public:
   std::array<T, bin_count> data = {};
 
+  T min = {};
+  T max = {};
+
   Histogram() = default;
+  Histogram(T _min, T _max) : min(_min), max(_max){};
 
   template <typename Container>
-  void compute(const Container &container, T min, T max) {
+  void compute(const Container &container) {
     data.fill(0);
 
     const unsigned int bin_size = (max - min + 1) / bin_count;

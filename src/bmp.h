@@ -81,7 +81,11 @@ public:
     read(mFrameHeight);
     read(mFormat);
     if (mFormat != 3) {
-      throw std::runtime_error("Only uint16 data supported currently!");
+      auto msg =
+          fmt::format("ERROR: Only uint16 data supported currently, file "
+                      "header says pixel format is '{}', expected '3'.",
+                      mFormat);
+      throw std::runtime_error(msg);
     }
     mFrameBytes = (mFrameWidth * mFrameHeight) * sizeof(uint16);
 
