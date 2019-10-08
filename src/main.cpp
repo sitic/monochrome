@@ -18,7 +18,7 @@
 
 GLFWwindow *main_window = nullptr;
 
-std::vector<std::shared_ptr<Recording>> recordings = {};
+std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
 
 enum class HistRange { FLOAT, U8, U12, U16 };
 
@@ -72,7 +72,7 @@ void load_new_file(filesystem::path path) {
     return;
   }
 
-  recordings.emplace_back(std::make_shared<Recording>(path));
+  recordings.emplace_back(std::make_shared<RecordingWindow>(path));
   auto rec = recordings.back();
   if (!rec->good()) {
     recordings.pop_back();
@@ -107,7 +107,7 @@ void load_new_file(filesystem::path path) {
   glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
   glfwSetWindowAspectRatio(window, rec->Nx(), rec->Ny());
 
-  RecordingWindow::resize_window(rec, prm::scale_fct);
+  rec->resize_window(prm::scale_fct);
   glfwMakeContextCurrent(main_window);
 }
 
@@ -154,7 +154,7 @@ void display() {
         ImGui::NextColumn();
         if (ImGui::SliderFloat("scale", &prm::scale_fct, 0.5, 5)) {
           for (const auto &r : recordings) {
-            RecordingWindow::resize_window(r, prm::scale_fct);
+            r->resize_window(prm::scale_fct);
           }
         }
         ImGui::NextColumn();

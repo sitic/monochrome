@@ -6,8 +6,12 @@
 #include <GLFW/glfw3.h>
 
 #include "bmp.h"
+#include "utils.h"
 
 extern GLFWwindow *main_window;
+
+class RecordingWindow;
+extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
 
 class Recording {
 protected:
@@ -103,21 +107,73 @@ public:
   float progress() { return _t / static_cast<float>(length() - 1); }
 };
 
-extern std::vector<std::shared_ptr<Recording>> recordings;
-
-class RecordingWindow {
+class RecordingWindow : public Recording {
 public:
-  static void resize_window(std::shared_ptr<Recording> rec, float scale = 1) {
-    auto window = rec->window;
-    int width = std::ceil(scale * rec->Nx());
-    int height = std::ceil(scale * rec->Ny());
+  using trace_t = std::pair<Vec2i, std::vector<float>>;
+  std::vector<trace_t> traces;
+
+  Histogram<float, 256> histogram;
+
+  RecordingWindow(filesystem::path path) : Recording(path){
+    //traces.push_back({Vec2i(5, 5), {}});
+  };
+
+  ~RecordingWindow() {
+    if (window) {
+      glfwDestroyWindow(window);
+      window = nullptr;
+    }
+  }
+
+  void reset_traces() {
+    //for (auto &[pos, trace] : traces) {
+    //  trace.clear();
+    //}
+  }
+
+  void display(float min, float max, float bitrange, bool diff_frames = false,
+               float speed = 1) {
+    glfwMakeContextCurrent(window);
+
+    load_next_frame(speed);
+
+    if (diff_frames) {
+      compute_frame_diff();
+      draw2dArray(frame_diff, min, max);
+
+      histogram.min = -bitrange / 10.f;
+      histogram.max = bitrange / 10.f;
+      histogram.compute(frame_diff.reshaped());
+    } else {
+      draw2dArray(frame, min, max);
+
+      histogram.min = 0;
+      histogram.max = bitrange;
+      histogram.compute(frame.reshaped());
+    }
+    glfwSwapBuffers(window);
+
+    //for (auto &[pos, trace] : traces) {
+    //  if (diff_frames) {
+    //    trace.push_back(frame_diff(pos.x(), pos.y()));
+    //  } else {
+    //    trace.push_back(frame(pos.x(), pos.y()));
+    //  }
+    //}
+
+    glfwMakeContextCurrent(main_window);
+  }
+
+  void resize_window(float scale = 1) {
+    int width = std::ceil(scale * Nx());
+    int height = std::ceil(scale * Ny());
 
     glfwSetWindowSize(window, width, height);
-    RecordingWindow::reshape_callback(window, width, height);
+    reshape_callback(window, width, height);
   }
 
   static void reshape_callback(GLFWwindow *window, int w, int h) {
-    std::shared_ptr<Recording> rec;
+    std::shared_ptr<RecordingWindow> rec;
     for (auto r : recordings) {
       if (r->window == window) {
         rec = r;
