@@ -109,7 +109,7 @@ public:
 
 class RecordingWindow : public Recording {
 public:
-  using trace_t = std::pair<Vec2i, std::vector<float>>;
+  using trace_t = std::pair<std::array<int, 2>, std::vector<float>>;
   std::vector<trace_t> traces;
 
   Histogram<float, 256> histogram;
@@ -119,10 +119,10 @@ public:
   };
 
   ~RecordingWindow() {
-    if (window) {
-      glfwDestroyWindow(window);
-      window = nullptr;
-    }
+    //if (window) {
+    //  glfwDestroyWindow(window);
+    //  window = nullptr;
+    //}
   }
 
   void reset_traces() {
