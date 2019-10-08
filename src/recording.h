@@ -42,6 +42,10 @@ public:
         prev_frame(fileheader.Nx(), fileheader.Ny()),
         frame_diff(fileheader.Nx(), fileheader.Ny()) {
 
+    if (!fileheader.good()) {
+      return;
+    }
+
     // load a frame from the middle to calculate auto min/max
     load_frame(length() / 2);
     auto_max = frame.maxCoeff();

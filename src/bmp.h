@@ -29,11 +29,15 @@ private:
   size_t mFrameBytes = 0;
 
   template <typename T> bool read(T &x) {
+    if (!_in.good()) { return false; }
+
     _in.read(reinterpret_cast<char *>(&x), sizeof(T));
     return _in.good();
   }
 
   std::string read_string() {
+    if (!_in.good()) { return ""; }
+
     char data;
     std::vector<char> vec;
     do {
@@ -43,6 +47,14 @@ private:
       }
     } while (data != '\0');
     return std::string(vec.begin(), vec.end());
+  }
+
+  std::size_t get_filesize() {
+    auto pos = _in.tellg();
+    _in.seekg(0, std::ios::end);
+    auto file_size = _in.tellg();
+    _in.seekg(pos, std::ios::beg);
+    return file_size;
   }
 
   bool _good = false;
@@ -55,14 +67,11 @@ public:
 
   BMPheader(filesystem::path path)
       : _in(path.string(), std::ios::in | std::ios::binary) {
-    _in.exceptions(std::ifstream::eofbit | std::ifstream::failbit |
-                   std::ifstream::badbit);
 
-    if (!_in.good()) {
+    if (!_in.good() || get_filesize() <= HeaderLength) {
       fmt::print("ERROR: {} does not seem to be a file!\n", path.string());
+      return;
     }
-
-    _in.seekg(0);
 
     char mVersion;
     if (!read(mVersion) || mVersion != Version) {
@@ -140,6 +149,10 @@ public:
 
     _in.seekg(HeaderLength + t * (mFrameBytes + FrameTailLength),
               std::ios::beg);
+
+    if (!_in.good()) {
+      throw std::runtime_error("Reading failed!");
+    }
     _in.read(reinterpret_cast<char *>(data), mFrameBytes);
   }
 };
