@@ -15,11 +15,8 @@ public:
   Histogram() = default;
   Histogram(T _min, T _max) : min(_min), max(_max){};
 
-  template <typename Container>
-  void compute(const Container &container) {
+  template <typename Container> void compute(const Container &container) {
     data.fill(0);
-
-    const unsigned int bin_size = (max - min + 1) / bin_count;
 
     for (auto val : container) {
 
@@ -29,8 +26,8 @@ public:
         val = min;
       }
 
-      const unsigned int index = (val - min) / bin_size;
-      data[index] += 1;
+      const unsigned int index = (bin_count - 1) * (val - min) / (max - min);
+      data.at(index) += 1;
     }
   }
 
@@ -49,7 +46,7 @@ public:
 };
 
 template <typename T>
-Vec3f val_to_color(const T &val, const T &min, const T &max) {
+std::array<T, 3> val_to_color(const T &val, const T &min, const T &max) {
   float x = static_cast<float>(val - min) / static_cast<float>(max - min);
 
   if (x < 0) {
@@ -64,28 +61,51 @@ Vec3f val_to_color(const T &val, const T &min, const T &max) {
 template <typename T>
 void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr,
                  float min, float max) {
-  auto image_width = arr.rows();
-  auto image_height = arr.cols();
+  int image_width = arr.rows();
+  int image_height = arr.cols();
 
-  for (long x = 0; x < image_width; x++) {
-    for (long y = 0; y < image_height; y++) {
-      const Vec2f pos1 = Vec2f(y, image_width - x);
-      const Vec2f pos2 = Vec2f(y + 1, image_width - x);
-      const Vec2f pos3 = Vec2f(y + 1, image_width - (x + 1));
-      const Vec2f pos4 = Vec2f(y, image_width - (x + 1));
+  using Vec2 = std::array<int, 2>;
+  Vec2 pos1, pos2, pos3, pos4;
+
+  for (int x = 0; x < image_width; x++) {
+    for (int y = 0; y < image_height; y++) {
+      pos1 = {y, image_width - x};
+      pos2 = {y + 1, image_width - x};
+      pos3 = {y + 1, image_width - (x + 1)};
+      pos4 = {y, image_width - (x + 1)};
 
       auto val = arr(x, y);
       auto c = val_to_color<T>(val, min, max);
 
       glBegin(GL_QUADS);
       glColor3fv(c.data());
-      glVertex2fv(pos1.data());
-      glVertex2fv(pos2.data());
-      glVertex2fv(pos3.data());
-      glVertex2fv(pos4.data());
+      glVertex2iv(pos1.data());
+      glVertex2iv(pos2.data());
+      glVertex2iv(pos3.data());
+      glVertex2iv(pos4.data());
       glEnd();
     }
   }
+}
+
+void drawPixel(int x, int y, int w, int dx, const std::array<float, 4> &color) {
+  y -= dx/2;
+  x -= dx/2;
+
+  using Vec2 = std::array<int, 2>;
+  Vec2 pos1, pos2, pos3, pos4;
+  pos1 = {y, w - x};
+  pos2 = {y + dx, w - x};
+  pos3 = {y + dx, w - (x + dx)};
+  pos4 = {y, w - (x + dx)};
+
+  glBegin(GL_QUADS);
+  glColor4fv(color.data());
+  glVertex2iv(pos1.data());
+  glVertex2iv(pos2.data());
+  glVertex2iv(pos3.data());
+  glVertex2iv(pos4.data());
+  glEnd();
 }
 
 static void glfw_error_callback(int error, const char *description) {

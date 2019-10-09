@@ -50,8 +50,8 @@ static bool is_idscam = true;
 static bool diff_frames = false;
 
 static int bitrange = calc_bitrange(is_idscam);
-static int min = 0;
-static int max = bitrange;
+static float min = 0;
+static float max = bitrange;
 
 static float speed = 1;
 static float scale_fct = 1;
@@ -90,25 +90,7 @@ void load_new_file(filesystem::path path) {
     }
   }
 
-  auto title = path.filename().string();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  GLFWwindow *window =
-      glfwCreateWindow(rec->Nx(), rec->Ny(), title.c_str(), NULL, NULL);
-  if (!window) {
-    fmt::print("ERROR: window created failed for {}\n",
-               path.filename().string());
-  }
-  glfwMakeContextCurrent(window);
-  glfwSwapInterval(1); // wait until the current frame has been drawn before
-  rec->window = window;
-  glfwSetWindowCloseCallback(window, RecordingWindow::close_callback);
-  glfwSetKeyCallback(window, RecordingWindow::key_callback);
-  glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
-  glfwSetWindowAspectRatio(window, rec->Nx(), rec->Ny());
-
-  rec->resize_window(prm::scale_fct);
-  glfwMakeContextCurrent(main_window);
+  rec->open_window(prm::scale_fct);
 }
 
 void display() {
@@ -117,8 +99,6 @@ void display() {
 
   // Our state
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-  Histogram<float, 256> histogram;
 
   // keep running until main window is closed
   while (!glfwWindowShouldClose(main_window)) {
@@ -165,7 +145,11 @@ void display() {
           prm::max = prm::bitrange;
         }
         ImGui::NextColumn();
-        ImGui::Checkbox("Show frame difference", &prm::diff_frames);
+        if (ImGui::Checkbox("Show frame difference", &prm::diff_frames)) {
+          for (const auto &r : recordings) {
+            r->reset_traces();
+          }
+        }
         ImGui::Columns(1);
       }
 
@@ -174,39 +158,21 @@ void display() {
     }
 
     // Check if recording window should close
-    for (auto &recording : recordings) {
-      if (glfwWindowShouldClose(recording->window)) {
-        RecordingWindow::close_callback(recording->window);
-      }
-    }
+    recordings.erase(std::remove_if(recordings.begin(), recordings.end(),
+                                    [](const auto &r) -> bool {
+                                      return glfwWindowShouldClose(r->window);
+                                    }),
+                     recordings.end());
 
-    for (auto &recording : recordings) {
-      glfwMakeContextCurrent(recording->window);
+    for (const auto &recording : recordings) {
+      float &min = prm::diff_frames
+                       ? recording->auto_diff_min
+                       : prm::auto_scale ? recording->auto_min : prm::min;
+      float &max = prm::diff_frames
+                       ? recording->auto_diff_max
+                       : prm::auto_scale ? recording->auto_max : prm::max;
 
-      recording->load_next_frame(prm::speed);
-
-      int &min = prm::diff_frames
-                     ? recording->auto_diff_min
-                     : prm::auto_scale ? recording->auto_min : prm::min;
-      int &max = prm::diff_frames
-                     ? recording->auto_diff_max
-                     : prm::auto_scale ? recording->auto_max : prm::max;
-
-      if (prm::diff_frames) {
-        recording->compute_frame_diff();
-        draw2dArray(recording->frame_diff, min, max);
-
-        histogram.min = -prm::bitrange / 10.f;
-        histogram.max = prm::bitrange / 10.f;
-        histogram.compute(recording->frame_diff.reshaped());
-      } else {
-        draw2dArray(recording->frame, min, max);
-
-        histogram.min = 0;
-        histogram.max = prm::bitrange;
-        histogram.compute(recording->frame.reshaped());
-      }
-      glfwSwapBuffers(recording->window);
+      recording->display(min, max, prm::bitrange, prm::diff_frames, prm::speed);
 
       glfwMakeContextCurrent(main_window);
       {
@@ -235,17 +201,43 @@ void display() {
         }
 
         ImGui::PushItemWidth(prm::main_window_width * 0.75f);
-        ImGui::PlotHistogram("Histogram", histogram.data.data(),
-                             histogram.data.size(), 0, nullptr, 0,
-                             histogram.max_value(), ImVec2(0, 100));
+        ImGui::PlotHistogram("Histogram", recording->histogram.data.data(),
+                             recording->histogram.data.size(), 0, nullptr, 0,
+                             recording->histogram.max_value(), ImVec2(0, 100));
 
-        ImGui::SliderInt("min", &min, histogram.min, histogram.max);
-        ImGui::SliderInt("max", &max, histogram.min, histogram.max);
+        ImGui::SliderFloat("min", &min, recording->histogram.min,
+                           recording->histogram.max);
+        ImGui::SliderFloat("max", &max, recording->histogram.min,
+                           recording->histogram.max);
 
         auto progress_label = fmt::format(
             "Frame {}/{}", recording->current_frame() + 1, recording->length());
         ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
                            progress_label.c_str());
+
+        ImGui::Separator();
+        for (auto &[pos, trace, color] : recording->traces) {
+          auto label = fmt::format("Pixel ({}, {})", pos[0], pos[1]);
+          ImGui::PushID(label.c_str());
+
+          ImGui::PushStyleColor(ImGuiCol_PlotLines, color);
+          ImGui::PlotLines("", trace.data(), trace.size(), 0, NULL,
+                           FLT_MAX, FLT_MAX, ImVec2(0, 100));
+          ImGui::PopStyleColor(1);
+          ImGui::SameLine();
+          ImGui::BeginGroup();
+          ImGui::ColorEdit3(label.c_str(), color.data(), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+          //ImGui::SameLine();
+          if (ImGui::Button("Reset")) {
+            trace.clear();
+          }
+          //ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.y);
+          if (ImGui::Button("Remove")) {
+            recording->remove_trace_pos(pos[0], pos[1]);
+          }
+          ImGui::EndGroup();
+          ImGui::PopID();
+        }
         ImGui::End();
       }
     }
@@ -376,9 +368,7 @@ int main(int, char **) {
   display();
 
   glfwDestroyWindow(main_window);
-  for (const auto &recording : recordings) {
-    glfwDestroyWindow(recording->window);
-  }
+  recordings.clear();
   glfwTerminate();
   exit(EXIT_SUCCESS);
 }

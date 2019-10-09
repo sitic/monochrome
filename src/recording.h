@@ -31,13 +31,11 @@ public:
   Eigen::MatrixXf prev_frame;
   Eigen::MatrixXf frame_diff;
 
-  GLFWwindow *window = nullptr;
+  float auto_max = 0;
+  float auto_min = 0;
 
-  int auto_max = 0;
-  int auto_min = 0;
-
-  int auto_diff_max = 0;
-  int auto_diff_min = 0;
+  float auto_diff_max = 0;
+  float auto_diff_min = 0;
 
   Recording(filesystem::path path)
       : _path(path), fileheader(path),
@@ -98,8 +96,8 @@ public:
   void compute_frame_diff() {
     if (t_prev_frame != t_frame) {
       frame_diff = frame - prev_frame;
-      frame.swap(prev_frame);
-      t_prev_frame = t_frame;
+      prev_frame.swap(frame);
+      std::swap(t_prev_frame, t_frame);
     }
   }
 
@@ -109,30 +107,65 @@ public:
 
 class RecordingWindow : public Recording {
 public:
-  using trace_t = std::pair<std::array<int, 2>, std::vector<float>>;
-  std::vector<trace_t> traces;
+  GLFWwindow *window = nullptr;
+
+  struct Trace {
+    std::array<int, 2> pos;
+    std::vector<float> data;
+    std::array<float, 4> color;
+
+    static std::array<float, 4> next_color() {
+      static std::array<std::array<float, 4>, 4> cycle_list = {{
+          {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
+          {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
+          {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
+          {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
+      }};
+
+      static int count = -1;
+      count++;
+      if (count >= cycle_list.size()) {
+        count = 0;
+      }
+      return cycle_list.at(count);
+    }
+  };
+  std::vector<Trace> traces;
+
+  std::array<double, 2> mousepos;
 
   Histogram<float, 256> histogram;
 
-  RecordingWindow(filesystem::path path) : Recording(path){
-    //traces.push_back({Vec2i(5, 5), {}});
-  };
-
+  RecordingWindow(filesystem::path path) : Recording(path){};
   ~RecordingWindow() {
-    //if (window) {
-    //  glfwDestroyWindow(window);
-    //  window = nullptr;
-    //}
+    if (window != nullptr) {
+      glfwDestroyWindow(window);
+    }
   }
 
   void reset_traces() {
-    //for (auto &[pos, trace] : traces) {
-    //  trace.clear();
-    //}
+    for (auto &t : traces) {
+      t.data.clear();
+    }
+  }
+
+  void add_trace_pos(int x, int y) {
+    traces.push_back({.pos = {x, y}, .data = {}, .color = Trace::next_color()});
+  }
+
+  void remove_trace_pos(int x, int y) {
+    traces.erase(
+        std::remove_if(traces.begin(), traces.end(), [x, y](const auto &trace) {
+          return trace.pos[0] == x && trace.pos[1] == y;
+        }));
   }
 
   void display(float min, float max, float bitrange, bool diff_frames = false,
                float speed = 1) {
+    if (!window)
+      throw std::runtime_error(
+          "No window set, but RecordingWindow::display() called");
+
     glfwMakeContextCurrent(window);
 
     load_next_frame(speed);
@@ -151,17 +184,49 @@ public:
       histogram.max = bitrange;
       histogram.compute(frame.reshaped());
     }
+
+    for (auto &[pos, trace, color] : traces) {
+      if (diff_frames) {
+        trace.push_back(frame_diff(pos[0], pos[1]));
+      } else {
+        trace.push_back(frame(pos[0], pos[1]));
+      }
+
+      drawPixel(pos[0], pos[1], Nx(), 4, color);
+    }
+
     glfwSwapBuffers(window);
 
-    //for (auto &[pos, trace] : traces) {
-    //  if (diff_frames) {
-    //    trace.push_back(frame_diff(pos.x(), pos.y()));
-    //  } else {
-    //    trace.push_back(frame(pos.x(), pos.y()));
-    //  }
-    //}
-
     glfwMakeContextCurrent(main_window);
+  }
+
+  void open_window(float scale_fct) {
+    if (window) {
+      throw std::runtime_error("ERROR: window was already initialized");
+    }
+
+    auto title = _path.filename().string();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    window = glfwCreateWindow(Nx(), Ny(), title.c_str(), NULL, NULL);
+    if (!window) {
+      fmt::print("ERROR: window created failed for {}\n", title);
+    }
+
+    auto prev_window = glfwGetCurrentContext();
+    glfwMakeContextCurrent(window);
+
+    glfwSwapInterval(1); // wait until the current frame has been drawn before
+    glfwSetWindowCloseCallback(window, RecordingWindow::close_callback);
+    glfwSetKeyCallback(window, RecordingWindow::key_callback);
+    glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
+    glfwSetCursorPosCallback(window, RecordingWindow::cursor_position_callback);
+    glfwSetMouseButtonCallback(window, RecordingWindow::mouse_button_callback);
+    glfwSetWindowAspectRatio(window, Nx(), Ny());
+
+    resize_window(scale_fct);
+
+    glfwMakeContextCurrent(prev_window);
   }
 
   void resize_window(float scale = 1) {
@@ -172,13 +237,33 @@ public:
     reshape_callback(window, width, height);
   }
 
-  static void reshape_callback(GLFWwindow *window, int w, int h) {
-    std::shared_ptr<RecordingWindow> rec;
-    for (auto r : recordings) {
-      if (r->window == window) {
-        rec = r;
-      }
+  static void cursor_position_callback(GLFWwindow *window, double xpos,
+                                       double ypos) {
+    std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
+    rec->mousepos = {xpos, ypos};
+  }
+
+  static void mouse_button_callback(GLFWwindow *window, int button, int action,
+                                    int mods) {
+    std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+      int w, h;
+      glfwGetWindowSize(window, &w, &h);
+      int x = rec->mousepos[0] * rec->Nx() / w;
+      int y = rec->mousepos[1] * rec->Ny() / h;
+
+      fmt::print("Click on pos ({}, {}), calc index ({}, {})\n",
+                 rec->mousepos[0], rec->mousepos[1], x, y);
+
+      // TODO: FIXME
+      std::swap(x, y);
+      rec->add_trace_pos(x, y);
     }
+  }
+
+  static void reshape_callback(GLFWwindow *window, int w, int h) {
+    std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
 
     if (!rec) {
       throw std::runtime_error("Error in RecordingWindow::reshape_callback, "
@@ -206,7 +291,6 @@ public:
         std::remove_if(recordings.begin(), recordings.end(),
                        [window](auto r) { return r->window == window; }),
         recordings.end());
-    glfwDestroyWindow(window);
   }
 
   static void key_callback(GLFWwindow *window, int key, int scancode,
@@ -216,5 +300,12 @@ public:
       // causes a segfault in glfw
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
+  }
+
+protected:
+  static std::shared_ptr<RecordingWindow> from_window_ptr(GLFWwindow *_window) {
+    return *std::find_if(
+        recordings.begin(), recordings.end(),
+        [_window](const auto &r) { return r->window == _window; });
   }
 };
