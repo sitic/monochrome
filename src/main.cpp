@@ -132,7 +132,7 @@ void display() {
         ImGui::Columns(2);
         ImGui::SliderFloat("speed", &prm::speed, 0, 5);
         ImGui::NextColumn();
-        if (ImGui::SliderFloat("scale", &prm::scale_fct, 0.5, 5)) {
+        if (ImGui::SliderFloat("scaling", &prm::scale_fct, 0.5, 5)) {
           for (const auto &r : recordings) {
             r->resize_window(prm::scale_fct);
           }
@@ -149,6 +149,11 @@ void display() {
           for (const auto &r : recordings) {
             r->reset_traces();
           }
+        }
+        ImGui::NextColumn();
+        int trace_width = RecordingWindow::Trace::width();
+        if (ImGui::InputInt("Trace width", &trace_width, 2, 5)) {
+          RecordingWindow::Trace::width(trace_width);
         }
         ImGui::Columns(1);
       }
@@ -216,22 +221,25 @@ void display() {
                            progress_label.c_str());
 
         ImGui::Separator();
-        for (auto &[pos, trace, color] : recording->traces) {
-          auto label = fmt::format("Pixel ({}, {})", pos[0], pos[1]);
+        for (auto &[trace, pos, color] : recording->traces) {
+          auto label = pos.to_string();
           ImGui::PushID(label.c_str());
 
-          ImGui::PushStyleColor(ImGuiCol_PlotLines, color);
-          ImGui::PlotLines("", trace.data(), trace.size(), 0, NULL,
-                           FLT_MAX, FLT_MAX, ImVec2(0, 100));
+          ImGui::PushStyleColor(ImGuiCol_PlotLines,
+                                ImVec4(color[0], color[1], color[2], 1));
+          ImGui::PlotLines("", trace.data(), trace.size(), 0, NULL, FLT_MAX,
+                           FLT_MAX, ImVec2(0, 100));
           ImGui::PopStyleColor(1);
           ImGui::SameLine();
           ImGui::BeginGroup();
-          ImGui::ColorEdit3(label.c_str(), color.data(), ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-          //ImGui::SameLine();
+          ImGui::ColorEdit3(label.c_str(), color.data(),
+                            ImGuiColorEditFlags_NoInputs |
+                                ImGuiColorEditFlags_NoLabel);
+          // ImGui::SameLine();
           if (ImGui::Button("Reset")) {
             trace.clear();
           }
-          //ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.y);
+          // ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.y);
           if (ImGui::Button("Remove")) {
             recording->remove_trace_pos(pos[0], pos[1]);
           }
@@ -288,8 +296,8 @@ int main(int, char **) {
   auto primary_monitor = glfwGetPrimaryMonitor();
   auto mode = glfwGetVideoMode(primary_monitor);
 
-  prm::main_window_width = 500;
-  prm::main_window_height = prm::main_window_width;
+  prm::main_window_width = mode->width / 4;
+  prm::main_window_height = 1.5 * prm::main_window_width;
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);

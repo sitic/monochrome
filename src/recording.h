@@ -7,6 +7,7 @@
 
 #include "bmp.h"
 #include "utils.h"
+#include "vectors.h"
 
 extern GLFWwindow *main_window;
 
@@ -63,8 +64,8 @@ public:
   }
 
   bool good() { return fileheader.good(); }
-  int Nx() { return frame.cols(); }
-  int Ny() { return frame.rows(); }
+  int Nx() { return fileheader.Nx(); }
+  int Ny() { return fileheader.Ny(); }
   int length() { return fileheader.length(); }
   filesystem::path path() { return _path; }
   std::string date() { return fileheader.date(); };
@@ -110,12 +111,12 @@ public:
   GLFWwindow *window = nullptr;
 
   struct Trace {
-    std::array<int, 2> pos;
     std::vector<float> data;
-    std::array<float, 4> color;
+    Vec2i pos;
+    Vec4f color;
 
-    static std::array<float, 4> next_color() {
-      static std::array<std::array<float, 4>, 4> cycle_list = {{
+    static Vec4f next_color() {
+      static std::array<Vec4f, 4> cycle_list = {{
           {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
           {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
           {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
@@ -129,14 +130,31 @@ public:
       }
       return cycle_list.at(count);
     }
+
+    static int width(int new_width = 0) {
+      static int w = 0;
+
+      if (new_width > 0) {
+        w = new_width;
+      }
+
+      return w;
+    }
   };
   std::vector<Trace> traces;
 
-  std::array<double, 2> mousepos;
+  Vec2d mousepos;
 
   Histogram<float, 256> histogram;
 
-  RecordingWindow(filesystem::path path) : Recording(path){};
+  RecordingWindow(filesystem::path path) : Recording(path) {
+    if (good() && Trace::width() == 0) {
+      // if unset, set trace edge length to something reasonable
+      auto min = std::min(Nx(), Ny());
+      Trace::width(min / 64);
+    }
+  };
+
   ~RecordingWindow() {
     if (window != nullptr) {
       glfwDestroyWindow(window);
@@ -150,7 +168,7 @@ public:
   }
 
   void add_trace_pos(int x, int y) {
-    traces.push_back({.pos = {x, y}, .data = {}, .color = Trace::next_color()});
+    traces.push_back({.data = {}, .pos = {x, y}, .color = Trace::next_color()});
   }
 
   void remove_trace_pos(int x, int y) {
@@ -172,27 +190,37 @@ public:
 
     if (diff_frames) {
       compute_frame_diff();
-      draw2dArray(frame_diff, min, max);
-
       histogram.min = -bitrange / 10.f;
       histogram.max = bitrange / 10.f;
-      histogram.compute(frame_diff.reshaped());
     } else {
-      draw2dArray(frame, min, max);
-
       histogram.min = 0;
       histogram.max = bitrange;
-      histogram.compute(frame.reshaped());
     }
 
-    for (auto &[pos, trace, color] : traces) {
-      if (diff_frames) {
-        trace.push_back(frame_diff(pos[0], pos[1]));
-      } else {
-        trace.push_back(frame(pos[0], pos[1]));
+    auto &arr = diff_frames ? frame_diff : frame;
+    draw2dArray(arr, min, max);
+    histogram.compute(arr.reshaped());
+
+    for (auto &[trace, pos, color] : traces) {
+      // We need to make sure, the block is inside the frame
+      const auto test_fct = [Nx = Nx(), Ny = Ny(),
+                             w = Trace::width()](const Vec2i &v) {
+        auto lim = [](auto x, auto N) { return ((x > 0) && (x < N)); };
+        return (lim(v[0], Nx) && lim(v[1], Ny));
+      };
+
+      auto w = Trace::width();
+      Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
+      // shrink the trace block width if it is too large
+      while (!test_fct(start) || !test_fct(start + Vec2i(w, w))) {
+        w -= 1;
+        Trace::width(w);
+        start = {pos[0] - w / 2, pos[1] - w / 2};
       }
 
-      drawPixel(pos[0], pos[1], Nx(), 4, color);
+      auto block = arr.block(start[0], start[1], w, w);
+      trace.push_back(block.mean());
+      drawPixel(pos[0], pos[1], Ny(), w, color);
     }
 
     glfwSwapBuffers(window);
@@ -256,8 +284,6 @@ public:
       fmt::print("Click on pos ({}, {}), calc index ({}, {})\n",
                  rec->mousepos[0], rec->mousepos[1], x, y);
 
-      // TODO: FIXME
-      std::swap(x, y);
       rec->add_trace_pos(x, y);
     }
   }

@@ -4,6 +4,7 @@
 #include <array>
 
 #include "definitions.h"
+#include "vectors.h"
 
 template <typename T, size_t bin_count> class Histogram {
 public:
@@ -46,7 +47,7 @@ public:
 };
 
 template <typename T>
-std::array<T, 3> val_to_color(const T &val, const T &min, const T &max) {
+Vector3<T> val_to_color(const T &val, const T &min, const T &max) {
   float x = static_cast<float>(val - min) / static_cast<float>(max - min);
 
   if (x < 0) {
@@ -61,21 +62,18 @@ std::array<T, 3> val_to_color(const T &val, const T &min, const T &max) {
 template <typename T>
 void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr,
                  float min, float max) {
-  int image_width = arr.rows();
-  int image_height = arr.cols();
+  const int Nx = arr.rows();
+  const int Ny = arr.cols();
 
-  using Vec2 = std::array<int, 2>;
-  Vec2 pos1, pos2, pos3, pos4;
+  for (int x = 0; x < Nx; x++) {
+    for (int y = 0; y < Ny; y++) {
+      const Vec2i pos1 = {x, Ny - y};
+      const Vec2i pos2 = {x + 1, Ny - y};
+      const Vec2i pos3 = {x + 1, Ny - (y + 1)};
+      const Vec2i pos4 = {x, Ny - (y + 1)};
 
-  for (int x = 0; x < image_width; x++) {
-    for (int y = 0; y < image_height; y++) {
-      pos1 = {y, image_width - x};
-      pos2 = {y + 1, image_width - x};
-      pos3 = {y + 1, image_width - (x + 1)};
-      pos4 = {y, image_width - (x + 1)};
-
-      auto val = arr(x, y);
-      auto c = val_to_color<T>(val, min, max);
+      const auto val = arr(x, y);
+      const auto c = val_to_color<T>(val, min, max);
 
       glBegin(GL_QUADS);
       glColor3fv(c.data());
@@ -88,18 +86,16 @@ void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr,
   }
 }
 
-void drawPixel(int x, int y, int w, int dx, const std::array<float, 4> &color) {
-  y -= dx/2;
-  x -= dx/2;
+void drawPixel(int x, int y, int Ny, int dx, const Vec4f &color) {
+  y -= dx / 2;
+  x -= dx / 2;
 
-  using Vec2 = std::array<int, 2>;
-  Vec2 pos1, pos2, pos3, pos4;
-  pos1 = {y, w - x};
-  pos2 = {y + dx, w - x};
-  pos3 = {y + dx, w - (x + dx)};
-  pos4 = {y, w - (x + dx)};
+  const Vec2i pos1 = {x, Ny - y};
+  const Vec2i pos2 = {x + dx, Ny - y};
+  const Vec2i pos3 = {x + dx, Ny - (y + dx)};
+  const Vec2i pos4 = {x, Ny - (y + dx)};
 
-  glBegin(GL_QUADS);
+  glBegin(GL_LINE_LOOP);
   glColor4fv(color.data());
   glVertex2iv(pos1.data());
   glVertex2iv(pos2.data());

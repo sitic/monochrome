@@ -39,7 +39,11 @@ if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
-add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h)
+if(APPLE)
+    add_definitions(-DGL_SILENCE_DEPRECATION)
+endif()
+
+add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h)
 target_link_libraries(quickViewer imgui_glfw_gl2 fmt)
 if(CMAKE_COMPILER_IS_GNUCXX)
     # Hotfix so that is shows up in the file explorer as executable, see https://stackoverflow.com/questions/41398444/
