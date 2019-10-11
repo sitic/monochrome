@@ -94,18 +94,16 @@ osx Release:
   <<: [*osx, *build_config_generator]
   variables:
     <<: *xcode_generator
-
-osx Debug:
-  <<: [*osx, *build_config_generator]
-  variables:
-    <<: *xcode_generator
+  artifacts:
+    paths:
+      - build/Release/quickViewer
+    expire_in: 1 day
 
 windows Release:
   <<: [*windows, *build_config_generator]
   variables:
     <<: *vs_generator
-
-windows Debug:
- <<: [*windows, *build_config_generator]
- variables:
-   <<: *vs_generator
+  artifacts:
+    paths:
+      - build/Release/quickViewer.exe
+    expire_in: 1 day
