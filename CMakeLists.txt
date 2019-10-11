@@ -40,6 +40,7 @@ if(MSVC)
 endif()
 
 if(APPLE)
+    # OpenGL was depricated on MacOS, ignore warnings
     add_definitions(-DGL_SILENCE_DEPRECATION)
 endif()
 

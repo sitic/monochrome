@@ -9,6 +9,8 @@
 #include "utils.h"
 #include "vectors.h"
 
+using namespace std::string_literals;
+
 extern GLFWwindow *main_window;
 
 class RecordingWindow;
@@ -104,11 +106,53 @@ public:
 
   int current_frame() { return _t; }
   float progress() { return _t / static_cast<float>(length() - 1); }
+
+  void export_ROI(filesystem::path path, Vec2i start, Vec2i size, Vec2i t0tmax) {
+    if (t0tmax[0] < 0 || t0tmax[1] > length() || t0tmax[0] > t0tmax[1]) {
+      fmt::print("ERROR: start or end frame invalid");
+      return;
+    }
+
+    filesystem::remove(path);
+    std::ofstream out(path.string(), std::ios::out | std::ios::binary);
+    auto cur_frame = t_frame;
+
+    std::size_t framesize = size[0] * Ny() * sizeof(float);
+    for (int t = t0tmax[0]; t < t0tmax[1]; t++) {
+      load_frame(t);
+      auto block = frame.block(start[0], start[1], size[0], size[1]);
+      out.write(reinterpret_cast<const char *>(block.data()),
+                block.size() * sizeof(float));
+    }
+    load_frame(cur_frame);
+  }
 };
 
 class RecordingWindow : public Recording {
 public:
   GLFWwindow *window = nullptr;
+
+  struct {
+    bool export_window = false;
+    Vec2i start;
+    Vec2i size;
+    int length = 0;
+    std::vector<char> filename = {};
+
+    void assign_auto_filename(const filesystem::path &bmp_path) {
+      auto fn = bmp_path.filename().string();
+      auto parts = split_string(fn, "_"s.c_str());
+      if (parts.size() > 4) {
+        fn = fmt::format("{}_{}", parts[1], parts[2]);
+      }
+
+      fn = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1], length);
+
+      filename.assign(fn.begin(), fn.end());
+    }
+  } export_ctrl;
+
+  Histogram<float, 256> histogram;
 
   struct Trace {
     std::vector<float> data;
@@ -143,10 +187,6 @@ public:
   };
   std::vector<Trace> traces;
 
-  Vec2d mousepos;
-
-  Histogram<float, 256> histogram;
-
   RecordingWindow(filesystem::path path) : Recording(path) {
     if (good() && Trace::width() == 0) {
       // if unset, set trace edge length to something reasonable
@@ -168,13 +208,27 @@ public:
   }
 
   void add_trace_pos(int x, int y) {
-    traces.push_back({.data = {}, .pos = {x, y}, .color = Trace::next_color()});
+    Vec2i npos = {x, y};
+
+    for (auto &[trace, pos, color] : traces) {
+      auto d = pos - npos;
+      if (std::abs(d[0]) < Trace::width() / 2 &&
+          std::abs(d[1]) < Trace::width() / 2) {
+        trace.clear();
+        pos = npos;
+        return;
+      }
+    }
+    traces.push_back({{}, npos, Trace::next_color()});
   }
 
   void remove_trace_pos(int x, int y) {
+    Vec2i pos = {x, y};
     traces.erase(
-        std::remove_if(traces.begin(), traces.end(), [x, y](const auto &trace) {
-          return trace.pos[0] == x && trace.pos[1] == y;
+        std::remove_if(traces.begin(), traces.end(), [pos](const auto &trace) {
+          auto d = pos - trace.pos;
+          return (std::abs(d[0]) < Trace::width() / 2 &&
+                  std::abs(d[1]) < Trace::width() / 2);
         }));
   }
 
@@ -250,6 +304,7 @@ public:
     glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
     glfwSetCursorPosCallback(window, RecordingWindow::cursor_position_callback);
     glfwSetMouseButtonCallback(window, RecordingWindow::mouse_button_callback);
+    glfwSetScrollCallback(window, RecordingWindow::scroll_callback);
     glfwSetWindowAspectRatio(window, Nx(), Ny());
 
     resize_window(scale_fct);
@@ -265,17 +320,21 @@ public:
     reshape_callback(window, width, height);
   }
 
+  static void scroll_callback(GLFWwindow *window, double xoffset,
+                              double yoffset) {
+    auto w = Trace::width();
+    int new_w = (yoffset < 0) ? 0.95f * w : 1.05f * w;
+    if (new_w == w) {
+      new_w = (yoffset < 0) ? w - 1 : w + 1;
+    }
+    Trace::width(new_w);
+  }
+
   static void cursor_position_callback(GLFWwindow *window, double xpos,
                                        double ypos) {
     std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
     rec->mousepos = {xpos, ypos};
-  }
-
-  static void mouse_button_callback(GLFWwindow *window, int button, int action,
-                                    int mods) {
-    std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
-
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+    if (rec->mousebutton.left) {
       int w, h;
       glfwGetWindowSize(window, &w, &h);
       int x = rec->mousepos[0] * rec->Nx() / w;
@@ -285,6 +344,24 @@ public:
                  rec->mousepos[0], rec->mousepos[1], x, y);
 
       rec->add_trace_pos(x, y);
+    }
+  }
+
+  static void mouse_button_callback(GLFWwindow *window, int button, int action,
+                                    int mods) {
+    std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+      if (action == GLFW_PRESS) {
+        rec->mousebutton.left = true;
+        rec->cursor_position_callback(window, rec->mousepos[0],
+                                      rec->mousepos[1]);
+      } else {
+        rec->mousebutton.left = false;
+      }
+    } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+      if (action == GLFW_PRESS) {
+        rec->remove_trace_pos(rec->mousepos[0], rec->mousepos[1]);
+      }
     }
   }
 
@@ -329,6 +406,12 @@ public:
   }
 
 protected:
+  Vec2d mousepos;
+  struct {
+    bool left = false;
+    bool right = false;
+  } mousebutton;
+
   static std::shared_ptr<RecordingWindow> from_window_ptr(GLFWwindow *_window) {
     return *std::find_if(
         recordings.begin(), recordings.end(),

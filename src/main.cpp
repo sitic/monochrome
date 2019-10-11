@@ -20,38 +20,23 @@ GLFWwindow *main_window = nullptr;
 
 std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
 
-enum class HistRange { FLOAT, U8, U12, U16 };
-
-constexpr static int bitrange(HistRange x) noexcept {
-  switch (x) {
-  case HistRange::FLOAT:
-    return 1;
-  case HistRange::U8:
-    return (1 << 8) - 1;
-  case HistRange::U12:
-    return (1 << 12) - 1;
-  case HistRange::U16:
-    return (1 << 16) - 1;
-  }
-
-  return 0; // silence compile warning
-}
+enum class BitRange {
+  FLOAT = 1,
+  U8 = (1 << 8) - 1,
+  U12 = (1 << 12) - 1,
+  U16 = (1 << 16) - 1
+};
 
 namespace prm {
-constexpr static int calc_bitrange(bool is_12bit) noexcept {
-  return is_12bit ? bitrange(HistRange::U12) : bitrange(HistRange::U16);
-}
-
 static int main_window_width = 500;
 static int main_window_height = 500;
 
 static bool auto_scale = true;
-static bool is_idscam = true;
 static bool diff_frames = false;
 
-static int bitrange = calc_bitrange(is_idscam);
+static BitRange bitrange = BitRange::U12;
 static float min = 0;
-static float max = bitrange;
+static float max = static_cast<float>(bitrange);
 
 static float speed = 1;
 static float scale_fct = 1;
@@ -81,12 +66,11 @@ void load_new_file(filesystem::path path) {
   }
 
   if ((rec->Nx() == 128) && (rec->Ny() == 128)) {
-    if (prm::is_idscam) {
+    if (prm::bitrange != BitRange::U16) {
       fmt::print("Looks like we are loading a PVCam file, setting bitrange to "
                  "16bit\n");
-      prm::is_idscam = false;
-      prm::bitrange = prm::calc_bitrange(prm::is_idscam);
-      prm::max = prm::bitrange;
+      prm::bitrange = BitRange::U16;
+      prm::max = static_cast<float>(prm::bitrange);
     }
   }
 
@@ -131,25 +115,35 @@ void display() {
       {
         ImGui::Columns(2);
         ImGui::SliderFloat("speed", &prm::speed, 0, 5);
+
         ImGui::NextColumn();
         if (ImGui::SliderFloat("scaling", &prm::scale_fct, 0.5, 5)) {
           for (const auto &r : recordings) {
             r->resize_window(prm::scale_fct);
           }
         }
+
         ImGui::NextColumn();
         ImGui::Checkbox("Auto min max", &prm::auto_scale);
+
         ImGui::NextColumn();
-        if (ImGui::Checkbox("12bit file", &prm::is_idscam)) {
-          prm::bitrange = prm::calc_bitrange(prm::is_idscam);
-          prm::max = prm::bitrange;
-        }
+        int e = static_cast<int>(prm::bitrange);
+        ImGui::RadioButton("float", &e, static_cast<int>(BitRange::FLOAT));
+        ImGui::SameLine();
+        ImGui::RadioButton("uint8", &e, static_cast<int>(BitRange::U8));
+        ImGui::SameLine();
+        ImGui::RadioButton("uint12", &e, static_cast<int>(BitRange::U12));
+        ImGui::SameLine();
+        ImGui::RadioButton("uint16", &e, static_cast<int>(BitRange::U16));
+        prm::bitrange = static_cast<BitRange>(e);
+
         ImGui::NextColumn();
         if (ImGui::Checkbox("Show frame difference", &prm::diff_frames)) {
           for (const auto &r : recordings) {
             r->reset_traces();
           }
         }
+
         ImGui::NextColumn();
         int trace_width = RecordingWindow::Trace::width();
         if (ImGui::InputInt("Trace width", &trace_width, 2, 5)) {
@@ -177,9 +171,9 @@ void display() {
                        ? recording->auto_diff_max
                        : prm::auto_scale ? recording->auto_max : prm::max;
 
-      recording->display(min, max, prm::bitrange, prm::diff_frames, prm::speed);
+      recording->display(min, max, static_cast<float>(prm::bitrange),
+                         prm::diff_frames, prm::speed);
 
-      glfwMakeContextCurrent(main_window);
       {
         ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                             ImVec2(FLT_MAX, FLT_MAX));
@@ -235,21 +229,61 @@ void display() {
           ImGui::ColorEdit3(label.c_str(), color.data(),
                             ImGuiColorEditFlags_NoInputs |
                                 ImGuiColorEditFlags_NoLabel);
-          // ImGui::SameLine();
           if (ImGui::Button("Reset")) {
             trace.clear();
           }
-          // ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.y);
-          if (ImGui::Button("Remove")) {
-            recording->remove_trace_pos(pos[0], pos[1]);
+          if (ImGui::Button("Export ROI")) {
+            recording->export_ctrl.export_window = true;
+            auto w = RecordingWindow::Trace::width();
+            recording->export_ctrl.start = {pos[0] - w / 2, pos[1] - w / 2};
+            recording->export_ctrl.size = {w, w};
+            recording->export_ctrl.length = recording->length();
+            recording->export_ctrl.assign_auto_filename(recording->path());
+            if (recording->export_ctrl.filename.size() < 64) {
+              recording->export_ctrl.filename.resize(64);
+            }
           }
           ImGui::EndGroup();
           ImGui::PopID();
         }
         ImGui::End();
+
+        if (recording->export_ctrl.export_window) {
+          ImGui::Begin("Export ROI", &(recording->export_ctrl.export_window));
+
+          // Use the directory path of the recording as best guest for the
+          // export directory, make it static so that it only has to be changed
+          // by the user once
+          static auto dir_path = recording->path().parent_path().string();
+          static std::vector<char> dir(dir_path.begin(), dir_path.end());
+          if (dir.size() < 64) {
+            dir.resize(64);
+          }
+
+          bool refresh =
+              ImGui::InputInt2("Start", recording->export_ctrl.start.data());
+          refresh |=
+              ImGui::InputInt2("Size", recording->export_ctrl.size.data());
+          refresh |=
+              ImGui::InputInt("Frames", &(recording->export_ctrl.length));
+          if (refresh)
+            recording->export_ctrl.assign_auto_filename(recording->path());
+
+          ImGui::InputText("Directory", dir.data(), dir.size());
+          ImGui::InputText("Filename", recording->export_ctrl.filename.data(),
+                           recording->export_ctrl.filename.size());
+          if (ImGui::Button("Start Export (freezes everything")) {
+            filesystem::path path(dir.data());
+            path /= recording->export_ctrl.filename.data();
+            fmt::print("Exporting ROI to {}\n", path.string());
+            recording->export_ROI(path, recording->export_ctrl.start,
+                                  recording->export_ctrl.size,
+                                  {0, recording->export_ctrl.length});
+          }
+          ImGui::End();
+        }
       }
     }
-    glfwMakeContextCurrent(main_window);
 
     // Rendering
     ImGui::Render();

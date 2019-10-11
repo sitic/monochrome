@@ -60,6 +60,13 @@ public:
 
   path extension() const { return split_filename().second; }
 
+  path parent_path() const {
+    if (separators_.empty())
+      return "";
+
+    return path_name_.substr(0, separators_.back());
+  }
+
   path &replace_filename(const path &filename) {
     // empty or just a file name then copy
     if (separators_.empty())
@@ -259,6 +266,9 @@ inline bool is_regular_file(const path &p) {
   return directory_entry(p).is_regular_file();
 }
 
+inline bool remove(const path &p) {
+  return std::remove(p.string().c_str());
+}
 } // namespace filesystem
 
 #endif
