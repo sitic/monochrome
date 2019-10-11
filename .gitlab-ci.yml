@@ -1,14 +1,5 @@
-stages:
-- linux
-- testrun
-- macOS
-- windows
-
 .linux: &linux
-  stage: linux
   image: docker.gitlab.gwdg.de/jlebert/emsim
-  tags:
-    - docker
 
 .gcc: &gcc
   <<: [*linux]
@@ -27,12 +18,10 @@ stages:
       - .ccache
 
 .osx: &osx
-  stage: macOS
   tags:
     - osx
 
 .windows: &windows
-  stage: windows
   tags:
     - windows
 
@@ -62,7 +51,7 @@ stages:
     - echo "CMAKE_PARAMS=${CMAKE_PARAMS}"
     - cmake -H. -Bbuild -G "${CMAKE_GENERATOR}" -DCMAKE_GENERATOR_PLATFORM="${CMAKE_GENERATOR_PLATFORM}" ${CMAKE_PARAMS[@]} -Wdev
     - cd build
-    - cmake --build . --config ${BUILD_TYPE}
+    - cmake --build . --config ${BUILD_TYPE} --parallel 4
   dependencies: []
 
 
@@ -73,21 +62,18 @@ stages:
     - export CCACHE_DIR=`pwd`/.ccache
     - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
     - ccache -s
+
+gcc Release:
+  <<: [*gcc, *docker_build]
   artifacts:
     paths:
       - build/quickViewer
     expire_in: 1 day
 
-gcc Release:
-  <<: [*gcc, *docker_build]
-
 gcc Debug:
   <<: [*gcc, *docker_build]
 
 clang Release:
-  <<: [*clang, *docker_build]
-
-clang Debug:
   <<: [*clang, *docker_build]
 
 osx Release:
