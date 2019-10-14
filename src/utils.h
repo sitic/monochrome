@@ -127,3 +127,23 @@ std::vector<std::string_view> split_string(std::string_view input,
 
   return output;
 }
+
+class Message {
+public:
+  bool show = true;
+  std::string msg;
+  int id = 0;
+
+  Message(std::string msg) : msg(msg) {
+    static int _id = -1;
+    _id += 1;
+    id = _id;
+  };
+};
+
+extern std::vector<Message> messages;
+template <typename... Args>
+inline void new_ui_message(const char *fmt, Args &&... args) {
+  const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
+  messages.emplace_back(msg);
+}

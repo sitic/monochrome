@@ -19,6 +19,7 @@
 GLFWwindow *main_window = nullptr;
 
 std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
+std::vector<Message> messages = {};
 
 enum class BitRange {
   FLOAT = 1,
@@ -174,111 +175,151 @@ void display() {
       recording->display(min, max, static_cast<float>(prm::bitrange),
                          prm::diff_frames, prm::speed);
 
-      {
-        ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
-                                            ImVec2(FLT_MAX, FLT_MAX));
-        ImGui::Begin(recording->path().filename().c_str(), nullptr,
+      ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
+                                          ImVec2(FLT_MAX, FLT_MAX));
+      ImGui::Begin(recording->path().filename().c_str(), nullptr,
+                   ImGuiWindowFlags_AlwaysAutoResize);
+      auto progress_label = fmt::format(
+          "Frame {}/{}", recording->current_frame() + 1, recording->length());
+      ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
+                         progress_label.c_str());
+
+      ImGui::Text("Date: %s", recording->date().c_str());
+
+      if (!recording->comment().empty()) {
+        ImGui::Text("Comment: %s", recording->comment().c_str());
+      }
+
+      ImGui::Columns(3);
+      ImGui::Text("Duration  %.3fs", recording->duration().count());
+      ImGui::NextColumn();
+      ImGui::Text("FPS  %.3f", recording->fps());
+      ImGui::NextColumn();
+      ImGui::Text("Frames %d", recording->length());
+      ImGui::NextColumn();
+      ImGui::Text("Width  %d", recording->Nx());
+      ImGui::NextColumn();
+      ImGui::Text("Height %d", recording->Ny());
+      ImGui::NextColumn();
+      if (ImGui::Button("Export")) {
+        recording->export_ctrl.export_window = true;
+        auto w = RecordingWindow::Trace::width();
+        recording->export_ctrl.start = {0, 0};
+        recording->export_ctrl.size = {recording->Nx(), recording->Ny()};
+        recording->export_ctrl.frames = {0, recording->length()};
+        recording->export_ctrl.assign_auto_filename(recording->path());
+      }
+      ImGui::Columns(1);
+
+      ImGui::PushItemWidth(prm::main_window_width * 0.75f);
+      ImGui::PlotHistogram("Histogram", recording->histogram.data.data(),
+                           recording->histogram.data.size(), 0, nullptr, 0,
+                           recording->histogram.max_value(), ImVec2(0, 100));
+
+      ImGui::SliderFloat("min", &min, recording->histogram.min,
+                         recording->histogram.max);
+      ImGui::SliderFloat("max", &max, recording->histogram.min,
+                         recording->histogram.max);
+
+      ImGui::Separator();
+      for (auto &[trace, pos, color] : recording->traces) {
+        auto label = pos.to_string();
+        ImGui::PushID(label.c_str());
+
+        ImGui::PushStyleColor(ImGuiCol_PlotLines,
+                              ImVec4(color[0], color[1], color[2], 1));
+        ImGui::PlotLines("", trace.data(), trace.size(), 0, NULL, FLT_MAX,
+                         FLT_MAX, ImVec2(0, 100));
+        ImGui::PopStyleColor(1);
+        ImGui::SameLine();
+        ImGui::BeginGroup();
+        ImGui::ColorEdit3(label.c_str(), color.data(),
+                          ImGuiColorEditFlags_NoInputs |
+                              ImGuiColorEditFlags_NoLabel);
+        if (ImGui::Button("Reset")) {
+          trace.clear();
+        }
+        if (ImGui::Button("Export ROI")) {
+          recording->export_ctrl.export_window = true;
+          auto w = RecordingWindow::Trace::width();
+          recording->export_ctrl.start = {pos[0] - w / 2, pos[1] - w / 2};
+          recording->export_ctrl.size = {w, w};
+          recording->export_ctrl.frames = {0, recording->length()};
+          recording->export_ctrl.assign_auto_filename(recording->path());
+        }
+        ImGui::EndGroup();
+        ImGui::PopID();
+      }
+      ImGui::End();
+
+      if (recording->export_ctrl.export_window) {
+        ImGui::Begin("Export ROI", &(recording->export_ctrl.export_window),
                      ImGuiWindowFlags_AlwaysAutoResize);
-        {
-          ImGui::Text("Date: %s", recording->date().c_str());
 
-          if (!recording->comment().empty()) {
-            ImGui::Text("Comment: %s", recording->comment().c_str());
-          }
-
-          ImGui::Columns(3);
-          ImGui::Text("Duration  %.3fs", recording->duration().count());
-          ImGui::NextColumn();
-          ImGui::Text("FPS  %.3f", recording->fps());
-          ImGui::NextColumn();
-          ImGui::Text("Frames %d", recording->length());
-          ImGui::NextColumn();
-          ImGui::Text("Width  %d", recording->Nx());
-          ImGui::NextColumn();
-          ImGui::Text("Height %d", recording->Ny());
-          ImGui::Columns(1);
+        // Use the directory path of the recording as best guest for the
+        // export directory, make it static so that it only has to be changed
+        // by the user once
+        static auto dir_path = recording->path().parent_path().string();
+        static std::vector<char> dir(dir_path.begin(), dir_path.end());
+        if (dir.size() < 64) {
+          dir.resize(64);
         }
 
-        ImGui::PushItemWidth(prm::main_window_width * 0.75f);
-        ImGui::PlotHistogram("Histogram", recording->histogram.data.data(),
-                             recording->histogram.data.size(), 0, nullptr, 0,
-                             recording->histogram.max_value(), ImVec2(0, 100));
+        bool refresh = ImGui::InputInt2("Top Left Position",
+                                        recording->export_ctrl.start.data());
+        refresh |=
+            ImGui::InputInt2("Array Size", recording->export_ctrl.size.data());
+        refresh |= ImGui::InputInt2("Start & End Frames",
+                                    recording->export_ctrl.frames.data());
+        if (refresh)
+          recording->export_ctrl.assign_auto_filename(recording->path());
 
-        ImGui::SliderFloat("min", &min, recording->histogram.min,
-                           recording->histogram.max);
-        ImGui::SliderFloat("max", &max, recording->histogram.min,
-                           recording->histogram.max);
+        ImGui::Spacing();
 
-        auto progress_label = fmt::format(
-            "Frame {}/{}", recording->current_frame() + 1, recording->length());
-        ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
-                           progress_label.c_str());
+        ImGui::InputText("Directory", dir.data(), dir.size());
+        ImGui::InputText("Filename", recording->export_ctrl.filename.data(),
+                         recording->export_ctrl.filename.size());
 
-        ImGui::Separator();
-        for (auto &[trace, pos, color] : recording->traces) {
-          auto label = pos.to_string();
-          ImGui::PushID(label.c_str());
+        static bool norm = false;
+        ImGui::Checkbox("Normalize to [0, 1]", &norm);
 
-          ImGui::PushStyleColor(ImGuiCol_PlotLines,
-                                ImVec4(color[0], color[1], color[2], 1));
-          ImGui::PlotLines("", trace.data(), trace.size(), 0, NULL, FLT_MAX,
-                           FLT_MAX, ImVec2(0, 100));
-          ImGui::PopStyleColor(1);
-          ImGui::SameLine();
-          ImGui::BeginGroup();
-          ImGui::ColorEdit3(label.c_str(), color.data(),
-                            ImGuiColorEditFlags_NoInputs |
-                                ImGuiColorEditFlags_NoLabel);
-          if (ImGui::Button("Reset")) {
-            trace.clear();
+        ImGui::Spacing();
+        if (ImGui::Button("Start Export (freezes everything",
+                          ImVec2(-1.0f, 0.0f))) {
+          filesystem::path path(dir.data());
+          path /= recording->export_ctrl.filename.data();
+          fmt::print("Exporting ROI to {}\n", path.string());
+
+          Vec2f minmax = norm ? Vec2f(min, max) : Vec2f(0, 0);
+
+          bool success = recording->export_ROI(
+              path, recording->export_ctrl.start, recording->export_ctrl.size,
+              recording->export_ctrl.frames, minmax);
+
+          if (success) {
+            new_ui_message("Exporting finished");
+            recording->export_ctrl.export_window = false;
           }
-          if (ImGui::Button("Export ROI")) {
-            recording->export_ctrl.export_window = true;
-            auto w = RecordingWindow::Trace::width();
-            recording->export_ctrl.start = {pos[0] - w / 2, pos[1] - w / 2};
-            recording->export_ctrl.size = {w, w};
-            recording->export_ctrl.length = recording->length();
-            recording->export_ctrl.assign_auto_filename(recording->path());
-            if (recording->export_ctrl.filename.size() < 64) {
-              recording->export_ctrl.filename.resize(64);
-            }
-          }
-          ImGui::EndGroup();
-          ImGui::PopID();
         }
         ImGui::End();
+      }
 
-        if (recording->export_ctrl.export_window) {
-          ImGui::Begin("Export ROI", &(recording->export_ctrl.export_window));
-
-          // Use the directory path of the recording as best guest for the
-          // export directory, make it static so that it only has to be changed
-          // by the user once
-          static auto dir_path = recording->path().parent_path().string();
-          static std::vector<char> dir(dir_path.begin(), dir_path.end());
-          if (dir.size() < 64) {
-            dir.resize(64);
-          }
-
-          bool refresh =
-              ImGui::InputInt2("Start", recording->export_ctrl.start.data());
-          refresh |=
-              ImGui::InputInt2("Size", recording->export_ctrl.size.data());
-          refresh |=
-              ImGui::InputInt("Frames", &(recording->export_ctrl.length));
-          if (refresh)
-            recording->export_ctrl.assign_auto_filename(recording->path());
-
-          ImGui::InputText("Directory", dir.data(), dir.size());
-          ImGui::InputText("Filename", recording->export_ctrl.filename.data(),
-                           recording->export_ctrl.filename.size());
-          if (ImGui::Button("Start Export (freezes everything")) {
-            filesystem::path path(dir.data());
-            path /= recording->export_ctrl.filename.data();
-            fmt::print("Exporting ROI to {}\n", path.string());
-            recording->export_ROI(path, recording->export_ctrl.start,
-                                  recording->export_ctrl.size,
-                                  {0, recording->export_ctrl.length});
+      // Check if message window should be cleared
+      messages.erase(
+          std::remove_if(messages.begin(), messages.end(),
+                         [](const auto &msg) -> bool { return !msg.show; }),
+          messages.end());
+      for (auto &msg : messages) {
+        if (msg.show) {
+          auto label = fmt::format("Message {}", msg.id);
+          ImGui::SetNextWindowSizeConstraints(
+              ImVec2(0.5 * prm::main_window_width, 0),
+              ImVec2(FLT_MAX, FLT_MAX));
+          ImGui::Begin(label.c_str(), &(msg.show),
+                       ImGuiWindowFlags_AlwaysAutoResize);
+          ImGui::TextWrapped("%s", msg.msg.c_str());
+          if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
+            msg.show = false;
           }
           ImGui::End();
         }
@@ -408,6 +449,11 @@ int main(int, char **) {
   // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
 
   display();
+
+  // Cleanup
+  ImGui_ImplOpenGL2_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
 
   glfwDestroyWindow(main_window);
   recordings.clear();

@@ -107,10 +107,21 @@ public:
   int current_frame() { return _t; }
   float progress() { return _t / static_cast<float>(length() - 1); }
 
-  void export_ROI(filesystem::path path, Vec2i start, Vec2i size, Vec2i t0tmax) {
+  bool export_ROI(filesystem::path path, Vec2i start, Vec2i size, Vec2i t0tmax,
+                  Vec2f minmax = {0, 0}) {
+    if (start[0] < 0 || start[1] < 0 || start[0] + size[0] > Nx() ||
+        start[1] + size[1] > Ny()) {
+      new_ui_message("ERROR: export_ROI() called with invalid array sizes, "
+                     "start={}, size={}",
+                     start, size);
+      return false;
+    }
+
     if (t0tmax[0] < 0 || t0tmax[1] > length() || t0tmax[0] > t0tmax[1]) {
-      fmt::print("ERROR: start or end frame invalid");
-      return;
+      new_ui_message(
+          "ERROR: start or end frame invalid, start frame {}, end frame {}",
+          t0tmax[0], t0tmax[1]);
+      return false;
     }
 
     filesystem::remove(path);
@@ -121,10 +132,26 @@ public:
     for (int t = t0tmax[0]; t < t0tmax[1]; t++) {
       load_frame(t);
       auto block = frame.block(start[0], start[1], size[0], size[1]);
+
+      if (minmax[0] != minmax[1]) {
+        auto normalize = [min = minmax[0], max = minmax[1]](const float &val) {
+          return (val - min) / (max - min);
+        };
+        block = block.unaryExpr(normalize);
+      }
+
       out.write(reinterpret_cast<const char *>(block.data()),
                 block.size() * sizeof(float));
     }
     load_frame(cur_frame);
+
+    if (!out.good()) {
+      new_ui_message("ERROR: the writing to file {} seems to have failed",
+                     path.string());
+      return false;
+    }
+
+    return true;
   }
 };
 
@@ -136,7 +163,7 @@ public:
     bool export_window = false;
     Vec2i start;
     Vec2i size;
-    int length = 0;
+    Vec2i frames;
     std::vector<char> filename = {};
 
     void assign_auto_filename(const filesystem::path &bmp_path) {
@@ -146,9 +173,19 @@ public:
         fn = fmt::format("{}_{}", parts[1], parts[2]);
       }
 
-      fn = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1], length);
+      if (frames[0] != 0) {
+        fn += "_o"s + std::to_string(frames[0]);
+      }
+
+      fn = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1],
+                       frames[1] - frames[0]);
 
       filename.assign(fn.begin(), fn.end());
+
+      // Make sure there is enough space for the user input
+      if (filename.size() < 64) {
+        filename.resize(64);
+      }
     }
   } export_ctrl;
 
