@@ -47,6 +47,9 @@ public:
         prev_frame(fileheader.Nx(), fileheader.Ny()),
         frame_diff(fileheader.Nx(), fileheader.Ny()) {
 
+    if (!fileheader.error_msg().empty()) {
+      new_ui_message(fileheader.error_msg());
+    }
     if (!fileheader.good()) {
       return;
     }
@@ -329,7 +332,8 @@ public:
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     window = glfwCreateWindow(Nx(), Ny(), title.c_str(), NULL, NULL);
     if (!window) {
-      fmt::print("ERROR: window created failed for {}\n", title);
+      new_ui_message("ERROR: window created failed for {}", title);
+      return;
     }
 
     auto prev_window = glfwGetCurrentContext();
@@ -376,9 +380,6 @@ public:
       glfwGetWindowSize(window, &w, &h);
       int x = rec->mousepos[0] * rec->Nx() / w;
       int y = rec->mousepos[1] * rec->Ny() / h;
-
-      fmt::print("Click on pos ({}, {}), calc index ({}, {})\n",
-                 rec->mousepos[0], rec->mousepos[1], x, y);
 
       rec->add_trace_pos(x, y);
     }

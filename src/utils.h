@@ -134,7 +134,7 @@ public:
   std::string msg;
   int id = 0;
 
-  Message(std::string msg) : msg(msg) {
+  Message(const std::string& msg) : msg(msg) {
     static int _id = -1;
     _id += 1;
     id = _id;
@@ -146,4 +146,10 @@ template <typename... Args>
 inline void new_ui_message(const char *fmt, Args &&... args) {
   const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
   messages.emplace_back(msg);
+  fmt::print(msg);
+}
+
+template <typename... Args>
+inline void new_ui_message(const std::string &fmt, Args &&... args) {
+  return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
 }

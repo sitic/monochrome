@@ -47,13 +47,13 @@ void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
 
   if (!filesystem::is_regular_file(path)) {
-    fmt::print("ERROR: {} does not appear to be a file, skipping\n",
+    new_ui_message("ERROR: {} does not appear to be a file, skipping",
                path.string());
     return;
   }
 
   if (path.extension().string() != ".dat") {
-    fmt::print("ERROR: {} does not have extension '.dat', skipping\n",
+    new_ui_message("ERROR: {} does not have extension '.dat', skipping",
                path.string());
     return;
   }
@@ -62,7 +62,7 @@ void load_new_file(filesystem::path path) {
   auto rec = recordings.back();
   if (!rec->good()) {
     recordings.pop_back();
-    fmt::print("ERROR: loading file failed, skipping\n");
+    new_ui_message("ERROR: loading file failed, skipping");
     return;
   }
 
@@ -297,32 +297,32 @@ void display() {
               recording->export_ctrl.frames, minmax);
 
           if (success) {
-            new_ui_message("Exporting finished");
+            new_ui_message("Export to {} completed successfully", path.string());
             recording->export_ctrl.export_window = false;
           }
         }
         ImGui::End();
       }
+    }
 
-      // Check if message window should be cleared
-      messages.erase(
-          std::remove_if(messages.begin(), messages.end(),
-                         [](const auto &msg) -> bool { return !msg.show; }),
-          messages.end());
-      for (auto &msg : messages) {
-        if (msg.show) {
-          auto label = fmt::format("Message {}", msg.id);
-          ImGui::SetNextWindowSizeConstraints(
-              ImVec2(0.5 * prm::main_window_width, 0),
-              ImVec2(FLT_MAX, FLT_MAX));
-          ImGui::Begin(label.c_str(), &(msg.show),
-                       ImGuiWindowFlags_AlwaysAutoResize);
-          ImGui::TextWrapped("%s", msg.msg.c_str());
-          if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
-            msg.show = false;
-          }
-          ImGui::End();
+    // Check if message window should be cleared
+    messages.erase(
+        std::remove_if(messages.begin(), messages.end(),
+                       [](const auto &msg) -> bool { return !msg.show; }),
+        messages.end());
+    for (auto &msg : messages) {
+      if (msg.show) {
+        auto label = fmt::format("Message {}", msg.id);
+        ImGui::SetNextWindowSizeConstraints(
+            ImVec2(0.6f * prm::main_window_width, 0),
+            ImVec2(FLT_MAX, FLT_MAX));
+        ImGui::Begin(label.c_str(), &(msg.show),
+                     ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::TextWrapped("%s", msg.msg.c_str());
+        if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
+          msg.show = false;
         }
+        ImGui::End();
       }
     }
 

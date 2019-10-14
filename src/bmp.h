@@ -29,14 +29,18 @@ private:
   size_t mFrameBytes = 0;
 
   template <typename T> bool read(T &x) {
-    if (!_in.good()) { return false; }
+    if (!_in.good()) {
+      return false;
+    }
 
     _in.read(reinterpret_cast<char *>(&x), sizeof(T));
     return _in.good();
   }
 
   std::string read_string() {
-    if (!_in.good()) { return ""; }
+    if (!_in.good()) {
+      return "";
+    }
 
     char data;
     std::vector<char> vec;
@@ -58,6 +62,7 @@ private:
   }
 
   bool _good = false;
+  std::string _error_msg = "";
 
 public:
   const char Version = 'f';
@@ -69,19 +74,22 @@ public:
       : _in(path.string(), std::ios::in | std::ios::binary) {
 
     if (!_in.good() || get_filesize() <= HeaderLength) {
-      fmt::print("ERROR: {} does not seem to be a file!\n", path.string());
+      _error_msg =
+          fmt::format("ERROR: {} does not seem to be a file!", path.string());
       return;
     }
 
     char mVersion;
     if (!read(mVersion) || mVersion != Version) {
-      fmt::print("Parsing '{}' failed, not a bmp recording?\n", path.string());
+      _error_msg = fmt::format("Parsing '{}' failed, not a bmp recording?",
+                               path.string());
       return;
     }
 
     uint32 mByteOrderMark;
     if (!read(mByteOrderMark) || mByteOrderMark != ByteOrderMark) {
-      fmt::print("Parsing '{}' failed, not a bmp recording?\n", path.string());
+      _error_msg = fmt::format("Parsing '{}' failed, not a bmp recording?",
+                               path.string());
       return;
     }
 
@@ -90,11 +98,11 @@ public:
     read(mFrameHeight);
     read(mFormat);
     if (mFormat != 3) {
-      auto msg =
+      _error_msg =
           fmt::format("ERROR: Only uint16 data supported currently, file "
                       "header says pixel format is '{}', expected '3'.",
                       mFormat);
-      throw std::runtime_error(msg);
+      return;
     }
     mFrameBytes = (mFrameWidth * mFrameHeight) * sizeof(uint16);
 
@@ -117,8 +125,10 @@ public:
     auto num_frames =
         (file_size - HeaderLength) / (mFrameBytes + FrameTailLength);
     if (num_frames != mNumFrames) {
-      fmt::print("WARNING: Expected {} frames, but only {} present in file!\n",
-                 mNumFrames, num_frames);
+      _error_msg =
+          fmt::format("WARNING: Header says there should be {} frames, but "
+                      "only {} found in file! The file might be corrupted.",
+                      mNumFrames, num_frames);
       mNumFrames = num_frames;
     }
 
@@ -131,16 +141,20 @@ public:
   };
 
   // Does it appear to be a valid MultiRecorder file?
-  bool good() { return _good; }
+  bool good() const { return _good; }
 
-  uint32 Nx() { return mFrameWidth; }
-  uint32 Ny() { return mFrameHeight; }
-  long length() { return mNumFrames; }
+  // If good() returns false, there might be an error msg here
+  // If good() is true, there might still be a warning msg here
+  std::string error_msg() const { return _error_msg; }
 
-  std::string date() { return mDate; };
-  std::string comment() { return mComment; };
-  std::chrono::duration<float> duration() { return mRecordingLength; };
-  float fps() { return mFPS; }
+  uint32 Nx() const { return mFrameWidth; }
+  uint32 Ny() const { return mFrameHeight; }
+  long length() const { return mNumFrames; }
+
+  std::string date() const { return mDate; };
+  std::string comment() const { return mComment; };
+  std::chrono::duration<float> duration() const { return mRecordingLength; };
+  float fps() const { return mFPS; }
 
   void read_frame(long t, uint16 *data) {
     if (!data) {
