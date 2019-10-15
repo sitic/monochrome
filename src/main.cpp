@@ -48,13 +48,13 @@ void load_new_file(filesystem::path path) {
 
   if (!filesystem::is_regular_file(path)) {
     new_ui_message("ERROR: {} does not appear to be a file, skipping",
-               path.string());
+                   path.string());
     return;
   }
 
   if (path.extension().string() != ".dat") {
     new_ui_message("ERROR: {} does not have extension '.dat', skipping",
-               path.string());
+                   path.string());
     return;
   }
 
@@ -297,7 +297,8 @@ void display() {
               recording->export_ctrl.frames, minmax);
 
           if (success) {
-            new_ui_message("Export to {} completed successfully", path.string());
+            new_ui_message("Export to {} completed successfully",
+                           path.string());
             recording->export_ctrl.export_window = false;
           }
         }
@@ -314,8 +315,7 @@ void display() {
       if (msg.show) {
         auto label = fmt::format("Message {}", msg.id);
         ImGui::SetNextWindowSizeConstraints(
-            ImVec2(0.6f * prm::main_window_width, 0),
-            ImVec2(FLT_MAX, FLT_MAX));
+            ImVec2(0.6f * prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
         ImGui::Begin(label.c_str(), &(msg.show),
                      ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::TextWrapped("%s", msg.msg.c_str());
@@ -390,8 +390,8 @@ int main(int, char **) {
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
-  // io.ConfigFlags |=
-  //    ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+  // Enable Keyboard Controls
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable
   // Gamepad Controls
   // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable Docking
