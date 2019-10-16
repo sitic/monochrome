@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/wheybags/glibc_version_header.git
+	branch = master
+	commit = 60d54829f34f21dc440126ad5630e6a9789a48b2
+	parent = 2e37cb829327531fb6e2b4ef175ec0845cf72047
+	method = merge
+	cmdver = 0.4.0

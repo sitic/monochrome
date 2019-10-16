@@ -41,6 +41,14 @@
     - cmake -H. -Bbuild -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_PARAMS[@]} -Wdev
     - cd build
     - cmake --build . --parallel 4
+    - |
+      if [ "$BUILD_APPIMAGE" = true ]
+      then
+        curl -L -o linuxdeploy-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage
+        OUTPUT="quickVidViewer.AppImage" ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e quickVidViewer -d ../vendor/quickVidViewer.desktop -i ../vendor/quickVidViewer.png --appdir AppDir --output appimage
+      fi
+
   dependencies: []
 
 .build_config_generator: &build_config_generator
@@ -65,9 +73,13 @@
 
 gcc Release:
   <<: [*gcc, *docker_build]
+  variables:
+    CMAKE_PARAMS: -DSTATIC_GCC=ON
+    BUILD_APPIMAGE: "true"
   artifacts:
     paths:
-      - build/quickViewer
+      - build/quickVidViewer
+      - build/quickVidViewer.AppImage
     expire_in: 1 day
 
 gcc Debug:
@@ -82,7 +94,7 @@ osx Release:
     <<: *xcode_generator
   artifacts:
     paths:
-      - build/Release/quickViewer
+      - build/Release/quickVidViewer
     expire_in: 1 day
 
 windows Release:
@@ -91,5 +103,5 @@ windows Release:
     <<: *vs_generator
   artifacts:
     paths:
-      - build/Release/quickViewer.exe
+      - build/Release/quickVidViewer.exe
     expire_in: 1 day

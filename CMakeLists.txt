@@ -2,11 +2,25 @@ cmake_minimum_required(VERSION 3.1)
 
 project(quickViewer C CXX)
 
-include(GNUInstallDirs)
+option(STATIC_GCC "Build with static libstdc++" OFF)
 
 # default to Release build
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug, Release or RelWithDebInfo" FORCE)
+endif()
+
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+
+include(GNUInstallDirs)
+
+if(CMAKE_COMPILER_IS_GNUCXX AND STATIC_GCC)
+    # Check if it works with  `objdump -p <Executable>`
+    set(GLIBC_VER "2.23")
+    message(STATUS "Force linking glibc version ${GLIBC_VER}")
+    set(GLIBC_HEADERFILE "${CMAKE_SOURCE_DIR}/vendor/glibc_version_header/version_headers/x64/force_link_glibc_${GLIBC_VER}.h")
+    set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -include ${GLIBC_HEADERFILE}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include ${GLIBC_HEADERFILE}")
 endif()
 
 set(OpenGL_GL_PREFERENCE GLVND)
@@ -46,14 +60,18 @@ if(APPLE)
     add_definitions(-DGL_SILENCE_DEPRECATION)
 endif()
 
-add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h)
-target_link_libraries(quickViewer imgui_glfw_gl2 fmt lodepng Eigen ipol)
+add_executable(quickVidViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h)
+target_link_libraries(quickVidViewer imgui_glfw_gl2 fmt lodepng Eigen ipol)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    # Hotfix so that is shows up in the file explorer as executable, see https://stackoverflow.com/questions/41398444/
-    target_link_options(quickViewer PRIVATE "-no-pie")
+    if (STATIC_GCC)
+        target_link_libraries(quickVidViewer -static-libgcc -static-libstdc++)
+    else()
+        # Hotfix so that is shows up in the file explorer as executable, see https://stackoverflow.com/questions/41398444/
+        target_link_options(quickVidViewer PRIVATE "-no-pie")
+    endif()
 endif()
 
-install(TARGETS quickViewer
+install(TARGETS quickVidViewer
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Do platform specific post target stuff
