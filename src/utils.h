@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 #include <array>
+#include <lodepng/lodepng.h>
 
 #include "definitions.h"
 #include "vectors.h"
@@ -134,7 +135,7 @@ public:
   std::string msg;
   int id = 0;
 
-  Message(const std::string& msg) : msg(msg) {
+  Message(const std::string &msg) : msg(msg) {
     static int _id = -1;
     _id += 1;
     id = _id;
@@ -152,4 +153,41 @@ inline void new_ui_message(const char *fmt, Args &&... args) {
 template <typename... Args>
 inline void new_ui_message(const std::string &fmt, Args &&... args) {
   return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
+}
+
+void save_snapshot(const std::string &out_png_path,
+                   GLFWwindow *window = nullptr, bool alpha_channel = false) {
+  auto prev_context = glfwGetCurrentContext();
+  if (window)
+    glfwMakeContextCurrent(window);
+
+  int width, height;
+  glfwGetWindowSize(window, &width, &height);
+
+  GLenum gl_px_format = alpha_channel ? GL_RGBA : GL_RGB;
+  const unsigned pix_byte_count = alpha_channel ? 4 : 3;
+  LodePNGColorType png_px_format =
+      alpha_channel ? LodePNGColorType::LCT_RGBA : LodePNGColorType::LCT_RGB;
+
+  std::vector<GLubyte> image(width * height * pix_byte_count);
+  glReadPixels(0, 0, width, height, gl_px_format, GL_UNSIGNED_BYTE,
+               image.data());
+
+  // flip y
+  for (int i = 0; i < height / 2; i++) {
+    std::swap_ranges(image.begin() + i * width * pix_byte_count,
+                     image.begin() + (i + 1) * width * pix_byte_count,
+                     image.begin() + (height - i - 1) * width * pix_byte_count);
+  }
+
+  // Save as png
+  unsigned error =
+      lodepng::encode(out_png_path, image, width, height, png_px_format);
+
+  if (error) {
+    new_ui_message("snapshot png encoder error {}: {}", error,
+                   lodepng_error_text(error));
+  }
+
+  glfwMakeContextCurrent(prev_context);
 }

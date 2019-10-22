@@ -18,6 +18,9 @@ target_include_directories(imgui_glfw_gl2 SYSTEM PUBLIC imgui imgui/examples)
 target_link_libraries(imgui_glfw_gl2 PUBLIC glfw OpenGL::GL)
 set_target_properties(imgui_glfw_gl2 PROPERTIES FOLDER libs)
 
+add_library(lodepng lodepng/lodepng.cpp lodepng/lodepng.h)
+set_target_properties(lodepng PROPERTIES PUBLIC_HEADER "lodepng/lodepng.h")
+
 # fmt
 add_subdirectory(fmt)
 set_target_properties(fmt PROPERTIES FOLDER libs)
