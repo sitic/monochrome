@@ -18,18 +18,19 @@ enum class BitRange {
 class BaseFileRecording {
 public:
   BaseFileRecording() = default;
+  virtual ~BaseFileRecording() = default;
 
-  virtual bool good() const = 0;
-  virtual int Nx() const = 0;
-  virtual int Ny() const = 0;
-  virtual int length() const = 0;
-  virtual std::string error_msg() = 0;
-  virtual std::string date() const = 0;
-  virtual std::string comment() const = 0;
-  virtual std::chrono::duration<float> duration() const = 0;
-  virtual float fps() const = 0;
-  virtual Eigen::MatrixXf read_frame(long t) = 0;
-  virtual std::optional<BitRange> bitrange() const = 0;
+  [[nodiscard]] virtual bool good() const = 0;
+  [[nodiscard]] virtual int Nx() const = 0;
+  [[nodiscard]] virtual int Ny() const = 0;
+  [[nodiscard]] virtual int length() const = 0;
+  [[nodiscard]] virtual std::string error_msg() = 0;
+  [[nodiscard]] virtual std::string date() const = 0;
+  [[nodiscard]] virtual std::string comment() const = 0;
+  [[nodiscard]] virtual std::chrono::duration<float> duration() const = 0;
+  [[nodiscard]] virtual float fps() const = 0;
+  [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t) = 0;
+  [[nodiscard]] virtual std::optional<BitRange> bitrange() const = 0;
 };
 
 class BmpFileRecording : public BaseFileRecording {
@@ -42,24 +43,24 @@ public:
     frame_uint16.setZero(file.Nx(), file.Ny());
   }
 
-  bool good() const override { return file.good(); };
-  int Nx() const override { return file.Nx(); };
-  int Ny() const override { return file.Ny(); };
-  int length() const override { return file.length(); };
-  std::string error_msg() override { return file.error_msg(); };
-  std::string date() const override { return file.date(); };
-  std::string comment() const override { return file.comment(); };
-  std::chrono::duration<float> duration() const override {
+  bool good() const final { return file.good(); };
+  int Nx() const final { return file.Nx(); };
+  int Ny() const final { return file.Ny(); };
+  int length() const final { return file.length(); };
+  std::string error_msg() final { return file.error_msg(); };
+  std::string date() const final { return file.date(); };
+  std::string comment() const final { return file.comment(); };
+  std::chrono::duration<float> duration() const final {
     return file.duration();
   };
-  float fps() const override { return file.fps(); };
+  float fps() const final { return file.fps(); };
 
-  Eigen::MatrixXf read_frame(long t) override {
+  Eigen::MatrixXf read_frame(long t) final {
     file.read_frame(t, frame_uint16.data());
     return frame_uint16.cast<float>();
   };
 
-  std::optional<BitRange> bitrange() const override {
+  std::optional<BitRange> bitrange() const final {
     if (Nx() == 128 && Ny() == 128) {
       // Probably a PVCam recording
       return BitRange::U16;
@@ -117,17 +118,17 @@ public:
     _frame.setZero(_nx, _ny);
   }
 
-  bool good() const override { return _good; };
-  int Nx() const override { return _nx; };
-  int Ny() const override { return _ny; };
-  int length() const override { return _nt; };
-  std::string error_msg() override { return _error_msg; };
-  std::string date() const override { return ""; };
-  std::string comment() const override { return ""; };
-  std::chrono::duration<float> duration() const override { return 0s; };
-  float fps() const override { return 0; };
+  bool good() const final { return _good; };
+  int Nx() const final { return _nx; };
+  int Ny() const final { return _ny; };
+  int length() const final { return _nt; };
+  std::string error_msg() final { return _error_msg; };
+  std::string date() const final { return ""; };
+  std::string comment() const final { return ""; };
+  std::chrono::duration<float> duration() const final { return 0s; };
+  float fps() const final { return 0; };
 
-  [[nodiscard]] Eigen::MatrixXf read_frame(long t) override {
+  Eigen::MatrixXf read_frame(long t) final {
     auto frame_size = _nx * _nx * sizeof(float);
     _in.seekg(t * frame_size, std::ios::beg);
     if (!_in.good()) {
@@ -137,5 +138,5 @@ public:
     return _frame;
   };
 
-  std::optional<BitRange> bitrange() const override { return BitRange::FLOAT; }
+  std::optional<BitRange> bitrange() const final { return BitRange::FLOAT; }
 };

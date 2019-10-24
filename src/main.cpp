@@ -200,7 +200,6 @@ void display() {
       ImGui::NextColumn();
       if (ImGui::Button("Export")) {
         recording->export_ctrl.export_window = true;
-        auto w = RecordingWindow::Trace::width();
         recording->export_ctrl.start = {0, 0};
         recording->export_ctrl.size = {recording->Nx(), recording->Ny()};
         recording->export_ctrl.frames = {0, recording->length()};
