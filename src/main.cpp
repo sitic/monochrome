@@ -33,7 +33,6 @@ static float min = 0;
 static float max = static_cast<float>(bitrange);
 
 static float speed = 1;
-static float scale_fct = 1;
 } // namespace prm
 
 void load_new_file(filesystem::path path) {
@@ -66,7 +65,7 @@ void load_new_file(filesystem::path path) {
     }
   }
 
-  rec->open_window(prm::scale_fct);
+  rec->open_window();
 }
 
 void display() {
@@ -109,9 +108,10 @@ void display() {
         ImGui::SliderFloat("speed", &prm::speed, 0, 5);
 
         ImGui::NextColumn();
-        if (ImGui::SliderFloat("scaling", &prm::scale_fct, 0.5, 5)) {
+        if (ImGui::SliderFloat("scaling", &RecordingWindow::scale_fct, 0.5,
+                               5)) {
           for (const auto &r : recordings) {
-            r->resize_window(prm::scale_fct);
+            r->resize_window();
           }
         }
 

@@ -35,8 +35,7 @@ public:
   float auto_diff_max = 0;
   float auto_diff_min = 0;
 
-  Recording(const filesystem::path &path)
-      : _path(path) {
+  Recording(const filesystem::path &path) : _path(path) {
 
     file = std::make_shared<RawFileRecording>(path);
     if (!file->good()) {
@@ -132,7 +131,6 @@ public:
     std::ofstream out(path.string(), std::ios::out | std::ios::binary);
     auto cur_frame = t_frame;
 
-    std::size_t framesize = size[0] * Ny() * sizeof(float);
     for (int t = t0tmax[0]; t < t0tmax[1]; t++) {
       load_frame(t);
       auto block = frame.block(start[0], start[1], size[0], size[1]);
@@ -162,6 +160,7 @@ public:
 class RecordingWindow : public Recording {
 public:
   GLFWwindow *window = nullptr;
+  static float scale_fct;
 
   struct {
     bool export_window = false;
@@ -248,9 +247,7 @@ public:
     }
   }
 
-  void add_trace_pos(int x, int y) {
-    Vec2i npos = {x, y};
-
+  void add_trace_pos(const Vec2i& npos) {
     for (auto &[trace, pos, color] : traces) {
       auto d = pos - npos;
       if (std::abs(d[0]) < Trace::width() / 2 &&
@@ -263,14 +260,15 @@ public:
     traces.push_back({{}, npos, Trace::next_color()});
   }
 
-  void remove_trace_pos(int x, int y) {
-    Vec2i pos = {x, y};
-    traces.erase(
-        std::remove_if(traces.begin(), traces.end(), [pos](const auto &trace) {
-          auto d = pos - trace.pos;
-          return (std::abs(d[0]) < Trace::width() / 2 &&
-                  std::abs(d[1]) < Trace::width() / 2);
-        }));
+  void remove_trace_pos(const Vec2i& pos) {
+    const auto pred = [pos](const auto &trace) {
+      auto d = pos - trace.pos;
+      auto max_dist = Trace::width() / 2;
+      return (std::abs(d[0]) < max_dist && std::abs(d[1]) < max_dist);
+    };
+
+    traces.erase(std::remove_if(traces.begin(), traces.end(), pred),
+                 traces.end());
   }
 
   void display(float min, float max, float bitrange, bool diff_frames = false,
@@ -323,7 +321,7 @@ public:
     glfwMakeContextCurrent(main_window);
   }
 
-  void open_window(float scale_fct) {
+  void open_window() {
     if (window) {
       throw std::runtime_error("ERROR: window was already initialized");
     }
@@ -349,14 +347,14 @@ public:
     glfwSetScrollCallback(window, RecordingWindow::scroll_callback);
     glfwSetWindowAspectRatio(window, Nx(), Ny());
 
-    resize_window(scale_fct);
+    resize_window();
 
     glfwMakeContextCurrent(prev_window);
   }
 
-  void resize_window(float scale = 1) {
-    int width = std::ceil(scale * Nx());
-    int height = std::ceil(scale * Ny());
+  void resize_window() {
+    int width = std::ceil(RecordingWindow::scale_fct * Nx());
+    int height = std::ceil(RecordingWindow::scale_fct * Ny());
 
     glfwSetWindowSize(window, width, height);
     reshape_callback(window, width, height);
@@ -364,12 +362,21 @@ public:
 
   static void scroll_callback(GLFWwindow *window, double xoffset,
                               double yoffset) {
-    auto w = Trace::width();
-    int new_w = (yoffset < 0) ? 0.95f * w : 1.05f * w;
-    if (new_w == w) {
-      new_w = (yoffset < 0) ? w - 1 : w + 1;
+    // if traces shown, change trace width, else window width
+    std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
+    if (!rec->traces.empty()) {
+      auto w = Trace::width();
+      int new_w = (yoffset < 0) ? 0.95f * w : 1.05f * w;
+      if (new_w == w) {
+        new_w = (yoffset < 0) ? w - 1 : w + 1;
+      }
+      Trace::width(new_w);
+    } else {
+      scale_fct = (yoffset < 0) ? 0.95f * scale_fct : 1.05f * scale_fct;
+      for (const auto &r : recordings) {
+        r->resize_window();
+      }
     }
-    Trace::width(new_w);
   }
 
   static void cursor_position_callback(GLFWwindow *window, double xpos,
@@ -382,7 +389,7 @@ public:
       int x = rec->mousepos[0] * rec->Nx() / w;
       int y = rec->mousepos[1] * rec->Ny() / h;
 
-      rec->add_trace_pos(x, y);
+      rec->add_trace_pos({x, y});
     }
   }
 
@@ -399,7 +406,12 @@ public:
       }
     } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
       if (action == GLFW_PRESS) {
-        rec->remove_trace_pos(rec->mousepos[0], rec->mousepos[1]);
+        int w, h;
+        glfwGetWindowSize(window, &w, &h);
+        int x = rec->mousepos[0] * rec->Nx() / w;
+        int y = rec->mousepos[1] * rec->Ny() / h;
+
+        rec->remove_trace_pos({x, y});
       }
     }
   }
@@ -461,3 +473,6 @@ protected:
         [_window](const auto &r) { return r->window == _window; });
   }
 };
+
+// this should be in a cpp file, but does not matter in this case
+float RecordingWindow::scale_fct = 1;
