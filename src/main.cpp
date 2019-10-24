@@ -21,13 +21,6 @@ GLFWwindow *main_window = nullptr;
 std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
 std::vector<Message> messages = {};
 
-enum class BitRange {
-  FLOAT = 1,
-  U8 = (1 << 8) - 1,
-  U12 = (1 << 12) - 1,
-  U16 = (1 << 16) - 1
-};
-
 namespace prm {
 static int main_window_width = 500;
 static int main_window_height = 500;
@@ -66,11 +59,9 @@ void load_new_file(filesystem::path path) {
     return;
   }
 
-  if ((rec->Nx() == 128) && (rec->Ny() == 128)) {
-    if (prm::bitrange != BitRange::U16) {
-      fmt::print("Looks like we are loading a PVCam file, setting bitrange to "
-                 "16bit\n");
-      prm::bitrange = BitRange::U16;
+  if (auto br = rec->bitrange(); br) {
+    if (br.value() != prm::bitrange) {
+      prm::bitrange = br.value();
       prm::max = static_cast<float>(prm::bitrange);
     }
   }
@@ -184,17 +175,23 @@ void display() {
       ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
                          progress_label.c_str());
 
-      ImGui::Text("Date: %s", recording->date().c_str());
+      if (!recording->date().empty()) {
+        ImGui::Text("Date: %s", recording->date().c_str());
+      }
 
       if (!recording->comment().empty()) {
         ImGui::Text("Comment: %s", recording->comment().c_str());
       }
 
       ImGui::Columns(3);
-      ImGui::Text("Duration  %.3fs", recording->duration().count());
-      ImGui::NextColumn();
-      ImGui::Text("FPS  %.3f", recording->fps());
-      ImGui::NextColumn();
+      if (recording->duration().count() > 0) {
+        ImGui::Text("Duration  %.3fs", recording->duration().count());
+        ImGui::NextColumn();
+      }
+      if (recording->fps() != 0) {
+        ImGui::Text("FPS  %.3f", recording->fps());
+        ImGui::NextColumn();
+      }
       ImGui::Text("Frames %d", recording->length());
       ImGui::NextColumn();
       ImGui::Text("Width  %d", recording->Nx());
@@ -221,7 +218,6 @@ void display() {
       ImGui::SliderFloat("max", &max, recording->histogram.min,
                          recording->histogram.max);
 
-      ImGui::Separator();
       for (auto &[trace, pos, color] : recording->traces) {
         auto label = pos.to_string();
         ImGui::PushID(label.c_str());

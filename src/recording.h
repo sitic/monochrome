@@ -1,11 +1,8 @@
 #pragma once
 
-#include <string>
-
-#include <Eigen/Dense>
 #include <GLFW/glfw3.h>
 
-#include "bmp.h"
+#include "filereader.h"
 #include "utils.h"
 #include "vectors.h"
 
@@ -20,11 +17,9 @@ class Recording {
 protected:
   filesystem::path _path;
 
-  BMPheader fileheader;
+  std::shared_ptr<BaseFileRecording> file;
   int _t = 0;
   float _tf = 0;
-
-  Eigen::Matrix<uint16, Eigen::Dynamic, Eigen::Dynamic> raw_frame;
 
   long t_frame = 0;
   long t_prev_frame = 0;
@@ -40,17 +35,22 @@ public:
   float auto_diff_max = 0;
   float auto_diff_min = 0;
 
-  Recording(filesystem::path path)
-      : _path(path), fileheader(path),
-        raw_frame(fileheader.Nx(), fileheader.Ny()),
-        frame(fileheader.Nx(), fileheader.Ny()),
-        prev_frame(fileheader.Nx(), fileheader.Ny()),
-        frame_diff(fileheader.Nx(), fileheader.Ny()) {
+  Recording(const filesystem::path &path)
+      : _path(path) {
 
-    if (!fileheader.error_msg().empty()) {
-      new_ui_message(fileheader.error_msg());
+    file = std::make_shared<RawFileRecording>(path);
+    if (!file->good()) {
+      file = std::make_shared<BmpFileRecording>(path);
     }
-    if (!fileheader.good()) {
+
+    frame.setZero(file->Nx(), file->Ny());
+    prev_frame.setZero(file->Nx(), file->Ny());
+    frame_diff.setZero(file->Nx(), file->Ny());
+
+    if (!file->error_msg().empty()) {
+      new_ui_message(file->error_msg());
+    }
+    if (!file->good()) {
       return;
     }
 
@@ -68,19 +68,20 @@ public:
     auto_diff_min = -auto_diff_max;
   }
 
-  bool good() { return fileheader.good(); }
-  int Nx() { return fileheader.Nx(); }
-  int Ny() { return fileheader.Ny(); }
-  int length() { return fileheader.length(); }
-  filesystem::path path() { return _path; }
-  std::string date() { return fileheader.date(); };
-  std::string comment() { return fileheader.comment(); };
-  std::chrono::duration<float> duration() { return fileheader.duration(); }
-  float fps() { return fileheader.fps(); }
+  bool good() const { return file->good(); }
+  int Nx() const { return file->Nx(); }
+  int Ny() const { return file->Ny(); }
+  int length() const { return file->length(); }
+  filesystem::path path() const { return _path; }
+  std::string date() const { return file->date(); };
+  std::string comment() const { return file->comment(); };
+  std::chrono::duration<float> duration() const { return file->duration(); }
+  float fps() const { return file->fps(); }
+
+  std::optional<BitRange> bitrange() const { return file->bitrange(); }
 
   void load_frame(long t) {
-    fileheader.read_frame(t, raw_frame.data());
-    frame = raw_frame.cast<float>();
+    frame = file->read_frame(t);
     t_frame = t;
   }
 
