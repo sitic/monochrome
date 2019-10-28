@@ -13,7 +13,8 @@ add_library(imgui_glfw_gl2
         imgui/imgui_widgets.cpp
         imgui/imgui_demo.cpp
         imgui/examples/imgui_impl_glfw.cpp
-        imgui/examples/imgui_impl_opengl2.cpp)
+        imgui/examples/imgui_impl_opengl2.cpp
+        fonts/IconsFontAwesome5.cpp)
 target_include_directories(imgui_glfw_gl2 SYSTEM PUBLIC imgui imgui/examples)
 target_link_libraries(imgui_glfw_gl2 PUBLIC glfw OpenGL::GL)
 set_target_properties(imgui_glfw_gl2 PROPERTIES FOLDER libs)

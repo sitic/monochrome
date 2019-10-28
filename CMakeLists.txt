@@ -44,7 +44,7 @@ if(APPLE)
     add_definitions(-DGL_SILENCE_DEPRECATION)
 endif()
 
-add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h)
+add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h)
 target_link_libraries(quickViewer imgui_glfw_gl2 fmt lodepng)
 if(CMAKE_COMPILER_IS_GNUCXX)
     # Hotfix so that is shows up in the file explorer as executable, see https://stackoverflow.com/questions/41398444/

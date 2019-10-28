@@ -6,12 +6,12 @@
 #include <vector>
 
 #include <GLFW/glfw3.h>
+#include <fmt/format.h>
 
+#include "fonts/IconsFontAwesome5.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
-
-#include <fmt/format.h>
 
 #include "recording.h"
 #include "utils.h"
@@ -95,21 +95,58 @@ void display() {
 
     {
       ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Pos);
-      ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
-                                          ImVec2(FLT_MAX, FLT_MAX));
+      ImGui::SetNextWindowSizeConstraints(
+          ImVec2(prm::main_window_width, 0),
+          ImVec2(prm::main_window_width, FLT_MAX));
       auto flags = ImGuiWindowFlags_NoCollapse |
                    ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings;
-      ImGui::Begin("Drag & drop MultiRecorder .dat files into this window",
-                   nullptr, flags);
+      ImGui::Begin("Drag & drop .dat files into this window", nullptr, flags);
 
       {
         ImGui::Columns(2);
-        ImGui::SliderFloat("speed", &prm::speed, 0, 5);
+        if (prm::speed == 0) {
+          if (ImGui::Button(ICON_FA_PLAY)) {
+            prm::speed = 1;
+          }
+        } else {
+          if (ImGui::Button(ICON_FA_PAUSE)) {
+            prm::speed = 0;
+          }
+        }
+        ImGui::SameLine();
+        ImGui::SliderFloat("##speed", &prm::speed, 0, 5,
+                           "playback speed = %.1f");
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_FORWARD)) {
+          prm::speed *= 2;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_FAST_FORWARD)) {
+          if (prm::speed == 1) {
+            prm::speed += 9;
+          } else {
+            prm::speed += 10;
+          }
+        }
 
         ImGui::NextColumn();
-        if (ImGui::SliderFloat("scaling", &RecordingWindow::scale_fct, 0.5,
-                               5)) {
+        bool resize_windows = false;
+        if (ImGui::Button(ICON_FA_SEARCH_MINUS)) {
+          RecordingWindow::scale_fct /= 2;
+          resize_windows = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::SliderFloat("##scaling", &RecordingWindow::scale_fct, 0.5, 5,
+                               "window scaling = %.1f")) {
+          resize_windows = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_SEARCH_PLUS)) {
+          RecordingWindow::scale_fct *= 2;
+          resize_windows = true;
+        }
+        if (resize_windows) {
           for (const auto &r : recordings) {
             r->resize_window();
           }
@@ -373,7 +410,7 @@ int main(int, char **) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   main_window =
       glfwCreateWindow(prm::main_window_width, prm::main_window_height,
-                       "Quick MultiRecorder Viewer", NULL, NULL);
+                       "Quick Raw Video Viewer", nullptr, nullptr);
   if (!main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);
@@ -434,7 +471,15 @@ int main(int, char **) {
   // - Read 'misc/fonts/README.txt' for more instructions and details.
   // - Remember that in C/C++ if you want to include a backslash \ in a string
   // literal you need to write a double backslash \\ !
-  // io.Fonts->AddFontDefault();
+  io.Fonts->AddFontDefault();
+  static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+  ImFontConfig icons_config;
+  icons_config.MergeMode = true;
+  icons_config.PixelSnapH = true;
+  io.Fonts->AddFontFromMemoryCompressedTTF(
+      fonts::fontawesome5_solid_compressed_data,
+      fonts::fontawesome5_solid_compressed_size, 11, &icons_config,
+      icons_ranges);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);

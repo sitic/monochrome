@@ -5,6 +5,7 @@
 #include "filereader.h"
 #include "utils.h"
 #include "vectors.h"
+#include "videorecorder.h"
 
 using namespace std::string_literals;
 
@@ -227,6 +228,8 @@ public:
   };
   std::vector<Trace> traces;
 
+  VideoRecorder videorecorder;
+
   RecordingWindow(filesystem::path path) : Recording(path) {
     if (good() && Trace::width() == 0) {
       // if unset, set trace edge length to something reasonable
@@ -247,7 +250,7 @@ public:
     }
   }
 
-  void add_trace_pos(const Vec2i& npos) {
+  void add_trace_pos(const Vec2i &npos) {
     for (auto &[trace, pos, color] : traces) {
       auto d = pos - npos;
       if (std::abs(d[0]) < Trace::width() / 2 &&
@@ -260,7 +263,7 @@ public:
     traces.push_back({{}, npos, Trace::next_color()});
   }
 
-  void remove_trace_pos(const Vec2i& pos) {
+  void remove_trace_pos(const Vec2i &pos) {
     const auto pred = [pos](const auto &trace) {
       auto d = pos - trace.pos;
       auto max_dist = Trace::width() / 2;
@@ -317,6 +320,10 @@ public:
     }
 
     glfwSwapBuffers(window);
+
+    if (videorecorder.recording) {
+      videorecorder.add_frame();
+    }
 
     glfwMakeContextCurrent(main_window);
   }

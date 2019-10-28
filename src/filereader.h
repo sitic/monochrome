@@ -20,17 +20,18 @@ public:
   BaseFileRecording() = default;
   virtual ~BaseFileRecording() = default;
 
-  [[nodiscard]] virtual bool good() const = 0;
-  [[nodiscard]] virtual int Nx() const = 0;
-  [[nodiscard]] virtual int Ny() const = 0;
-  [[nodiscard]] virtual int length() const = 0;
-  [[nodiscard]] virtual std::string error_msg() = 0;
-  [[nodiscard]] virtual std::string date() const = 0;
-  [[nodiscard]] virtual std::string comment() const = 0;
-  [[nodiscard]] virtual std::chrono::duration<float> duration() const = 0;
-  [[nodiscard]] virtual float fps() const = 0;
+  virtual bool good() const = 0;
+  virtual int Nx() const = 0;
+  virtual int Ny() const = 0;
+  virtual int length() const = 0;
+  virtual std::string error_msg() = 0;
+  virtual std::string date() const = 0;
+  virtual std::string comment() const = 0;
+  virtual std::chrono::duration<float> duration() const = 0;
+  virtual float fps() const = 0;
+  virtual std::optional<BitRange> bitrange() const = 0;
+
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t) = 0;
-  [[nodiscard]] virtual std::optional<BitRange> bitrange() const = 0;
 };
 
 class BmpFileRecording : public BaseFileRecording {
