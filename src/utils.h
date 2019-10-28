@@ -147,7 +147,7 @@ template <typename... Args>
 inline void new_ui_message(const char *fmt, Args &&... args) {
   const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
   messages.emplace_back(msg);
-  fmt::print(msg);
+  fmt::print(msg + "\n");
 }
 
 template <typename... Args>
@@ -155,8 +155,9 @@ inline void new_ui_message(const std::string &fmt, Args &&... args) {
   return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
 }
 
-void save_snapshot(const std::string &out_png_path,
-                   GLFWwindow *window = nullptr, bool alpha_channel = false) {
+void gl_save_snapshot(const std::string &out_png_path,
+                      GLFWwindow *window = nullptr,
+                      bool alpha_channel = false) {
   auto prev_context = glfwGetCurrentContext();
   if (window)
     glfwMakeContextCurrent(window);

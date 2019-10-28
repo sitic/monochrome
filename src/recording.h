@@ -511,10 +511,18 @@ public:
       // causes a segfault in glfw
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-      std::string output_png_path = "tmp.png";
-      save_snapshot(output_png_path, window);
-      new_ui_message("Saved screenshot to {}", output_png_path);
+      std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
+      rec->save_snapshot();
     }
+  }
+
+  void save_snapshot(std::string output_png_path = "") {
+    if (output_png_path.empty()) {
+      auto fn = path().stem().string();
+      output_png_path = fmt::format("{}_{}.png", fn, _t);
+    }
+    gl_save_snapshot(output_png_path, window);
+    new_ui_message("Saved screenshot to {}", output_png_path);
   }
 
 protected:

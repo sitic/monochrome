@@ -247,6 +247,10 @@ void display() {
         recording->export_video_ctrl.export_window = true;
         recording->export_video_ctrl.assign_auto_filename(recording->path());
       }
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
+        recording->save_snapshot();
+      }
       ImGui::Columns(1);
 
       ImGui::PushItemWidth(prm::main_window_width * 0.75f);
