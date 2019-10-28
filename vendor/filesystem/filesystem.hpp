@@ -79,6 +79,13 @@ public:
     separators_.pop_back();
     return *this /= filename;
   }
+
+  path with_extension(const path& replacement = path("")) const {
+    path p = parent_path();
+    p /= stem().string() + replacement.string();
+    return p;
+  }
+
   bool operator==(const path &rhs) const {
     return path_name_ == rhs.path_name_;
   }

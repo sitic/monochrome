@@ -97,6 +97,12 @@ public:
       _t = std::floor(_tf);
     }
 
+    if (_t < 0) {
+      // should never happen, but just in case
+      _t = 0;
+      _tf = 0;
+    }
+
     load_frame(_t);
   }
 
@@ -163,6 +169,8 @@ public:
   GLFWwindow *window = nullptr;
   static float scale_fct;
 
+  Histogram<float, 256> histogram;
+
   struct {
     bool export_window = false;
     Vec2i start;
@@ -193,7 +201,25 @@ public:
     }
   } export_ctrl;
 
-  Histogram<float, 256> histogram;
+  struct {
+    bool export_window = false;
+    bool recording = false;
+    float progress = 0;
+    std::vector<char> filename = {};
+    VideoRecorder videoRecorder;
+
+    void assign_auto_filename(const filesystem::path &bmp_path) {
+      videoRecorder.videotitle = bmp_path.filename().string();
+
+      std::string fn = bmp_path.filename().with_extension(".mp4").string();
+      filename.assign(fn.begin(), fn.end());
+
+      // Make sure there is enough space for the user input
+      if (filename.size() < 64) {
+        filename.resize(64);
+      }
+    }
+  } export_video_ctrl;
 
   struct Trace {
     std::vector<float> data;
@@ -228,8 +254,6 @@ public:
   };
   std::vector<Trace> traces;
 
-  VideoRecorder videorecorder;
-
   RecordingWindow(filesystem::path path) : Recording(path) {
     if (good() && Trace::width() == 0) {
       // if unset, set trace edge length to something reasonable
@@ -242,6 +266,11 @@ public:
     if (window != nullptr) {
       glfwDestroyWindow(window);
     }
+  }
+
+  void restart() {
+    _tf = std::numeric_limits<float>::lowest();
+    _t = std::numeric_limits<int>::lowest();
   }
 
   void reset_traces() {
@@ -321,11 +350,32 @@ public:
 
     glfwSwapBuffers(window);
 
-    if (videorecorder.recording) {
-      videorecorder.add_frame();
+    if (export_video_ctrl.recording) {
+      auto cur = progress();
+      if (cur < export_video_ctrl.progress) {
+        stop_recording();
+        new_ui_message("Exporting video finished!");
+      } else {
+        export_video_ctrl.videoRecorder.add_frame();
+        export_video_ctrl.progress = cur;
+      }
     }
 
     glfwMakeContextCurrent(main_window);
+  }
+
+  void start_recording(const std::string &filename, int fps = 30) {
+    restart();
+    export_video_ctrl.videoRecorder.start_recording(filename, window, fps);
+    export_video_ctrl.recording = true;
+    export_video_ctrl.progress = 0;
+  }
+
+  void stop_recording() {
+    export_video_ctrl.videoRecorder.stop_recording();
+    export_video_ctrl.recording = false;
+    export_video_ctrl.progress = 0;
+    export_video_ctrl.export_window = false;
   }
 
   void open_window() {

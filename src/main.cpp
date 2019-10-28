@@ -235,12 +235,17 @@ void display() {
       ImGui::NextColumn();
       ImGui::Text("Height %d", recording->Ny());
       ImGui::NextColumn();
-      if (ImGui::Button("Export")) {
+      if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
         recording->export_ctrl.export_window = true;
         recording->export_ctrl.start = {0, 0};
         recording->export_ctrl.size = {recording->Nx(), recording->Ny()};
         recording->export_ctrl.frames = {0, recording->length()};
         recording->export_ctrl.assign_auto_filename(recording->path());
+      }
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
+        recording->export_video_ctrl.export_window = true;
+        recording->export_video_ctrl.assign_auto_filename(recording->path());
       }
       ImGui::Columns(1);
 
@@ -284,18 +289,23 @@ void display() {
       }
       ImGui::End();
 
+      // Use the directory path of the recording as best guest for the
+      // export directory, make it static so that it only has to be changed
+      // by the user once
+      const auto gen_export_dir = [](filesystem::path dir) {
+        std::string s = dir.string();
+        std::vector<char> v(s.begin(), s.end());
+        // Maximum size for user input
+        if (v.size() < 64) {
+          v.resize(64);
+        }
+        return v;
+      };
+      static auto export_dir = gen_export_dir(recording->path().parent_path());
+
       if (recording->export_ctrl.export_window) {
         ImGui::Begin("Export ROI", &(recording->export_ctrl.export_window),
                      ImGuiWindowFlags_AlwaysAutoResize);
-
-        // Use the directory path of the recording as best guest for the
-        // export directory, make it static so that it only has to be changed
-        // by the user once
-        static auto dir_path = recording->path().parent_path().string();
-        static std::vector<char> dir(dir_path.begin(), dir_path.end());
-        if (dir.size() < 64) {
-          dir.resize(64);
-        }
 
         bool refresh = ImGui::InputInt2("Top Left Position",
                                         recording->export_ctrl.start.data());
@@ -308,7 +318,7 @@ void display() {
 
         ImGui::Spacing();
 
-        ImGui::InputText("Directory", dir.data(), dir.size());
+        ImGui::InputText("Directory", export_dir.data(), export_dir.size());
         ImGui::InputText("Filename", recording->export_ctrl.filename.data(),
                          recording->export_ctrl.filename.size());
 
@@ -316,9 +326,9 @@ void display() {
         ImGui::Checkbox("Normalize to [0, 1]", &norm);
 
         ImGui::Spacing();
-        if (ImGui::Button("Start Export (freezes everything",
+        if (ImGui::Button("Start Export (freezes everything)",
                           ImVec2(-1.0f, 0.0f))) {
-          filesystem::path path(dir.data());
+          filesystem::path path(export_dir.data());
           path /= recording->export_ctrl.filename.data();
           fmt::print("Exporting ROI to {}\n", path.string());
 
@@ -332,6 +342,42 @@ void display() {
             new_ui_message("Export to {} completed successfully",
                            path.string());
             recording->export_ctrl.export_window = false;
+          }
+        }
+        ImGui::End();
+      }
+
+      if (recording->export_video_ctrl.export_window) {
+        auto &ctrl = recording->export_video_ctrl;
+        ImGui::Begin("Export Video", &(ctrl.export_window));
+        ImGui::TextWrapped(
+            "Export the recording window as an .mp4 file."
+            "Exports exactly what is shown in the recording "
+            "window, so don't change anything during the export."
+            "Restarts to the beginning of the file and ends automatically.");
+
+        if (!ctrl.recording) {
+          ImGui::InputText("Directory", export_dir.data(), export_dir.size());
+          ImGui::InputText("Filename", ctrl.filename.data(),
+                           ctrl.filename.size());
+          static int fps = 30;
+          ImGui::InputInt("FPS", &fps);
+
+          if (ImGui::Button("Start Export")) {
+            filesystem::path path(export_dir.data());
+            path /= ctrl.filename.data();
+            recording->start_recording(path.string(), fps);
+          }
+        } else {
+          auto label = fmt::format(
+              "Exporting frame {}/{}",
+              static_cast<int>((recording->current_frame() + 1) / prm::speed),
+              static_cast<int>((recording->length()) / prm::speed));
+          ImGui::ProgressBar(ctrl.progress, ImVec2(-1, 0), label.c_str());
+
+          if (ImGui::Button(ICON_FA_STOP " Stop Export")) {
+            recording->stop_recording();
+            new_ui_message("Exporting video stopped");
           }
         }
         ImGui::End();

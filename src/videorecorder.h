@@ -26,8 +26,9 @@ class VideoRecorder {
   FILE *ffmpeg = nullptr;
   std::vector<GLubyte> buffer;
 
-  std::string ffmpeg_encoder_args() {
-    if (glfwExtensionSupported("GL_NVX_nvenc_interop")) {
+  static std::string ffmpeg_encoder_args() {
+    const bool nvenc_test_enabled = false; // disable nvenc for now, needs better testing
+    if (nvenc_test_enabled && glfwExtensionSupported("GL_NVX_nvenc_interop")) {
       // if Nvidia NVENC supported, use it instead of cpu encoding
       return "-c:v h264_nvenc -preset slow -profile:v high -rc vbr_hq -qmin:v 19 -qmax:v 21 -b:v 4M -maxrate:v 10M";
     } else {
@@ -44,7 +45,6 @@ class VideoRecorder {
 
 public:
   std::string videotitle = "";
-  bool recording = false;
 
   VideoRecorder() = default;
 
