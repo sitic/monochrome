@@ -26,4 +26,7 @@ set_target_properties(lodepng PROPERTIES PUBLIC_HEADER "lodepng/lodepng.h")
 add_subdirectory(fmt)
 set_target_properties(fmt PROPERTIES FOLDER libs)
 
+add_library(Eigen INTERFACE)
+target_include_directories(Eigen INTERFACE Eigen)
+
 set_property(TARGET imgui_glfw_gl2 glfw fmt APPEND_STRING PROPERTY COMPILE_FLAGS " -w")

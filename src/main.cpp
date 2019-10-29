@@ -22,8 +22,8 @@ std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
 std::vector<Message> messages = {};
 
 namespace prm {
-static int main_window_width = 500;
-static int main_window_height = 500;
+static int main_window_width = 600;
+static int main_window_height = 0;
 
 static bool auto_scale = true;
 static bool diff_frames = false;
@@ -308,23 +308,24 @@ void display() {
       static auto export_dir = gen_export_dir(recording->path().parent_path());
 
       if (recording->export_ctrl.export_window) {
-        ImGui::Begin("Export ROI", &(recording->export_ctrl.export_window),
+        auto &ctrl = recording->export_ctrl;
+        ImGui::SetNextWindowSizeConstraints(
+            ImVec2(0.75f * prm::main_window_width, 0),
+            ImVec2(prm::main_window_width, FLT_MAX));
+        ImGui::Begin("Export ROI", &(ctrl.export_window),
                      ImGuiWindowFlags_AlwaysAutoResize);
 
-        bool refresh = ImGui::InputInt2("Top Left Position",
-                                        recording->export_ctrl.start.data());
-        refresh |=
-            ImGui::InputInt2("Array Size", recording->export_ctrl.size.data());
-        refresh |= ImGui::InputInt2("Start & End Frames",
-                                    recording->export_ctrl.frames.data());
+        bool refresh = ImGui::InputInt2("Top Left Position", ctrl.start.data());
+        refresh |= ImGui::InputInt2("Array Size", ctrl.size.data());
+        refresh |= ImGui::InputInt2("Start & End Frames", ctrl.frames.data());
         if (refresh)
-          recording->export_ctrl.assign_auto_filename(recording->path());
+          ctrl.assign_auto_filename(recording->path());
 
         ImGui::Spacing();
 
         ImGui::InputText("Directory", export_dir.data(), export_dir.size());
-        ImGui::InputText("Filename", recording->export_ctrl.filename.data(),
-                         recording->export_ctrl.filename.size());
+        ImGui::InputText("Filename", ctrl.filename.data(),
+                         ctrl.filename.size());
 
         static bool norm = false;
         ImGui::Checkbox("Normalize to [0, 1]", &norm);
@@ -333,19 +334,18 @@ void display() {
         if (ImGui::Button("Start Export (freezes everything)",
                           ImVec2(-1.0f, 0.0f))) {
           filesystem::path path(export_dir.data());
-          path /= recording->export_ctrl.filename.data();
+          path /= ctrl.filename.data();
           fmt::print("Exporting ROI to {}\n", path.string());
 
           Vec2f minmax = norm ? Vec2f(min, max) : Vec2f(0, 0);
 
-          bool success = recording->export_ROI(
-              path, recording->export_ctrl.start, recording->export_ctrl.size,
-              recording->export_ctrl.frames, minmax);
+          bool success = recording->export_ROI(path, ctrl.start, ctrl.size,
+                                               ctrl.frames, minmax);
 
           if (success) {
             new_ui_message("Export to {} completed successfully",
                            path.string());
-            recording->export_ctrl.export_window = false;
+            ctrl.export_window = false;
           }
         }
         ImGui::End();
@@ -353,6 +353,9 @@ void display() {
 
       if (recording->export_video_ctrl.export_window) {
         auto &ctrl = recording->export_video_ctrl;
+        ImGui::SetNextWindowSizeConstraints(
+            ImVec2(0.75f * prm::main_window_width, 0),
+            ImVec2(prm::main_window_width, FLT_MAX));
         ImGui::Begin("Export Video", &(ctrl.export_window));
         ImGui::TextWrapped(
             "Export the recording window as an .mp4 file."
@@ -453,7 +456,7 @@ int main(int, char **) {
   auto primary_monitor = glfwGetPrimaryMonitor();
   auto mode = glfwGetVideoMode(primary_monitor);
 
-  prm::main_window_width = mode->width / 4;
+  prm::main_window_width = std::max(prm::main_window_width, mode->width / 4);
   prm::main_window_height = 1.5 * prm::main_window_width;
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
