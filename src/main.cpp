@@ -236,20 +236,24 @@ void display() {
       ImGui::Text("Height %d", recording->Ny());
       ImGui::NextColumn();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
-        recording->export_ctrl.export_window = true;
-        recording->export_ctrl.start = {0, 0};
-        recording->export_ctrl.size = {recording->Nx(), recording->Ny()};
-        recording->export_ctrl.frames = {0, recording->length()};
-        recording->export_ctrl.assign_auto_filename(recording->path());
+        auto &ctrl = recording->export_raw_ctrl;
+        ctrl.export_window = true;
+        ctrl.assign_auto_filename(recording->path());
+        ctrl.start = {0, 0};
+        ctrl.size = {recording->Nx(), recording->Ny()};
+        ctrl.frames = {0, recording->length()};
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
-        recording->export_video_ctrl.export_window = true;
-        recording->export_video_ctrl.assign_auto_filename(recording->path());
+        auto &ctrl = recording->export_video_ctrl;
+        ctrl.export_window = true;
+        ctrl.assign_auto_filename(recording->path());
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
-        recording->save_snapshot();
+        auto &ctrl = recording->export_png_ctrl;
+        ctrl.export_window = true;
+        ctrl.assign_auto_filename(recording->path());
       }
       ImGui::Columns(1);
 
@@ -281,12 +285,13 @@ void display() {
           trace.clear();
         }
         if (ImGui::Button("Export ROI")) {
-          recording->export_ctrl.export_window = true;
+          auto &ctrl = recording->export_raw_ctrl;
+          ctrl.export_window = true;
+          ctrl.assign_auto_filename(recording->path());
           auto w = RecordingWindow::Trace::width();
-          recording->export_ctrl.start = {pos[0] - w / 2, pos[1] - w / 2};
-          recording->export_ctrl.size = {w, w};
-          recording->export_ctrl.frames = {0, recording->length()};
-          recording->export_ctrl.assign_auto_filename(recording->path());
+          ctrl.start = {pos[0] - w / 2, pos[1] - w / 2};
+          ctrl.size = {w, w};
+          ctrl.frames = {0, recording->length()};
         }
         ImGui::EndGroup();
         ImGui::PopID();
@@ -296,7 +301,7 @@ void display() {
       // Use the directory path of the recording as best guest for the
       // export directory, make it static so that it only has to be changed
       // by the user once
-      const auto gen_export_dir = [](filesystem::path dir) {
+      const auto gen_export_dir = [](const filesystem::path &dir) {
         std::string s = dir.string();
         std::vector<char> v(s.begin(), s.end());
         // Maximum size for user input
@@ -307,12 +312,11 @@ void display() {
       };
       static auto export_dir = gen_export_dir(recording->path().parent_path());
 
-      if (recording->export_ctrl.export_window) {
-        auto &ctrl = recording->export_ctrl;
+      if (auto &ctrl = recording->export_raw_ctrl; ctrl.export_window) {
         ImGui::SetNextWindowSizeConstraints(
             ImVec2(0.75f * prm::main_window_width, 0),
             ImVec2(prm::main_window_width, FLT_MAX));
-        ImGui::Begin("Export ROI", &(ctrl.export_window),
+        ImGui::Begin("Export Raw ROI", &(ctrl.export_window),
                      ImGuiWindowFlags_AlwaysAutoResize);
 
         bool refresh = ImGui::InputInt2("Top Left Position", ctrl.start.data());
@@ -351,8 +355,7 @@ void display() {
         ImGui::End();
       }
 
-      if (recording->export_video_ctrl.export_window) {
-        auto &ctrl = recording->export_video_ctrl;
+      if (auto &ctrl = recording->export_video_ctrl; ctrl.export_window) {
         ImGui::SetNextWindowSizeConstraints(
             ImVec2(0.75f * prm::main_window_width, 0),
             ImVec2(prm::main_window_width, FLT_MAX));
@@ -385,6 +388,40 @@ void display() {
           if (ImGui::Button(ICON_FA_STOP " Stop Export")) {
             recording->stop_recording();
             new_ui_message("Exporting video stopped");
+          }
+        }
+        ImGui::End();
+      }
+
+      if (auto &ctrl = recording->export_png_ctrl; ctrl.export_window) {
+        ImGui::SetNextWindowSizeConstraints(
+            ImVec2(0.75f * prm::main_window_width, 0),
+            ImVec2(prm::main_window_width, FLT_MAX));
+        ImGui::Begin("Export .png", &(ctrl.export_window));
+        ImGui::InputText("Directory", export_dir.data(), export_dir.size());
+        ImGui::InputText("Filename", ctrl.filename.data(),
+                         ctrl.filename.size());
+
+        const auto make_snapshot = [&recording, &ctrl]() {
+          filesystem::path path(export_dir.data());
+          path /= ctrl.filename.data();
+          return recording->save_snapshot(path.string());
+        };
+
+        if (!ctrl.save_pngs) {
+          if (ImGui::Button("Single .png")) {
+            auto fn = make_snapshot();
+            new_ui_message("Saved screenshot to {}", fn.string());
+          }
+
+          ctrl.save_pngs = ImGui::Button("Start exporting .png series");
+        } else {
+          auto fn = make_snapshot();
+          if (ImGui::Button("Stop exporting .png series")) {
+            ctrl.save_pngs = false;
+            ctrl.export_window = false;
+            new_ui_message("Stopped exporting .png series, last screenshot {}",
+                           fn.string());
           }
         }
         ImGui::End();

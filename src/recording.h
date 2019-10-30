@@ -199,7 +199,7 @@ public:
         filename.resize(64);
       }
     }
-  } export_ctrl;
+  } export_raw_ctrl;
 
   struct {
     bool export_window = false;
@@ -220,6 +220,22 @@ public:
       }
     }
   } export_video_ctrl;
+
+  struct {
+    bool export_window = false;
+    bool save_pngs = false;
+    std::vector<char> filename = {};
+
+    void assign_auto_filename(const filesystem::path &bmp_path) {
+      std::string fn = bmp_path.filename().stem().string() + "_{t}.png";
+      filename.assign(fn.begin(), fn.end());
+
+      // Make sure there is enough space for the user input
+      if (filename.size() < 64) {
+        filename.resize(64);
+      }
+    }
+  } export_png_ctrl;
 
   struct Trace {
     std::vector<float> data;
@@ -512,17 +528,19 @@ public:
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
       std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
-      rec->save_snapshot();
+      auto fn = rec->save_snapshot();
+      new_ui_message("Saved screenshot to {}", fn.string());
     }
   }
 
-  void save_snapshot(std::string output_png_path = "") {
-    if (output_png_path.empty()) {
-      auto fn = path().stem().string();
-      output_png_path = fmt::format("{}_{}.png", fn, _t);
+  filesystem::path save_snapshot(std::string output_png_path_template = "") {
+    if (output_png_path_template.empty()) {
+      output_png_path_template = path().stem().string() + "_{t}.png";
     }
-    gl_save_snapshot(output_png_path, window);
-    new_ui_message("Saved screenshot to {}", output_png_path);
+    auto out_path = fmt::format(output_png_path_template, fmt::arg("t", _t));
+
+    gl_save_snapshot(out_path, window);
+    return out_path;
   }
 
 protected:
