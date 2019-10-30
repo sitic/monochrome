@@ -54,7 +54,7 @@ public:
     return path(path_name_.substr(separators_.back() + 1));
   }
   const char *c_str() const { return path_name_.c_str(); }
-  const std::string &string() const { return path_name_; }
+  std::string string() const { return path_name_; }
 
   path stem() const { return split_filename().first; }
 

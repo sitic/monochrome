@@ -97,8 +97,8 @@ public:
       : _in(path.string(), std::ios::in | std::ios::binary) {
 
     const std::regex rgx(R"(^.*?_(\d+)x(\d+)x(\d+)f.*?\.dat$)");
-    if (std::smatch matches;
-        std::regex_match(path.filename().string(), matches, rgx)) {
+    std::string filename = path.filename().string();
+    if (std::smatch matches; std::regex_match(filename, matches, rgx)) {
       _nx = std::stoi(matches[1]);
       _ny = std::stoi(matches[2]);
       _nt = std::stoi(matches[3]);
