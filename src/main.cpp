@@ -44,7 +44,7 @@ void load_new_file(filesystem::path path) {
     return;
   }
 
-  if (path.extension().string() != ".dat") {
+  if (path.extension() != ".dat") {
     new_ui_message("ERROR: {} does not have extension '.dat', skipping",
                    path.string());
     return;
@@ -174,9 +174,9 @@ void display() {
         }
 
         ImGui::NextColumn();
-        int trace_width = RecordingWindow::Trace::width();
+        int trace_width = Trace::width();
         if (ImGui::InputInt("Trace width", &trace_width, 2, 5)) {
-          RecordingWindow::Trace::width(trace_width);
+          Trace::width(trace_width);
         }
         ImGui::Columns(1);
       }
@@ -236,7 +236,7 @@ void display() {
       ImGui::Text("Height %d", recording->Ny());
       ImGui::NextColumn();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
-        auto &ctrl = recording->export_raw_ctrl;
+        auto &ctrl = recording->export_ctrl.raw;
         ctrl.export_window = true;
         ctrl.assign_auto_filename(recording->path());
         ctrl.start = {0, 0};
@@ -245,13 +245,13 @@ void display() {
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
-        auto &ctrl = recording->export_video_ctrl;
+        auto &ctrl = recording->export_ctrl.video;
         ctrl.export_window = true;
         ctrl.assign_auto_filename(recording->path());
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
-        auto &ctrl = recording->export_png_ctrl;
+        auto &ctrl = recording->export_ctrl.png;
         ctrl.export_window = true;
         ctrl.assign_auto_filename(recording->path());
       }
@@ -285,10 +285,10 @@ void display() {
           trace.clear();
         }
         if (ImGui::Button("Export ROI")) {
-          auto &ctrl = recording->export_raw_ctrl;
+          auto &ctrl = recording->export_ctrl.raw;
           ctrl.export_window = true;
           ctrl.assign_auto_filename(recording->path());
-          auto w = RecordingWindow::Trace::width();
+          auto w = Trace::width();
           ctrl.start = {pos[0] - w / 2, pos[1] - w / 2};
           ctrl.size = {w, w};
           ctrl.frames = {0, recording->length()};
@@ -312,7 +312,7 @@ void display() {
       };
       static auto export_dir = gen_export_dir(recording->path().parent_path());
 
-      if (auto &ctrl = recording->export_raw_ctrl; ctrl.export_window) {
+      if (auto &ctrl = recording->export_ctrl.raw; ctrl.export_window) {
         ImGui::SetNextWindowSizeConstraints(
             ImVec2(0.75f * prm::main_window_width, 0),
             ImVec2(prm::main_window_width, FLT_MAX));
@@ -355,7 +355,7 @@ void display() {
         ImGui::End();
       }
 
-      if (auto &ctrl = recording->export_video_ctrl; ctrl.export_window) {
+      if (auto &ctrl = recording->export_ctrl.video; ctrl.export_window) {
         ImGui::SetNextWindowSizeConstraints(
             ImVec2(0.75f * prm::main_window_width, 0),
             ImVec2(prm::main_window_width, FLT_MAX));
@@ -393,7 +393,7 @@ void display() {
         ImGui::End();
       }
 
-      if (auto &ctrl = recording->export_png_ctrl; ctrl.export_window) {
+      if (auto &ctrl = recording->export_ctrl.png; ctrl.export_window) {
         ImGui::SetNextWindowSizeConstraints(
             ImVec2(0.75f * prm::main_window_width, 0),
             ImVec2(prm::main_window_width, FLT_MAX));

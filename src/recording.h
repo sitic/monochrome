@@ -164,13 +164,7 @@ public:
   }
 };
 
-class RecordingWindow : public Recording {
-public:
-  GLFWwindow *window = nullptr;
-  static float scale_fct;
-
-  Histogram<float, 256> histogram;
-
+struct ExportCtrl {
   struct {
     bool export_window = false;
     Vec2i start;
@@ -199,7 +193,7 @@ public:
         filename.resize(64);
       }
     }
-  } export_raw_ctrl;
+  } raw;
 
   struct {
     bool export_window = false;
@@ -219,7 +213,7 @@ public:
         filename.resize(64);
       }
     }
-  } export_video_ctrl;
+  } video;
 
   struct {
     bool export_window = false;
@@ -235,39 +229,49 @@ public:
         filename.resize(64);
       }
     }
-  } export_png_ctrl;
+  } png;
+};
 
-  struct Trace {
-    std::vector<float> data;
-    Vec2i pos;
-    Vec4f color;
+struct Trace {
+  std::vector<float> data;
+  Vec2i pos;
+  Vec4f color;
 
-    static Vec4f next_color() {
-      static std::array<Vec4f, 4> cycle_list = {{
-          {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
-          {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
-          {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
-          {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
-      }};
+  static Vec4f next_color() {
+    // List of colors to cycle through
+    static std::array<Vec4f, 4> cycle_list = {{
+        {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
+        {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
+        {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
+        {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
+    }};
 
-      static int count = -1;
-      count++;
-      if (count >= cycle_list.size()) {
-        count = 0;
-      }
-      return cycle_list.at(count);
+    static int count = -1;
+    count++;
+    if (count >= cycle_list.size()) {
+      count = 0;
+    }
+    return cycle_list.at(count);
+  }
+
+  static int width(int new_width = 0) {
+    static int w = 0;
+
+    if (new_width > 0) {
+      w = new_width;
     }
 
-    static int width(int new_width = 0) {
-      static int w = 0;
+    return w;
+  }
+};
 
-      if (new_width > 0) {
-        w = new_width;
-      }
+class RecordingWindow : public Recording {
+public:
+  GLFWwindow *window = nullptr;
+  static float scale_fct;
 
-      return w;
-    }
-  };
+  Histogram<float, 256> histogram;
+  ExportCtrl export_ctrl;
   std::vector<Trace> traces;
 
   RecordingWindow(filesystem::path path) : Recording(path) {
@@ -366,14 +370,14 @@ public:
 
     glfwSwapBuffers(window);
 
-    if (export_video_ctrl.recording) {
+    if (export_ctrl.video.recording) {
       auto cur = progress();
-      if (cur < export_video_ctrl.progress) {
+      if (cur < export_ctrl.video.progress) {
         stop_recording();
         new_ui_message("Exporting video finished!");
       } else {
-        export_video_ctrl.videoRecorder.add_frame();
-        export_video_ctrl.progress = cur;
+        export_ctrl.video.videoRecorder.add_frame();
+        export_ctrl.video.progress = cur;
       }
     }
 
@@ -382,16 +386,16 @@ public:
 
   void start_recording(const std::string &filename, int fps = 30) {
     restart();
-    export_video_ctrl.videoRecorder.start_recording(filename, window, fps);
-    export_video_ctrl.recording = true;
-    export_video_ctrl.progress = 0;
+    export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
+    export_ctrl.video.recording = true;
+    export_ctrl.video.progress = 0;
   }
 
   void stop_recording() {
-    export_video_ctrl.videoRecorder.stop_recording();
-    export_video_ctrl.recording = false;
-    export_video_ctrl.progress = 0;
-    export_video_ctrl.export_window = false;
+    export_ctrl.video.videoRecorder.stop_recording();
+    export_ctrl.video.recording = false;
+    export_ctrl.video.progress = 0;
+    export_ctrl.video.export_window = false;
   }
 
   void open_window() {
@@ -402,7 +406,7 @@ public:
     auto title = _path.filename().string();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    window = glfwCreateWindow(Nx(), Ny(), title.c_str(), NULL, NULL);
+    window = glfwCreateWindow(Nx(), Ny(), title.c_str(), nullptr, nullptr);
     if (!window) {
       new_ui_message("ERROR: window created failed for {}", title);
       return;
