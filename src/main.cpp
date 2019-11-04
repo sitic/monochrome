@@ -13,8 +13,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
 
-#include "recording.h"
-#include "utils.h"
+#include "recordingwindow.h"
 
 GLFWwindow *main_window = nullptr;
 
@@ -25,12 +24,8 @@ namespace prm {
 static int main_window_width = 600;
 static int main_window_height = 0;
 
-static bool auto_scale = true;
-static bool diff_frames = false;
-
+static FrameTransformations transformation = FrameTransformations::None;
 static BitRange bitrange = BitRange::U12;
-static float min = 0;
-static float max = static_cast<float>(bitrange);
 
 static float speed = 1;
 } // namespace prm
@@ -61,7 +56,6 @@ void load_new_file(filesystem::path path) {
   if (auto br = rec->bitrange(); br) {
     if (br.value() != prm::bitrange) {
       prm::bitrange = br.value();
-      prm::max = static_cast<float>(prm::bitrange);
     }
   }
 
@@ -93,6 +87,8 @@ void display() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    // ImGui::ShowDemoWindow();
+
     {
       ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Pos);
       ImGui::SetNextWindowSizeConstraints(
@@ -105,6 +101,12 @@ void display() {
 
       {
         ImGui::Columns(2);
+        if (ImGui::Button(ICON_FA_REDO_ALT)) {
+          for (const auto &r : recordings) {
+            r->restart();
+          }
+        }
+        ImGui::SameLine();
         if (prm::speed == 0) {
           if (ImGui::Button(ICON_FA_PLAY)) {
             prm::speed = 1;
@@ -115,8 +117,13 @@ void display() {
           }
         }
         ImGui::SameLine();
-        ImGui::SliderFloat("##speed", &prm::speed, 0, 5,
-                           "playback speed = %.1f");
+        if (ImGui::Button(ICON_FA_BACKWARD)) {
+          prm::speed /= 2;
+        }
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
+        ImGui::DragFloat("##speed", &prm::speed, 0.05, 0, 20,
+                         "playback speed = %.1f");
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_FORWARD)) {
           prm::speed *= 2;
@@ -137,8 +144,9 @@ void display() {
           resize_windows = true;
         }
         ImGui::SameLine();
-        if (ImGui::SliderFloat("##scaling", &RecordingWindow::scale_fct, 0.5, 5,
-                               "window scaling = %.1f")) {
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
+        if (ImGui::DragFloat("##scaling", &RecordingWindow::scale_fct, 0.05,
+                             0.5, 10, "window scaling = %.1f")) {
           resize_windows = true;
         }
         ImGui::SameLine();
@@ -153,25 +161,10 @@ void display() {
         }
 
         ImGui::NextColumn();
-        ImGui::Checkbox("Auto min max", &prm::auto_scale);
-
-        ImGui::NextColumn();
-        int e = static_cast<int>(prm::bitrange);
-        ImGui::RadioButton("float", &e, static_cast<int>(BitRange::FLOAT));
-        ImGui::SameLine();
-        ImGui::RadioButton("uint8", &e, static_cast<int>(BitRange::U8));
-        ImGui::SameLine();
-        ImGui::RadioButton("uint12", &e, static_cast<int>(BitRange::U12));
-        ImGui::SameLine();
-        ImGui::RadioButton("uint16", &e, static_cast<int>(BitRange::U16));
-        prm::bitrange = static_cast<BitRange>(e);
-
-        ImGui::NextColumn();
-        if (ImGui::Checkbox("Show frame difference", &prm::diff_frames)) {
-          for (const auto &r : recordings) {
-            r->reset_traces();
-          }
-        }
+        int item = static_cast<int>(prm::bitrange);
+        ImGui::Combo("Data Format", &item, BitRangeNames,
+                     IM_ARRAYSIZE(BitRangeNames));
+        prm::bitrange = static_cast<BitRange>(item);
 
         ImGui::NextColumn();
         int trace_width = Trace::width();
@@ -182,6 +175,42 @@ void display() {
       }
 
       ImGui::Text("Application average %.1f FPS", ImGui::GetIO().Framerate);
+
+      ImGui::Separator();
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      if (ImGui::TreeNode("Transformations")) {
+        auto selectable = [](const char *label, FrameTransformations ft) {
+          bool is_active = prm::transformation == ft;
+          if (ImGui::Selectable(label, is_active,
+                                ImGuiSelectableFlags_SpanAllColumns)) {
+            if (!is_active) {
+              prm::transformation = ft;
+            } else {
+              prm::transformation = FrameTransformations::None;
+            }
+            for (const auto &r : recordings) {
+              r->reset_traces();
+            }
+          }
+        };
+        selectable("Frame Difference", FrameTransformations::FrameDiff);
+        selectable("Contrast Enhancement",
+                   FrameTransformations::ContrastEnhancement);
+        if (prm::transformation == FrameTransformations::ContrastEnhancement) {
+          ImGui::Indent();
+          const int step = 2;
+          if (ImGui::InputScalar(
+                  "Kernel size", ImGuiDataType_U32,
+                  &FrameTransformation::ContrastEnhancement::kernel_size, &step,
+                  nullptr, "%d")) {
+            for (const auto &r : recordings) {
+              r->contrastEnhancement.reset();
+            }
+          }
+          ImGui::Unindent();
+        }
+        ImGui::TreePop();
+      }
       ImGui::End();
     }
 
@@ -193,24 +222,21 @@ void display() {
                      recordings.end());
 
     for (const auto &recording : recordings) {
-      float &min = prm::diff_frames
-                       ? recording->auto_diff_min
-                       : prm::auto_scale ? recording->auto_min : prm::min;
-      float &max = prm::diff_frames
-                       ? recording->auto_diff_max
-                       : prm::auto_scale ? recording->auto_max : prm::max;
-
-      recording->display(min, max, static_cast<float>(prm::bitrange),
-                         prm::diff_frames, prm::speed);
+      recording->display(prm::speed, prm::transformation, prm::bitrange);
 
       ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                           ImVec2(FLT_MAX, FLT_MAX));
       ImGui::Begin(recording->path().filename().c_str(), nullptr,
                    ImGuiWindowFlags_AlwaysAutoResize);
-      auto progress_label = fmt::format(
-          "Frame {}/{}", recording->current_frame() + 1, recording->length());
-      ImGui::ProgressBar(recording->progress(), ImVec2(-1, 0),
-                         progress_label.c_str());
+      int t = recording->current_frame();
+      ImGui::PushStyleColor(ImGuiCol_SliderGrab,
+                            ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::SliderInt("##progress", &t, 0, recording->length() - 1,
+                           "Frame %d")) {
+        recording->set_frame_index(t - static_cast<int>(prm::speed));
+      }
+      ImGui::PopStyleColor(1);
 
       if (!recording->date().empty()) {
         ImGui::Text("Date: %s", recording->date().c_str());
@@ -262,10 +288,10 @@ void display() {
                            recording->histogram.data.size(), 0, nullptr, 0,
                            recording->histogram.max_value(), ImVec2(0, 100));
 
-      ImGui::SliderFloat("min", &min, recording->histogram.min,
-                         recording->histogram.max);
-      ImGui::SliderFloat("max", &max, recording->histogram.min,
-                         recording->histogram.max);
+      ImGui::SliderFloat("min", &recording->get_min(prm::transformation),
+                         recording->histogram.min, recording->histogram.max);
+      ImGui::SliderFloat("max", &recording->get_max(prm::transformation),
+                         recording->histogram.min, recording->histogram.max);
 
       for (auto &[trace, pos, color] : recording->traces) {
         auto label = pos.to_string();
@@ -341,7 +367,10 @@ void display() {
           path /= ctrl.filename.data();
           fmt::print("Exporting ROI to {}\n", path.string());
 
-          Vec2f minmax = norm ? Vec2f(min, max) : Vec2f(0, 0);
+          Vec2f minmax =
+              norm ? Vec2f(recording->get_min(FrameTransformations::None),
+                           recording->get_max(FrameTransformations::None))
+                   : Vec2f(0, 0);
 
           bool success = recording->export_ROI(path, ctrl.start, ctrl.size,
                                                ctrl.frames, minmax);
@@ -506,8 +535,8 @@ int main(int, char **) {
     exit(EXIT_FAILURE);
   }
   glfwMakeContextCurrent(main_window);
-  glfwSwapInterval(1); // wait until the current frame has been drawn before
-                       // drawing the next one
+  // wait until the current frame has been drawn before drawing the next one
+  glfwSwapInterval(1);
 
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();

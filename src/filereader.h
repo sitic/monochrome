@@ -8,12 +8,22 @@
 
 #include "bmp.h"
 
-enum class BitRange {
-  FLOAT = 1,
-  U8 = (1 << 8) - 1,
-  U12 = (1 << 12) - 1,
-  U16 = (1 << 16) - 1
-};
+enum class BitRange : int { FLOAT, U8, U12, U16 };
+const char *BitRangeNames[] = {"float", "uint8", "uint12", "uint16"};
+
+float bitrange_to_float(BitRange br) {
+  switch (br) {
+  case BitRange::FLOAT:
+    return 1;
+  case BitRange::U8:
+    return (1 << 8) - 1;
+  case BitRange::U12:
+    return (1 << 12) - 1;
+  case BitRange::U16:
+    return (1 << 16) - 1;
+  }
+  throw std::logic_error("This line should not be reached");
+}
 
 class BaseFileRecording {
 public:
