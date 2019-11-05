@@ -120,6 +120,8 @@ public:
   Transformation::None no_transformation;
   Transformation::FrameDiff frameDiff;
   Transformation::ContrastEnhancement contrastEnhancement;
+  Transformation::MeanFilter meanFilter;
+  Transformation::MedianFilter medianFilter;
 
   float &get_max(Transformations type) {
     switch (type) {
@@ -165,6 +167,8 @@ public:
     no_transformation.assign(*this);
     frameDiff.assign(*this);
     contrastEnhancement.assign(*this);
+    meanFilter.assign(*this);
+    medianFilter.assign(*this);
   };
 
   ~RecordingWindow() {
@@ -190,14 +194,24 @@ public:
       frameDiff.compute(frame, t_frame);
       arr = &frameDiff.frame;
 
-      histogram.min = get_min(transformation) * 1.5;
-      histogram.max = get_max(transformation) * 1.5;
+      histogram.min = frameDiff.min_init() * 1.5;
+      histogram.max = frameDiff.max_init() * 1.5;
     } else if (transformation == Transformations::ContrastEnhancement) {
       contrastEnhancement.compute(frame, t_frame);
       arr = &contrastEnhancement.frame;
 
       histogram.min = 0;
       histogram.max = 1;
+    }
+
+    if (meanFilter.enabled) {
+      meanFilter.compute(*arr, t_frame);
+      arr = &meanFilter.frame;
+    }
+
+    if (medianFilter.enabled) {
+      medianFilter.compute(*arr, t_frame);
+      arr = &medianFilter.frame;
     }
 
     draw2dArray(*arr, get_min(transformation), get_max(transformation));
@@ -455,3 +469,7 @@ protected:
 // this should be in a cpp file, but does not matter in this case
 float RecordingWindow::scale_fct = 1;
 unsigned Transformation::ContrastEnhancement::kernel_size = 3;
+unsigned Transformation::MeanFilter::kernel_size = 3;
+unsigned Transformation::MedianFilter::kernel_size = 3;
+bool Transformation::MeanFilter::enabled = false;
+bool Transformation::MedianFilter::enabled = false;

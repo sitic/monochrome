@@ -211,6 +211,15 @@ void display() {
         }
         ImGui::TreePop();
       }
+
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      if (ImGui::TreeNode("Filters")) {
+        if (ImGui::Selectable("Mean", Transformation::MeanFilter::enabled)) {
+          Transformation::MeanFilter::enabled =
+              !Transformation::MeanFilter::enabled;
+        }
+        ImGui::TreePop();
+      }
       ImGui::End();
     }
 

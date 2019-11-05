@@ -13,6 +13,14 @@ void contrast_enhancement(const Eigen::MatrixXf &in, Eigen::MatrixXf &out);
 void contrast_enhancement(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
                           const unsigned kernel_size);
 
+template <std::size_t kernel_size>
+void mean_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out);
+
+void mean_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
+                 const unsigned kernel_size);
+void median_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
+                   const unsigned kernel_size);
+
 template <typename Derived, typename Derived2>
 Derived conv2d(const Eigen::MatrixBase<Derived> &I,
                const Eigen::MatrixBase<Derived2> &kernel);
@@ -47,6 +55,10 @@ private:
   Eigen::MatrixXf prev_frame;
   long t_prev_frame = 0;
 
+  // initial values from assign() for min and max
+  float m_min_init = 0;
+  float m_max_init = 0;
+
 public:
   void assign(Recording &rec) final {
     rec.load_frame(rec.length() / 2);
@@ -57,6 +69,9 @@ public:
     compute(rec.frame, rec.length() / 2 + 2);
     max = std::max(std::abs(frame.minCoeff()), std::abs(frame.maxCoeff()));
     min = -max;
+
+    m_min_init = min;
+    m_max_init = max;
   }
 
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
@@ -66,6 +81,9 @@ public:
       t_prev_frame = new_frame_counter;
     }
   }
+
+  float min_init() { return m_min_init; };
+  float max_init() { return m_max_init; };
 };
 
 class ContrastEnhancement : public Base {
@@ -83,6 +101,41 @@ public:
     } else {
       functions::contrast_enhancement(new_frame, frame, kernel_size);
     }
+  }
+
+  void reset() { frame.setZero(); }
+};
+
+class MeanFilter : public Base {
+public:
+  static bool enabled;
+  static unsigned kernel_size;
+
+  void assign(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
+
+  void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
+    // Used fixed size versions for
+    if (kernel_size == 3) {
+      functions::mean_filter<3>(new_frame, frame);
+    } else if (kernel_size == 5) {
+      functions::mean_filter<5>(new_frame, frame);
+    } else {
+      functions::mean_filter(new_frame, frame, kernel_size);
+    }
+  }
+
+  void reset() { frame.setZero(); }
+};
+
+class MedianFilter : public Base {
+public:
+  static bool enabled;
+  static unsigned kernel_size;
+
+  void assign(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
+
+  void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
+    functions::median_filter(new_frame, frame, kernel_size);
   }
 
   void reset() { frame.setZero(); }
@@ -146,6 +199,42 @@ Derived conv2d(const Eigen::MatrixBase<Derived> &I,
   }
 
   return O / normalization;
+}
+
+template <std::size_t kernel_size>
+void mean_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out) {
+  for (long row = kernel_size; row < in.rows() - kernel_size; row++) {
+    for (long col = kernel_size; col < in.cols() - kernel_size; col++) {
+      const auto block = in.block<kernel_size, kernel_size>(row, col);
+      out(row, col) = block.mean();
+    }
+  }
+}
+
+void mean_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
+                 const unsigned kernel_size) {
+  for (long row = kernel_size; row < in.rows() - kernel_size; row++) {
+    for (long col = kernel_size; col < in.cols() - kernel_size; col++) {
+      const auto block = in.block(row, col, kernel_size, kernel_size);
+      out(row, col) = block.mean();
+    }
+  }
+}
+
+void median_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
+                   const unsigned kernel_size) {
+  std::vector<float> copy(kernel_size * kernel_size);
+  for (long row = kernel_size; row < in.rows() - kernel_size; row++) {
+    for (long col = kernel_size; col < in.cols() - kernel_size; col++) {
+      const auto block = in.block(row, col, kernel_size, kernel_size);
+      auto v = block.reshaped();
+      std::copy(v.cbegin(), v.cend(), copy.begin());
+      auto n = kernel_size * kernel_size / 2;
+      std::nth_element(copy.begin(), copy.begin() + n, copy.end());
+
+      out(row, col) = copy[n];
+    }
+  }
 }
 } // namespace functions
 }
