@@ -1,13 +1,22 @@
 #pragma once
 
-#include "contrast_enhancement.h"
 #include "recording.h"
 
-enum class FrameTransformations : int { None, FrameDiff, ContrastEnhancement };
-const char *FrameTransformationsNames[] = {"None", "FrameDiff",
-                                           "ContrastEnhancement"};
+enum class Transformations : int { None, FrameDiff, ContrastEnhancement };
 
-namespace FrameTransformation {
+namespace Transformation {
+
+namespace functions {
+template <std::size_t kernel_size>
+void contrast_enhancement(const Eigen::MatrixXf &in, Eigen::MatrixXf &out);
+
+void contrast_enhancement(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
+                          const unsigned kernel_size);
+
+template <typename Derived, typename Derived2>
+Derived conv2d(const Eigen::MatrixBase<Derived> &I,
+               const Eigen::MatrixBase<Derived2> &kernel);
+} // namespace functions
 
 class Base {
 public:
@@ -68,14 +77,75 @@ public:
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
     // Used fixed size versions for
     if (kernel_size == 3) {
-      contrast_enhancement<3>(new_frame, frame);
+      functions::contrast_enhancement<3>(new_frame, frame);
     } else if (kernel_size == 5) {
-      contrast_enhancement<5>(new_frame, frame);
+      functions::contrast_enhancement<5>(new_frame, frame);
     } else {
-      contrast_enhancement(new_frame, frame, kernel_size);
+      functions::contrast_enhancement(new_frame, frame, kernel_size);
     }
   }
 
   void reset() { frame.setZero(); }
 };
-};
+
+namespace functions {
+template <std::size_t kernel_size>
+void contrast_enhancement(const Eigen::MatrixXf &in, Eigen::MatrixXf &out) {
+  for (long row = kernel_size; row < in.rows() - kernel_size; row++) {
+    for (long col = kernel_size; col < in.cols() - kernel_size; col++) {
+      const auto block = in.block<kernel_size, kernel_size>(row, col);
+      const auto max = block.maxCoeff();
+      const auto min = block.minCoeff();
+
+      out(row, col) = (in(row, col) - min) / (max - min);
+    }
+  }
+}
+
+void contrast_enhancement(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
+                          const unsigned kernel_size) {
+  for (long row = kernel_size; row < in.rows() - kernel_size; row++) {
+    for (long col = kernel_size; col < in.cols() - kernel_size; col++) {
+      const auto block = in.block(row, col, kernel_size, kernel_size);
+      const auto max = block.maxCoeff();
+      const auto min = block.minCoeff();
+
+      out(row, col) = (in(row, col) - min) / (max - min);
+    }
+  }
+}
+
+template <typename Derived, typename Derived2>
+Derived conv2d(const Eigen::MatrixBase<Derived> &I,
+               const Eigen::MatrixBase<Derived2> &kernel) {
+  Derived O = Derived::Zero(I.rows(), I.cols());
+
+  typedef typename Derived::Scalar Scalar;
+  typedef typename Derived2::Scalar Scalar2;
+
+  int col = 0, row = 0;
+  int KSizeX = kernel.rows();
+  int KSizeY = kernel.cols();
+
+  int limitRow = I.rows() - KSizeX;
+  int limitCol = I.cols() - KSizeY;
+
+  Derived2 block;
+  Scalar normalization = kernel.sum();
+  if (normalization < 1E-6) {
+    normalization = 1;
+  }
+  for (row = KSizeX; row < limitRow; row++) {
+
+    for (col = KSizeY; col < limitCol; col++) {
+      Scalar b = (static_cast<Derived2>(I.block(row, col, KSizeX, KSizeY))
+                      .cwiseProduct(kernel))
+                     .sum();
+      O.coeffRef(row, col) = b;
+    }
+  }
+
+  return O / normalization;
+}
+} // namespace functions
+}

@@ -117,33 +117,33 @@ public:
   GLFWwindow *window = nullptr;
   static float scale_fct;
 
-  FrameTransformation::None no_transformation;
-  FrameTransformation::FrameDiff frameDiff;
-  FrameTransformation::ContrastEnhancement contrastEnhancement;
+  Transformation::None no_transformation;
+  Transformation::FrameDiff frameDiff;
+  Transformation::ContrastEnhancement contrastEnhancement;
 
-  float &get_max(FrameTransformations type) {
+  float &get_max(Transformations type) {
     switch (type) {
-    case FrameTransformations::None:
+    case Transformations::None:
       return no_transformation.max;
-    case FrameTransformations::FrameDiff:
+    case Transformations::FrameDiff:
       return frameDiff.max;
-    case FrameTransformations::ContrastEnhancement:
+    case Transformations::ContrastEnhancement:
       return contrastEnhancement.max;
     default:
-      throw std::runtime_error("WTF");
+      throw std::logic_error("This line should not be reachable");
     }
   }
 
-  float &get_min(FrameTransformations type) {
+  float &get_min(Transformations type) {
     switch (type) {
-    case FrameTransformations::None:
+    case Transformations::None:
       return no_transformation.min;
-    case FrameTransformations::FrameDiff:
+    case Transformations::FrameDiff:
       return frameDiff.min;
-    case FrameTransformations::ContrastEnhancement:
+    case Transformations::ContrastEnhancement:
       return contrastEnhancement.min;
     default:
-      throw std::runtime_error("WTF");
+      throw std::logic_error("This line should not be reachable");
     }
   }
 
@@ -173,8 +173,7 @@ public:
     }
   }
 
-  void display(float speed, FrameTransformations transformation,
-               BitRange bitrange) {
+  void display(float speed, Transformations transformation, BitRange bitrange) {
     if (!window)
       throw std::runtime_error(
           "No window set, but RecordingWindow::display() called");
@@ -184,17 +183,16 @@ public:
     load_next_frame(speed);
 
     Eigen::MatrixXf *arr = &frame;
-    float bitrange_f = bitrange_to_float(bitrange);
-    if (transformation == FrameTransformations::None) {
+    if (transformation == Transformations::None) {
       histogram.min = 0;
-      histogram.max = bitrange_f;
-    } else if (transformation == FrameTransformations::FrameDiff) {
+      histogram.max = bitrange_to_float(bitrange);
+    } else if (transformation == Transformations::FrameDiff) {
       frameDiff.compute(frame, t_frame);
       arr = &frameDiff.frame;
 
-      histogram.min = -bitrange_f / 10.f;
-      histogram.max = bitrange_f / 10.f;
-    } else if (transformation == FrameTransformations::ContrastEnhancement) {
+      histogram.min = get_min(transformation) * 1.5;
+      histogram.max = get_max(transformation) * 1.5;
+    } else if (transformation == Transformations::ContrastEnhancement) {
       contrastEnhancement.compute(frame, t_frame);
       arr = &contrastEnhancement.frame;
 
@@ -456,4 +454,4 @@ protected:
 
 // this should be in a cpp file, but does not matter in this case
 float RecordingWindow::scale_fct = 1;
-unsigned FrameTransformation::ContrastEnhancement::kernel_size = 3;
+unsigned Transformation::ContrastEnhancement::kernel_size = 3;

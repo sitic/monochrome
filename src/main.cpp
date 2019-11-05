@@ -24,7 +24,7 @@ namespace prm {
 static int main_window_width = 600;
 static int main_window_height = 0;
 
-static FrameTransformations transformation = FrameTransformations::None;
+static Transformations transformation = Transformations::None;
 static BitRange bitrange = BitRange::U12;
 
 static float speed = 1;
@@ -179,29 +179,29 @@ void display() {
       ImGui::Separator();
       ImGui::SetNextItemOpen(true, ImGuiCond_Once);
       if (ImGui::TreeNode("Transformations")) {
-        auto selectable = [](const char *label, FrameTransformations ft) {
+        auto selectable = [](const char *label, Transformations ft) {
           bool is_active = prm::transformation == ft;
           if (ImGui::Selectable(label, is_active,
                                 ImGuiSelectableFlags_SpanAllColumns)) {
             if (!is_active) {
               prm::transformation = ft;
             } else {
-              prm::transformation = FrameTransformations::None;
+              prm::transformation = Transformations::None;
             }
             for (const auto &r : recordings) {
               r->reset_traces();
             }
           }
         };
-        selectable("Frame Difference", FrameTransformations::FrameDiff);
+        selectable("Frame Difference", Transformations::FrameDiff);
         selectable("Contrast Enhancement",
-                   FrameTransformations::ContrastEnhancement);
-        if (prm::transformation == FrameTransformations::ContrastEnhancement) {
+                   Transformations::ContrastEnhancement);
+        if (prm::transformation == Transformations::ContrastEnhancement) {
           ImGui::Indent();
           const int step = 2;
           if (ImGui::InputScalar(
                   "Kernel size", ImGuiDataType_U32,
-                  &FrameTransformation::ContrastEnhancement::kernel_size, &step,
+                  &Transformation::ContrastEnhancement::kernel_size, &step,
                   nullptr, "%d")) {
             for (const auto &r : recordings) {
               r->contrastEnhancement.reset();
@@ -367,10 +367,9 @@ void display() {
           path /= ctrl.filename.data();
           fmt::print("Exporting ROI to {}\n", path.string());
 
-          Vec2f minmax =
-              norm ? Vec2f(recording->get_min(FrameTransformations::None),
-                           recording->get_max(FrameTransformations::None))
-                   : Vec2f(0, 0);
+          Vec2f minmax = norm ? Vec2f(recording->get_min(Transformations::None),
+                                      recording->get_max(Transformations::None))
+                              : Vec2f(0, 0);
 
           bool success = recording->export_ROI(path, ctrl.start, ctrl.size,
                                                ctrl.frames, minmax);
