@@ -2,7 +2,12 @@
 
 #include "recording.h"
 
+extern "C" {
+#include "ipol/gaussian_conv_deriche.h"
+}
+
 enum class Transformations : int { None, FrameDiff, ContrastEnhancement };
+enum class Filters { None, Gauss, Mean, Median };
 
 namespace Transformation {
 
@@ -12,6 +17,12 @@ void contrast_enhancement(const Eigen::MatrixXf &in, Eigen::MatrixXf &out);
 
 void contrast_enhancement(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
                           const unsigned kernel_size);
+
+void gauss_conv(const Eigen::MatrixXf &in, Eigen::MatrixXf &buffer,
+                Eigen::MatrixXf &out, const deriche_coeffs &c) {
+  deriche_gaussian_conv_image(c, out.data(), buffer.data(), in.data(),
+                              in.rows(), in.cols(), 1);
+}
 
 template <std::size_t kernel_size>
 void mean_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out);
@@ -106,9 +117,34 @@ public:
   void reset() { frame.setZero(); }
 };
 
+class GaussFilter : public Base {
+private:
+  static deriche_coeffs c;
+  static float sigma;
+  Eigen::MatrixXf buffer;
+
+public:
+  void assign(Recording &rec) final {
+    set_sigma(sigma);
+    frame.setZero(rec.Nx(), rec.Ny());
+    buffer.setZero(rec.Nx(), rec.Ny());
+  }
+
+  static float get_sigma() { return sigma; }
+  static void set_sigma(float s) {
+    sigma = s;
+    const int K = 3;
+    const float tol = 1e-3;
+    deriche_precomp(&c, s, K, tol);
+  }
+
+  void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
+    functions::gauss_conv(new_frame, buffer, frame, c);
+  }
+};
+
 class MeanFilter : public Base {
 public:
-  static bool enabled;
   static unsigned kernel_size;
 
   void assign(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
@@ -129,13 +165,14 @@ public:
 
 class MedianFilter : public Base {
 public:
-  static bool enabled;
   static unsigned kernel_size;
 
   void assign(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
 
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
-    functions::median_filter(new_frame, frame, kernel_size);
+    if (kernel_size > 0) {
+      functions::median_filter(new_frame, frame, kernel_size);
+    }
   }
 
   void reset() { frame.setZero(); }
@@ -223,6 +260,8 @@ void mean_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
 
 void median_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
                    const unsigned kernel_size) {
+  assert(kernel_size > 0);
+
   std::vector<float> copy(kernel_size * kernel_size);
   for (long row = kernel_size; row < in.rows() - kernel_size; row++) {
     for (long col = kernel_size; col < in.cols() - kernel_size; col++) {

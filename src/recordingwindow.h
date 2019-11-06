@@ -120,8 +120,25 @@ public:
   Transformation::None no_transformation;
   Transformation::FrameDiff frameDiff;
   Transformation::ContrastEnhancement contrastEnhancement;
-  Transformation::MeanFilter meanFilter;
-  Transformation::MedianFilter medianFilter;
+
+  struct AllFilters {
+    Transformation::GaussFilter gaussFilter;
+    Transformation::MeanFilter meanFilter;
+    Transformation::MedianFilter medianFilter;
+
+    void assign(Recording &rec) {
+      gaussFilter.assign(rec);
+      meanFilter.assign(rec);
+      medianFilter.assign(rec);
+    }
+
+    void reset() {
+      meanFilter.reset();
+      medianFilter.reset();
+    }
+  };
+  AllFilters prefilters;
+  AllFilters postfilters;
 
   float &get_max(Transformations type) {
     switch (type) {
@@ -167,8 +184,8 @@ public:
     no_transformation.assign(*this);
     frameDiff.assign(*this);
     contrastEnhancement.assign(*this);
-    meanFilter.assign(*this);
-    medianFilter.assign(*this);
+    prefilters.assign(*this);
+    postfilters.assign(*this);
   };
 
   ~RecordingWindow() {
@@ -177,7 +194,8 @@ public:
     }
   }
 
-  void display(float speed, Transformations transformation, BitRange bitrange) {
+  void display(float speed, Filters prefilter, Transformations transformation,
+               Filters postfilter, BitRange bitrange) {
     if (!window)
       throw std::runtime_error(
           "No window set, but RecordingWindow::display() called");
@@ -187,31 +205,60 @@ public:
     load_next_frame(speed);
 
     Eigen::MatrixXf *arr = &frame;
-    if (transformation == Transformations::None) {
+
+    switch (prefilter) {
+    case Filters::Gauss:
+      prefilters.gaussFilter.compute(*arr, t_frame);
+      arr = &prefilters.gaussFilter.frame;
+      break;
+    case Filters::Mean:
+      prefilters.meanFilter.compute(*arr, t_frame);
+      arr = &prefilters.meanFilter.frame;
+      break;
+    case Filters::Median:
+      prefilters.medianFilter.compute(*arr, t_frame);
+      arr = &prefilters.medianFilter.frame;
+      break;
+    default:
+      break;
+    }
+
+    switch (transformation) {
+    case Transformations::None:
       histogram.min = 0;
       histogram.max = bitrange_to_float(bitrange);
-    } else if (transformation == Transformations::FrameDiff) {
-      frameDiff.compute(frame, t_frame);
+      break;
+    case Transformations::FrameDiff:
+      frameDiff.compute(*arr, t_frame);
       arr = &frameDiff.frame;
 
       histogram.min = frameDiff.min_init() * 1.5;
       histogram.max = frameDiff.max_init() * 1.5;
-    } else if (transformation == Transformations::ContrastEnhancement) {
-      contrastEnhancement.compute(frame, t_frame);
+      break;
+    case Transformations::ContrastEnhancement:
+      contrastEnhancement.compute(*arr, t_frame);
       arr = &contrastEnhancement.frame;
 
       histogram.min = 0;
       histogram.max = 1;
+      break;
     }
 
-    if (meanFilter.enabled) {
-      meanFilter.compute(*arr, t_frame);
-      arr = &meanFilter.frame;
-    }
-
-    if (medianFilter.enabled) {
-      medianFilter.compute(*arr, t_frame);
-      arr = &medianFilter.frame;
+    switch (postfilter) {
+    case Filters::Gauss:
+      postfilters.gaussFilter.compute(*arr, t_frame);
+      arr = &postfilters.gaussFilter.frame;
+      break;
+    case Filters::Mean:
+      postfilters.meanFilter.compute(*arr, t_frame);
+      arr = &postfilters.meanFilter.frame;
+      break;
+    case Filters::Median:
+      postfilters.medianFilter.compute(*arr, t_frame);
+      arr = &postfilters.medianFilter.frame;
+      break;
+    default:
+      break;
     }
 
     draw2dArray(*arr, get_min(transformation), get_max(transformation));
@@ -468,8 +515,8 @@ protected:
 
 // this should be in a cpp file, but does not matter in this case
 float RecordingWindow::scale_fct = 1;
+float Transformation::GaussFilter::sigma = 1;
+deriche_coeffs Transformation::GaussFilter::c;
 unsigned Transformation::ContrastEnhancement::kernel_size = 3;
 unsigned Transformation::MeanFilter::kernel_size = 3;
 unsigned Transformation::MedianFilter::kernel_size = 3;
-bool Transformation::MeanFilter::enabled = false;
-bool Transformation::MedianFilter::enabled = false;

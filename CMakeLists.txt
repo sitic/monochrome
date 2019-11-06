@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(quickViewer CXX)
+project(quickViewer C CXX)
 
 # default to Release build
 if(NOT CMAKE_BUILD_TYPE)
@@ -45,7 +45,7 @@ if(APPLE)
 endif()
 
 add_executable(quickViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h)
-target_link_libraries(quickViewer imgui_glfw_gl2 fmt lodepng Eigen)
+target_link_libraries(quickViewer imgui_glfw_gl2 fmt lodepng Eigen ipol)
 if(CMAKE_COMPILER_IS_GNUCXX)
     # Hotfix so that is shows up in the file explorer as executable, see https://stackoverflow.com/questions/41398444/
     target_link_options(quickViewer PRIVATE "-no-pie")

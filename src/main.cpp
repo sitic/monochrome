@@ -24,7 +24,9 @@ namespace prm {
 static int main_window_width = 600;
 static int main_window_height = 0;
 
+static Filters prefilter = Filters::None;
 static Transformations transformation = Transformations::None;
+static Filters postfilter = Filters::None;
 static BitRange bitrange = BitRange::U12;
 
 static float speed = 1;
@@ -177,49 +179,101 @@ void display() {
       ImGui::Text("Application average %.1f FPS", ImGui::GetIO().Framerate);
 
       ImGui::Separator();
-      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-      if (ImGui::TreeNode("Transformations")) {
-        auto selectable = [](const char *label, Transformations ft) {
-          bool is_active = prm::transformation == ft;
-          if (ImGui::Selectable(label, is_active,
-                                ImGuiSelectableFlags_SpanAllColumns)) {
-            if (!is_active) {
-              prm::transformation = ft;
-            } else {
-              prm::transformation = Transformations::None;
-            }
+      auto selectable_factory = [](auto &p, auto default_val) {
+        return [&p, default_val](const char *label, auto e) {
+          bool is_active = p == e;
+          if (ImGui::Selectable(label, is_active)) {
+
+            p = is_active ? default_val : e;
             for (const auto &r : recordings) {
               r->reset_traces();
             }
           }
+
+          return is_active;
         };
-        selectable("Frame Difference", Transformations::FrameDiff);
-        selectable("Contrast Enhancement",
-                   Transformations::ContrastEnhancement);
-        if (prm::transformation == Transformations::ContrastEnhancement) {
-          ImGui::Indent();
-          const int step = 2;
-          if (ImGui::InputScalar(
-                  "Kernel size", ImGuiDataType_U32,
-                  &Transformation::ContrastEnhancement::kernel_size, &step,
-                  nullptr, "%d")) {
-            for (const auto &r : recordings) {
-              r->contrastEnhancement.reset();
-            }
+      };
+
+      auto kernel_size_select = [](unsigned int &val, auto reset_fn) {
+        ImGui::Indent(10);
+        const int step = 2;
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32, &val, &step,
+                               nullptr, "%d")) {
+          for (const auto &r : recordings) {
+            reset_fn(r.get());
           }
-          ImGui::Unindent();
+        }
+        ImGui::Unindent(10);
+      };
+
+      ImGui::Columns(3);
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      if (ImGui::TreeNode("Pre Filters")) {
+        auto selectable = selectable_factory(prm::prefilter, Filters::None);
+        if (selectable("Gauss", Filters::Gauss)) {
+          ImGui::Indent(10);
+          ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+          float sigma = Transformation::GaussFilter::get_sigma();
+          if (ImGui::InputFloat("sigma", &sigma)) {
+            Transformation::GaussFilter::set_sigma(sigma);
+          }
+          ImGui::Unindent(10);
+        }
+        if (selectable("Mean", Filters::Mean)) {
+          kernel_size_select(Transformation::MeanFilter::kernel_size,
+                             [](RecordingWindow *r) { r->prefilters.reset(); });
+        }
+        if (selectable("Median", Filters::Median)) {
+          kernel_size_select(Transformation::MedianFilter::kernel_size,
+                             [](RecordingWindow *r) { r->prefilters.reset(); });
         }
         ImGui::TreePop();
       }
 
+      ImGui::NextColumn();
+
       ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-      if (ImGui::TreeNode("Filters")) {
-        if (ImGui::Selectable("Mean", Transformation::MeanFilter::enabled)) {
-          Transformation::MeanFilter::enabled =
-              !Transformation::MeanFilter::enabled;
+      if (ImGui::TreeNode("Transformations")) {
+        auto selectable =
+            selectable_factory(prm::transformation, Transformations::None);
+        selectable("Frame Difference", Transformations::FrameDiff);
+        if (selectable("Contrast Enhancement",
+                       Transformations::ContrastEnhancement)) {
+          kernel_size_select(
+              Transformation::ContrastEnhancement::kernel_size,
+              [](RecordingWindow *r) { r->contrastEnhancement.reset(); });
         }
         ImGui::TreePop();
       }
+
+      ImGui::NextColumn();
+
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      if (ImGui::TreeNode("Post Filters")) {
+        auto selectable = selectable_factory(prm::postfilter, Filters::None);
+        if (selectable("Gauss", Filters::Gauss)) {
+          ImGui::Indent(10);
+          ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+          float sigma = Transformation::GaussFilter::get_sigma();
+          if (ImGui::InputFloat("sigma", &sigma)) {
+            Transformation::GaussFilter::set_sigma(sigma);
+          }
+          ImGui::Unindent(10);
+        }
+        if (selectable("Mean", Filters::Mean)) {
+          kernel_size_select(
+              Transformation::MeanFilter::kernel_size,
+              [](RecordingWindow *r) { r->postfilters.reset(); });
+        }
+        if (selectable("Median", Filters::Median)) {
+          kernel_size_select(
+              Transformation::MedianFilter::kernel_size,
+              [](RecordingWindow *r) { r->postfilters.reset(); });
+        }
+        ImGui::TreePop();
+      }
+      ImGui::Columns(1);
       ImGui::End();
     }
 
@@ -231,7 +285,8 @@ void display() {
                      recordings.end());
 
     for (const auto &recording : recordings) {
-      recording->display(prm::speed, prm::transformation, prm::bitrange);
+      recording->display(prm::speed, prm::prefilter, prm::transformation,
+                         prm::postfilter, prm::bitrange);
 
       ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                           ImVec2(FLT_MAX, FLT_MAX));
@@ -544,7 +599,7 @@ int main(int, char **) {
   }
   glfwMakeContextCurrent(main_window);
   // wait until the current frame has been drawn before drawing the next one
-  glfwSwapInterval(1);
+  glfwSwapInterval(2);
 
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
