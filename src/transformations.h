@@ -44,14 +44,14 @@ public:
   float max = 1;
 
   Base() = default;
-  virtual void assign(Recording &rec) = 0;
+  virtual void allocate(Recording &rec) = 0;
   virtual void compute(const Eigen::MatrixXf &new_frame,
                        long new_frame_counter) = 0;
 };
 
 class None : public Base {
 public:
-  void assign(Recording &rec) final {
+  void allocate(Recording &rec) final {
     rec.load_frame(rec.length() / 2);
     max = rec.frame.maxCoeff();
     min = rec.frame.minCoeff();
@@ -66,12 +66,12 @@ private:
   Eigen::MatrixXf prev_frame;
   long t_prev_frame = 0;
 
-  // initial values from assign() for min and max
+  // initial values from allocate() for min and max
   float m_min_init = 0;
   float m_max_init = 0;
 
 public:
-  void assign(Recording &rec) final {
+  void allocate(Recording &rec) final {
     rec.load_frame(rec.length() / 2);
     prev_frame = rec.frame;
     t_prev_frame = rec.length() / 2;
@@ -101,7 +101,7 @@ class ContrastEnhancement : public Base {
 public:
   static unsigned kernel_size;
 
-  void assign(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
+  void allocate(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
 
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
     // Used fixed size versions for
@@ -124,7 +124,7 @@ private:
   Eigen::MatrixXf buffer;
 
 public:
-  void assign(Recording &rec) final {
+  void allocate(Recording &rec) final {
     set_sigma(sigma);
     frame.setZero(rec.Nx(), rec.Ny());
     buffer.setZero(rec.Nx(), rec.Ny());
@@ -147,7 +147,7 @@ class MeanFilter : public Base {
 public:
   static unsigned kernel_size;
 
-  void assign(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
+  void allocate(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
 
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
     // Used fixed size versions for
@@ -167,7 +167,7 @@ class MedianFilter : public Base {
 public:
   static unsigned kernel_size;
 
-  void assign(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
+  void allocate(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
 
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
     if (kernel_size > 0) {

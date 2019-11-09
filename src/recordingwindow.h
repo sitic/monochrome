@@ -126,10 +126,10 @@ public:
     Transformation::MeanFilter meanFilter;
     Transformation::MedianFilter medianFilter;
 
-    void assign(Recording &rec) {
-      gaussFilter.assign(rec);
-      meanFilter.assign(rec);
-      medianFilter.assign(rec);
+    void allocate(Recording &rec) {
+      gaussFilter.allocate(rec);
+      meanFilter.allocate(rec);
+      medianFilter.allocate(rec);
     }
 
     void reset() {
@@ -139,6 +139,14 @@ public:
   };
   AllFilters prefilters;
   AllFilters postfilters;
+
+  void allocate_buffers() {
+    no_transformation.allocate(*this);
+    frameDiff.allocate(*this);
+    contrastEnhancement.allocate(*this);
+    prefilters.allocate(*this);
+    postfilters.allocate(*this);
+  }
 
   float &get_max(Transformations type) {
     switch (type) {
@@ -175,17 +183,13 @@ public:
       return;
     }
 
+    allocate_buffers();
+
     if (Trace::width() == 0) {
       // if unset, set trace edge length to something reasonable
       auto min = std::min(Nx(), Ny());
       Trace::width(min / 64);
     }
-
-    no_transformation.assign(*this);
-    frameDiff.assign(*this);
-    contrastEnhancement.assign(*this);
-    prefilters.assign(*this);
-    postfilters.assign(*this);
   };
 
   ~RecordingWindow() {
@@ -380,6 +384,29 @@ public:
     glfwMakeContextCurrent(prev_window);
   }
 
+  void fliplr() {
+    auto r = rotations.get_rotation();
+    if (r == 0 || r == 180) {
+      rotations.flipud = !rotations.flipud;
+    } else {
+      rotations.fliplr = !rotations.fliplr;
+    }
+  }
+  void flipud() {
+    auto r = rotations.get_rotation();
+    if (r == 0 || r == 180) {
+      rotations.fliplr = !rotations.fliplr;
+    } else {
+      rotations.flipud = !rotations.flipud;
+    }
+  }
+  void add_rotation(short d_rotation) {
+    rotations.add_rotation(d_rotation);
+    load_frame(t_frame);
+    allocate_buffers();
+    resize_window();
+  }
+
   void resize_window() {
     int width = std::ceil(RecordingWindow::scale_fct * Nx());
     int height = std::ceil(RecordingWindow::scale_fct * Ny());
@@ -512,11 +539,3 @@ protected:
         [_window](const auto &r) { return r->window == _window; });
   }
 };
-
-// this should be in a cpp file, but does not matter in this case
-float RecordingWindow::scale_fct = 1;
-float Transformation::GaussFilter::sigma = 1;
-deriche_coeffs Transformation::GaussFilter::c;
-unsigned Transformation::ContrastEnhancement::kernel_size = 3;
-unsigned Transformation::MeanFilter::kernel_size = 3;
-unsigned Transformation::MedianFilter::kernel_size = 3;

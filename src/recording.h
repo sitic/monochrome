@@ -16,7 +16,80 @@ protected:
 
   long t_frame = 0;
 
+  static struct RotationCtrl {
+  private:
+    short _rotation = 0;
+
+  public:
+    bool fliplr = false;
+    bool flipud = false;
+
+    short get_rotation() { return _rotation; }
+
+    void set_rotation(short rotation) {
+      const std::array<short, 4> valid_rotations = {{0, 90, 180, 270}};
+      if (std::none_of(valid_rotations.begin(), valid_rotations.end(),
+                       [rotation](auto r) { return r == rotation; })) {
+        throw std::logic_error("set_rotation() has to be called with either "
+                               "0, 90, 180,  or 270 as parameter");
+      }
+
+      _rotation = rotation;
+    }
+
+    void add_rotation(short delta_rotation) {
+      if (std::abs(delta_rotation) != 90) {
+        throw std::logic_error("add_rotation() has to be called with either "
+                               "+90 or -90 as parameter");
+      }
+
+      if (_rotation == 0 && delta_rotation < 0) {
+        _rotation = 270;
+      } else if (_rotation == 270 && delta_rotation > 0) {
+        _rotation = 0;
+      } else {
+        _rotation += delta_rotation;
+      }
+    }
+
+  } rotations;
+
+  void apply_rotation() {
+    if (rotations.fliplr && rotations.flipud) {
+      frame = frame.rowwise().reverse().colwise().reverse().eval();
+    } else if (rotations.fliplr) {
+      frame.rowwise().reverseInPlace();
+    } else if (rotations.flipud) {
+      frame.colwise().reverseInPlace();
+    }
+
+    switch (rotations.get_rotation()) {
+    case 0:
+      // do nothing
+      break;
+    case 90:
+      frame = frame.transpose().colwise().reverse().eval();
+      break;
+    case 180:
+      frame = frame.transpose()
+                  .colwise()
+                  .reverse()
+                  .transpose()
+                  .colwise()
+                  .reverse()
+                  .eval();
+      break;
+    case 270:
+      frame = frame.transpose().rowwise().reverse().eval();
+      break;
+    default:
+      throw std::logic_error(
+          "Invalid rotation value! (Should be 0, 90, 180, or 270");
+    }
+  }
+
 public:
+
   Eigen::MatrixXf frame;
 
   Recording(const filesystem::path &path) : _path(path) {
@@ -34,11 +107,12 @@ public:
     }
 
     frame.setZero(file->Nx(), file->Ny());
+    apply_rotation();
   }
 
-  bool good() const { return file->good(); }
-  int Nx() const { return file->Nx(); }
-  int Ny() const { return file->Ny(); }
+  [[nodiscard]] bool good() const { return file->good(); }
+  int Nx() const { return frame.rows(); }
+  int Ny() const { return frame.cols(); }
   int length() const { return file->length(); }
   filesystem::path path() const { return _path; }
   std::string date() const { return file->date(); };
@@ -51,6 +125,7 @@ public:
   void load_frame(long t) {
     frame = file->read_frame(t);
     t_frame = t;
+    apply_rotation();
   }
 
   void load_next_frame(float speed = 1) {

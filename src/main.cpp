@@ -9,6 +9,7 @@
 #include <fmt/format.h>
 
 #include "fonts/IconsFontAwesome5.h"
+#include "fonts/IconsMaterialDesignIcons.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
@@ -31,6 +32,14 @@ static BitRange bitrange = BitRange::U12;
 
 static float speed = 1;
 } // namespace prm
+
+float RecordingWindow::scale_fct = 1;
+float Transformation::GaussFilter::sigma = 1;
+deriche_coeffs Transformation::GaussFilter::c;
+unsigned Transformation::ContrastEnhancement::kernel_size = 3;
+unsigned Transformation::MeanFilter::kernel_size = 3;
+unsigned Transformation::MedianFilter::kernel_size = 3;
+Recording::RotationCtrl Recording::rotations = {};
 
 void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
@@ -103,75 +112,114 @@ void display() {
 
       {
         ImGui::Columns(2);
-        if (ImGui::Button(ICON_FA_REDO_ALT)) {
-          for (const auto &r : recordings) {
-            r->restart();
+        {
+          if (ImGui::Button(ICON_FA_REDO_ALT)) {
+            for (const auto &r : recordings) {
+              r->restart();
+            }
           }
-        }
-        ImGui::SameLine();
-        if (prm::speed == 0) {
-          if (ImGui::Button(ICON_FA_PLAY)) {
-            prm::speed = 1;
-          }
-        } else {
-          if (ImGui::Button(ICON_FA_PAUSE)) {
-            prm::speed = 0;
-          }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_BACKWARD)) {
-          prm::speed /= 2;
-        }
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
-        ImGui::DragFloat("##speed", &prm::speed, 0.05, 0, 20,
-                         "playback speed = %.1f");
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_FORWARD)) {
-          prm::speed *= 2;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_FAST_FORWARD)) {
-          if (prm::speed == 1) {
-            prm::speed += 9;
+          ImGui::SameLine();
+          if (prm::speed == 0) {
+            if (ImGui::Button(ICON_FA_PLAY)) {
+              prm::speed = 1;
+            }
           } else {
-            prm::speed += 10;
+            if (ImGui::Button(ICON_FA_PAUSE)) {
+              prm::speed = 0;
+            }
+          }
+          ImGui::SameLine();
+          if (ImGui::Button(ICON_FA_BACKWARD)) {
+            prm::speed /= 2;
+          }
+          ImGui::SameLine();
+          ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
+          ImGui::DragFloat("##speed", &prm::speed, 0.05, 0, 20,
+                           "playback speed = %.1f");
+          ImGui::SameLine();
+          if (ImGui::Button(ICON_FA_FORWARD)) {
+            prm::speed *= 2;
+          }
+          ImGui::SameLine();
+          if (ImGui::Button(ICON_FA_FAST_FORWARD)) {
+            if (prm::speed == 1) {
+              prm::speed += 9;
+            } else {
+              prm::speed += 10;
+            }
           }
         }
 
         ImGui::NextColumn();
-        bool resize_windows = false;
-        if (ImGui::Button(ICON_FA_SEARCH_MINUS)) {
-          RecordingWindow::scale_fct /= 2;
-          resize_windows = true;
-        }
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
-        if (ImGui::DragFloat("##scaling", &RecordingWindow::scale_fct, 0.05,
-                             0.5, 10, "window scaling = %.1f")) {
-          resize_windows = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_SEARCH_PLUS)) {
-          RecordingWindow::scale_fct *= 2;
-          resize_windows = true;
-        }
-        if (resize_windows) {
-          for (const auto &r : recordings) {
-            r->resize_window();
+        {
+          bool resize_windows = false;
+          if (ImGui::Button(ICON_FA_SEARCH_MINUS)) {
+            RecordingWindow::scale_fct /= 2;
+            resize_windows = true;
+          }
+          ImGui::SameLine();
+          ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
+          if (ImGui::DragFloat("##scaling", &RecordingWindow::scale_fct, 0.05,
+                               0.5, 10, "window scaling = %.1f")) {
+            resize_windows = true;
+          }
+          ImGui::SameLine();
+          if (ImGui::Button(ICON_FA_SEARCH_PLUS)) {
+            RecordingWindow::scale_fct *= 2;
+            resize_windows = true;
+          }
+          if (resize_windows) {
+            for (const auto &r : recordings) {
+              r->resize_window();
+            }
           }
         }
 
         ImGui::NextColumn();
-        int item = static_cast<int>(prm::bitrange);
-        ImGui::Combo("Data Format", &item, BitRangeNames,
-                     IM_ARRAYSIZE(BitRangeNames));
-        prm::bitrange = static_cast<BitRange>(item);
+        {
+          int item = static_cast<int>(prm::bitrange);
+          ImGui::Combo("Data Format", &item, BitRangeNames,
+                       IM_ARRAYSIZE(BitRangeNames));
+          prm::bitrange = static_cast<BitRange>(item);
+        }
 
         ImGui::NextColumn();
-        int trace_width = Trace::width();
-        if (ImGui::InputInt("Trace width", &trace_width, 2, 5)) {
-          Trace::width(trace_width);
+        {
+          ImGui::Text("Image Flip");
+          ImGui::SameLine();
+          if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) {
+            for (const auto &r : recordings) {
+              r->flipud();
+            }
+          }
+          ImGui::SameLine();
+          if (ImGui::Button(ICON_MDI_FLIP_HORIZONTAL)) {
+            for (const auto &r : recordings) {
+              r->fliplr();
+            }
+          }
+          ImGui::SameLine();
+          ImGui::Text("Rotate");
+          ImGui::SameLine();
+          if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) {
+            for (const auto &r : recordings) {
+              r->add_rotation(-90);
+            }
+          }
+          ImGui::SameLine();
+          if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) {
+            for (const auto &r : recordings) {
+              r->add_rotation(90);
+            }
+          }
+        }
+
+        ImGui::NextColumn();
+        {
+          int trace_width = Trace::width();
+          if (ImGui::InputInt("Trace width", &trace_width, 2, 5)) {
+            Trace::width(trace_width);
+          }
         }
         ImGui::Columns(1);
       }
@@ -654,14 +702,22 @@ int main(int, char **) {
   // - Remember that in C/C++ if you want to include a backslash \ in a string
   // literal you need to write a double backslash \\ !
   io.Fonts->AddFontDefault();
-  static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
   ImFontConfig icons_config;
   icons_config.MergeMode = true;
   icons_config.PixelSnapH = true;
+
+  static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA,
+                                                     0};
   io.Fonts->AddFontFromMemoryCompressedTTF(
       fonts::fontawesome5_solid_compressed_data,
       fonts::fontawesome5_solid_compressed_size, 11, &icons_config,
-      icons_ranges);
+      fontawesome_icons_ranges);
+  static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI,
+                                                             ICON_MAX_MDI, 0};
+  io.Fonts->AddFontFromMemoryCompressedTTF(
+      fonts::materialdesignicons_compressed_data,
+      fonts::materialdesignicons_compressed_size, 11, &icons_config,
+      materialdesignicons_icons_ranges);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);

@@ -96,6 +96,7 @@ void drawPixel(int x, int y, int Ny, int dx, const Vec4f &color) {
   const Vec2i pos3 = {x + dx, Ny - (y + dx)};
   const Vec2i pos4 = {x, Ny - (y + dx)};
 
+  glLineWidth(2);
   glBegin(GL_LINE_LOOP);
   glColor4fv(color.data());
   glVertex2iv(pos1.data());
