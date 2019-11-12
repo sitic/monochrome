@@ -40,6 +40,7 @@ unsigned Transformation::ContrastEnhancement::kernel_size = 3;
 unsigned Transformation::MeanFilter::kernel_size = 3;
 unsigned Transformation::MedianFilter::kernel_size = 3;
 Recording::RotationCtrl Recording::rotations = {};
+int Transformation::ContrastEnhancement::maskVersion = 0;
 
 void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
@@ -263,7 +264,8 @@ void display() {
           ImGui::Indent(10);
           ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
           float sigma = Transformation::GaussFilter::get_sigma();
-          if (ImGui::InputFloat("sigma", &sigma)) {
+          ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
+          if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, "sigma = %.2f")) {
             Transformation::GaussFilter::set_sigma(sigma);
           }
           ImGui::Unindent(10);
@@ -288,9 +290,20 @@ void display() {
         selectable("Frame Difference", Transformations::FrameDiff);
         if (selectable("Contrast Enhancement",
                        Transformations::ContrastEnhancement)) {
-          kernel_size_select(
-              Transformation::ContrastEnhancement::kernel_size,
-              [](RecordingWindow *r) { r->contrastEnhancement.reset(); });
+          ImGui::Indent(10);
+          const int step = 2;
+          ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+          if (ImGui::InputScalar(
+                  "Kernel size", ImGuiDataType_U32,
+                  &Transformation::ContrastEnhancement::kernel_size, &step,
+                  nullptr, "%d")) {
+            for (const auto &r : recordings) {
+              r->contrastEnhancement.reset();
+            }
+          }
+          ImGui::SliderInt(
+              "Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
+          ImGui::Unindent(10);
         }
         ImGui::TreePop();
       }
@@ -304,7 +317,8 @@ void display() {
           ImGui::Indent(10);
           ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
           float sigma = Transformation::GaussFilter::get_sigma();
-          if (ImGui::InputFloat("sigma", &sigma)) {
+          ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
+          if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, "sigma = %.2f")) {
             Transformation::GaussFilter::set_sigma(sigma);
           }
           ImGui::Unindent(10);

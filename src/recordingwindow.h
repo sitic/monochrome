@@ -236,15 +236,15 @@ public:
       frameDiff.compute(*arr, t_frame);
       arr = &frameDiff.frame;
 
-      histogram.min = frameDiff.min_init() * 1.5;
-      histogram.max = frameDiff.max_init() * 1.5;
+      histogram.min = frameDiff.min_init() * 1.5f;
+      histogram.max = frameDiff.max_init() * 1.5f;
       break;
     case Transformations::ContrastEnhancement:
       contrastEnhancement.compute(*arr, t_frame);
       arr = &contrastEnhancement.frame;
 
-      histogram.min = 0;
-      histogram.max = 1;
+      histogram.min = -0.1f;
+      histogram.max = 1.1f;
       break;
     }
 
