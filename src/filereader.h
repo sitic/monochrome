@@ -109,7 +109,8 @@ class RawFileRecording : public BaseFileRecording {
 
 public:
   RawFileRecording(const filesystem::path &path)
-      : _in(path.string(), std::ios::in | std::ios::binary) {
+      : _in(path.string(), std::ios::in | std::ios::binary),
+        BaseFileRecording(path) {
 
     const std::regex rgx(R"(^.*?_(\d+)x(\d+)x(\d+)f.*?\.dat$)");
     std::string filename = path.filename().string();
