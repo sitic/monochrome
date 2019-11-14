@@ -26,9 +26,13 @@ float bitrange_to_float(BitRange br) {
 }
 
 class BaseFileRecording {
+private:
+  filesystem::path _path;
+
 public:
-  BaseFileRecording() = default;
+  BaseFileRecording(const filesystem::path &path) : _path(path){};
   virtual ~BaseFileRecording() = default;
+  filesystem::path path() { return _path; };
 
   virtual bool good() const = 0;
   virtual int Nx() const = 0;
@@ -50,7 +54,8 @@ protected:
   Eigen::Matrix<uint16, Eigen::Dynamic, Eigen::Dynamic> frame_uint16;
 
 public:
-  BmpFileRecording(const filesystem::path &path) : file(path) {
+  BmpFileRecording(const filesystem::path &path)
+      : file(path), BaseFileRecording(path) {
     frame_uint16.setZero(file.Nx(), file.Ny());
   }
 

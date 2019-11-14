@@ -178,7 +178,9 @@ public:
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
 
-  RecordingWindow(filesystem::path path) : Recording(path) {
+  RecordingWindow(const filesystem::path& path)
+      : RecordingWindow(autoguess_filerecording(path)){};
+  RecordingWindow(std::shared_ptr<BaseFileRecording> file) : Recording(file) {
     if (!good()) {
       return;
     }
@@ -190,16 +192,17 @@ public:
       auto min = std::min(Nx(), Ny());
       Trace::width(min / 64);
     }
-  };
+  }
 
-  ~RecordingWindow() {
+  virtual ~RecordingWindow() {
     if (window != nullptr) {
       glfwDestroyWindow(window);
     }
   }
 
-  void display(float speed, Filters prefilter, Transformations transformation,
-               Filters postfilter, BitRange bitrange) {
+  virtual void display(float speed, Filters prefilter,
+                       Transformations transformation, Filters postfilter,
+                       BitRange bitrange) {
     if (!window)
       throw std::runtime_error(
           "No window set, but RecordingWindow::display() called");
@@ -355,7 +358,7 @@ public:
       throw std::runtime_error("ERROR: window was already initialized");
     }
 
-    auto title = _path.filename().string();
+    auto title = path().filename().string();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     window = glfwCreateWindow(Nx(), Ny(), title.c_str(), nullptr, nullptr);

@@ -8,8 +8,6 @@ using namespace std::string_literals;
 
 class Recording {
 protected:
-  filesystem::path _path;
-
   std::shared_ptr<BaseFileRecording> file;
   int _t = 0;
   float _tf = 0;
@@ -88,13 +86,10 @@ protected:
     }
   }
 
-public:
-
-  Eigen::MatrixXf frame;
-
-  Recording(const filesystem::path &path) : _path(path) {
-
-    file = std::make_shared<RawFileRecording>(path);
+  static std::shared_ptr<BaseFileRecording>
+  autoguess_filerecording(const filesystem::path &path) {
+    std::shared_ptr<BaseFileRecording> file =
+        std::make_shared<RawFileRecording>(path);
     if (!file->good()) {
       file = std::make_shared<BmpFileRecording>(path);
     }
@@ -102,6 +97,16 @@ public:
     if (!file->error_msg().empty()) {
       new_ui_message(file->error_msg());
     }
+
+    return file;
+  }
+
+public:
+  Eigen::MatrixXf frame;
+
+  Recording(const filesystem::path &path)
+      : Recording(autoguess_filerecording(path)){};
+  Recording(std::shared_ptr<BaseFileRecording> _file) : file(_file) {
     if (!file->good()) {
       return;
     }
@@ -114,7 +119,7 @@ public:
   int Nx() const { return frame.rows(); }
   int Ny() const { return frame.cols(); }
   int length() const { return file->length(); }
-  filesystem::path path() const { return _path; }
+  filesystem::path path() const { return file->path(); }
   std::string date() const { return file->date(); };
   std::string comment() const { return file->comment(); };
   std::chrono::duration<float> duration() const { return file->duration(); }
