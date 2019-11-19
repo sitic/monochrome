@@ -11,6 +11,21 @@ extern GLFWwindow *main_window;
 class RecordingWindow;
 extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
 
+namespace prm {
+static struct {
+  float val = 1;
+
+  void toggle_play_pause() {
+    std::swap(old_val, val);
+    if (old_val > 0)
+      val = 0;
+  }
+
+private:
+  float old_val = 0;
+} playbackCtrl;
+}
+
 struct ExportCtrl {
   struct {
     bool export_window = false;
@@ -83,6 +98,19 @@ struct Trace {
   std::vector<float> data;
   Vec2i pos;
   Vec4f color;
+
+  void set_pos(const Vec2i &npos) {
+    clear();
+    pos = npos;
+  }
+
+  void clear() { data.clear(); }
+
+  bool is_near_point(const Vec2i &npos) const {
+    const auto d = npos - pos;
+    const auto max_dist = Trace::width() / 2 + 1;
+    return (std::abs(d[0]) < max_dist && std::abs(d[1]) < max_dist);
+  }
 
   static Vec4f next_color() {
     // List of colors to cycle through
@@ -178,7 +206,7 @@ public:
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
 
-  RecordingWindow(const filesystem::path& path)
+  RecordingWindow(const filesystem::path &path)
       : RecordingWindow(autoguess_filerecording(path)){};
   RecordingWindow(std::shared_ptr<BaseFileRecording> file) : Recording(file) {
     if (!good()) {
@@ -189,8 +217,8 @@ public:
 
     if (Trace::width() == 0) {
       // if unset, set trace edge length to something reasonable
-      auto min = std::min(Nx(), Ny());
-      Trace::width(min / 64);
+      auto val = std::min(Nx(), Ny()) / 64;
+      Trace::width(std::max(val, 2));
     }
   }
 
@@ -311,17 +339,14 @@ public:
 
   void reset_traces() {
     for (auto &t : traces) {
-      t.data.clear();
+      t.clear();
     }
   }
 
   void add_trace_pos(const Vec2i &npos) {
-    for (auto &[trace, pos, color] : traces) {
-      auto d = pos - npos;
-      if (std::abs(d[0]) < Trace::width() / 2 &&
-          std::abs(d[1]) < Trace::width() / 2) {
-        trace.clear();
-        pos = npos;
+    for (auto &t : traces) {
+      if (t.is_near_point(npos)) {
+        t.set_pos(npos);
         return;
       }
     }
@@ -330,9 +355,7 @@ public:
 
   void remove_trace_pos(const Vec2i &pos) {
     const auto pred = [pos](const auto &trace) {
-      auto d = pos - trace.pos;
-      auto max_dist = Trace::width() / 2;
-      return (std::abs(d[0]) < max_dist && std::abs(d[1]) < max_dist);
+      return trace.is_near_point(pos);
     };
 
     traces.erase(std::remove_if(traces.begin(), traces.end(), pred),
@@ -388,20 +411,10 @@ public:
   }
 
   void fliplr() {
-    auto r = rotations.get_rotation();
-    if (r == 0 || r == 180) {
-      rotations.flipud = !rotations.flipud;
-    } else {
-      rotations.fliplr = !rotations.fliplr;
-    }
+    rotations.flipud();
   }
   void flipud() {
-    auto r = rotations.get_rotation();
-    if (r == 0 || r == 180) {
-      rotations.fliplr = !rotations.fliplr;
-    } else {
-      rotations.flipud = !rotations.flipud;
-    }
+    rotations.fliplr();
   }
   void add_rotation(short d_rotation) {
     rotations.add_rotation(d_rotation);
@@ -515,6 +528,8 @@ public:
       std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
       auto fn = rec->save_snapshot();
       new_ui_message("Saved screenshot to {}", fn.string());
+    } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+      prm::playbackCtrl.toggle_play_pause();
     }
   }
 

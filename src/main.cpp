@@ -29,17 +29,15 @@ static Filters prefilter = Filters::None;
 static Transformations transformation = Transformations::None;
 static Filters postfilter = Filters::None;
 static BitRange bitrange = BitRange::U12;
-
-static float speed = 1;
 } // namespace prm
 
+RotationCtrl Recording::rotations = {};
 float RecordingWindow::scale_fct = 1;
 float Transformation::GaussFilter::sigma = 1;
 deriche_coeffs Transformation::GaussFilter::c;
 unsigned Transformation::ContrastEnhancement::kernel_size = 3;
 unsigned Transformation::MeanFilter::kernel_size = 3;
 unsigned Transformation::MedianFilter::kernel_size = 3;
-Recording::RotationCtrl Recording::rotations = {};
 int Transformation::ContrastEnhancement::maskVersion = 0;
 
 void load_new_file(filesystem::path path) {
@@ -120,33 +118,33 @@ void display() {
             }
           }
           ImGui::SameLine();
-          if (prm::speed == 0) {
+          if (prm::playbackCtrl.val == 0) {
             if (ImGui::Button(ICON_FA_PLAY)) {
-              prm::speed = 1;
+              prm::playbackCtrl.toggle_play_pause();
             }
           } else {
             if (ImGui::Button(ICON_FA_PAUSE)) {
-              prm::speed = 0;
+              prm::playbackCtrl.toggle_play_pause();
             }
           }
           ImGui::SameLine();
           if (ImGui::Button(ICON_FA_BACKWARD)) {
-            prm::speed /= 2;
+            prm::playbackCtrl.val /= 2;
           }
           ImGui::SameLine();
           ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
-          ImGui::DragFloat("##speed", &prm::speed, 0.05, 0, 20,
+          ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20,
                            "playback speed = %.1f");
           ImGui::SameLine();
           if (ImGui::Button(ICON_FA_FORWARD)) {
-            prm::speed *= 2;
+            prm::playbackCtrl.val *= 2;
           }
           ImGui::SameLine();
           if (ImGui::Button(ICON_FA_FAST_FORWARD)) {
-            if (prm::speed == 1) {
-              prm::speed += 9;
+            if (prm::playbackCtrl.val == 1) {
+              prm::playbackCtrl.val += 9;
             } else {
-              prm::speed += 10;
+              prm::playbackCtrl.val += 10;
             }
           }
         }
@@ -347,8 +345,8 @@ void display() {
                      recordings.end());
 
     for (const auto &recording : recordings) {
-      recording->display(prm::speed, prm::prefilter, prm::transformation,
-                         prm::postfilter, prm::bitrange);
+      recording->display(prm::playbackCtrl.val, prm::prefilter,
+                         prm::transformation, prm::postfilter, prm::bitrange);
 
       ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                           ImVec2(FLT_MAX, FLT_MAX));
@@ -360,7 +358,7 @@ void display() {
       ImGui::SetNextItemWidth(-1);
       if (ImGui::SliderInt("##progress", &t, 0, recording->length() - 1,
                            "Frame %d")) {
-        recording->set_frame_index(t - static_cast<int>(prm::speed));
+        recording->set_frame_index(t - static_cast<int>(prm::playbackCtrl.val));
       }
       ImGui::PopStyleColor(1);
 
@@ -534,9 +532,9 @@ void display() {
           }
         } else {
           auto label = fmt::format(
-              "Exporting frame {}/{}",
-              static_cast<int>((recording->current_frame() + 1) / prm::speed),
-              static_cast<int>((recording->length()) / prm::speed));
+              "Exporting frame {:d}/{:d}",
+              recording->current_frame() / prm::playbackCtrl.val + 1,
+              (recording->length()) / prm::playbackCtrl.val);
           ImGui::ProgressBar(ctrl.progress, ImVec2(-1, 0), label.c_str());
 
           if (ImGui::Button(ICON_FA_STOP " Stop Export")) {

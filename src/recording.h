@@ -6,6 +6,92 @@
 
 using namespace std::string_literals;
 
+struct RotationCtrl {
+private:
+  short _rotation = 0;
+  bool _fliplr = false;
+  bool _flipud = false;
+
+public:
+  short get_rotation() { return _rotation; }
+
+  void set_rotation(short rotation) {
+    const std::array<short, 4> valid_rotations = {{0, 90, 180, 270}};
+    if (std::none_of(valid_rotations.begin(), valid_rotations.end(),
+                     [rotation](auto r) { return r == rotation; })) {
+      throw std::logic_error("set_rotation() has to be called with either "
+                             "0, 90, 180,  or 270 as parameter");
+    }
+
+    _rotation = rotation;
+  }
+
+  void add_rotation(short delta_rotation) {
+    if (std::abs(delta_rotation) != 90) {
+      throw std::logic_error("add_rotation() has to be called with either "
+                             "+90 or -90 as parameter");
+    }
+
+    if (_rotation == 0 && delta_rotation < 0) {
+      _rotation = 270;
+    } else if (_rotation == 270 && delta_rotation > 0) {
+      _rotation = 0;
+    } else {
+      _rotation += delta_rotation;
+    }
+  }
+
+  void fliplr() {
+    if (_rotation == 0 || _rotation == 180) {
+      _fliplr = !_fliplr;
+    } else {
+      _flipud = !_flipud;
+    }
+  }
+
+  void flipud() {
+    if (_rotation == 0 || _rotation == 180) {
+      _flipud = !_flipud;
+    } else {
+      _fliplr = !_fliplr;
+    }
+  }
+
+  void apply(Eigen::MatrixXf &arr) {
+    if (_fliplr && _flipud) {
+      arr = arr.rowwise().reverse().colwise().reverse().eval();
+    } else if (_fliplr) {
+      arr.rowwise().reverseInPlace();
+    } else if (_flipud) {
+      arr.colwise().reverseInPlace();
+    }
+
+    switch (_rotation) {
+    case 0:
+      // do nothing
+      break;
+    case 90:
+      arr = arr.transpose().colwise().reverse().eval();
+      break;
+    case 180:
+      arr = arr.transpose()
+                .colwise()
+                .reverse()
+                .transpose()
+                .colwise()
+                .reverse()
+                .eval();
+      break;
+    case 270:
+      arr = arr.transpose().rowwise().reverse().eval();
+      break;
+    default:
+      throw std::logic_error(
+          "Invalid rotation value! (Should be 0, 90, 180, or 270");
+    }
+  }
+};
+
 class Recording {
 protected:
   std::shared_ptr<BaseFileRecording> file;
@@ -14,77 +100,9 @@ protected:
 
   long t_frame = 0;
 
-  static struct RotationCtrl {
-  private:
-    short _rotation = 0;
+  static RotationCtrl rotations;
 
-  public:
-    bool fliplr = false;
-    bool flipud = false;
-
-    short get_rotation() { return _rotation; }
-
-    void set_rotation(short rotation) {
-      const std::array<short, 4> valid_rotations = {{0, 90, 180, 270}};
-      if (std::none_of(valid_rotations.begin(), valid_rotations.end(),
-                       [rotation](auto r) { return r == rotation; })) {
-        throw std::logic_error("set_rotation() has to be called with either "
-                               "0, 90, 180,  or 270 as parameter");
-      }
-
-      _rotation = rotation;
-    }
-
-    void add_rotation(short delta_rotation) {
-      if (std::abs(delta_rotation) != 90) {
-        throw std::logic_error("add_rotation() has to be called with either "
-                               "+90 or -90 as parameter");
-      }
-
-      if (_rotation == 0 && delta_rotation < 0) {
-        _rotation = 270;
-      } else if (_rotation == 270 && delta_rotation > 0) {
-        _rotation = 0;
-      } else {
-        _rotation += delta_rotation;
-      }
-    }
-
-  } rotations;
-
-  void apply_rotation() {
-    if (rotations.fliplr && rotations.flipud) {
-      frame = frame.rowwise().reverse().colwise().reverse().eval();
-    } else if (rotations.fliplr) {
-      frame.rowwise().reverseInPlace();
-    } else if (rotations.flipud) {
-      frame.colwise().reverseInPlace();
-    }
-
-    switch (rotations.get_rotation()) {
-    case 0:
-      // do nothing
-      break;
-    case 90:
-      frame = frame.transpose().colwise().reverse().eval();
-      break;
-    case 180:
-      frame = frame.transpose()
-                  .colwise()
-                  .reverse()
-                  .transpose()
-                  .colwise()
-                  .reverse()
-                  .eval();
-      break;
-    case 270:
-      frame = frame.transpose().rowwise().reverse().eval();
-      break;
-    default:
-      throw std::logic_error(
-          "Invalid rotation value! (Should be 0, 90, 180, or 270");
-    }
-  }
+  void apply_rotation() { rotations.apply(frame); }
 
   static std::shared_ptr<BaseFileRecording>
   autoguess_filerecording(const filesystem::path &path) {
