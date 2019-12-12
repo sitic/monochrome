@@ -43,11 +43,11 @@ int Transformation::ContrastEnhancement::maskVersion = 0;
 void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
 
-  if (!filesystem::is_regular_file(path)) {
-    new_ui_message("ERROR: {} does not appear to be a file, skipping",
-                   path.string());
-    return;
-  }
+  //if (!filesystem::is_regular_file(path)) {
+  //  new_ui_message("ERROR: {} does not appear to be a file, skipping",
+  //                 path.string());
+  //  return;
+  //}
 
   if (path.extension() != ".dat") {
     new_ui_message("ERROR: {} does not have extension '.dat', skipping",
