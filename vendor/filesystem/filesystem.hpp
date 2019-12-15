@@ -8,6 +8,10 @@
 
 //#define use_std_filesystem
 
+#if _MSC_VER >= 1920
+#define use_std_filesystem
+#endif
+
 #ifdef use_std_filesystem
 #include <filesystem>
 namespace filesystem = std::filesystem;
@@ -19,7 +23,7 @@ namespace filesystem = std::filesystem;
 #include <sys/stat.h>
 #include <vector>
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #include "dirent.h"
 #else
 #include <dirent.h>
@@ -80,12 +84,6 @@ public:
     path_name_.erase(separators_.back());
     separators_.pop_back();
     return *this /= filename;
-  }
-
-  path with_extension(const path& replacement = path("")) const {
-    path p = parent_path();
-    p /= stem().string() + replacement.string();
-    return p;
   }
 
   bool operator==(const path &rhs) const {
