@@ -2,10 +2,13 @@
 
 #include <chrono>
 #include <fstream>
-using namespace std::chrono_literals;
+
+#include <fmt/format.h>
 
 #include "definitions.h"
 #include "filesystem/filesystem.hpp"
+
+using namespace std::chrono_literals;
 
 class BMPheader {
 private:
@@ -118,7 +121,7 @@ public:
     read(mFirstFrameTime);
 
     _in.seekg(0, std::ios::end);
-    const long file_size = _in.tellg();
+    const std::streamoff file_size = _in.tellg();
     _in.seekg(file_size - sizeof(uint64), std::ios::beg);
     read(mLastFrameTime);
 
@@ -138,7 +141,7 @@ public:
 
     // if we got to this point, this is a valid MultiRecoder header
     _good = _in.good();
-  };
+  }
 
   // Does it appear to be a valid MultiRecorder file?
   bool good() const { return _good; }
@@ -151,9 +154,9 @@ public:
   uint32 Ny() const { return mFrameHeight; }
   long length() const { return mNumFrames; }
 
-  std::string date() const { return mDate; };
-  std::string comment() const { return mComment; };
-  std::chrono::duration<float> duration() const { return mRecordingLength; };
+  std::string date() const { return mDate; }
+  std::string comment() const { return mComment; }
+  std::chrono::duration<float> duration() const { return mRecordingLength; }
   float fps() const { return mFPS; }
 
   void read_frame(long t, uint16 *data) {

@@ -43,11 +43,11 @@ int Transformation::ContrastEnhancement::maskVersion = 0;
 void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
 
-  //if (!filesystem::is_regular_file(path)) {
-  //  new_ui_message("ERROR: {} does not appear to be a file, skipping",
-  //                 path.string());
-  //  return;
-  //}
+  if (!filesystem::is_regular_file(path)) {
+    new_ui_message("ERROR: {} does not appear to be a file, skipping",
+                   path.string());
+    return;
+  }
 
   if (path.extension() != ".dat") {
     new_ui_message("ERROR: {} does not have extension '.dat', skipping",
@@ -350,7 +350,7 @@ void display() {
 
       ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                           ImVec2(FLT_MAX, FLT_MAX));
-      ImGui::Begin(recording->path().filename().c_str(), nullptr,
+      ImGui::Begin(recording->path().filename().string().c_str(), nullptr,
                    ImGuiWindowFlags_AlwaysAutoResize);
       int t = recording->current_frame();
       ImGui::PushStyleColor(ImGuiCol_SliderGrab,

@@ -6,9 +6,11 @@
 #include <functional>
 #include <iostream>
 
+//#define use_std_filesystem
+
 #ifdef use_std_filesystem
-#include <experimental/filesystem>
-namespace filesystem = std::experimental::filesystem;
+#include <filesystem>
+namespace filesystem = std::filesystem;
 #else
 
 #include <cstring>
@@ -150,8 +152,13 @@ private:
   directory_entry(const filesystem::path &path, bool iterate)
       : dir_(nullptr), entry_(nullptr), path_(path) {
     // stat it first in case its not a directory
+#if defined(_WIN32)
+    struct _stat64 s;
+    if (_stat64(path_.c_str(), &s) == 0) {
+#else
     struct stat s;
     if (stat(path_.c_str(), &s) == 0) {
+#endif
       // if it is a directory and we are going to iterate over it
       if (S_ISDIR(s.st_mode) && iterate) {
         dir_.reset(opendir(path_.c_str()), [](DIR *d) { closedir(d); });
@@ -168,6 +175,9 @@ private:
       entry_->d_namlen = filename.string().size();
 #endif
       entry_->d_type = mode_to_type(s.st_mode);
+    } else {
+        auto e = strerror(errno);
+        printf("Error getting file status with stat() :%s\n", e);
     }
   }
   int mode_to_type(decltype(stat::st_mode) mode) {

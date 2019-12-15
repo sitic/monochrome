@@ -67,7 +67,7 @@ struct ExportCtrl {
     void assign_auto_filename(const filesystem::path &bmp_path) {
       videoRecorder.videotitle = bmp_path.filename().string();
 
-      std::string fn = bmp_path.filename().with_extension(".mp4").string();
+      std::string fn = bmp_path.filename().stem().string() + ".mp4";
       filename.assign(fn.begin(), fn.end());
 
       // Make sure there is enough space for the user input
