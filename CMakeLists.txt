@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.1)
 
 project(quickViewer C CXX)
 
+include(GNUInstallDirs)
+
 # default to Release build
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug, Release or RelWithDebInfo" FORCE)
@@ -50,3 +52,13 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     # Hotfix so that is shows up in the file explorer as executable, see https://stackoverflow.com/questions/41398444/
     target_link_options(quickViewer PRIVATE "-no-pie")
 endif()
+
+install(TARGETS quickViewer
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# Do platform specific post target stuff
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    # Install desktop entry and icon
+    install(FILES vendor/quickViewer.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications )
+    install(FILES vendor/MultiRecorderVideo.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps)
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")

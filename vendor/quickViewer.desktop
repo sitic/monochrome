@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=quickViewer
+Comment=MultiRecorder and raw video viewer
+Exec=quickViewer
+Icon=MultiRecorderVideo
+Type=Application
+Terminal=true
+Categories=Science;
