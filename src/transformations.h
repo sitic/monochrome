@@ -6,7 +6,12 @@ extern "C" {
 #include "ipol/gaussian_conv_deriche.h"
 }
 
-enum class Transformations : int { None, FrameDiff, ContrastEnhancement };
+enum class Transformations : int {
+  None,
+  FrameDiff,
+  ContrastEnhancement,
+  FlickerSegmentation
+};
 enum class Filters { None, Gauss, Mean, Median };
 
 namespace Transformation {
@@ -49,6 +54,9 @@ public:
 
 class None : public Base {
 public:
+  using Base::Base;
+  None(Recording &rec) : Base() { allocate(rec); }
+
   void allocate(Recording &rec) final {
     rec.load_frame(rec.length() / 2);
     max = rec.frame.maxCoeff();
@@ -56,6 +64,7 @@ public:
   }
 
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
+    frame = new_frame;
   }
 };
 
@@ -69,6 +78,9 @@ private:
   float m_max_init = 0;
 
 public:
+  using Base::Base;
+  FrameDiff(Recording &rec) : Base() { allocate(rec); }
+
   void allocate(Recording &rec) final {
     rec.load_frame(rec.length() / 2);
     prev_frame = rec.frame;
@@ -97,6 +109,9 @@ public:
 
 class ContrastEnhancement : public Base {
 public:
+  using Base::Base;
+  ContrastEnhancement(Recording &rec) : Base() { allocate(rec); }
+
   static unsigned kernel_size;
   static int maskVersion;
 
@@ -124,6 +139,9 @@ private:
   Eigen::MatrixXf buffer;
 
 public:
+  using Base::Base;
+  GaussFilter(Recording &rec) : Base() { allocate(rec); }
+
   void allocate(Recording &rec) final {
     set_sigma(sigma);
     frame.setZero(rec.Nx(), rec.Ny());
@@ -147,6 +165,9 @@ class MeanFilter : public Base {
 public:
   static unsigned kernel_size;
 
+  using Base::Base;
+  MeanFilter(Recording &rec) : Base() { allocate(rec); }
+
   void allocate(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
 
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
@@ -160,6 +181,9 @@ class MedianFilter : public Base {
 public:
   static unsigned kernel_size;
 
+  using Base::Base;
+  MedianFilter(Recording &rec) : Base() { allocate(rec); }
+
   void allocate(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
 
   void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
@@ -169,6 +193,80 @@ public:
   }
 
   void reset() { frame.setZero(); }
+};
+
+class FlickerSegmentation : public Base {
+  int m_n = 0;
+
+  Eigen::MatrixXf m_oldM, m_newM, m_oldS, m_newS;
+  Eigen::MatrixXf mean;
+  Eigen::MatrixXf prev_frame;
+  long t_prev_frame = 0;
+
+public:
+  using Base::Base;
+  FlickerSegmentation(Recording &rec) : Base() { allocate(rec); }
+
+  void allocate(Recording &rec) final {
+    frame.setZero(rec.Nx(), rec.Ny());
+    m_n = 0;
+  }
+
+  void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
+    m_n++;
+
+    if (m_n == 1) {
+      prev_frame = new_frame;
+      t_prev_frame = new_frame_counter;
+      return;
+    }
+
+    if (t_prev_frame == new_frame_counter) {
+      return;
+    } else if (new_frame_counter < t_prev_frame) {
+      reset();
+    }
+
+    frame = new_frame; // - prev_frame;
+
+    // See Knuth TAOCP vol 2, 3rd edition, page 232
+    if (m_n == 2) {
+      m_oldM = frame;
+      m_newM = frame;
+      m_oldS.setZero(frame.cols(), frame.rows());
+    } else {
+      m_newM = m_oldM + (frame - m_oldM) / m_n;
+      m_newS = m_oldS + (frame - m_oldM).cwiseProduct(frame - m_newM);
+
+      // set up for next iteration
+      m_oldM = m_newM;
+      m_oldS = m_newS;
+
+      frame = m_newS.cwiseQuotient(m_newM) / (m_n - 1);
+      // frame = m_newS/(m_n - 1);
+    }
+
+    prev_frame = new_frame;
+    t_prev_frame = new_frame_counter;
+
+    // if (!prev_frame.rows()) {
+    //  prev_frame = new_frame;
+    //  t_prev_frame = new_frame_counter;
+    //  return;
+    //}
+    //
+    // if (t_prev_frame != new_frame_counter) {
+    //  frame += (new_frame - prev_frame).cwiseAbs();
+    //  prev_frame = new_frame;
+    //  t_prev_frame = new_frame_counter;
+    //}
+  }
+
+  void reset() {
+    frame.setZero();
+    t_prev_frame = 0;
+    m_n = 0;
+  }
 };
 
 namespace functions {
@@ -378,4 +476,4 @@ void median_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out,
   }
 }
 } // namespace functions
-}
+} // namespace Transformation

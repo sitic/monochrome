@@ -269,12 +269,28 @@ void display() {
           ImGui::Unindent(10);
         }
         if (selectable("Mean", Filters::Mean)) {
-          kernel_size_select(Transformation::MeanFilter::kernel_size,
-                             [](RecordingWindow *r) { r->prefilters.reset(); });
+          kernel_size_select(
+              Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
+                // TODO: clean up
+                auto transform =
+                    r->transformationArena.create_if_needed(Filters::Mean, 0);
+                auto c = dynamic_cast<Transformation::MeanFilter *>(transform);
+                assert(c);
+                c->reset();
+              });
         }
         if (selectable("Median", Filters::Median)) {
-          kernel_size_select(Transformation::MedianFilter::kernel_size,
-                             [](RecordingWindow *r) { r->prefilters.reset(); });
+          kernel_size_select(
+              Transformation::MedianFilter::kernel_size,
+              [](RecordingWindow *r) {
+                // TODO: clean up
+                auto transform =
+                    r->transformationArena.create_if_needed(Filters::Median, 0);
+                auto c =
+                    dynamic_cast<Transformation::MedianFilter *>(transform);
+                assert(c);
+                c->reset();
+              });
         }
         ImGui::TreePop();
       }
@@ -296,13 +312,21 @@ void display() {
                   &Transformation::ContrastEnhancement::kernel_size, &step,
                   nullptr, "%d")) {
             for (const auto &r : recordings) {
-              r->contrastEnhancement.reset();
+              // TODO: clean up
+              auto transform = r->transformationArena.create_if_needed(
+                  Transformations::ContrastEnhancement, 0);
+              auto c = dynamic_cast<Transformation::ContrastEnhancement *>(
+                  transform);
+              assert(c);
+              c->reset();
             }
           }
           ImGui::SliderInt(
               "Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
           ImGui::Unindent(10);
         }
+        selectable("Flicker Segmentation",
+                   Transformations::FlickerSegmentation);
         ImGui::TreePop();
       }
 
@@ -323,13 +347,27 @@ void display() {
         }
         if (selectable("Mean", Filters::Mean)) {
           kernel_size_select(
-              Transformation::MeanFilter::kernel_size,
-              [](RecordingWindow *r) { r->postfilters.reset(); });
+              Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
+                // TODO: clean up
+                auto transform =
+                    r->transformationArena.create_if_needed(Filters::Mean, 0);
+                auto c = dynamic_cast<Transformation::MeanFilter *>(transform);
+                assert(c);
+                c->reset();
+              });
         }
         if (selectable("Median", Filters::Median)) {
           kernel_size_select(
               Transformation::MedianFilter::kernel_size,
-              [](RecordingWindow *r) { r->postfilters.reset(); });
+              [](RecordingWindow *r) {
+                // TODO: clean up
+                auto transform =
+                    r->transformationArena.create_if_needed(Filters::Median, 0);
+                auto c =
+                    dynamic_cast<Transformation::MedianFilter *>(transform);
+                assert(c);
+                c->reset();
+              });
         }
         ImGui::TreePop();
       }

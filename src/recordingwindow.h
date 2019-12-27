@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <variant>
 
 #include "recording.h"
 #include "transformations.h"
@@ -24,7 +25,7 @@ static struct {
 private:
   float old_val = 0;
 } playbackCtrl;
-}
+} // namespace prm
 
 struct ExportCtrl {
   struct {
@@ -145,61 +146,97 @@ public:
   GLFWwindow *window = nullptr;
   static float scale_fct;
 
-  Transformation::None no_transformation;
-  Transformation::FrameDiff frameDiff;
-  Transformation::ContrastEnhancement contrastEnhancement;
+  class TransformationList {
+  private:
+    Recording &m_parent;
 
-  struct AllFilters {
-    Transformation::GaussFilter gaussFilter;
-    Transformation::MeanFilter meanFilter;
-    Transformation::MedianFilter medianFilter;
+  public:
+    class TransformationCtrl {
+      int m_gen;
+      std::variant<Transformations, Filters> m_type;
+      std::unique_ptr<Transformation::Base> m_transform;
 
-    void allocate(Recording &rec) {
-      gaussFilter.allocate(rec);
-      meanFilter.allocate(rec);
-      medianFilter.allocate(rec);
+    public:
+      TransformationCtrl(std::variant<Transformations, Filters> type,
+                         Recording &rec, int _gen = 0)
+          : m_gen(_gen), m_type(type) {
+        if (auto t = std::get_if<Transformations>(&type)) {
+          switch (*t) {
+          case Transformations::None:
+            m_transform = std::make_unique<Transformation::None>(rec);
+            break;
+          case Transformations::FrameDiff:
+            m_transform = std::make_unique<Transformation::FrameDiff>(rec);
+            break;
+          case Transformations::ContrastEnhancement:
+            m_transform =
+                std::make_unique<Transformation::ContrastEnhancement>(rec);
+            break;
+          case Transformations::FlickerSegmentation:
+            m_transform =
+                std::make_unique<Transformation::FlickerSegmentation>(rec);
+            break;
+          }
+        } else if (auto t = std::get_if<Filters>(&type)) {
+          switch (*t) {
+          case Filters::None:
+            m_transform = std::make_unique<Transformation::None>(rec);
+            break;
+          case Filters::Gauss:
+            m_transform = std::make_unique<Transformation::GaussFilter>(rec);
+            break;
+          case Filters::Mean:
+            m_transform = std::make_unique<Transformation::MeanFilter>(rec);
+            break;
+          case Filters::Median:
+            m_transform = std::make_unique<Transformation::MedianFilter>(rec);
+            break;
+          }
+        }
+      }
+
+      int gen() const { return m_gen; }
+      std::variant<Transformations, Filters> type() const { return m_type; }
+      Transformation::Base *transformation() const { return m_transform.get(); }
+    };
+
+    std::vector<TransformationCtrl> transformations;
+
+    TransformationList(Recording &rec) : m_parent(rec) {
+      transformations.emplace_back(Transformations::None, m_parent, 0);
+      transformations.emplace_back(Filters::None, m_parent, 0);
+      transformations.emplace_back(Filters::None, m_parent, 1);
+    };
+
+    void reallocate() {
+      for (auto& t : transformations) {
+        t.transformation()->allocate(m_parent);
+      }
     }
 
-    void reset() {
-      meanFilter.reset();
-      medianFilter.reset();
+    Transformation::Base *
+    create_if_needed(std::variant<Transformations, Filters> type, int gen = 0) {
+      auto r = std::find_if(transformations.begin(), transformations.end(),
+                            [type, gen](const TransformationCtrl &t) -> bool {
+                              return (t.type() == type) && (t.gen() == gen);
+                            });
+      if (r != std::end(transformations)) {
+        return r->transformation();
+      } else {
+        transformations.emplace_back(type, m_parent, gen);
+        return transformations.back().transformation();
+      }
     }
   };
-  AllFilters prefilters;
-  AllFilters postfilters;
 
-  void allocate_buffers() {
-    no_transformation.allocate(*this);
-    frameDiff.allocate(*this);
-    contrastEnhancement.allocate(*this);
-    prefilters.allocate(*this);
-    postfilters.allocate(*this);
-  }
+  TransformationList transformationArena;
 
   float &get_max(Transformations type) {
-    switch (type) {
-    case Transformations::None:
-      return no_transformation.max;
-    case Transformations::FrameDiff:
-      return frameDiff.max;
-    case Transformations::ContrastEnhancement:
-      return contrastEnhancement.max;
-    default:
-      throw std::logic_error("This line should not be reachable");
-    }
+    return transformationArena.create_if_needed(type)->max;
   }
 
   float &get_min(Transformations type) {
-    switch (type) {
-    case Transformations::None:
-      return no_transformation.min;
-    case Transformations::FrameDiff:
-      return frameDiff.min;
-    case Transformations::ContrastEnhancement:
-      return contrastEnhancement.min;
-    default:
-      throw std::logic_error("This line should not be reachable");
-    }
+    return transformationArena.create_if_needed(type)->min;
   }
 
   Histogram<float, 256> histogram;
@@ -208,12 +245,11 @@ public:
 
   RecordingWindow(const filesystem::path &path)
       : RecordingWindow(autoguess_filerecording(path)){};
-  RecordingWindow(std::shared_ptr<BaseFileRecording> file) : Recording(file) {
+  RecordingWindow(std::shared_ptr<BaseFileRecording> file)
+      : Recording(file), transformationArena(*this) {
     if (!good()) {
       return;
     }
-
-    allocate_buffers();
 
     if (Trace::width() == 0) {
       // if unset, set trace edge length to something reasonable
@@ -241,64 +277,44 @@ public:
 
     Eigen::MatrixXf *arr = &frame;
 
-    switch (prefilter) {
-    case Filters::Gauss:
-      prefilters.gaussFilter.compute(*arr, t_frame);
-      arr = &prefilters.gaussFilter.frame;
-      break;
-    case Filters::Mean:
-      prefilters.meanFilter.compute(*arr, t_frame);
-      arr = &prefilters.meanFilter.frame;
-      break;
-    case Filters::Median:
-      prefilters.medianFilter.compute(*arr, t_frame);
-      arr = &prefilters.medianFilter.frame;
-      break;
-    default:
-      break;
-    }
+    auto pretransform = transformationArena.create_if_needed(prefilter, 0);
+    pretransform->compute(*arr, t_frame);
+    arr = &pretransform->frame;
+
+    auto transform = transformationArena.create_if_needed(transformation, 0);
+    transform->compute(*arr, t_frame);
+    arr = &transform->frame;
 
     switch (transformation) {
     case Transformations::None:
       histogram.min = 0;
       histogram.max = bitrange_to_float(bitrange);
       break;
-    case Transformations::FrameDiff:
-      frameDiff.compute(*arr, t_frame);
-      arr = &frameDiff.frame;
+    case Transformations::FrameDiff: {
+      auto frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
+      assert(frameDiff);
 
-      histogram.min = frameDiff.min_init() * 1.5f;
-      histogram.max = frameDiff.max_init() * 1.5f;
-      break;
+      histogram.min = frameDiff->min_init() * 1.5f;
+      histogram.max = frameDiff->max_init() * 1.5f;
+    } break;
     case Transformations::ContrastEnhancement:
-      contrastEnhancement.compute(*arr, t_frame);
-      arr = &contrastEnhancement.frame;
-
       histogram.min = -0.1f;
       histogram.max = 1.1f;
       break;
+    case Transformations::FlickerSegmentation:
+      histogram.min = 0;
+      histogram.max = (*arr).maxCoeff();
+      break;
     }
 
-    switch (postfilter) {
-    case Filters::Gauss:
-      postfilters.gaussFilter.compute(*arr, t_frame);
-      arr = &postfilters.gaussFilter.frame;
-      break;
-    case Filters::Mean:
-      postfilters.meanFilter.compute(*arr, t_frame);
-      arr = &postfilters.meanFilter.frame;
-      break;
-    case Filters::Median:
-      postfilters.medianFilter.compute(*arr, t_frame);
-      arr = &postfilters.medianFilter.frame;
-      break;
-    default:
-      break;
-    }
+    auto posttransform = transformationArena.create_if_needed(prefilter, 0);
+    posttransform->compute(*arr, t_frame);
+    arr = &posttransform->frame;
 
     draw2dArray(*arr, get_min(transformation), get_max(transformation));
     histogram.compute(arr->reshaped());
 
+    // draw and update traces
     for (auto &[trace, pos, color] : traces) {
       // We need to make sure, the block is inside the frame
       const auto test_fct = [Nx = Nx(), Ny = Ny(),
@@ -410,16 +426,12 @@ public:
     glfwMakeContextCurrent(prev_window);
   }
 
-  void fliplr() {
-    rotations.flipud();
-  }
-  void flipud() {
-    rotations.fliplr();
-  }
+  void fliplr() { rotations.flipud(); }
+  void flipud() { rotations.fliplr(); }
   void add_rotation(short d_rotation) {
     rotations.add_rotation(d_rotation);
     load_frame(t_frame);
-    allocate_buffers();
+    transformationArena.reallocate();
     resize_window();
   }
 
