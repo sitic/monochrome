@@ -531,10 +531,11 @@ void display() {
             recording->start_recording(path.string(), fps);
           }
         } else {
-          auto label = fmt::format(
-              "Exporting frame {:d}/{:d}",
-              recording->current_frame() / prm::playbackCtrl.val + 1,
-              (recording->length()) / prm::playbackCtrl.val);
+          int cur_frame =
+              recording->current_frame() / prm::playbackCtrl.val + 1;
+          int total_frames = recording->length() / prm::playbackCtrl.val;
+          auto label =
+              fmt::format("Exporting frame {:d}/{:d}", cur_frame, total_frames);
           ImGui::ProgressBar(ctrl.progress, ImVec2(-1, 0), label.c_str());
 
           if (ImGui::Button(ICON_FA_STOP " Stop Export")) {
