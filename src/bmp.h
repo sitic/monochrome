@@ -11,27 +11,28 @@
 using namespace std::chrono_literals;
 
 class BMPheader {
-private:
+ private:
   std::ifstream _in;
 
   uint32 mNumFrames = 0;
   uint32 mFormat;
 
-  uint32 mFrequency = 0;
-  uint32 mFrameWidth = 0;
+  uint32 mFrequency   = 0;
+  uint32 mFrameWidth  = 0;
   uint32 mFrameHeight = 0;
 
   std::string mDate;
   std::string mComment;
 
   uint64 mFirstFrameTime = 0;
-  uint64 mLastFrameTime = 0;
+  uint64 mLastFrameTime  = 0;
   std::chrono::duration<float> mRecordingLength;
   float mFPS = 0;
 
   size_t mFrameBytes = 0;
 
-  template <typename T> bool read(T &x) {
+  template <typename T>
+  bool read(T &x) {
     if (!_in.good()) {
       return false;
     }
@@ -64,35 +65,31 @@ private:
     return file_size;
   }
 
-  bool _good = false;
+  bool _good             = false;
   std::string _error_msg = "";
 
-public:
-  const char Version = 'f';
-  const uint32 ByteOrderMark = 0x1A2B3C4D;
-  const size_t HeaderLength = 1024;
+ public:
+  const char Version           = 'f';
+  const uint32 ByteOrderMark   = 0x1A2B3C4D;
+  const size_t HeaderLength    = 1024;
   const size_t FrameTailLength = sizeof(uint64);
 
-  BMPheader(filesystem::path path)
-      : _in(path.string(), std::ios::in | std::ios::binary) {
+  BMPheader(filesystem::path path) : _in(path.string(), std::ios::in | std::ios::binary) {
 
     if (!_in.good() || get_filesize() <= HeaderLength) {
-      _error_msg =
-          fmt::format("ERROR: {} does not seem to be a file!", path.string());
+      _error_msg = fmt::format("ERROR: {} does not seem to be a file!", path.string());
       return;
     }
 
     char mVersion;
     if (!read(mVersion) || mVersion != Version) {
-      _error_msg = fmt::format("Parsing '{}' failed, not a bmp recording?",
-                               path.string());
+      _error_msg = fmt::format("Parsing '{}' failed, not a bmp recording?", path.string());
       return;
     }
 
     uint32 mByteOrderMark;
     if (!read(mByteOrderMark) || mByteOrderMark != ByteOrderMark) {
-      _error_msg = fmt::format("Parsing '{}' failed, not a bmp recording?",
-                               path.string());
+      _error_msg = fmt::format("Parsing '{}' failed, not a bmp recording?", path.string());
       return;
     }
 
@@ -101,10 +98,10 @@ public:
     read(mFrameHeight);
     read(mFormat);
     if (mFormat != 3) {
-      _error_msg =
-          fmt::format("ERROR: Only uint16 data supported currently, file "
-                      "header says pixel format is '{}', expected '3'.",
-                      mFormat);
+      _error_msg = fmt::format(
+          "ERROR: Only uint16 data supported currently, file "
+          "header says pixel format is '{}', expected '3'.",
+          mFormat);
       return;
     }
     mFrameBytes = (mFrameWidth * mFrameHeight) * sizeof(uint16);
@@ -113,7 +110,7 @@ public:
     read(bin);
     read(mFrequency);
 
-    mDate = read_string();
+    mDate    = read_string();
     mComment = read_string();
 
     // calculate the recording period, firstFrametime and lastFramtime;
@@ -125,19 +122,17 @@ public:
     _in.seekg(file_size - sizeof(uint64), std::ios::beg);
     read(mLastFrameTime);
 
-    auto num_frames =
-        (file_size - HeaderLength) / (mFrameBytes + FrameTailLength);
+    auto num_frames = (file_size - HeaderLength) / (mFrameBytes + FrameTailLength);
     if (num_frames != mNumFrames) {
-      _error_msg =
-          fmt::format("WARNING: Header says there should be {} frames, but "
-                      "only {} found in file! The file might be corrupted.",
-                      mNumFrames, num_frames);
+      _error_msg = fmt::format(
+          "WARNING: Header says there should be {} frames, but "
+          "only {} found in file! The file might be corrupted.",
+          mNumFrames, num_frames);
       mNumFrames = num_frames;
     }
 
-    mRecordingLength =
-        std::chrono::milliseconds(mLastFrameTime - mFirstFrameTime);
-    mFPS = mNumFrames / mRecordingLength.count();
+    mRecordingLength = std::chrono::milliseconds(mLastFrameTime - mFirstFrameTime);
+    mFPS             = mNumFrames / mRecordingLength.count();
 
     // if we got to this point, this is a valid MultiRecoder header
     _good = _in.good();
@@ -164,8 +159,7 @@ public:
       throw std::runtime_error("read_frame() called with nullptr as argument");
     }
 
-    _in.seekg(HeaderLength + t * (mFrameBytes + FrameTailLength),
-              std::ios::beg);
+    _in.seekg(HeaderLength + t * (mFrameBytes + FrameTailLength), std::ios::beg);
 
     if (!_in.good()) {
       throw std::runtime_error("Reading failed!");

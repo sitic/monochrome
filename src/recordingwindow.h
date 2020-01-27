@@ -13,19 +13,18 @@ class RecordingWindow;
 extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
 
 namespace prm {
-static struct {
-  float val = 1;
+  static struct {
+    float val = 1;
 
-  void toggle_play_pause() {
-    std::swap(old_val, val);
-    if (old_val > 0)
-      val = 0;
-  }
+    void toggle_play_pause() {
+      std::swap(old_val, val);
+      if (old_val > 0) val = 0;
+    }
 
-private:
-  float old_val = 0;
-} playbackCtrl;
-} // namespace prm
+   private:
+    float old_val = 0;
+  } playbackCtrl;
+}  // namespace prm
 
 struct ExportCtrl {
   struct {
@@ -36,7 +35,7 @@ struct ExportCtrl {
     std::vector<char> filename = {};
 
     void assign_auto_filename(const filesystem::path &bmp_path) {
-      auto fn = bmp_path.filename().string();
+      auto fn    = bmp_path.filename().string();
       auto parts = split_string(fn, "_"s.c_str());
       if (parts.size() > 4) {
         fn = fmt::format("{}_{}", parts[1], parts[2]);
@@ -46,8 +45,7 @@ struct ExportCtrl {
         fn += "_o"s + std::to_string(frames[0]);
       }
 
-      fn = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1],
-                       frames[1] - frames[0]);
+      fn = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1], frames[1] - frames[0]);
 
       filename.assign(fn.begin(), fn.end());
 
@@ -59,9 +57,9 @@ struct ExportCtrl {
   } raw;
 
   struct {
-    bool export_window = false;
-    bool recording = false;
-    float progress = 0;
+    bool export_window         = false;
+    bool recording             = false;
+    float progress             = 0;
     std::vector<char> filename = {};
     VideoRecorder videoRecorder;
 
@@ -79,8 +77,8 @@ struct ExportCtrl {
   } video;
 
   struct {
-    bool export_window = false;
-    bool save_pngs = false;
+    bool export_window         = false;
+    bool save_pngs             = false;
     std::vector<char> filename = {};
 
     void assign_auto_filename(const filesystem::path &bmp_path) {
@@ -108,7 +106,7 @@ struct Trace {
   void clear() { data.clear(); }
 
   bool is_near_point(const Vec2i &npos) const {
-    const auto d = npos - pos;
+    const auto d        = npos - pos;
     const auto max_dist = Trace::width() / 2 + 1;
     return (std::abs(d[0]) < max_dist && std::abs(d[1]) < max_dist);
   }
@@ -142,55 +140,52 @@ struct Trace {
 };
 
 class RecordingWindow : public Recording {
-public:
+ public:
   GLFWwindow *window = nullptr;
   static float scale_fct;
 
   class TransformationList {
-  private:
+   private:
     Recording &m_parent;
 
-  public:
+   public:
     class TransformationCtrl {
       int m_gen;
       std::variant<Transformations, Filters> m_type;
       std::unique_ptr<Transformation::Base> m_transform;
 
-    public:
-      TransformationCtrl(std::variant<Transformations, Filters> type,
-                         Recording &rec, int _gen = 0)
+     public:
+      TransformationCtrl(std::variant<Transformations, Filters> type, Recording &rec, int _gen = 0)
           : m_gen(_gen), m_type(type) {
         if (auto t = std::get_if<Transformations>(&type)) {
           switch (*t) {
-          case Transformations::None:
-            m_transform = std::make_unique<Transformation::None>(rec);
-            break;
-          case Transformations::FrameDiff:
-            m_transform = std::make_unique<Transformation::FrameDiff>(rec);
-            break;
-          case Transformations::ContrastEnhancement:
-            m_transform =
-                std::make_unique<Transformation::ContrastEnhancement>(rec);
-            break;
-          case Transformations::FlickerSegmentation:
-            m_transform =
-                std::make_unique<Transformation::FlickerSegmentation>(rec);
-            break;
+            case Transformations::None:
+              m_transform = std::make_unique<Transformation::None>(rec);
+              break;
+            case Transformations::FrameDiff:
+              m_transform = std::make_unique<Transformation::FrameDiff>(rec);
+              break;
+            case Transformations::ContrastEnhancement:
+              m_transform = std::make_unique<Transformation::ContrastEnhancement>(rec);
+              break;
+            case Transformations::FlickerSegmentation:
+              m_transform = std::make_unique<Transformation::FlickerSegmentation>(rec);
+              break;
           }
         } else if (auto t = std::get_if<Filters>(&type)) {
           switch (*t) {
-          case Filters::None:
-            m_transform = std::make_unique<Transformation::None>(rec);
-            break;
-          case Filters::Gauss:
-            m_transform = std::make_unique<Transformation::GaussFilter>(rec);
-            break;
-          case Filters::Mean:
-            m_transform = std::make_unique<Transformation::MeanFilter>(rec);
-            break;
-          case Filters::Median:
-            m_transform = std::make_unique<Transformation::MedianFilter>(rec);
-            break;
+            case Filters::None:
+              m_transform = std::make_unique<Transformation::None>(rec);
+              break;
+            case Filters::Gauss:
+              m_transform = std::make_unique<Transformation::GaussFilter>(rec);
+              break;
+            case Filters::Mean:
+              m_transform = std::make_unique<Transformation::MeanFilter>(rec);
+              break;
+            case Filters::Median:
+              m_transform = std::make_unique<Transformation::MedianFilter>(rec);
+              break;
           }
         }
       }
@@ -209,13 +204,13 @@ public:
     };
 
     void reallocate() {
-      for (auto& t : transformations) {
+      for (auto &t : transformations) {
         t.transformation()->allocate(m_parent);
       }
     }
 
-    Transformation::Base *
-    create_if_needed(std::variant<Transformations, Filters> type, int gen = 0) {
+    Transformation::Base *create_if_needed(std::variant<Transformations, Filters> type,
+                                           int gen = 0) {
       auto r = std::find_if(transformations.begin(), transformations.end(),
                             [type, gen](const TransformationCtrl &t) -> bool {
                               return (t.type() == type) && (t.gen() == gen);
@@ -231,20 +226,15 @@ public:
 
   TransformationList transformationArena;
 
-  float &get_max(Transformations type) {
-    return transformationArena.create_if_needed(type)->max;
-  }
+  float &get_max(Transformations type) { return transformationArena.create_if_needed(type)->max; }
 
-  float &get_min(Transformations type) {
-    return transformationArena.create_if_needed(type)->min;
-  }
+  float &get_min(Transformations type) { return transformationArena.create_if_needed(type)->min; }
 
   Histogram<float, 256> histogram;
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
 
-  RecordingWindow(const filesystem::path &path)
-      : RecordingWindow(autoguess_filerecording(path)){};
+  RecordingWindow(const filesystem::path &path) : RecordingWindow(autoguess_filerecording(path)){};
   RecordingWindow(std::shared_ptr<BaseFileRecording> file)
       : Recording(file), transformationArena(*this) {
     if (!good()) {
@@ -264,12 +254,12 @@ public:
     }
   }
 
-  virtual void display(float speed, Filters prefilter,
-                       Transformations transformation, Filters postfilter,
+  virtual void display(float speed,
+                       Filters prefilter,
+                       Transformations transformation,
+                       Filters postfilter,
                        BitRange bitrange) {
-    if (!window)
-      throw std::runtime_error(
-          "No window set, but RecordingWindow::display() called");
+    if (!window) throw std::runtime_error("No window set, but RecordingWindow::display() called");
 
     glfwMakeContextCurrent(window);
 
@@ -286,25 +276,25 @@ public:
     arr = &transform->frame;
 
     switch (transformation) {
-    case Transformations::None:
-      histogram.min = 0;
-      histogram.max = bitrange_to_float(bitrange);
-      break;
-    case Transformations::FrameDiff: {
-      auto frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
-      assert(frameDiff);
+      case Transformations::None:
+        histogram.min = 0;
+        histogram.max = bitrange_to_float(bitrange);
+        break;
+      case Transformations::FrameDiff: {
+        auto frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
+        assert(frameDiff);
 
-      histogram.min = frameDiff->min_init() * 1.5f;
-      histogram.max = frameDiff->max_init() * 1.5f;
-    } break;
-    case Transformations::ContrastEnhancement:
-      histogram.min = -0.1f;
-      histogram.max = 1.1f;
-      break;
-    case Transformations::FlickerSegmentation:
-      histogram.min = 0;
-      histogram.max = (*arr).maxCoeff();
-      break;
+        histogram.min = frameDiff->min_init() * 1.5f;
+        histogram.max = frameDiff->max_init() * 1.5f;
+      } break;
+      case Transformations::ContrastEnhancement:
+        histogram.min = -0.1f;
+        histogram.max = 1.1f;
+        break;
+      case Transformations::FlickerSegmentation:
+        histogram.min = 0;
+        histogram.max = (*arr).maxCoeff();
+        break;
     }
 
     auto posttransform = transformationArena.create_if_needed(prefilter, 0);
@@ -317,13 +307,12 @@ public:
     // draw and update traces
     for (auto &[trace, pos, color] : traces) {
       // We need to make sure, the block is inside the frame
-      const auto test_fct = [Nx = Nx(), Ny = Ny(),
-                             w = Trace::width()](const Vec2i &v) {
+      const auto test_fct = [Nx = Nx(), Ny = Ny(), w = Trace::width()](const Vec2i &v) {
         auto lim = [](auto x, auto N) { return ((x > 0) && (x < N)); };
         return (lim(v[0], Nx) && lim(v[1], Ny));
       };
 
-      auto w = Trace::width();
+      auto w      = Trace::width();
       Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
       // shrink the trace block width if it is too large
       while (!test_fct(start) || !test_fct(start + Vec2i(w, w))) {
@@ -370,25 +359,22 @@ public:
   }
 
   void remove_trace_pos(const Vec2i &pos) {
-    const auto pred = [pos](const auto &trace) {
-      return trace.is_near_point(pos);
-    };
+    const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
 
-    traces.erase(std::remove_if(traces.begin(), traces.end(), pred),
-                 traces.end());
+    traces.erase(std::remove_if(traces.begin(), traces.end(), pred), traces.end());
   }
 
   void start_recording(const std::string &filename, int fps = 30) {
     restart();
     export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
     export_ctrl.video.recording = true;
-    export_ctrl.video.progress = 0;
+    export_ctrl.video.progress  = 0;
   }
 
   void stop_recording() {
     export_ctrl.video.videoRecorder.stop_recording();
-    export_ctrl.video.recording = false;
-    export_ctrl.video.progress = 0;
+    export_ctrl.video.recording     = false;
+    export_ctrl.video.progress      = 0;
     export_ctrl.video.export_window = false;
   }
 
@@ -436,19 +422,18 @@ public:
   }
 
   void resize_window() {
-    int width = std::ceil(RecordingWindow::scale_fct * Nx());
+    int width  = std::ceil(RecordingWindow::scale_fct * Nx());
     int height = std::ceil(RecordingWindow::scale_fct * Ny());
 
     glfwSetWindowSize(window, width, height);
     reshape_callback(window, width, height);
   }
 
-  static void scroll_callback(GLFWwindow *window, double xoffset,
-                              double yoffset) {
+  static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     // if traces shown, change trace width, else window width
     std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
     if (!rec->traces.empty()) {
-      auto w = Trace::width();
+      auto w    = Trace::width();
       int new_w = (yoffset < 0) ? 0.95f * w : 1.05f * w;
       if (new_w == w) {
         new_w = (yoffset < 0) ? w - 1 : w + 1;
@@ -462,10 +447,9 @@ public:
     }
   }
 
-  static void cursor_position_callback(GLFWwindow *window, double xpos,
-                                       double ypos) {
+  static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
     std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
-    rec->mousepos = {xpos, ypos};
+    rec->mousepos                        = {xpos, ypos};
     if (rec->mousebutton.left) {
       int w, h;
       glfwGetWindowSize(window, &w, &h);
@@ -476,14 +460,12 @@ public:
     }
   }
 
-  static void mouse_button_callback(GLFWwindow *window, int button, int action,
-                                    int mods) {
+  static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
     std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
       if (action == GLFW_PRESS) {
         rec->mousebutton.left = true;
-        rec->cursor_position_callback(window, rec->mousepos[0],
-                                      rec->mousepos[1]);
+        rec->cursor_position_callback(window, rec->mousepos[0], rec->mousepos[1]);
       } else {
         rec->mousebutton.left = false;
       }
@@ -503,19 +485,20 @@ public:
     std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
 
     if (!rec) {
-      throw std::runtime_error("Error in RecordingWindow::reshape_callback, "
-                               "could not find associated recording");
+      throw std::runtime_error(
+          "Error in RecordingWindow::reshape_callback, "
+          "could not find associated recording");
     }
 
     glfwMakeContextCurrent(window);
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
-    glLoadIdentity(); // Reset The Projection Matrix
+    glLoadIdentity();  // Reset The Projection Matrix
     glOrtho(0, rec->Nx(), 0, rec->Ny(), -1, 1);
     // https://docs.microsoft.com/en-us/previous-versions//ms537249(v=vs.85)?redirectedfrom=MSDN
     // http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
-    glMatrixMode(GL_MODELVIEW); // Select The Modelview Matrix
-    glLoadIdentity();           // Reset The Modelview Matrix
+    glMatrixMode(GL_MODELVIEW);  // Select The Modelview Matrix
+    glLoadIdentity();            // Reset The Modelview Matrix
 
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -524,21 +507,19 @@ public:
   }
 
   static void close_callback(GLFWwindow *window) {
-    recordings.erase(
-        std::remove_if(recordings.begin(), recordings.end(),
-                       [window](auto r) { return r->window == window; }),
-        recordings.end());
+    recordings.erase(std::remove_if(recordings.begin(), recordings.end(),
+                                    [window](auto r) { return r->window == window; }),
+                     recordings.end());
   }
 
-  static void key_callback(GLFWwindow *window, int key, int scancode,
-                           int action, int mods) {
+  static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_PRESS) {
       // Don't call RecordingWindow::close_callback() directly here,
       // causes a segfault in glfw
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
       std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
-      auto fn = rec->save_snapshot();
+      auto fn                              = rec->save_snapshot();
       new_ui_message("Saved screenshot to {}", fn.string());
     } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
       prm::playbackCtrl.toggle_play_pause();
@@ -549,23 +530,21 @@ public:
     if (output_png_path_template.empty()) {
       output_png_path_template = path().stem().string() + "_{t}.png";
     }
-    auto out_path =
-        fmt::format(output_png_path_template, fmt::arg("t", t_frame));
+    auto out_path = fmt::format(output_png_path_template, fmt::arg("t", t_frame));
 
     gl_save_snapshot(out_path, window);
     return out_path;
   }
 
-protected:
+ protected:
   Vec2d mousepos;
   struct {
-    bool left = false;
+    bool left  = false;
     bool right = false;
   } mousebutton;
 
   static std::shared_ptr<RecordingWindow> from_window_ptr(GLFWwindow *_window) {
-    return *std::find_if(
-        recordings.begin(), recordings.end(),
-        [_window](const auto &r) { return r->window == _window; });
+    return *std::find_if(recordings.begin(), recordings.end(),
+                         [_window](const auto &r) { return r->window == _window; });
   }
 };

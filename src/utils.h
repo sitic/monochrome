@@ -7,8 +7,9 @@
 #include "definitions.h"
 #include "vectors.h"
 
-template <typename T, size_t bin_count> class Histogram {
-public:
+template <typename T, size_t bin_count>
+class Histogram {
+ public:
   std::array<T, bin_count> data = {};
 
   T min = {};
@@ -17,7 +18,8 @@ public:
   Histogram() = default;
   Histogram(T _min, T _max) : min(_min), max(_max){};
 
-  template <typename Container> void compute(const Container &container) {
+  template <typename Container>
+  void compute(const Container &container) {
     data.fill(0);
 
     for (auto val : container) {
@@ -61,8 +63,7 @@ Vector3<T> val_to_color(const T &val, const T &min, const T &max) {
 }
 
 template <typename T>
-void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr,
-                 float min, float max) {
+void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr, float min, float max) {
   const int Nx = arr.rows();
   const int Ny = arr.cols();
 
@@ -74,7 +75,7 @@ void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr,
       const Vec2i pos4 = {x, Ny - (y + 1)};
 
       const auto val = arr(x, y);
-      const auto c = val_to_color<T>(val, min, max);
+      const auto c   = val_to_color<T>(val, min, max);
 
       glBegin(GL_QUADS);
       glColor3fv(c.data());
@@ -110,19 +111,16 @@ static void glfw_error_callback(int error, const char *description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-std::vector<std::string_view> split_string(std::string_view input,
-                                           std::string_view delims = " ") {
+std::vector<std::string_view> split_string(std::string_view input, std::string_view delims = " ") {
   std::vector<std::string_view> output;
   size_t first = 0;
 
   while (first < input.size()) {
     const auto second = input.find_first_of(delims, first);
 
-    if (first != second)
-      output.emplace_back(input.substr(first, second - first));
+    if (first != second) output.emplace_back(input.substr(first, second - first));
 
-    if (second == std::string_view::npos)
-      break;
+    if (second == std::string_view::npos) break;
 
     first = second + 1;
   }
@@ -131,7 +129,7 @@ std::vector<std::string_view> split_string(std::string_view input,
 }
 
 class Message {
-public:
+ public:
   bool show = true;
   std::string msg;
   int id = 0;
@@ -160,20 +158,18 @@ void gl_save_snapshot(const std::string &out_png_path,
                       GLFWwindow *window = nullptr,
                       bool alpha_channel = false) {
   auto prev_context = glfwGetCurrentContext();
-  if (window)
-    glfwMakeContextCurrent(window);
+  if (window) glfwMakeContextCurrent(window);
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);
 
-  GLenum gl_px_format = alpha_channel ? GL_RGBA : GL_RGB;
+  GLenum gl_px_format           = alpha_channel ? GL_RGBA : GL_RGB;
   const unsigned pix_byte_count = alpha_channel ? 4 : 3;
   LodePNGColorType png_px_format =
       alpha_channel ? LodePNGColorType::LCT_RGBA : LodePNGColorType::LCT_RGB;
 
   std::vector<GLubyte> image(width * height * pix_byte_count);
-  glReadPixels(0, 0, width, height, gl_px_format, GL_UNSIGNED_BYTE,
-               image.data());
+  glReadPixels(0, 0, width, height, gl_px_format, GL_UNSIGNED_BYTE, image.data());
 
   // flip y
   for (int i = 0; i < height / 2; i++) {
@@ -183,12 +179,10 @@ void gl_save_snapshot(const std::string &out_png_path,
   }
 
   // Save as png
-  unsigned error =
-      lodepng::encode(out_png_path, image, width, height, png_px_format);
+  unsigned error = lodepng::encode(out_png_path, image, width, height, png_px_format);
 
   if (error) {
-    new_ui_message("snapshot png encoder error {}: {}", error,
-                   lodepng_error_text(error));
+    new_ui_message("snapshot png encoder error {}: {}", error, lodepng_error_text(error));
   }
 
   glfwMakeContextCurrent(prev_context);

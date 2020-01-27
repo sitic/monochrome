@@ -10,10 +10,14 @@
 #include <type_traits>
 
 /* Forward Definitions */
-template <typename T, size_t N> class VectorN;
-template <typename T> class Vector2;
-template <typename T> class Vector3;
-template <typename T> class Vector4;
+template <typename T, size_t N>
+class VectorN;
+template <typename T>
+class Vector2;
+template <typename T>
+class Vector3;
+template <typename T>
+class Vector4;
 template <typename T, size_t N>
 std::ostream &operator<<(std::ostream &out, const VectorN<T, N> &v);
 template <typename T>
@@ -33,13 +37,15 @@ using Vec4f = Vector4<float>;
 /* Implementations */
 
 // A minimal N-dimensional vector class of floats/integers
-template <typename T, size_t N> class VectorN {
-public:
+template <typename T, size_t N>
+class VectorN {
+ public:
   std::array<T, N> f = {};
 
   constexpr VectorN() = default;
 
-  template <typename D> explicit VectorN(const VectorN<D, N> &v) {
+  template <typename D>
+  explicit VectorN(const VectorN<D, N> &v) {
     for (int i = 0; i < N; i++) {
       this->f[i] = static_cast<T>(v.f[i]);
     }
@@ -87,24 +93,22 @@ public:
 
   T length_squared() const { return inner_product(*this); }
 
-  [[nodiscard]] float length() const {
-    return std::sqrt(this->length_squared());
-  }
+  [[nodiscard]] float length() const { return std::sqrt(this->length_squared()); }
 
   T element_product() const {
     return std::accumulate(f.begin(), f.end(), T{}, std::multiplies<T>());
   }
 
-  template <typename D> T inner_product(const VectorN<D, N> &o) const {
-    return std::inner_product(f.begin(), f.end(), o.f.begin(),
-                              static_cast<T>(0));
+  template <typename D>
+  T inner_product(const VectorN<D, N> &o) const {
+    return std::inner_product(f.begin(), f.end(), o.f.begin(), static_cast<T>(0));
   }
 
   friend std::ostream &operator<<<>(std::ostream &out, const VectorN &v);
 
   // basic iterators
   using value_type = T;
-  using iterator = typename std::array<T, N>::iterator;
+  using iterator   = typename std::array<T, N>::iterator;
   iterator begin() { return f.begin(); }
   iterator end() { return f.end(); }
 
@@ -113,31 +117,25 @@ public:
   const_iterator end() const { return f.end(); }
 };
 
-template <typename T> class Vector2 : public VectorN<T, 2> {
-public:
+template <typename T>
+class Vector2 : public VectorN<T, 2> {
+ public:
   constexpr Vector2() = default;
 
   constexpr Vector2(const T &x, const T &y) { this->f = {{x, y}}; }
 
   using VectorN<T, 2>::VectorN;
 
-  std::string to_string() const override {
-    return fmt::format("({}, {})", this->f[0], this->f[1]);
-  }
+  std::string to_string() const override { return fmt::format("({}, {})", this->f[0], this->f[1]); }
 
-  Vector2 operator/(const T &a) const {
-    return Vector2(this->f[0] / a, this->f[1] / a);
-  }
+  Vector2 operator/(const T &a) const { return Vector2(this->f[0] / a, this->f[1] / a); }
 
-  Vector2 operator-(const Vector2 &v) const {
-    return Vector2(this->f[0] - v[0], this->f[1] - v[1]);
-  }
+  Vector2 operator-(const Vector2 &v) const { return Vector2(this->f[0] - v[0], this->f[1] - v[1]); }
 
-  Vector2 operator+(const Vector2 &v) const {
-    return Vector2(this->f[0] + v[0], this->f[1] + v[1]);
-  }
+  Vector2 operator+(const Vector2 &v) const { return Vector2(this->f[0] + v[0], this->f[1] + v[1]); }
 
-  template <typename D> Vector2 operator*(const D &a) const {
+  template <typename D>
+  Vector2 operator*(const D &a) const {
     return Vector2(this->f[0] * a, this->f[1] * a);
   }
 
@@ -145,8 +143,9 @@ public:
 };
 
 
-template <typename T> class Vector3 : public VectorN<T, 3> {
-public:
+template <typename T>
+class Vector3 : public VectorN<T, 3> {
+ public:
   constexpr Vector3() = default;
 
   constexpr Vector3(const T &x, const T &y, const T &z) { this->f = {{x, y, z}}; }
@@ -155,8 +154,7 @@ public:
 
   std::string to_string() const override {
     if constexpr (std::is_floating_point<T>::value) {
-      return fmt::format("({:.2G}, {:.2G}, {:.2G})", this->f[0], this->f[1],
-                         this->f[2]);
+      return fmt::format("({:.2G}, {:.2G}, {:.2G})", this->f[0], this->f[1], this->f[2]);
     } else {
       return fmt::format("({}, {}, {})", this->f[0], this->f[1], this->f[2]);
     }
@@ -174,21 +172,19 @@ public:
     return Vector3(this->f[0] + v[0], this->f[1] + v[1], this->f[2] + v[2]);
   }
 
-  template <typename D> Vector3 operator*(const D &a) const {
+  template <typename D>
+  Vector3 operator*(const D &a) const {
     return Vector3(this->f[0] * a, this->f[1] * a, this->f[2] * a);
   }
 
   Vector3 operator-() const { return Vector3(-this->f[0], -this->f[1], -this->f[2]); }
 
   Vector3 cross(const Vector3 &v) const {
-    return Vector3(this->f[1] * v[2] - this->f[2] * v[1],
-                   this->f[2] * v[0] - this->f[0] * v[2],
+    return Vector3(this->f[1] * v[2] - this->f[2] * v[1], this->f[2] * v[0] - this->f[0] * v[2],
                    this->f[0] * v[1] - this->f[1] * v[0]);
   }
 
-  T dot(const Vector3 &v) const {
-    return this->f[0] * v[0] + this->f[1] * v[1] + this->f[2] * v[2];
-  }
+  T dot(const Vector3 &v) const { return this->f[0] * v[0] + this->f[1] * v[1] + this->f[2] * v[2]; }
 
   // Rodrigues' rotation formula
   // k: a unit vector describing the axis of rotation
@@ -198,8 +194,7 @@ public:
     double cos_theta = std::cos(theta);
     double sin_theta = std::sin(theta);
 
-    return (*this * cos_theta) + k.cross(*this) * sin_theta +
-        k * (k.dot(*this) * (1 - cos_theta));
+    return (*this * cos_theta) + k.cross(*this) * sin_theta + k * (k.dot(*this) * (1 - cos_theta));
   }
 
   Vector3 cwiseProduct(const Vector3 &v) const {
@@ -207,44 +202,37 @@ public:
   }
 };
 
-template <typename T> class Vector4 : public VectorN<T, 4> {
-public:
+template <typename T>
+class Vector4 : public VectorN<T, 4> {
+ public:
   using VectorN<T, 4>::VectorN;
 
   constexpr Vector4() = default;
 
-  constexpr Vector4(const T &x, const T &y, const T &z, const T &w) {
-    this->f = {{x, y, z, w}};
-  }
+  constexpr Vector4(const T &x, const T &y, const T &z, const T &w) { this->f = {{x, y, z, w}}; }
 
   std::string to_string() const override {
-    return fmt::format("({}, {}, {}, {})", this->f[0], this->f[1], this->f[2],
-                       this->f[3]);
+    return fmt::format("({}, {}, {}, {})", this->f[0], this->f[1], this->f[2], this->f[3]);
   }
 
   Vector4 operator/(const T &a) const {
-    return Vector4(this->f[0] / a, this->f[1] / a, this->f[2] / a,
-                   this->f[3] / a);
+    return Vector4(this->f[0] / a, this->f[1] / a, this->f[2] / a, this->f[3] / a);
   }
 
   Vector4 operator-(const Vector4 &v) const {
-    return Vector4(this->f[0] - v[0], this->f[1] - v[1], this->f[2] - v[2],
-                   this->f[3] - v[3]);
+    return Vector4(this->f[0] - v[0], this->f[1] - v[1], this->f[2] - v[2], this->f[3] - v[3]);
   }
 
   Vector4 operator+(const Vector4 &v) const {
-    return Vector4(this->f[0] + v[0], this->f[1] + v[1], this->f[2] + v[2],
-                   this->f[3] + v[3]);
+    return Vector4(this->f[0] + v[0], this->f[1] + v[1], this->f[2] + v[2], this->f[3] + v[3]);
   }
 
-  template <typename D> Vector4 operator*(const D &a) const {
-    return Vector4(this->f[0] * a, this->f[1] * a, this->f[2] * a,
-                   this->f[3] * a);
+  template <typename D>
+  Vector4 operator*(const D &a) const {
+    return Vector4(this->f[0] * a, this->f[1] * a, this->f[2] * a, this->f[3] * a);
   }
 
-  Vector4 operator-() const {
-    return Vector4(-this->f[0], -this->f[1], -this->f[2], -this->f[3]);
-  }
+  Vector4 operator-() const { return Vector4(-this->f[0], -this->f[1], -this->f[2], -this->f[3]); }
 };
 
 template <typename T, size_t N>
@@ -252,40 +240,44 @@ std::ostream &operator<<(std::ostream &out, const VectorN<T, N> &v) {
   return out << v.to_string();
 }
 
-template <typename T> Vector3<T> operator*(const T &a, const Vector3<T> &v) {
+template <typename T>
+Vector3<T> operator*(const T &a, const Vector3<T> &v) {
   return v * a;
 }
 
 namespace detail {
-// see https://stackoverflow.com/questions/2590677
-template <class T> inline void hash_combine(std::size_t &seed, const T &v) {
-  std::hash<T> hasher;
-  seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-}
-} // namespace detail
+  // see https://stackoverflow.com/questions/2590677
+  template <class T>
+  inline void hash_combine(std::size_t &seed, const T &v) {
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  }
+}  // namespace detail
 
 // hash functions for std::unordered_set etc.
 namespace std {
-template <typename T, size_t N> struct hash<VectorN<T, N>> {
-  inline std::size_t operator()(const VectorN<T, N> &v) const {
-    std::size_t seed = 0;
+  template <typename T, size_t N>
+  struct hash<VectorN<T, N>> {
+    inline std::size_t operator()(const VectorN<T, N> &v) const {
+      std::size_t seed = 0;
 
-    for (int i = 0; i < N; i++) {
-      // see https://stackoverflow.com/questions/19966041 for the magic number
-      detail::hash_combine(seed, v[i] * 2654435761);
+      for (int i = 0; i < N; i++) {
+        // see https://stackoverflow.com/questions/19966041 for the magic number
+        detail::hash_combine(seed, v[i] * 2654435761);
+      }
+      return seed;
     }
-    return seed;
-  }
-};
+  };
 
-template <typename T> struct hash<Vector3<T>> {
-  inline std::size_t operator()(const Vector3<T> &v) const {
-    std::size_t seed = 0;
+  template <typename T>
+  struct hash<Vector3<T>> {
+    inline std::size_t operator()(const Vector3<T> &v) const {
+      std::size_t seed = 0;
 
-    for (int i = 0; i < 3; i++) {
-      detail::hash_combine(seed, v[i] * 2654435761);
+      for (int i = 0; i < 3; i++) {
+        detail::hash_combine(seed, v[i] * 2654435761);
+      }
+      return seed;
     }
-    return seed;
-  }
-};
-} // namespace std
+  };
+}  // namespace std

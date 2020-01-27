@@ -13,49 +13,48 @@ const char *BitRangeNames[] = {"float", "uint8", "uint12", "uint16"};
 
 float bitrange_to_float(BitRange br) {
   switch (br) {
-  case BitRange::FLOAT:
-    return 1;
-  case BitRange::U8:
-    return (1 << 8) - 1;
-  case BitRange::U12:
-    return (1 << 12) - 1;
-  case BitRange::U16:
-    return (1 << 16) - 1;
+    case BitRange::FLOAT:
+      return 1;
+    case BitRange::U8:
+      return (1 << 8) - 1;
+    case BitRange::U12:
+      return (1 << 12) - 1;
+    case BitRange::U16:
+      return (1 << 16) - 1;
   }
   throw std::logic_error("This line should not be reached");
 }
 
 class BaseFileRecording {
-private:
+ private:
   filesystem::path _path;
 
-public:
+ public:
   BaseFileRecording(const filesystem::path &path) : _path(path){};
   virtual ~BaseFileRecording() = default;
   filesystem::path path() { return _path; };
 
-  virtual bool good() const = 0;
-  virtual int Nx() const = 0;
-  virtual int Ny() const = 0;
-  virtual int length() const = 0;
-  virtual std::string error_msg() = 0;
-  virtual std::string date() const = 0;
-  virtual std::string comment() const = 0;
+  virtual bool good() const                             = 0;
+  virtual int Nx() const                                = 0;
+  virtual int Ny() const                                = 0;
+  virtual int length() const                            = 0;
+  virtual std::string error_msg()                       = 0;
+  virtual std::string date() const                      = 0;
+  virtual std::string comment() const                   = 0;
   virtual std::chrono::duration<float> duration() const = 0;
-  virtual float fps() const = 0;
-  virtual std::optional<BitRange> bitrange() const = 0;
+  virtual float fps() const                             = 0;
+  virtual std::optional<BitRange> bitrange() const      = 0;
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t) = 0;
 };
 
 class BmpFileRecording : public BaseFileRecording {
-protected:
+ protected:
   BMPheader file;
   Eigen::Matrix<uint16, Eigen::Dynamic, Eigen::Dynamic> frame_uint16;
 
-public:
-  BmpFileRecording(const filesystem::path &path)
-      : file(path), BaseFileRecording(path) {
+ public:
+  BmpFileRecording(const filesystem::path &path) : file(path), BaseFileRecording(path) {
     frame_uint16.setZero(file.Nx(), file.Ny());
   }
 
@@ -66,9 +65,7 @@ public:
   std::string error_msg() final { return file.error_msg(); };
   std::string date() const final { return file.date(); };
   std::string comment() const final { return file.comment(); };
-  std::chrono::duration<float> duration() const final {
-    return file.duration();
-  };
+  std::chrono::duration<float> duration() const final { return file.duration(); };
   float fps() const final { return file.fps(); };
 
   Eigen::MatrixXf read_frame(long t) final {
@@ -88,9 +85,9 @@ public:
 
 class RawFileRecording : public BaseFileRecording {
   std::ifstream _in;
-  int _nx = 0;
-  int _ny = 0;
-  int _nt = 0;
+  int _nx    = 0;
+  int _ny    = 0;
+  int _nt    = 0;
   bool _good = false;
 
   std::string _error_msg = "";
@@ -107,10 +104,9 @@ class RawFileRecording : public BaseFileRecording {
     return file_size;
   }
 
-public:
+ public:
   RawFileRecording(const filesystem::path &path)
-      : _in(path.string(), std::ios::in | std::ios::binary),
-        BaseFileRecording(path) {
+      : _in(path.string(), std::ios::in | std::ios::binary), BaseFileRecording(path) {
 
     const std::regex rgx(R"(^.*?_(\d+)x(\d+)x(\d+)f.*?\.dat$)");
     std::string filename = path.filename().string();
@@ -120,8 +116,7 @@ public:
       _nt = std::stoi(matches[3]);
 
       auto l = get_filesize();
-      if (l % (_nx * _ny * sizeof(float)) != 0 ||
-          l / (_nx * _ny * sizeof(float)) < _nt) {
+      if (l % (_nx * _ny * sizeof(float)) != 0 || l / (_nx * _ny * sizeof(float)) < _nt) {
         _error_msg = "File size does not match expected dimensions";
         return;
       }

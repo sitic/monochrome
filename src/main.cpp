@@ -1,4 +1,4 @@
-#ifdef _WIN32 // Windows 32 and 64 bit
+#ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
 #endif
 
@@ -19,39 +19,37 @@
 GLFWwindow *main_window = nullptr;
 
 std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
-std::vector<Message> messages = {};
+std::vector<Message> messages                            = {};
 
 namespace prm {
-static int main_window_width = 600;
-static int main_window_height = 0;
+  static int main_window_width  = 600;
+  static int main_window_height = 0;
 
-static Filters prefilter = Filters::None;
-static Transformations transformation = Transformations::None;
-static Filters postfilter = Filters::None;
-static BitRange bitrange = BitRange::U12;
-} // namespace prm
+  static Filters prefilter              = Filters::None;
+  static Transformations transformation = Transformations::None;
+  static Filters postfilter             = Filters::None;
+  static BitRange bitrange              = BitRange::U12;
+}  // namespace prm
 
-RotationCtrl Recording::rotations = {};
-float RecordingWindow::scale_fct = 1;
+RotationCtrl Recording::rotations        = {};
+float RecordingWindow::scale_fct         = 1;
 float Transformation::GaussFilter::sigma = 1;
 deriche_coeffs Transformation::GaussFilter::c;
 unsigned Transformation::ContrastEnhancement::kernel_size = 3;
-unsigned Transformation::MeanFilter::kernel_size = 3;
-unsigned Transformation::MedianFilter::kernel_size = 3;
-int Transformation::ContrastEnhancement::maskVersion = 0;
+unsigned Transformation::MeanFilter::kernel_size          = 3;
+unsigned Transformation::MedianFilter::kernel_size        = 3;
+int Transformation::ContrastEnhancement::maskVersion      = 0;
 
 void load_new_file(filesystem::path path) {
   fmt::print("Loading {} ...\n", path.string());
 
   if (!filesystem::is_regular_file(path)) {
-    new_ui_message("ERROR: {} does not appear to be a file, skipping",
-                   path.string());
+    new_ui_message("ERROR: {} does not appear to be a file, skipping", path.string());
     return;
   }
 
   if (path.extension() != ".dat") {
-    new_ui_message("ERROR: {} does not have extension '.dat', skipping",
-                   path.string());
+    new_ui_message("ERROR: {} does not have extension '.dat', skipping", path.string());
     return;
   }
 
@@ -101,11 +99,9 @@ void display() {
 
     {
       ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Pos);
-      ImGui::SetNextWindowSizeConstraints(
-          ImVec2(prm::main_window_width, 0),
-          ImVec2(prm::main_window_width, FLT_MAX));
-      auto flags = ImGuiWindowFlags_NoCollapse |
-                   ImGuiWindowFlags_AlwaysAutoResize |
+      ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
+                                          ImVec2(prm::main_window_width, FLT_MAX));
+      auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings;
       ImGui::Begin("Drag & drop .dat files into this window", nullptr, flags);
 
@@ -133,8 +129,7 @@ void display() {
           }
           ImGui::SameLine();
           ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
-          ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20,
-                           "playback speed = %.1f");
+          ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20, "playback speed = %.1f");
           ImGui::SameLine();
           if (ImGui::Button(ICON_FA_FORWARD)) {
             prm::playbackCtrl.val *= 2;
@@ -158,8 +153,8 @@ void display() {
           }
           ImGui::SameLine();
           ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
-          if (ImGui::DragFloat("##scaling", &RecordingWindow::scale_fct, 0.05,
-                               0.5, 10, "window scaling = %.1f")) {
+          if (ImGui::DragFloat("##scaling", &RecordingWindow::scale_fct, 0.05, 0.5, 10,
+                               "window scaling = %.1f")) {
             resize_windows = true;
           }
           ImGui::SameLine();
@@ -177,8 +172,7 @@ void display() {
         ImGui::NextColumn();
         {
           int item = static_cast<int>(prm::bitrange);
-          ImGui::Combo("Data Format", &item, BitRangeNames,
-                       IM_ARRAYSIZE(BitRangeNames));
+          ImGui::Combo("Data Format", &item, BitRangeNames, IM_ARRAYSIZE(BitRangeNames));
           prm::bitrange = static_cast<BitRange>(item);
         }
 
@@ -245,8 +239,7 @@ void display() {
         ImGui::Indent(10);
         const int step = 2;
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-        if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32, &val, &step,
-                               nullptr, "%d")) {
+        if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32, &val, &step, nullptr, "%d")) {
           for (const auto &r : recordings) {
             reset_fn(r.get());
           }
@@ -269,28 +262,22 @@ void display() {
           ImGui::Unindent(10);
         }
         if (selectable("Mean", Filters::Mean)) {
-          kernel_size_select(
-              Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
-                // TODO: clean up
-                auto transform =
-                    r->transformationArena.create_if_needed(Filters::Mean, 0);
-                auto c = dynamic_cast<Transformation::MeanFilter *>(transform);
-                assert(c);
-                c->reset();
-              });
+          kernel_size_select(Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
+            // TODO: clean up
+            auto transform = r->transformationArena.create_if_needed(Filters::Mean, 0);
+            auto c         = dynamic_cast<Transformation::MeanFilter *>(transform);
+            assert(c);
+            c->reset();
+          });
         }
         if (selectable("Median", Filters::Median)) {
-          kernel_size_select(
-              Transformation::MedianFilter::kernel_size,
-              [](RecordingWindow *r) {
-                // TODO: clean up
-                auto transform =
-                    r->transformationArena.create_if_needed(Filters::Median, 0);
-                auto c =
-                    dynamic_cast<Transformation::MedianFilter *>(transform);
-                assert(c);
-                c->reset();
-              });
+          kernel_size_select(Transformation::MedianFilter::kernel_size, [](RecordingWindow *r) {
+            // TODO: clean up
+            auto transform = r->transformationArena.create_if_needed(Filters::Median, 0);
+            auto c         = dynamic_cast<Transformation::MedianFilter *>(transform);
+            assert(c);
+            c->reset();
+          });
         }
         ImGui::TreePop();
       }
@@ -299,34 +286,28 @@ void display() {
 
       ImGui::SetNextItemOpen(true, ImGuiCond_Once);
       if (ImGui::TreeNode("Transformations")) {
-        auto selectable =
-            selectable_factory(prm::transformation, Transformations::None);
+        auto selectable = selectable_factory(prm::transformation, Transformations::None);
         selectable("Frame Difference", Transformations::FrameDiff);
-        if (selectable("Contrast Enhancement",
-                       Transformations::ContrastEnhancement)) {
+        if (selectable("Contrast Enhancement", Transformations::ContrastEnhancement)) {
           ImGui::Indent(10);
           const int step = 2;
           ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-          if (ImGui::InputScalar(
-                  "Kernel size", ImGuiDataType_U32,
-                  &Transformation::ContrastEnhancement::kernel_size, &step,
-                  nullptr, "%d")) {
+          if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32,
+                                 &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
+                                 "%d")) {
             for (const auto &r : recordings) {
               // TODO: clean up
-              auto transform = r->transformationArena.create_if_needed(
-                  Transformations::ContrastEnhancement, 0);
-              auto c = dynamic_cast<Transformation::ContrastEnhancement *>(
-                  transform);
+              auto transform =
+                  r->transformationArena.create_if_needed(Transformations::ContrastEnhancement, 0);
+              auto c = dynamic_cast<Transformation::ContrastEnhancement *>(transform);
               assert(c);
               c->reset();
             }
           }
-          ImGui::SliderInt(
-              "Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
+          ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
           ImGui::Unindent(10);
         }
-        selectable("Flicker Segmentation",
-                   Transformations::FlickerSegmentation);
+        selectable("Flicker Segmentation", Transformations::FlickerSegmentation);
         ImGui::TreePop();
       }
 
@@ -346,28 +327,22 @@ void display() {
           ImGui::Unindent(10);
         }
         if (selectable("Mean", Filters::Mean)) {
-          kernel_size_select(
-              Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
-                // TODO: clean up
-                auto transform =
-                    r->transformationArena.create_if_needed(Filters::Mean, 0);
-                auto c = dynamic_cast<Transformation::MeanFilter *>(transform);
-                assert(c);
-                c->reset();
-              });
+          kernel_size_select(Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
+            // TODO: clean up
+            auto transform = r->transformationArena.create_if_needed(Filters::Mean, 0);
+            auto c         = dynamic_cast<Transformation::MeanFilter *>(transform);
+            assert(c);
+            c->reset();
+          });
         }
         if (selectable("Median", Filters::Median)) {
-          kernel_size_select(
-              Transformation::MedianFilter::kernel_size,
-              [](RecordingWindow *r) {
-                // TODO: clean up
-                auto transform =
-                    r->transformationArena.create_if_needed(Filters::Median, 0);
-                auto c =
-                    dynamic_cast<Transformation::MedianFilter *>(transform);
-                assert(c);
-                c->reset();
-              });
+          kernel_size_select(Transformation::MedianFilter::kernel_size, [](RecordingWindow *r) {
+            // TODO: clean up
+            auto transform = r->transformationArena.create_if_needed(Filters::Median, 0);
+            auto c         = dynamic_cast<Transformation::MedianFilter *>(transform);
+            assert(c);
+            c->reset();
+          });
         }
         ImGui::TreePop();
       }
@@ -376,26 +351,23 @@ void display() {
     }
 
     // Check if recording window should close
-    recordings.erase(std::remove_if(recordings.begin(), recordings.end(),
-                                    [](const auto &r) -> bool {
-                                      return glfwWindowShouldClose(r->window);
-                                    }),
-                     recordings.end());
+    recordings.erase(
+        std::remove_if(recordings.begin(), recordings.end(),
+                       [](const auto &r) -> bool { return glfwWindowShouldClose(r->window); }),
+        recordings.end());
 
     for (const auto &recording : recordings) {
-      recording->display(prm::playbackCtrl.val, prm::prefilter,
-                         prm::transformation, prm::postfilter, prm::bitrange);
+      recording->display(prm::playbackCtrl.val, prm::prefilter, prm::transformation, prm::postfilter,
+                         prm::bitrange);
 
       ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                           ImVec2(FLT_MAX, FLT_MAX));
       ImGui::Begin(recording->path().filename().string().c_str(), nullptr,
                    ImGuiWindowFlags_AlwaysAutoResize);
       int t = recording->current_frame();
-      ImGui::PushStyleColor(ImGuiCol_SliderGrab,
-                            ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
+      ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
       ImGui::SetNextItemWidth(-1);
-      if (ImGui::SliderInt("##progress", &t, 0, recording->length() - 1,
-                           "Frame %d")) {
+      if (ImGui::SliderInt("##progress", &t, 0, recording->length() - 1, "Frame %d")) {
         recording->set_frame_index(t - static_cast<int>(prm::playbackCtrl.val));
       }
       ImGui::PopStyleColor(1);
@@ -424,22 +396,22 @@ void display() {
       ImGui::Text("Height %d", recording->Ny());
       ImGui::NextColumn();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
-        auto &ctrl = recording->export_ctrl.raw;
+        auto &ctrl         = recording->export_ctrl.raw;
         ctrl.export_window = true;
         ctrl.assign_auto_filename(recording->path());
-        ctrl.start = {0, 0};
-        ctrl.size = {recording->Nx(), recording->Ny()};
+        ctrl.start  = {0, 0};
+        ctrl.size   = {recording->Nx(), recording->Ny()};
         ctrl.frames = {0, recording->length()};
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
-        auto &ctrl = recording->export_ctrl.video;
+        auto &ctrl         = recording->export_ctrl.video;
         ctrl.export_window = true;
         ctrl.assign_auto_filename(recording->path());
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
-        auto &ctrl = recording->export_ctrl.png;
+        auto &ctrl         = recording->export_ctrl.png;
         ctrl.export_window = true;
         ctrl.assign_auto_filename(recording->path());
       }
@@ -450,35 +422,32 @@ void display() {
                            recording->histogram.data.size(), 0, nullptr, 0,
                            recording->histogram.max_value(), ImVec2(0, 100));
 
-      ImGui::SliderFloat("min", &recording->get_min(prm::transformation),
-                         recording->histogram.min, recording->histogram.max);
-      ImGui::SliderFloat("max", &recording->get_max(prm::transformation),
-                         recording->histogram.min, recording->histogram.max);
+      ImGui::SliderFloat("min", &recording->get_min(prm::transformation), recording->histogram.min,
+                         recording->histogram.max);
+      ImGui::SliderFloat("max", &recording->get_max(prm::transformation), recording->histogram.min,
+                         recording->histogram.max);
 
       for (auto &[trace, pos, color] : recording->traces) {
         auto label = pos.to_string();
         ImGui::PushID(label.c_str());
 
-        ImGui::PushStyleColor(ImGuiCol_PlotLines,
-                              ImVec4(color[0], color[1], color[2], 1));
-        ImGui::PlotLines("", trace.data(), trace.size(), 0, NULL, FLT_MAX,
-                         FLT_MAX, ImVec2(0, 100));
+        ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(color[0], color[1], color[2], 1));
+        ImGui::PlotLines("", trace.data(), trace.size(), 0, NULL, FLT_MAX, FLT_MAX, ImVec2(0, 100));
         ImGui::PopStyleColor(1);
         ImGui::SameLine();
         ImGui::BeginGroup();
         ImGui::ColorEdit3(label.c_str(), color.data(),
-                          ImGuiColorEditFlags_NoInputs |
-                              ImGuiColorEditFlags_NoLabel);
+                          ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
         if (ImGui::Button("Reset")) {
           trace.clear();
         }
         if (ImGui::Button("Export ROI")) {
-          auto &ctrl = recording->export_ctrl.raw;
+          auto &ctrl         = recording->export_ctrl.raw;
           ctrl.export_window = true;
           ctrl.assign_auto_filename(recording->path());
-          auto w = Trace::width();
-          ctrl.start = {pos[0] - w / 2, pos[1] - w / 2};
-          ctrl.size = {w, w};
+          auto w      = Trace::width();
+          ctrl.start  = {pos[0] - w / 2, pos[1] - w / 2};
+          ctrl.size   = {w, w};
           ctrl.frames = {0, recording->length()};
         }
         ImGui::EndGroup();
@@ -501,30 +470,25 @@ void display() {
       static auto export_dir = gen_export_dir(recording->path().parent_path());
 
       if (auto &ctrl = recording->export_ctrl.raw; ctrl.export_window) {
-        ImGui::SetNextWindowSizeConstraints(
-            ImVec2(0.75f * prm::main_window_width, 0),
-            ImVec2(prm::main_window_width, FLT_MAX));
-        ImGui::Begin("Export Raw ROI", &(ctrl.export_window),
-                     ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
+                                            ImVec2(prm::main_window_width, FLT_MAX));
+        ImGui::Begin("Export Raw ROI", &(ctrl.export_window), ImGuiWindowFlags_AlwaysAutoResize);
 
         bool refresh = ImGui::InputInt2("Top Left Position", ctrl.start.data());
         refresh |= ImGui::InputInt2("Array Size", ctrl.size.data());
         refresh |= ImGui::InputInt2("Start & End Frames", ctrl.frames.data());
-        if (refresh)
-          ctrl.assign_auto_filename(recording->path());
+        if (refresh) ctrl.assign_auto_filename(recording->path());
 
         ImGui::Spacing();
 
         ImGui::InputText("Directory", export_dir.data(), export_dir.size());
-        ImGui::InputText("Filename", ctrl.filename.data(),
-                         ctrl.filename.size());
+        ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
 
         static bool norm = false;
         ImGui::Checkbox("Normalize to [0, 1]", &norm);
 
         ImGui::Spacing();
-        if (ImGui::Button("Start Export (freezes everything)",
-                          ImVec2(-1.0f, 0.0f))) {
+        if (ImGui::Button("Start Export (freezes everything)", ImVec2(-1.0f, 0.0f))) {
           filesystem::path path(export_dir.data());
           path /= ctrl.filename.data();
           fmt::print("Exporting ROI to {}\n", path.string());
@@ -533,12 +497,10 @@ void display() {
                                       recording->get_max(Transformations::None))
                               : Vec2f(0, 0);
 
-          bool success = recording->export_ROI(path, ctrl.start, ctrl.size,
-                                               ctrl.frames, minmax);
+          bool success = recording->export_ROI(path, ctrl.start, ctrl.size, ctrl.frames, minmax);
 
           if (success) {
-            new_ui_message("Export to {} completed successfully",
-                           path.string());
+            new_ui_message("Export to {} completed successfully", path.string());
             ctrl.export_window = false;
           }
         }
@@ -546,9 +508,8 @@ void display() {
       }
 
       if (auto &ctrl = recording->export_ctrl.video; ctrl.export_window) {
-        ImGui::SetNextWindowSizeConstraints(
-            ImVec2(0.75f * prm::main_window_width, 0),
-            ImVec2(prm::main_window_width, FLT_MAX));
+        ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
+                                            ImVec2(prm::main_window_width, FLT_MAX));
         ImGui::Begin("Export Video", &(ctrl.export_window));
         ImGui::TextWrapped(
             "Export the recording window as an .mp4 file."
@@ -558,8 +519,7 @@ void display() {
 
         if (!ctrl.recording) {
           ImGui::InputText("Directory", export_dir.data(), export_dir.size());
-          ImGui::InputText("Filename", ctrl.filename.data(),
-                           ctrl.filename.size());
+          ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
           static int fps = 30;
           ImGui::InputInt("FPS", &fps);
 
@@ -569,11 +529,9 @@ void display() {
             recording->start_recording(path.string(), fps);
           }
         } else {
-          int cur_frame =
-              recording->current_frame() / prm::playbackCtrl.val + 1;
+          int cur_frame    = recording->current_frame() / prm::playbackCtrl.val + 1;
           int total_frames = recording->length() / prm::playbackCtrl.val;
-          auto label =
-              fmt::format("Exporting frame {:d}/{:d}", cur_frame, total_frames);
+          auto label       = fmt::format("Exporting frame {:d}/{:d}", cur_frame, total_frames);
           ImGui::ProgressBar(ctrl.progress, ImVec2(-1, 0), label.c_str());
 
           if (ImGui::Button(ICON_FA_STOP " Stop Export")) {
@@ -585,13 +543,11 @@ void display() {
       }
 
       if (auto &ctrl = recording->export_ctrl.png; ctrl.export_window) {
-        ImGui::SetNextWindowSizeConstraints(
-            ImVec2(0.75f * prm::main_window_width, 0),
-            ImVec2(prm::main_window_width, FLT_MAX));
+        ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
+                                            ImVec2(prm::main_window_width, FLT_MAX));
         ImGui::Begin("Export .png", &(ctrl.export_window));
         ImGui::InputText("Directory", export_dir.data(), export_dir.size());
-        ImGui::InputText("Filename", ctrl.filename.data(),
-                         ctrl.filename.size());
+        ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
 
         const auto make_snapshot = [&recording, &ctrl]() {
           filesystem::path path(export_dir.data());
@@ -609,10 +565,9 @@ void display() {
         } else {
           auto fn = make_snapshot();
           if (ImGui::Button("Stop exporting .png series")) {
-            ctrl.save_pngs = false;
+            ctrl.save_pngs     = false;
             ctrl.export_window = false;
-            new_ui_message("Stopped exporting .png series, last screenshot {}",
-                           fn.string());
+            new_ui_message("Stopped exporting .png series, last screenshot {}", fn.string());
           }
         }
         ImGui::End();
@@ -620,17 +575,15 @@ void display() {
     }
 
     // Check if message window should be cleared
-    messages.erase(
-        std::remove_if(messages.begin(), messages.end(),
-                       [](const auto &msg) -> bool { return !msg.show; }),
-        messages.end());
+    messages.erase(std::remove_if(messages.begin(), messages.end(),
+                                  [](const auto &msg) -> bool { return !msg.show; }),
+                   messages.end());
     for (auto &msg : messages) {
       if (msg.show) {
         auto label = fmt::format("Message {}", msg.id);
-        ImGui::SetNextWindowSizeConstraints(
-            ImVec2(0.6f * prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
-        ImGui::Begin(label.c_str(), &(msg.show),
-                     ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::SetNextWindowSizeConstraints(ImVec2(0.6f * prm::main_window_width, 0),
+                                            ImVec2(FLT_MAX, FLT_MAX));
+        ImGui::Begin(label.c_str(), &(msg.show), ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::TextWrapped("%s", msg.msg.c_str());
         if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
           msg.show = false;
@@ -678,20 +631,18 @@ void drop_callback(GLFWwindow *window, int count, const char **paths) {
 
 int main(int, char **) {
   glfwSetErrorCallback(glfw_error_callback);
-  if (!glfwInit())
-    exit(EXIT_FAILURE);
+  if (!glfwInit()) exit(EXIT_FAILURE);
 
   auto primary_monitor = glfwGetPrimaryMonitor();
-  auto mode = glfwGetVideoMode(primary_monitor);
+  auto mode            = glfwGetVideoMode(primary_monitor);
 
-  prm::main_window_width = std::max(prm::main_window_width, mode->width / 4);
+  prm::main_window_width  = std::max(prm::main_window_width, mode->width / 4);
   prm::main_window_height = 1.5 * prm::main_window_width;
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  main_window =
-      glfwCreateWindow(prm::main_window_width, prm::main_window_height,
-                       "Quick Raw Video Viewer", nullptr, nullptr);
+  main_window = glfwCreateWindow(prm::main_window_width, prm::main_window_height,
+                                 "Quick Raw Video Viewer", nullptr, nullptr);
   if (!main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);
@@ -721,7 +672,7 @@ int main(int, char **) {
   // windows can look identical to regular ones.
   ImGuiStyle &style = ImGui::GetStyle();
   if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-    style.WindowRounding = 0.0f;
+    style.WindowRounding              = 0.0f;
     style.Colors[ImGuiCol_WindowBg].w = 1.0f;
   }
 
@@ -754,21 +705,17 @@ int main(int, char **) {
   // literal you need to write a double backslash \\ !
   io.Fonts->AddFontDefault();
   ImFontConfig icons_config;
-  icons_config.MergeMode = true;
+  icons_config.MergeMode  = true;
   icons_config.PixelSnapH = true;
 
-  static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA,
-                                                     0};
-  io.Fonts->AddFontFromMemoryCompressedTTF(
-      fonts::fontawesome5_solid_compressed_data,
-      fonts::fontawesome5_solid_compressed_size, 11, &icons_config,
-      fontawesome_icons_ranges);
-  static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI,
-                                                             ICON_MAX_MDI, 0};
-  io.Fonts->AddFontFromMemoryCompressedTTF(
-      fonts::materialdesignicons_compressed_data,
-      fonts::materialdesignicons_compressed_size, 11, &icons_config,
-      materialdesignicons_icons_ranges);
+  static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+  io.Fonts->AddFontFromMemoryCompressedTTF(fonts::fontawesome5_solid_compressed_data,
+                                           fonts::fontawesome5_solid_compressed_size, 11,
+                                           &icons_config, fontawesome_icons_ranges);
+  static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI, ICON_MAX_MDI, 0};
+  io.Fonts->AddFontFromMemoryCompressedTTF(fonts::materialdesignicons_compressed_data,
+                                           fonts::materialdesignicons_compressed_size, 11,
+                                           &icons_config, materialdesignicons_icons_ranges);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
   // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);

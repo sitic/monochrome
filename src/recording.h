@@ -7,20 +7,21 @@
 using namespace std::string_literals;
 
 struct RotationCtrl {
-private:
+ private:
   short _rotation = 0;
-  bool _fliplr = false;
-  bool _flipud = false;
+  bool _fliplr    = false;
+  bool _flipud    = false;
 
-public:
+ public:
   short get_rotation() { return _rotation; }
 
   void set_rotation(short rotation) {
     const std::array<short, 4> valid_rotations = {{0, 90, 180, 270}};
     if (std::none_of(valid_rotations.begin(), valid_rotations.end(),
                      [rotation](auto r) { return r == rotation; })) {
-      throw std::logic_error("set_rotation() has to be called with either "
-                             "0, 90, 180,  or 270 as parameter");
+      throw std::logic_error(
+          "set_rotation() has to be called with either "
+          "0, 90, 180,  or 270 as parameter");
     }
 
     _rotation = rotation;
@@ -28,8 +29,9 @@ public:
 
   void add_rotation(short delta_rotation) {
     if (std::abs(delta_rotation) != 90) {
-      throw std::logic_error("add_rotation() has to be called with either "
-                             "+90 or -90 as parameter");
+      throw std::logic_error(
+          "add_rotation() has to be called with either "
+          "+90 or -90 as parameter");
     }
 
     if (_rotation == 0 && delta_rotation < 0) {
@@ -67,35 +69,28 @@ public:
     }
 
     switch (_rotation) {
-    case 0:
-      // do nothing
-      break;
-    case 90:
-      arr = arr.transpose().colwise().reverse().eval();
-      break;
-    case 180:
-      arr = arr.transpose()
-                .colwise()
-                .reverse()
-                .transpose()
-                .colwise()
-                .reverse()
-                .eval();
-      break;
-    case 270:
-      arr = arr.transpose().rowwise().reverse().eval();
-      break;
-    default:
-      throw std::logic_error(
-          "Invalid rotation value! (Should be 0, 90, 180, or 270");
+      case 0:
+        // do nothing
+        break;
+      case 90:
+        arr = arr.transpose().colwise().reverse().eval();
+        break;
+      case 180:
+        arr = arr.transpose().colwise().reverse().transpose().colwise().reverse().eval();
+        break;
+      case 270:
+        arr = arr.transpose().rowwise().reverse().eval();
+        break;
+      default:
+        throw std::logic_error("Invalid rotation value! (Should be 0, 90, 180, or 270");
     }
   }
 };
 
 class Recording {
-protected:
+ protected:
   std::shared_ptr<BaseFileRecording> file;
-  int _t = 0;
+  int _t    = 0;
   float _tf = 0;
 
   long t_frame = 0;
@@ -104,10 +99,8 @@ protected:
 
   void apply_rotation() { rotations.apply(frame); }
 
-  static std::shared_ptr<BaseFileRecording>
-  autoguess_filerecording(const filesystem::path &path) {
-    std::shared_ptr<BaseFileRecording> file =
-        std::make_shared<RawFileRecording>(path);
+  static std::shared_ptr<BaseFileRecording> autoguess_filerecording(const filesystem::path &path) {
+    std::shared_ptr<BaseFileRecording> file = std::make_shared<RawFileRecording>(path);
     if (!file->good()) {
       file = std::make_shared<BmpFileRecording>(path);
     }
@@ -119,11 +112,10 @@ protected:
     return file;
   }
 
-public:
+ public:
   Eigen::MatrixXf frame;
 
-  Recording(const filesystem::path &path)
-      : Recording(autoguess_filerecording(path)){};
+  Recording(const filesystem::path &path) : Recording(autoguess_filerecording(path)){};
   Recording(std::shared_ptr<BaseFileRecording> _file) : file(_file) {
     if (!file->good()) {
       return;
@@ -146,7 +138,7 @@ public:
   std::optional<BitRange> bitrange() const { return file->bitrange(); }
 
   void load_frame(long t) {
-    frame = file->read_frame(t);
+    frame   = file->read_frame(t);
     t_frame = t;
     apply_rotation();
   }
@@ -165,7 +157,7 @@ public:
 
     if (_t < 0) {
       // should never happen, but just in case
-      _t = 0;
+      _t  = 0;
       _tf = 0;
     }
 
@@ -174,7 +166,7 @@ public:
 
   void restart() {
     _tf = std::numeric_limits<float>::lowest();
-    _t = std::numeric_limits<int>::lowest();
+    _t  = std::numeric_limits<int>::lowest();
   }
 
   int current_frame() { return _t; }
@@ -182,26 +174,25 @@ public:
   // Set the internal frame index to some value, use if want to manipulate the
   // next load_next_frame() call without calling load_frame()
   void set_frame_index(int t) {
-    _t = t;
+    _t  = t;
     _tf = t;
   }
 
   float progress() { return _t / static_cast<float>(length() - 1); }
 
-  bool export_ROI(filesystem::path path, Vec2i start, Vec2i size, Vec2i t0tmax,
-                  Vec2f minmax = {0, 0}) {
-    if (start[0] < 0 || start[1] < 0 || start[0] + size[0] > Nx() ||
-        start[1] + size[1] > Ny()) {
-      new_ui_message("ERROR: export_ROI() called with invalid array sizes, "
-                     "start={}, size={}",
-                     start, size);
+  bool export_ROI(
+      filesystem::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax = {0, 0}) {
+    if (start[0] < 0 || start[1] < 0 || start[0] + size[0] > Nx() || start[1] + size[1] > Ny()) {
+      new_ui_message(
+          "ERROR: export_ROI() called with invalid array sizes, "
+          "start={}, size={}",
+          start, size);
       return false;
     }
 
     if (t0tmax[0] < 0 || t0tmax[1] > length() || t0tmax[0] > t0tmax[1]) {
-      new_ui_message(
-          "ERROR: start or end frame invalid, start frame {}, end frame {}",
-          t0tmax[0], t0tmax[1]);
+      new_ui_message("ERROR: start or end frame invalid, start frame {}, end frame {}", t0tmax[0],
+                     t0tmax[1]);
       return false;
     }
 
@@ -220,14 +211,12 @@ public:
         block = block.unaryExpr(normalize);
       }
 
-      out.write(reinterpret_cast<const char *>(block.data()),
-                block.size() * sizeof(float));
+      out.write(reinterpret_cast<const char *>(block.data()), block.size() * sizeof(float));
     }
     load_frame(cur_frame);
 
     if (!out.good()) {
-      new_ui_message("ERROR: the writing to file {} seems to have failed",
-                     path.string());
+      new_ui_message("ERROR: the writing to file {} seems to have failed", path.string());
       return false;
     }
 

@@ -1,13 +1,15 @@
 #pragma once
 
-#ifdef _WIN32 // Windows 32 and 64 bit
+#ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
 
 inline FILE *popen(const char *command, const char *type) {
   return _popen(command, type);
 }
 
-inline void pclose(FILE *file) { _pclose(file); }
+inline void pclose(FILE *file) {
+  _pclose(file);
+}
 #endif
 
 #include <stdio.h>
@@ -21,16 +23,17 @@ inline void pclose(FILE *file) { _pclose(file); }
 
 class VideoRecorder {
 
-  int width = 0;
-  int height = 0;
+  int width    = 0;
+  int height   = 0;
   FILE *ffmpeg = nullptr;
   std::vector<GLubyte> buffer;
 
   static std::string ffmpeg_encoder_args() {
-    const bool nvenc_test_enabled = false; // disable nvenc for now, needs better testing
+    const bool nvenc_test_enabled = false;  // disable nvenc for now, needs better testing
     if (nvenc_test_enabled && glfwExtensionSupported("GL_NVX_nvenc_interop")) {
       // if Nvidia NVENC supported, use it instead of cpu encoding
-      return "-c:v h264_nvenc -preset slow -profile:v high -rc vbr_hq -qmin:v 19 -qmax:v 21 -b:v 4M -maxrate:v 10M";
+      return "-c:v h264_nvenc -preset slow -profile:v high -rc vbr_hq -qmin:v 19 -qmax:v 21 -b:v 4M "
+             "-maxrate:v 10M";
     } else {
       // libx264 encoding preset, one of: ultrafast, superfast, veryfast,
       // faster, fast, medium, slow, slower, veryslow
@@ -38,22 +41,19 @@ class VideoRecorder {
       // Range is logarithmic 0 (lossless) to 51 (worst quality). Default is 23.
       unsigned quality = 18;
       return fmt::format("-c:v libx264 -preset {preset} -crf {quality:d}",
-                         fmt::arg("preset", preset),
-                         fmt::arg("quality", quality));
+                         fmt::arg("preset", preset), fmt::arg("quality", quality));
     }
   }
 
-public:
+ public:
   std::string videotitle = "";
 
   VideoRecorder() = default;
 
   ~VideoRecorder() { stop_recording(); }
 
-  void start_recording(const std::string &filename,
-                       GLFWwindow *window = nullptr, int fps = 30) {
-    if (ffmpeg)
-      return; // if already recording, silently return
+  void start_recording(const std::string &filename, GLFWwindow *window = nullptr, int fps = 30) {
+    if (ffmpeg) return;  // if already recording, silently return
 
     if (fps <= 0) {
       new_ui_message("FPS has to be >0");
@@ -76,10 +76,9 @@ public:
         // ensure height and width are divisible by 2
         "-vf \"[in]vflip,scale=trunc(iw/2)*2:trunc(ih/2)*2[out]\" "
         "-metadata title=\"{title}\" {filename}",
-        fmt::arg("fps", fps), fmt::arg("width", width),
-        fmt::arg("height", height),
-        fmt::arg("encoder_args", ffmpeg_encoder_args()),
-        fmt::arg("title", videotitle), fmt::arg("filename", filename));
+        fmt::arg("fps", fps), fmt::arg("width", width), fmt::arg("height", height),
+        fmt::arg("encoder_args", ffmpeg_encoder_args()), fmt::arg("title", videotitle),
+        fmt::arg("filename", filename));
 
     ffmpeg = popen(cmd.c_str(), "w");
     if (!ffmpeg) {
@@ -89,8 +88,9 @@ public:
 
   void add_frame() {
     if (!ffmpeg) {
-      new_ui_message("VideoRecorder::start_recording has to be called before "
-                     "using ::add_frame!");
+      new_ui_message(
+          "VideoRecorder::start_recording has to be called before "
+          "using ::add_frame!");
     }
 
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
