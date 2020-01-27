@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "filereader.h"
 #include "utils.h"
 #include "vectors.h"
@@ -116,7 +118,7 @@ class Recording {
   Eigen::MatrixXf frame;
 
   Recording(const filesystem::path &path) : Recording(autoguess_filerecording(path)){};
-  Recording(std::shared_ptr<BaseFileRecording> _file) : file(_file) {
+  Recording(std::shared_ptr<BaseFileRecording> _file) : file(std::move(_file)) {
     if (!file->good()) {
       return;
     }
@@ -124,6 +126,9 @@ class Recording {
     frame.setZero(file->Nx(), file->Ny());
     apply_rotation();
   }
+
+  std::shared_ptr<BaseFileRecording> get_file_ptr() const { return file; }
+  void set_file_ptr(std::shared_ptr<BaseFileRecording> new_file) { file = new_file; }
 
   [[nodiscard]] bool good() const { return file->good(); }
   int Nx() const { return frame.rows(); }
