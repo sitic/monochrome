@@ -2,7 +2,6 @@
 Name=quickVidViewer
 Comment=MultiRecorder and raw video viewer
 Exec=quickVidViewer
-Exec=quickVidViewer
 Icon=MultiRecorderVideo
 Type=Application
 Terminal=true
