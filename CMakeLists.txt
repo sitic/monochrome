@@ -61,7 +61,7 @@ if(APPLE)
 endif()
 
 add_executable(quickVidViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h)
-target_link_libraries(quickVidViewer imgui_glfw_gl2 fmt lodepng Eigen ipol)
+target_link_libraries(quickVidViewer imgui_glfw_gl2 fmt lodepng Eigen ipol CLI11::CLI11)
 if(CMAKE_COMPILER_IS_GNUCXX)
     if (STATIC_GCC)
         target_link_libraries(quickVidViewer -static-libgcc -static-libstdc++)
@@ -77,6 +77,6 @@ install(TARGETS quickVidViewer
 # Do platform specific post target stuff
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # Install desktop entry and icon
-    install(FILES vendor/quickViewer.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications )
+    install(FILES vendor/quickVidViewer.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications )
     install(FILES vendor/MultiRecorderVideo.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")

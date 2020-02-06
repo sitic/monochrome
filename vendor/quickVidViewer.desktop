@@ -1,8 +1,9 @@
 [Desktop Entry]
-Type=Application
 Name=quickVidViewer
+Comment=MultiRecorder and raw video viewer
 Exec=quickVidViewer
-Icon=quickVidViewer
-Comment=
+Exec=quickVidViewer
+Icon=MultiRecorderVideo
+Type=Application
 Terminal=true
 Categories=Science;

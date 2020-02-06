@@ -7,6 +7,7 @@
 
 #include <GLFW/glfw3.h>
 #include <fmt/format.h>
+#include <CLI/CLI.hpp>
 
 #include "fonts/IconsFontAwesome5.h"
 #include "fonts/IconsMaterialDesignIcons.h"
@@ -629,7 +630,16 @@ void drop_callback(GLFWwindow *window, int count, const char **paths) {
   }
 }
 
-int main(int, char **) {
+int main(int argc, char** argv) {
+  CLI::App app{"Quick Raw Video Viewer"};
+  std::vector<std::string> files;
+  app.add_option("files", files, "List of files to open");
+  try {
+    app.parse(argc, argv);
+  } catch (const CLI::ParseError &e) {
+    return app.exit(e);
+  }
+
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit()) exit(EXIT_FAILURE);
 
@@ -724,6 +734,9 @@ int main(int, char **) {
   // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f,
   // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
 
+  for (const auto& file : files) {
+    load_new_file(file);
+  }
   display();
 
   // Cleanup

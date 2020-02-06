@@ -46,7 +46,7 @@
       then
         curl -L -o linuxdeploy-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
         chmod +x linuxdeploy-x86_64.AppImage
-        OUTPUT="quickVidViewer.AppImage" ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e quickVidViewer -d ../vendor/quickVidViewer.desktop -i ../vendor/quickVidViewer.png --appdir AppDir --output appimage
+        OUTPUT="quickVidViewer.AppImage" ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e quickVidViewer -d ../vendor/quickVidViewer.desktop -i ../vendor/MultiRecorderVideo.png --appdir AppDir --output appimage
       fi
 
   dependencies: []
