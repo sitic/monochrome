@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/CLIUtils/CLI11.git
+	branch = master
+	commit = 706b14fb14444e68ace232eb9a0ef106bf99343b
+	parent = 2e7f3142721dc363d11068ed3de2be008dd2dbf7
+	method = merge
+	cmdver = 0.4.1
