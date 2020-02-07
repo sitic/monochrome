@@ -3,4 +3,5 @@ build
 Debug
 Release
 
+imgui.ini
 *.dat

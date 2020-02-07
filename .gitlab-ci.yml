@@ -87,6 +87,8 @@ gcc Debug:
 
 clang Release:
   <<: [*clang, *docker_build]
+  variables:
+    CXXFLAGS: "-DCLI11_HAS_FILESYSTEM=0 -stdlib=libc++ -Wno-error=unused-command-line-argument"
 
 osx Release:
   <<: [*osx, *build_config_generator]
