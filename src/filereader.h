@@ -54,7 +54,7 @@ class BmpFileRecording : public BaseFileRecording {
   Eigen::Matrix<uint16, Eigen::Dynamic, Eigen::Dynamic> frame_uint16;
 
  public:
-  BmpFileRecording(const filesystem::path &path) : file(path), BaseFileRecording(path) {
+  BmpFileRecording(const filesystem::path &path) : BaseFileRecording(path), file(path) {
     frame_uint16.setZero(file.Nx(), file.Ny());
   }
 

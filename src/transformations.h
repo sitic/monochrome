@@ -41,6 +41,7 @@ namespace Transformation {
     float max = 1;
 
     Base()                                                                         = default;
+    virtual ~Base()                                                                = default;
     virtual void allocate(Recording &rec)                                          = 0;
     virtual void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) = 0;
   };
