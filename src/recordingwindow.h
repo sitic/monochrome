@@ -305,25 +305,27 @@ class RecordingWindow : public Recording {
     histogram.compute(arr->reshaped());
 
     // draw and update traces
-    for (auto &[trace, pos, color] : traces) {
-      // We need to make sure, the block is inside the frame
-      const auto test_fct = [Nx = Nx(), Ny = Ny(), w = Trace::width()](const Vec2i &v) {
-        auto lim = [](auto x, auto N) { return ((x > 0) && (x < N)); };
-        return (lim(v[0], Nx) && lim(v[1], Ny));
-      };
+    if (speed != 0.f) {
+      for (auto &[trace, pos, color] : traces) {
+        // We need to make sure, the block is inside the frame
+        const auto test_fct = [Nx = Nx(), Ny = Ny(), w = Trace::width()](const Vec2i &v) {
+          auto lim = [](auto x, auto N) { return ((x > 0) && (x < N)); };
+          return (lim(v[0], Nx) && lim(v[1], Ny));
+        };
 
-      auto w      = Trace::width();
-      Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
-      // shrink the trace block width if it is too large
-      while (!test_fct(start) || !test_fct(start + Vec2i(w, w))) {
-        w -= 1;
-        Trace::width(w);
-        start = {pos[0] - w / 2, pos[1] - w / 2};
+        auto w      = Trace::width();
+        Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
+        // shrink the trace block width if it is too large
+        while (!test_fct(start) || !test_fct(start + Vec2i(w, w))) {
+          w -= 1;
+          Trace::width(w);
+          start = {pos[0] - w / 2, pos[1] - w / 2};
+        }
+
+        auto block = arr->block(start[0], start[1], w, w);
+        trace.push_back(block.mean());
+        drawPixel(pos[0], pos[1], Ny(), w, color);
       }
-
-      auto block = arr->block(start[0], start[1], w, w);
-      trace.push_back(block.mean());
-      drawPixel(pos[0], pos[1], Ny(), w, color);
     }
 
     glfwSwapBuffers(window);
@@ -406,6 +408,7 @@ class RecordingWindow : public Recording {
     glfwSetMouseButtonCallback(window, RecordingWindow::mouse_button_callback);
     glfwSetScrollCallback(window, RecordingWindow::scroll_callback);
     glfwSetWindowAspectRatio(window, Nx(), Ny());
+    glfwRequestWindowAttention(window);
 
     resize_window();
 

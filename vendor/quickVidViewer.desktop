@@ -4,5 +4,5 @@ Comment=MultiRecorder and raw video viewer
 Exec=quickVidViewer
 Icon=MultiRecorderVideo
 Type=Application
-Terminal=true
+Terminal=false
 Categories=Science;

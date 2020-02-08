@@ -7,6 +7,21 @@
 #include "definitions.h"
 #include "vectors.h"
 
+#if defined(unix) || defined(__unix__) || defined(__unix)
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
+std::string get_user_homedir() {
+  const char *homedir;
+
+  if ((homedir = getenv("HOME")) == nullptr) {
+    homedir = getpwuid(getuid())->pw_dir;
+  }
+  return homedir;
+}
+#endif
+
 template <typename T, size_t bin_count>
 class Histogram {
  public:

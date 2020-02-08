@@ -630,10 +630,21 @@ void drop_callback(GLFWwindow *window, int count, const char **paths) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   CLI::App app{"Quick Raw Video Viewer"};
   std::vector<std::string> files;
-  app.add_option("files", files, "List of files to open");
+  app.add_option("files", files, "List of files to open")->check(CLI::ExistingFile);
+  app.add_option("--scale", RecordingWindow::scale_fct, "Recording window size multiplier")
+      ->check(CLI::PositiveNumber);
+  app.add_option("--speed", prm::playbackCtrl.val, "Recording playback speed multiplier")
+      ->check(CLI::PositiveNumber);
+#ifdef _WIN32
+  app.set_config("--config", "%APPDATA%\\quickVidViewer\\quickVidViewer.ini",
+                 "Configuration file to load command line arguments from", false);
+#elif defined(unix) || defined(__unix__) || defined(__unix)
+  app.set_config("--config", fmt::format("{}/.config/quickVidViewer.ini", get_user_homedir()),
+                 "Configuration file to load command line arguments from", true);
+#endif
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError &e) {
@@ -734,7 +745,7 @@ int main(int argc, char** argv) {
   // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f,
   // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
 
-  for (const auto& file : files) {
+  for (const auto &file : files) {
     load_new_file(file);
   }
   display();
