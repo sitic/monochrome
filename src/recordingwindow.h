@@ -86,8 +86,8 @@ struct ExportCtrl {
       filename.assign(fn.begin(), fn.end());
 
       // Make sure there is enough space for the user input
-      if (filename.size() < 64) {
-        filename.resize(64);
+      if (filename.size() < 256) {
+        filename.resize(256);
       }
     }
   } png;

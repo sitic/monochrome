@@ -472,8 +472,8 @@ void display() {
         std::string s = dir.string();
         std::vector<char> v(s.begin(), s.end());
         // Maximum size for user input
-        if (v.size() < 64) {
-          v.resize(64);
+        if (v.size() < 512) {
+          v.resize(512);
         }
         return v;
       };
