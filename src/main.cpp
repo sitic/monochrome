@@ -646,7 +646,7 @@ int main(int argc, char **argv) {
   app.add_option("--scale", RecordingWindow::scale_fct, "Recording window size multiplier")
       ->check(CLI::PositiveNumber);
   app.add_option("--speed", prm::playbackCtrl.val, "Recording playback speed multiplier")
-      ->check(CLI::PositiveNumber);
+      ->check(CLI::NonNegativeNumber);
   app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
   app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
   app.add_option("--max_trace_length", prm::max_trace_length);
