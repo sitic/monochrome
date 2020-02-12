@@ -23,9 +23,9 @@ std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
 std::vector<Message> messages                            = {};
 
 namespace prm {
-  static int main_window_width  = 600;
+  static int main_window_width  = 0;
   static int main_window_height = 0;
-  static int max_trace_length = 200;
+  static int max_trace_length   = 200;
 
   static Filters prefilter              = Filters::None;
   static Transformations transformation = Transformations::None;
@@ -217,9 +217,7 @@ void display() {
           }
         }
         ImGui::NextColumn();
-        {
-          ImGui::SliderInt("Trace Length", &prm::max_trace_length, 10, 1000);
-        }
+        { ImGui::SliderInt("Trace Length", &prm::max_trace_length, 10, 1000); }
         ImGui::Columns(1);
       }
 
@@ -436,7 +434,7 @@ void display() {
       for (auto &[trace, pos, color] : recording->traces) {
         auto label = pos.to_string();
         ImGui::PushID(label.c_str());
-        int size = trace.size();
+        int size  = trace.size();
         auto data = trace.data();
         if (size > prm::max_trace_length) {
           data += (size - prm::max_trace_length);
@@ -649,15 +647,22 @@ int main(int argc, char **argv) {
       ->check(CLI::PositiveNumber);
   app.add_option("--speed", prm::playbackCtrl.val, "Recording playback speed multiplier")
       ->check(CLI::PositiveNumber);
+  app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
+  app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
+  app.add_option("--max_trace_length", prm::max_trace_length);
+  std::string config_file;
 #ifdef _WIN32
-  app.set_config("--config", "%APPDATA%\\quickVidViewer\\quickVidViewer.ini",
-                 "Configuration file to load command line arguments from", false);
+  config_file = "%APPDATA%\\quickVidViewer\\quickVidViewer.ini";
 #elif defined(unix) || defined(__unix__) || defined(__unix)
-  app.set_config("--config", fmt::format("{}/.config/quickVidViewer.ini", get_user_homedir()),
-                 "Configuration file to load command line arguments from", true);
+  config_file = fmt::format("{}/.config/quickVidViewer.ini", get_user_homedir());
 #endif
-  bool print_config = false;
-  auto print_config_opt = app.add_flag("--print-config", print_config);
+  bool print_config             = false;
+  CLI::Option *print_config_opt = nullptr;
+  if (!config_file.empty()) {
+    app.set_config("--config", config_file,
+                   "Configuration file to load command line arguments from");
+    print_config_opt = app.add_flag("--print-config", print_config);
+  }
 
   try {
     app.parse(argc, argv);
@@ -677,8 +682,8 @@ int main(int argc, char **argv) {
   auto primary_monitor = glfwGetPrimaryMonitor();
   auto mode            = glfwGetVideoMode(primary_monitor);
 
-  prm::main_window_width  = std::max(prm::main_window_width, mode->width / 4);
-  prm::main_window_height = 1.5 * prm::main_window_width;
+  if (prm::main_window_width == 0) prm::main_window_width = std::max(600, mode->width / 4);
+  if (prm::main_window_height == 0) prm::main_window_height = 1.5 * prm::main_window_width;
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -720,6 +725,7 @@ int main(int argc, char **argv) {
   // TODO: Better HIDIP handling
   float xscale, yscale;
   glfwGetMonitorContentScale(primary_monitor, &xscale, &yscale);
+  xscale = std::max(xscale, yscale);
   style.ScaleAllSizes(xscale);
 
   // Setup Platform/Renderer bindings

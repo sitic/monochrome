@@ -415,8 +415,8 @@ class RecordingWindow : public Recording {
     glfwMakeContextCurrent(prev_window);
   }
 
-  void fliplr() { rotations.flipud(); }
-  void flipud() { rotations.fliplr(); }
+  static void fliplr() { rotations.flipud(); }
+  static void flipud() { rotations.fliplr(); }
   void add_rotation(short d_rotation) {
     rotations.add_rotation(d_rotation);
     load_frame(t_frame);
