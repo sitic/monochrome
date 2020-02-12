@@ -25,13 +25,12 @@ std::vector<Message> messages                            = {};
 namespace prm {
   static int main_window_width  = 600;
   static int main_window_height = 0;
+  static int max_trace_length = 200;
 
   static Filters prefilter              = Filters::None;
   static Transformations transformation = Transformations::None;
   static Filters postfilter             = Filters::None;
   static BitRange bitrange              = BitRange::U12;
-
-  static int max_trace_length = 200;
 }  // namespace prm
 
 RotationCtrl Recording::rotations        = {};
@@ -657,10 +656,19 @@ int main(int argc, char **argv) {
   app.set_config("--config", fmt::format("{}/.config/quickVidViewer.ini", get_user_homedir()),
                  "Configuration file to load command line arguments from", true);
 #endif
+  bool print_config = false;
+  auto print_config_opt = app.add_flag("--print-config", print_config);
+
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError &e) {
     return app.exit(e);
+  }
+
+  if (print_config) {
+    app.remove_option(print_config_opt);
+    fmt::print(app.config_to_str(true, true));
+    exit(EXIT_SUCCESS);
   }
 
   glfwSetErrorCallback(glfw_error_callback);
