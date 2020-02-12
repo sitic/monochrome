@@ -30,6 +30,8 @@ namespace prm {
   static Transformations transformation = Transformations::None;
   static Filters postfilter             = Filters::None;
   static BitRange bitrange              = BitRange::U12;
+
+  static int max_trace_length = 200;
 }  // namespace prm
 
 RotationCtrl Recording::rotations        = {};
@@ -211,9 +213,13 @@ void display() {
         ImGui::NextColumn();
         {
           int trace_width = Trace::width();
-          if (ImGui::InputInt("Trace width", &trace_width, 2, 5)) {
+          if (ImGui::InputInt("Trace Width", &trace_width, 2, 5)) {
             Trace::width(trace_width);
           }
+        }
+        ImGui::NextColumn();
+        {
+          ImGui::SliderInt("Trace Length", &prm::max_trace_length, 10, 1000);
         }
         ImGui::Columns(1);
       }
@@ -431,9 +437,15 @@ void display() {
       for (auto &[trace, pos, color] : recording->traces) {
         auto label = pos.to_string();
         ImGui::PushID(label.c_str());
+        int size = trace.size();
+        auto data = trace.data();
+        if (size > prm::max_trace_length) {
+          data += (size - prm::max_trace_length);
+          size = prm::max_trace_length;
+        }
 
         ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(color[0], color[1], color[2], 1));
-        ImGui::PlotLines("", trace.data(), trace.size(), 0, NULL, FLT_MAX, FLT_MAX, ImVec2(0, 100));
+        ImGui::PlotLines("", data, size, 0, NULL, FLT_MAX, FLT_MAX, ImVec2(0, 100));
         ImGui::PopStyleColor(1);
         ImGui::SameLine();
         ImGui::BeginGroup();
