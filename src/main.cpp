@@ -711,6 +711,9 @@ int main(int argc, char **argv) {
   // io.ConfigViewportsNoAutoMerge = true;
   // io.ConfigViewportsNoTaskBarIcon = true;
 
+  // Disable .ini generation/loading for now
+  io.IniFilename = NULL;
+
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
 
