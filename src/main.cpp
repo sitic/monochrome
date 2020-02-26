@@ -402,10 +402,10 @@ void display() {
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
         auto &ctrl         = recording->export_ctrl.raw;
         ctrl.export_window = true;
-        ctrl.assign_auto_filename(recording->path());
         ctrl.start  = {0, 0};
         ctrl.size   = {recording->Nx(), recording->Ny()};
         ctrl.frames = {0, recording->length()};
+        ctrl.assign_auto_filename(recording->path());
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
