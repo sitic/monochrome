@@ -198,6 +198,7 @@ class RecordingWindow : public Recording {
     std::vector<TransformationCtrl> transformations;
 
     TransformationList(Recording &rec) : m_parent(rec) {
+      if (!rec.good()) return;
       transformations.emplace_back(Transformations::None, m_parent, 0);
       transformations.emplace_back(Filters::None, m_parent, 0);
       transformations.emplace_back(Filters::None, m_parent, 1);
