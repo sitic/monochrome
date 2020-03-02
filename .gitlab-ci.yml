@@ -80,7 +80,7 @@ gcc Release:
     paths:
       - build/quickVidViewer
       - build/quickVidViewer.AppImage
-    expire_in: 1 day
+    expire_in: 3 months
 
 gcc Debug:
   <<: [*gcc, *docker_build]
@@ -97,7 +97,7 @@ osx Release:
   artifacts:
     paths:
       - build/Release/quickVidViewer
-    expire_in: 1 day
+    expire_in: 3 months
 
 windows Release:
   <<: [*windows, *build_config_generator]
@@ -106,4 +106,4 @@ windows Release:
   artifacts:
     paths:
       - build/Release/quickVidViewer.exe
-    expire_in: 1 day
+    expire_in: 3 months
