@@ -91,7 +91,7 @@ struct RotationCtrl {
 
 class Recording {
  protected:
-  std::shared_ptr<BaseFileRecording> file;
+  std::shared_ptr<AbstractRecording> file;
   int _t    = 0;
   float _tf = 0;
 
@@ -101,8 +101,8 @@ class Recording {
 
   void apply_rotation() { rotations.apply(frame); }
 
-  static std::shared_ptr<BaseFileRecording> autoguess_filerecording(const filesystem::path &path) {
-    std::shared_ptr<BaseFileRecording> file = std::make_shared<RawFileRecording>(path);
+  static std::shared_ptr<AbstractRecording> autoguess_filerecording(const filesystem::path &path) {
+    std::shared_ptr<AbstractRecording> file = std::make_shared<RawFileRecording>(path);
     if (!file->good()) {
       file = std::make_shared<BmpFileRecording>(path);
     }
@@ -118,7 +118,7 @@ class Recording {
   Eigen::MatrixXf frame;
 
   Recording(const filesystem::path &path) : Recording(autoguess_filerecording(path)){};
-  Recording(std::shared_ptr<BaseFileRecording> _file) : file(std::move(_file)) {
+  Recording(std::shared_ptr<AbstractRecording> _file) : file(std::move(_file)) {
     if (!file->good()) {
       return;
     }
@@ -127,8 +127,8 @@ class Recording {
     apply_rotation();
   }
 
-  std::shared_ptr<BaseFileRecording> get_file_ptr() const { return file; }
-  void set_file_ptr(std::shared_ptr<BaseFileRecording> new_file) { file = new_file; }
+  std::shared_ptr<AbstractRecording> get_file_ptr() const { return file; }
+  void set_file_ptr(std::shared_ptr<AbstractRecording> new_file) { file = new_file; }
 
   [[nodiscard]] bool good() const { return file->good(); }
   int Nx() const { return frame.rows(); }

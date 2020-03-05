@@ -236,7 +236,7 @@ class RecordingWindow : public Recording {
   std::vector<Trace> traces;
 
   RecordingWindow(const filesystem::path &path) : RecordingWindow(autoguess_filerecording(path)){};
-  RecordingWindow(std::shared_ptr<BaseFileRecording> file)
+  RecordingWindow(std::shared_ptr<AbstractRecording> file)
       : Recording(file), transformationArena(*this) {
     if (!good()) {
       return;

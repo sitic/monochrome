@@ -5,6 +5,7 @@
 #include <string>
 
 #include <Eigen/Dense>
+#include <utility>
 
 #include "bmp.h"
 
@@ -25,13 +26,13 @@ float bitrange_to_float(BitRange br) {
   throw std::logic_error("This line should not be reached");
 }
 
-class BaseFileRecording {
+class AbstractRecording {
  private:
   filesystem::path _path;
 
  public:
-  BaseFileRecording(const filesystem::path &path) : _path(path){};
-  virtual ~BaseFileRecording() = default;
+  AbstractRecording(filesystem::path path) : _path(std::move(path)){};
+  virtual ~AbstractRecording() = default;
   filesystem::path path() { return _path; };
 
   virtual bool good() const                             = 0;
@@ -48,13 +49,13 @@ class BaseFileRecording {
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t) = 0;
 };
 
-class BmpFileRecording : public BaseFileRecording {
+class BmpFileRecording : public AbstractRecording {
  protected:
   BMPheader file;
   Eigen::Matrix<uint16, Eigen::Dynamic, Eigen::Dynamic> frame_uint16;
 
  public:
-  BmpFileRecording(const filesystem::path &path) : BaseFileRecording(path), file(path) {
+  BmpFileRecording(const filesystem::path &path) : AbstractRecording(path), file(path) {
     frame_uint16.setZero(file.Nx(), file.Ny());
   }
 
@@ -83,7 +84,7 @@ class BmpFileRecording : public BaseFileRecording {
   }
 };
 
-class RawFileRecording : public BaseFileRecording {
+class RawFileRecording : public AbstractRecording {
   std::ifstream _in;
   int _nx    = 0;
   int _ny    = 0;
@@ -106,7 +107,7 @@ class RawFileRecording : public BaseFileRecording {
 
  public:
   RawFileRecording(const filesystem::path &path)
-      : _in(path.string(), std::ios::in | std::ios::binary), BaseFileRecording(path) {
+      : _in(path.string(), std::ios::in | std::ios::binary), AbstractRecording(path) {
 
     const std::regex rgx(R"(^.*?_(\d+)x(\d+)x(\d+)f.*?\.dat$)");
     std::string filename = path.filename().string();
@@ -147,6 +148,45 @@ class RawFileRecording : public BaseFileRecording {
       throw std::runtime_error("Reading failed!");
     }
     _in.read(reinterpret_cast<char *>(_frame.data()), frame_size);
+    return _frame;
+  };
+
+  std::optional<BitRange> bitrange() const final { return BitRange::FLOAT; }
+};
+
+class InMemoryRecording : public AbstractRecording {
+  int _nx    = 0;
+  int _ny    = 0;
+  int _nt    = 0;
+  bool _good = false;
+
+  std::string _error_msg = "";
+
+  std::shared_ptr<float> _data;
+  Eigen::MatrixXf _frame;
+
+ public:
+  InMemoryRecording(std::shared_ptr<float> data, int nx, int ny, int nt, const std::string &name)
+      : AbstractRecording(name), _nx(nx), _ny(ny), _nt(nt), _data(std::move(data)) {
+    _good = true;
+
+    _frame.setZero(_nx, _ny);
+  }
+
+  bool good() const final { return _good; };
+  int Nx() const final { return _nx; };
+  int Ny() const final { return _ny; };
+  int length() const final { return _nt; };
+  std::string error_msg() final { return _error_msg; };
+  std::string date() const final { return ""; };
+  std::string comment() const final { return ""; };
+  std::chrono::duration<float> duration() const final { return 0s; };
+  float fps() const final { return 0; };
+
+  Eigen::MatrixXf read_frame(long t) final {
+    auto frame_size = _nx * _nx;
+    auto data_ptr   = _data.get() + frame_size * t;
+    std::copy(data_ptr, data_ptr + frame_size, _frame.data());
     return _frame;
   };
 
