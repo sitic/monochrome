@@ -61,7 +61,7 @@ if (APPLE)
 endif ()
 
 add_executable(quickVidViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h src/main_window.h)
-target_link_libraries(quickVidViewer imgui_glfw_gl2 fmt lodepng Eigen ipol CLI11::CLI11)
+target_link_libraries(quickVidViewer CLI11::CLI11 imgui_glfw_gl2 fmt lodepng Eigen ipol asio)
 if (CMAKE_COMPILER_IS_GNUCXX)
     if (STATIC_GCC)
         target_link_libraries(quickVidViewer -static-libgcc -static-libstdc++)

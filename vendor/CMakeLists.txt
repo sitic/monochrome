@@ -1,9 +1,9 @@
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(GLFW_BUILD_DOCS     OFF CACHE BOOL "Build glfw docs" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build glfw docs" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build glfw examples" FORCE)
-set(GLFW_BUILD_TESTS    OFF CACHE BOOL "Build glfw tests" FORCE)
-set(GLFW_INSTALL        OFF CACHE BOOL "Generate glfw installation target" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build glfw tests" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "Generate glfw installation target" FORCE)
 add_subdirectory(glfw)
 set_target_properties(glfw PROPERTIES FOLDER libs)
 
@@ -32,6 +32,13 @@ set_target_properties(fmt PROPERTIES FOLDER libs)
 
 add_library(Eigen INTERFACE)
 target_include_directories(Eigen INTERFACE Eigen)
+
+add_library(asio INTERFACE)
+target_include_directories(asio INTERFACE asio/include)
+target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
+if (MSVC)
+    target_compile_definitions(asio INTERFACE _WIN32_WINNT=0x0501)
+endif ()
 
 add_subdirectory(CLI11)
 

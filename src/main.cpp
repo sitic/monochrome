@@ -1,8 +1,9 @@
+#include <CLI/CLI.hpp>
+
+#include "asio.hpp"
 #ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
 #endif
-
-#include <CLI/CLI.hpp>
 
 #include "main_window.h"
 
