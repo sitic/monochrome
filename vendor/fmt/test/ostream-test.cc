@@ -187,8 +187,8 @@ TEST(OStreamTest, Join) {
 
 #if FMT_USE_CONSTEXPR
 TEST(OStreamTest, ConstexprString) {
-  EXPECT_EQ("42", format(fmt("{}"), std::string("42")));
-  EXPECT_EQ("a string", format(fmt("{0}"), TestString("a string")));
+  EXPECT_EQ("42", format(FMT_STRING("{}"), std::string("42")));
+  EXPECT_EQ("a string", format(FMT_STRING("{0}"), TestString("a string")));
 }
 #endif
 
@@ -243,8 +243,7 @@ TEST(FormatTest, UDL) {
 }
 #endif
 
-template <typename T>
-struct convertible {
+template <typename T> struct convertible {
   T value;
   explicit convertible(const T& val) : value(val) {}
   operator T() const { return value; }
@@ -255,3 +254,47 @@ TEST(OStreamTest, DisableBuiltinOStreamOperators) {
   EXPECT_EQ(L"42", fmt::format(L"{:d}", convertible<unsigned short>(42)));
   EXPECT_EQ("foo", fmt::format("{}", convertible<const char*>("foo")));
 }
+
+struct explicitly_convertible_to_string_like {
+  template <typename String,
+            typename = typename std::enable_if<std::is_constructible<
+                String, const char*, std::size_t>::value>::type>
+  explicit operator String() const {
+    return String("foo", 3u);
+  }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {
+  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         explicitly_convertible_to_string_like) {
+  return os << "bar";
+}
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStringLikeIgnoreInserter) {
+  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
+}
+
+#ifdef FMT_USE_STRING_VIEW
+struct explicitly_convertible_to_std_string_view {
+  explicit operator fmt::internal::std_string_view<char>() const {
+    return {"foo", 3u};
+  }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
+  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         explicitly_convertible_to_std_string_view) {
+  return os << "bar";
+}
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringViewIgnoreInserter) {
+  EXPECT_EQ("foo",
+            fmt::format("{}", explicitly_convertible_to_std_string_view()));
+}
+#endif  // FMT_USE_STRING_VIEW

@@ -8,6 +8,7 @@
 #ifndef FMT_FORMAT_
 #define FMT_FORMAT_
 
+#include <cassert>
 #include <variant>
 #include "fmt/format.h"
 
@@ -666,8 +667,7 @@ struct formatter {
       break;
     case internal::double_type:
     case internal::long_double_type:
-      handle_float_type_spec(type_spec,
-                             internal::float_type_checker<decltype(eh)>(eh));
+      internal::parse_float_type_spec(specs_, eh);
       break;
     case internal::cstring_type:
       internal::handle_cstring_type_spec(

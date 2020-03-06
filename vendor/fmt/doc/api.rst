@@ -10,12 +10,14 @@ The {fmt} library API consists of the following parts:
   facilities and a lightweight subset of formatting functions
 * :ref:`fmt/format.h <format-api>`: the full format API providing compile-time
   format string checks, output iterator and user-defined type support
+* :ref:`fmt/ranges.h <ranges-api>`: additional formatting support for ranges
+  and tuples
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 
 All functions and types provided by the library reside in namespace ``fmt`` and
-macros have prefix ``FMT_`` or ``fmt``.
+macros have prefix ``FMT_``.
 
 .. _core-api:
 
@@ -50,7 +52,6 @@ participate in an overload resolution if the latter is not a string.
 
 .. doxygenfunction:: print(std::FILE *, const S&, Args&&...)
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
-.. doxygenfunction:: vprint(std::FILE *, wstring_view, wformat_args)
 
 Named Arguments
 ---------------
@@ -95,8 +96,11 @@ string checks, output iterator and user-defined type support.
 Compile-time Format String Checks
 ---------------------------------
 
+Compile-time checks are supported for built-in and string types as well as
+user-defined types with ``constexpr`` ``parse`` functions in their ``formatter``
+specializations.
+
 .. doxygendefine:: FMT_STRING
-.. doxygendefine:: fmt
 
 Formatting User-defined Types
 -----------------------------
@@ -108,32 +112,56 @@ template and implement ``parse`` and ``format`` methods::
 
   struct point { double x, y; };
 
-  namespace fmt {
   template <>
-  struct formatter<point> {
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+  struct fmt::formatter<point> {
+    // Presentation format: 'f' - fixed, 'e' - exponential.
+    char presentation = 'f';
 
+    // Parses format specifications of the form ['f' | 'e'].
+    constexpr auto parse(format_parse_context& ctx) {
+      // [ctx.begin(), ctx.end()) is a character range that contains a part of
+      // the format string starting from the format specifications to be parsed,
+      // e.g. in
+      //
+      //   fmt::format("{:f} - point of interest", point{1, 2});
+      //
+      // the range will contain "f} - point of interest". The formatter should
+      // parse specifiers until '}' or the end of the range. In this example
+      // the formatter should parse the 'f' specifier and return an iterator
+      // pointing to '}'.
+
+      // Parse the presentation format and store it in the formatter:
+      auto it = ctx.begin(), end = ctx.end();
+      if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
+
+      // Check if reached the end of the range:
+      if (it != end && *it != '}')
+        throw format_error("invalid format");
+
+      // Return an iterator past the end of the parsed range:
+      return it;
+    }
+
+    // Formats the point p using the parsed format specification (presentation)
+    // stored in this formatter.
     template <typename FormatContext>
-    auto format(const point &p, FormatContext &ctx) {
-      return format_to(ctx.out(), "({:.1f}, {:.1f})", p.x, p.y);
+    auto format(const point& p, FormatContext& ctx) {
+      // ctx.out() is an output iterator to write to.
+      return format_to(
+          ctx.out(),
+          presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})",
+          p.x, p.y);
     }
   };
-  }
 
 Then you can pass objects of type ``point`` to any formatting function::
 
   point p = {1, 2};
-  std::string s = fmt::format("{}", p);
+  std::string s = fmt::format("{:f}", p);
   // s == "(1.0, 2.0)"
 
-In the example above the ``formatter<point>::parse`` function ignores the
-contents of the format string referred to by ``ctx.begin()`` so the object will
-always be formatted in the same way. See ``formatter<tm>::parse`` in
-:file:`fmt/chrono.h` for an advanced example of how to parse the format string and
-customize the formatted output.
-
-You can also reuse existing formatters, for example::
+You can also reuse existing formatters via inheritance or composition, for
+example::
 
   enum class color {red, green, blue};
 
@@ -141,7 +169,7 @@ You can also reuse existing formatters, for example::
   struct fmt::formatter<color>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
-    auto format(color c, FormatContext &ctx) {
+    auto format(color c, FormatContext& ctx) {
       string_view name = "unknown";
       switch (c) {
       case color::red:   name = "red"; break;
@@ -180,6 +208,9 @@ You can also write a formatter for a hierarchy of classes::
     A& a = b;
     fmt::print("{}", a); // prints "B"
   }
+
+.. doxygenclass:: fmt::basic_format_parse_context
+   :members:
 
 Output Iterator Support
 -----------------------
@@ -264,7 +295,7 @@ allocator::
     template <typename ...Args>
     inline custom_string format(custom_allocator alloc,
                                 fmt::string_view format_str,
-                                const Args & ... args) {
+                                const Args& ... args) {
       return vformat(alloc, format_str, fmt::make_format_args(args...));
     }
 
@@ -308,7 +339,7 @@ custom argument formatter class::
 
   template <typename ...Args>
   inline std::string custom_format(
-      fmt::string_view format_str, const Args &... args) {
+      fmt::string_view format_str, const Args&... args) {
     return custom_vformat(format_str, fmt::make_format_args(args...));
   }
 
@@ -316,6 +347,31 @@ custom argument formatter class::
 
 .. doxygenclass:: fmt::arg_formatter
    :members:
+
+.. _ranges-api:
+
+Ranges and Tuple Formatting
+===========================
+
+The library also supports convenient formatting of ranges and tuples::
+
+  #include <fmt/ranges.h>
+
+  std::tuple<char, int, float> t{'a', 1, 2.0f};
+  // Prints "('a', 1, 2.0)"
+  fmt::print("{}", t);
+
+
+NOTE: currently, the overload of ``fmt::join`` for iterables exists in the main
+``format.h`` header, but expect this to change in the future.
+
+Using ``fmt::join``, you can separate tuple elements with a custom separator::
+
+  #include <fmt/ranges.h>
+
+  std::tuple<int, char> t = {1, 'a'};
+  // Prints "1, a"
+  fmt::print("{}", fmt::join(t, ", "));
 
 .. _chrono-api:
 
@@ -350,7 +406,7 @@ user-defined types that have overloaded ``operator<<``::
   public:
     date(int year, int month, int day): year_(year), month_(month), day_(day) {}
 
-    friend std::ostream &operator<<(std::ostream &os, const date &d) {
+    friend std::ostream& operator<<(std::ostream& os, const date& d) {
       return os << d.year_ << '-' << d.month_ << '-' << d.day_;
     }
   };

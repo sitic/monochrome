@@ -26,11 +26,11 @@ template <typename Char> struct format_part {
 
   kind part_kind;
   union value {
-    unsigned arg_index;
+    int arg_index;
     basic_string_view<Char> str;
     replacement repl;
 
-    FMT_CONSTEXPR value(unsigned index = 0) : arg_index(index) {}
+    FMT_CONSTEXPR value(int index = 0) : arg_index(index) {}
     FMT_CONSTEXPR value(basic_string_view<Char> s) : str(s) {}
     FMT_CONSTEXPR value(replacement r) : repl(r) {}
   } val;
@@ -40,7 +40,7 @@ template <typename Char> struct format_part {
   FMT_CONSTEXPR format_part(kind k = kind::arg_index, value v = {})
       : part_kind(k), val(v) {}
 
-  static FMT_CONSTEXPR format_part make_arg_index(unsigned index) {
+  static FMT_CONSTEXPR format_part make_arg_index(int index) {
     return format_part(kind::arg_index, index);
   }
   static FMT_CONSTEXPR format_part make_arg_name(basic_string_view<Char> name) {
@@ -62,7 +62,7 @@ template <typename Char> struct part_counter {
   }
 
   FMT_CONSTEXPR void on_arg_id() { ++num_parts; }
-  FMT_CONSTEXPR void on_arg_id(unsigned) { ++num_parts; }
+  FMT_CONSTEXPR void on_arg_id(int) { ++num_parts; }
   FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) { ++num_parts; }
 
   FMT_CONSTEXPR void on_replacement_field(const Char*) {}
@@ -101,7 +101,7 @@ class format_string_compiler : public error_handler {
   PartHandler handler_;
   part part_;
   basic_string_view<Char> format_str_;
-  basic_parse_context<Char> parse_context_;
+  basic_format_parse_context<Char> parse_context_;
 
  public:
   FMT_CONSTEXPR format_string_compiler(basic_string_view<Char> format_str,
@@ -119,7 +119,7 @@ class format_string_compiler : public error_handler {
     part_ = part::make_arg_index(parse_context_.next_arg_id());
   }
 
-  FMT_CONSTEXPR void on_arg_id(unsigned id) {
+  FMT_CONSTEXPR void on_arg_id(int id) {
     parse_context_.check_arg_id(id);
     part_ = part::make_arg_index(id);
   }
@@ -136,8 +136,8 @@ class format_string_compiler : public error_handler {
   FMT_CONSTEXPR const Char* on_format_specs(const Char* begin,
                                             const Char* end) {
     auto repl = typename part::replacement();
-    dynamic_specs_handler<basic_parse_context<Char>> handler(repl.specs,
-                                                             parse_context_);
+    dynamic_specs_handler<basic_format_parse_context<Char>> handler(
+        repl.specs, parse_context_);
     auto it = parse_format_specs(begin, end, handler);
     if (*it != '}') on_error("missing '}' in format string");
     repl.arg_id = part_.part_kind == part::kind::arg_index
@@ -160,8 +160,9 @@ FMT_CONSTEXPR void compile_format_string(basic_string_view<Char> format_str,
 }
 
 template <typename Range, typename Context, typename Id>
-void format_arg(basic_parse_context<typename Range::value_type>& parse_ctx,
-                Context& ctx, Id arg_id) {
+void format_arg(
+    basic_format_parse_context<typename Range::value_type>& parse_ctx,
+    Context& ctx, Id arg_id) {
   ctx.advance_to(
       visit_format_arg(arg_formatter<Range>(ctx, &parse_ctx), ctx.arg(arg_id)));
 }
@@ -172,7 +173,8 @@ template <typename Context, typename Range, typename CompiledFormat>
 auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
     -> typename Context::iterator {
   using char_type = typename Context::char_type;
-  basic_parse_context<char_type> parse_ctx(to_string_view(cf.format_str_));
+  basic_format_parse_context<char_type> parse_ctx(
+      to_string_view(cf.format_str_));
   Context ctx(out.begin(), args);
 
   const auto& parts = cf.parts();
@@ -374,6 +376,13 @@ OutputIt format_default(OutputIt out, T value) {
 }
 
 template <typename Char, typename OutputIt>
+OutputIt format_default(OutputIt out, double value) {
+  writer w(out);
+  w.write(value);
+  return w.out();
+}
+
+template <typename Char, typename OutputIt>
 OutputIt format_default(OutputIt out, Char value) {
   *out++ = value;
   return out;
@@ -503,8 +512,6 @@ template <typename CompiledFormat, typename... Args,
                                          CompiledFormat>::value)>
 std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
-  using range = buffer_range<Char>;
-  using context = buffer_context<Char>;
   cf.format(std::back_inserter(buffer), args...);
   return to_string(buffer);
 }
@@ -570,10 +577,7 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
 
 template <typename CompiledFormat, typename... Args>
 std::size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
-  return format_to(
-             internal::counting_iterator<typename CompiledFormat::char_type>(),
-             cf, args...)
-      .count();
+  return format_to(internal::counting_iterator(), cf, args...).count();
 }
 
 FMT_END_NAMESPACE

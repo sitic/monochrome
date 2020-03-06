@@ -20,8 +20,14 @@
 #  include <windows.h>
 #endif
 
+// Check if fmt/format.h compiles with the X11 index macro defined.
+#define index(x, y) no nice things
+
 #include "fmt/color.h"
 #include "fmt/format.h"
+
+#undef index
+
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"
@@ -34,13 +40,13 @@
 using std::size_t;
 
 using fmt::basic_memory_buffer;
-using fmt::internal::basic_writer;
-using fmt::internal::max_value;
 using fmt::format;
 using fmt::format_error;
 using fmt::memory_buffer;
 using fmt::string_view;
 using fmt::wmemory_buffer;
+using fmt::internal::basic_writer;
+using fmt::internal::max_value;
 
 using testing::Return;
 using testing::StrictMock;
@@ -163,8 +169,7 @@ TEST(UtilTest, Increment) {
 }
 
 TEST(UtilTest, ParseNonnegativeInt) {
-  if (max_value<int>() !=
-      static_cast<int>(static_cast<unsigned>(1) << 31)) {
+  if (max_value<int>() != static_cast<int>(static_cast<unsigned>(1) << 31)) {
     fmt::print("Skipping parse_nonnegative_int test\n");
     return;
   }
@@ -182,7 +187,7 @@ TEST(UtilTest, ParseNonnegativeInt) {
 }
 
 TEST(IteratorTest, CountingIterator) {
-  fmt::internal::counting_iterator<char> it;
+  fmt::internal::counting_iterator it;
   auto prev = it++;
   EXPECT_EQ(prev.count(), 0);
   EXPECT_EQ(it.count(), 1);
@@ -271,7 +276,7 @@ static void check_move_buffer(
   EXPECT_EQ(alloc, buffer2.get_allocator().get());
 }
 
-TEST(MemoryBufferTest, MoveCtor) {
+TEST(MemoryBufferTest, MoveCtorInlineBuffer) {
   std::allocator<char> alloc;
   basic_memory_buffer<char, 5, TestAllocator> buffer((TestAllocator(&alloc)));
   const char test[] = "test";
@@ -281,15 +286,22 @@ TEST(MemoryBufferTest, MoveCtor) {
   // dynamic allocation.
   buffer.push_back('a');
   check_move_buffer("testa", buffer);
+}
+
+TEST(MemoryBufferTest, MoveCtorDynamicBuffer) {
+  std::allocator<char> alloc;
+  basic_memory_buffer<char, 4, TestAllocator> buffer((TestAllocator(&alloc)));
+  const char test[] = "test";
+  buffer.append(test, test + 4);
   const char* inline_buffer_ptr = &buffer[0];
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
-  buffer.push_back('b');
-  basic_memory_buffer<char, 5, TestAllocator> buffer2(std::move(buffer));
+  buffer.push_back('a');
+  basic_memory_buffer<char, 4, TestAllocator> buffer2(std::move(buffer));
   // Move should rip the guts of the first buffer.
   EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
-  EXPECT_EQ("testab", std::string(&buffer2[0], buffer2.size()));
-  EXPECT_GT(buffer2.capacity(), 5u);
+  EXPECT_EQ("testa", std::string(&buffer2[0], buffer2.size()));
+  EXPECT_GT(buffer2.capacity(), 4u);
 }
 
 static void check_move_assign_buffer(const char* str,
@@ -526,9 +538,8 @@ TEST(UtilTest, FormatWindowsError) {
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
             fmt::to_string(actual_message));
   actual_message.resize(0);
-  fmt::internal::format_windows_error(
-      actual_message, ERROR_FILE_EXISTS,
-      fmt::string_view(0, max_value<size_t>()));
+  fmt::internal::format_windows_error(actual_message, ERROR_FILE_EXISTS,
+                                      fmt::string_view(0, max_value<size_t>()));
   EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
             fmt::to_string(actual_message));
 }
@@ -674,9 +685,7 @@ TEST(WriterTest, WriteString) {
   CHECK_WRITE_WCHAR("abc");
 }
 
-TEST(WriterTest, WriteWideString) {
-  CHECK_WRITE_WCHAR(L"abc");
-}
+TEST(WriterTest, WriteWideString) { CHECK_WRITE_WCHAR(L"abc"); }
 
 TEST(FormatToTest, FormatWithoutArgs) {
   std::string s;
@@ -1189,12 +1198,37 @@ TEST(FormatterTest, Precision) {
                    "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ull), format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG(format("{0:.2%}", 42), format_error,
-                   "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:3.0}", 'x'), format_error,
                    "precision not allowed for this argument type");
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
+  EXPECT_EQ("1.2e+56", format("{:.2}", 1.234e56));
+  EXPECT_EQ("1e+00", format("{:.0e}", 1.0L));
+  EXPECT_EQ("  0.0e+00", format("{:9.1e}", 0.0));
+  EXPECT_EQ(
+      "4.9406564584124654417656879286822137236505980261432476442558568250067550"
+      "727020875186529983636163599237979656469544571773092665671035593979639877"
+      "479601078187812630071319031140452784581716784898210368871863605699873072"
+      "305000638740915356498438731247339727316961514003171538539807412623856559"
+      "117102665855668676818703956031062493194527159149245532930545654440112748"
+      "012970999954193198940908041656332452475714786901472678015935523861155013"
+      "480352649347201937902681071074917033322268447533357208324319361e-324",
+      format("{:.494}", 4.9406564584124654E-324));
+  EXPECT_EQ(
+      "-0X1.41FE3FFE71C9E000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+      "000000000000000000000000000000000000000000000000000P+127",
+      format("{:.838A}", -2.14001164E+38));
+  EXPECT_EQ("123.", format("{:#.0f}", 123.0));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
@@ -1462,11 +1496,7 @@ TEST(FormatterTest, FormatOct) {
 }
 
 TEST(FormatterTest, FormatIntLocale) {
-  EXPECT_EQ("123", format("{:n}", 123));
-  EXPECT_EQ("1,234", format("{:n}", 1234));
-  EXPECT_EQ("1,234,567", format("{:n}", 1234567));
-  EXPECT_EQ("4,294,967,295",
-            format("{:n}", max_value<uint32_t>()));
+  EXPECT_EQ("1234", format("{:n}", 1234));
 }
 
 struct ConvertibleToLongLong {
@@ -1479,7 +1509,6 @@ TEST(FormatterTest, FormatConvertibleToLongLong) {
 
 TEST(FormatterTest, FormatFloat) {
   EXPECT_EQ("392.500000", format("{0:f}", 392.5f));
-  EXPECT_EQ("12.500000%", format("{0:%}", 0.125f));
 }
 
 TEST(FormatterTest, FormatDouble) {
@@ -1492,8 +1521,6 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("392.65", format("{:G}", 392.65));
   EXPECT_EQ("392.650000", format("{:f}", 392.65));
   EXPECT_EQ("392.650000", format("{:F}", 392.65));
-  EXPECT_EQ("12.500000%", format("{:%}", 0.125));
-  EXPECT_EQ("12.34%", format("{:.2%}", 0.1234432));
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_EQ(buffer, format("{0:e}", 392.65));
@@ -1533,7 +1560,6 @@ TEST(FormatterTest, FormatNaN) {
   EXPECT_EQ("nan    ", format("{:<7}", nan));
   EXPECT_EQ("  nan  ", format("{:^7}", nan));
   EXPECT_EQ("    nan", format("{:>7}", nan));
-  EXPECT_EQ("nan%", format("{:%}", nan));
 }
 
 TEST(FormatterTest, FormatInfinity) {
@@ -1546,7 +1572,6 @@ TEST(FormatterTest, FormatInfinity) {
   EXPECT_EQ("inf    ", format("{:<7}", inf));
   EXPECT_EQ("  inf  ", format("{:^7}", inf));
   EXPECT_EQ("    inf", format("{:>7}", inf));
-  EXPECT_EQ("inf%", format("{:%}", inf));
 }
 
 TEST(FormatterTest, FormatLongDouble) {
@@ -1557,8 +1582,6 @@ TEST(FormatterTest, FormatLongDouble) {
   EXPECT_EQ("392.65", format("{0:G}", 392.65l));
   EXPECT_EQ("392.650000", format("{0:f}", 392.65l));
   EXPECT_EQ("392.650000", format("{0:F}", 392.65l));
-  EXPECT_EQ("12.500000%", format("{:%}", 0.125l));
-  EXPECT_EQ("12.34%", format("{:.2%}", 0.1234432l));
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%Le", 392.65l);
   EXPECT_EQ(buffer, format("{0:e}", 392.65l));
@@ -1661,6 +1684,26 @@ FMT_END_NAMESPACE
 TEST(FormatterTest, FormatStdStringView) {
   EXPECT_EQ("test", format("{}", std::string_view("test")));
   EXPECT_EQ("foo", format("{}", string_viewable()));
+}
+
+struct explicitly_convertible_to_std_string_view {
+  explicit operator std::string_view() const { return "foo"; }
+};
+
+namespace fmt {
+template <>
+struct formatter<explicitly_convertible_to_std_string_view>
+    : formatter<std::string_view> {
+  auto format(const explicitly_convertible_to_std_string_view& v,
+              format_context& ctx) -> decltype(ctx.out()) {
+    return format_to(ctx.out(), "'{}'", std::string_view(v));
+  }
+};
+}  // namespace fmt
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
+  EXPECT_EQ("'foo'",
+            fmt::format("{}", explicitly_convertible_to_std_string_view()));
 }
 #endif
 
@@ -1805,12 +1848,11 @@ TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ("-42", fmt::format_int(-42ll).str());
   std::ostringstream os;
   os << max_value<int64_t>();
-  EXPECT_EQ(os.str(),
-            fmt::format_int(max_value<int64_t>()).str());
+  EXPECT_EQ(os.str(), fmt::format_int(max_value<int64_t>()).str());
 }
 
 TEST(FormatTest, Print) {
-#if FMT_USE_FILE_DESCRIPTORS
+#if FMT_USE_FCNTL
   EXPECT_WRITE(stdout, fmt::print("Don't {}!", "panic"), "Don't panic!");
   EXPECT_WRITE(stderr, fmt::print(stderr, "Don't {}!", "panic"),
                "Don't panic!");
@@ -1831,7 +1873,7 @@ TEST(FormatTest, Dynamic) {
 
   std::string result = fmt::vformat(
       "{} and {} and {}", fmt::basic_format_args<ctx>(
-                              args.data(), static_cast<unsigned>(args.size())));
+                              args.data(), static_cast<int>(args.size())));
 
   EXPECT_EQ("42 and abc1 and 1.5", result);
 }
@@ -1917,7 +1959,7 @@ TEST(FormatTest, CustomFormatCompileTimeString) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), Answer()));
   Answer answer;
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), answer));
-  const Answer const_answer;
+  const Answer const_answer = Answer();
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), const_answer));
 }
 
@@ -1965,8 +2007,9 @@ enum TestEnum { A };
 TEST(FormatTest, Enum) { EXPECT_EQ("0", fmt::format("{}", A)); }
 
 TEST(FormatTest, FormatterNotSpecialized) {
-  EXPECT_FALSE((fmt::internal::has_formatter<fmt::formatter<TestEnum>,
-                                             fmt::format_context>::value));
+  static_assert(
+      !fmt::has_formatter<fmt::formatter<TestEnum>, fmt::format_context>::value,
+      "");
 }
 
 #if FMT_HAS_FEATURE(cxx_strong_enums)
@@ -2144,12 +2187,12 @@ TEST(FormatTest, WideFormatToN) {
 struct test_arg_id_handler {
   enum result { NONE, EMPTY, INDEX, NAME, ERROR };
   result res = NONE;
-  unsigned index = 0;
+  int index = 0;
   string_view name;
 
   FMT_CONSTEXPR void operator()() { res = EMPTY; }
 
-  FMT_CONSTEXPR void operator()(unsigned i) {
+  FMT_CONSTEXPR void operator()(int i) {
     res = INDEX;
     index = i;
   }
@@ -2185,9 +2228,9 @@ struct test_format_specs_handler {
 
   fmt::align_t align = fmt::align::none;
   char fill = 0;
-  unsigned width = 0;
+  int width = 0;
   fmt::internal::arg_ref<char> width_ref;
-  unsigned precision = 0;
+  int precision = 0;
   fmt::internal::arg_ref<char> precision_ref;
   char type = 0;
 
@@ -2213,14 +2256,14 @@ struct test_format_specs_handler {
   FMT_CONSTEXPR void on_hash() { res = HASH; }
   FMT_CONSTEXPR void on_zero() { res = ZERO; }
 
-  FMT_CONSTEXPR void on_width(unsigned w) { width = w; }
+  FMT_CONSTEXPR void on_width(int w) { width = w; }
   FMT_CONSTEXPR void on_dynamic_width(fmt::internal::auto_id) {}
-  FMT_CONSTEXPR void on_dynamic_width(unsigned index) { width_ref = index; }
+  FMT_CONSTEXPR void on_dynamic_width(int index) { width_ref = index; }
   FMT_CONSTEXPR void on_dynamic_width(string_view) {}
 
-  FMT_CONSTEXPR void on_precision(unsigned p) { precision = p; }
+  FMT_CONSTEXPR void on_precision(int p) { precision = p; }
   FMT_CONSTEXPR void on_dynamic_precision(fmt::internal::auto_id) {}
-  FMT_CONSTEXPR void on_dynamic_precision(unsigned index) {
+  FMT_CONSTEXPR void on_dynamic_precision(int index) {
     precision_ref = index;
   }
   FMT_CONSTEXPR void on_dynamic_precision(string_view) {}
@@ -2257,7 +2300,7 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 struct test_parse_context {
   typedef char char_type;
 
-  FMT_CONSTEXPR unsigned next_arg_id() { return 11; }
+  FMT_CONSTEXPR int next_arg_id() { return 11; }
   template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
 
   FMT_CONSTEXPR const char* begin() { return nullptr; }
@@ -2286,9 +2329,9 @@ struct test_context {
 
 template <size_t N>
 FMT_CONSTEXPR fmt::format_specs parse_specs(const char (&s)[N]) {
-  fmt::format_specs specs;
-  test_parse_context parse_ctx;
-  test_context ctx{};
+  auto specs = fmt::format_specs();
+  auto parse_ctx = test_parse_context();
+  auto ctx = test_context();
   fmt::internal::specs_handler<test_parse_context, test_context> h(
       specs, parse_ctx, ctx);
   parse_format_specs(s, s + N, h);
@@ -2448,11 +2491,11 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
   EXPECT_ERROR_NOARGS("{:x}", "argument index out of range");
-#if FMT_NUMERIC_ALIGN
+#    if FMT_NUMERIC_ALIGN
   EXPECT_ERROR("{0:=5", "unknown format specifier", int);
   EXPECT_ERROR("{:=}", "format specifier requires numeric argument",
                const char*);
-#endif
+#    endif
   EXPECT_ERROR("{:+}", "format specifier requires numeric argument",
                const char*);
   EXPECT_ERROR("{:-}", "format specifier requires numeric argument",
@@ -2607,4 +2650,14 @@ TEST(FormatTest, FormatCustomChar) {
   auto result = fmt::format(format, mychar('x'));
   EXPECT_EQ(result.size(), 1);
   EXPECT_EQ(result[0], mychar('x'));
+}
+
+TEST(FormatTest, FormatUTF8Precision) {
+  using str_type = std::basic_string<char8_t>;
+  str_type format(reinterpret_cast<const char8_t*>(u8"{:.4}"));
+  str_type str(reinterpret_cast<const char8_t*>(u8"caf\u00e9s"));  // cafés
+  auto result = fmt::format(format, str);
+  EXPECT_EQ(fmt::internal::count_code_points(result), 4);
+  EXPECT_EQ(result.size(), 5);
+  EXPECT_EQ(result, str.substr(0, 5));
 }

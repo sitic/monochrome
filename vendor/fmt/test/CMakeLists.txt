@@ -47,8 +47,6 @@ target_compile_definitions(gmock
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
-target_compile_definitions(test-main PUBLIC
-  FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
 target_include_directories(test-main SYSTEM PUBLIC gtest gmock)
 target_link_libraries(test-main gmock fmt)
 
@@ -113,12 +111,11 @@ add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
 
-if (HAVE_OPEN AND NOT MSVC_BUILD_STATIC)
+if (NOT MSVC_BUILD_STATIC)
   add_fmt_executable(posix-mock-test
     posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
   target_include_directories(
     posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
   target_link_libraries(posix-mock-test gmock)
   target_include_directories(posix-mock-test SYSTEM PUBLIC gtest gmock)
   if (FMT_PEDANTIC)
@@ -232,20 +229,22 @@ if (FMT_PEDANTIC AND NOT WIN32)
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
 
-# Activate optional CUDA tests if CUDA is found. For version selection, see
+# Activate optional CUDA tests if CUDA is found. For version selection see
 # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cpp14-language-features
-if (${CMAKE_VERSION} VERSION_LESS 3.15)
-  find_package(CUDA 9.0)
-else ()
-  include(CheckLanguage)
-  check_language(CUDA)
-  if (CMAKE_CUDA_COMPILER)
-    enable_language(CUDA OPTIONAL)
-    set(CUDA_FOUND TRUE)
+if (FMT_CUDA_TEST)
+  if (${CMAKE_VERSION} VERSION_LESS 3.15)
+    find_package(CUDA 9.0)
+  else ()
+    include(CheckLanguage)
+    check_language(CUDA)
+    if (CMAKE_CUDA_COMPILER)
+      enable_language(CUDA OPTIONAL)
+      set(CUDA_FOUND TRUE)
+    endif ()
   endif ()
-endif ()
 
-if (CUDA_FOUND)
-  add_subdirectory(cuda-test)
-  add_test(NAME cuda-test COMMAND fmt-in-cuda-test)
+  if (CUDA_FOUND)
+    add_subdirectory(cuda-test)
+    add_test(NAME cuda-test COMMAND fmt-in-cuda-test)
+  endif ()
 endif ()
