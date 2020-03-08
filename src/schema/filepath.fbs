@@ -1,0 +1,7 @@
+namespace ipc;
+
+table Filepaths {
+  file:[string];
+}
+
+root_type Filepaths;

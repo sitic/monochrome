@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
 #endif
@@ -6,7 +8,6 @@
 #include <vector>
 
 #include <GLFW/glfw3.h>
-#include <fmt/format.h>
 
 #include "fonts/IconsFontAwesome5.h"
 #include "fonts/IconsMaterialDesignIcons.h"
@@ -14,13 +15,17 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
+#include "readerwriterqueue.h"
 
+#include "globals.h"
 #include "recordingwindow.h"
 
-GLFWwindow *main_window = nullptr;
-
 std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
-std::vector<Message> messages                            = {};
+
+namespace global {
+  GLFWwindow *main_window       = nullptr;
+  std::vector<Message> messages = {};
+}  // namespace global
 
 namespace prm {
   static int main_window_width  = 0;
@@ -42,6 +47,36 @@ unsigned Transformation::MeanFilter::kernel_size          = 3;
 unsigned Transformation::MedianFilter::kernel_size        = 3;
 int Transformation::ContrastEnhancement::maskVersion      = 0;
 
+void load_new_file(const filesystem::path &path) {
+  fmt::print("Loading {} ...\n", path.string());
+
+  if (!filesystem::is_regular_file(path)) {
+    new_ui_message("ERROR: {} does not appear to be a file, skipping", path.string());
+    return;
+  }
+
+  if (path.extension() != ".dat") {
+    new_ui_message("ERROR: {} does not have extension '.dat', skipping", path.string());
+    return;
+  }
+
+  auto rec = std::make_shared<RecordingWindow>(path);
+  if (!rec->good()) {
+    recordings.pop_back();
+    new_ui_message("ERROR: loading file failed, skipping");
+    return;
+  }
+
+  if (auto br = rec->bitrange(); br) {
+    if (br.value() != prm::bitrange) {
+      prm::bitrange = br.value();
+    }
+  }
+
+  recordings.emplace_back(rec);
+  rec->open_window();
+}
+
 void display_loop() {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
@@ -50,7 +85,7 @@ void display_loop() {
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   // keep running until main window is closed
-  while (!glfwWindowShouldClose(main_window)) {
+  while (!glfwWindowShouldClose(global::main_window)) {
     // Poll and handle events (inputs, window resize, etc.)
     // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to
     // tell if dear imgui wants to use your inputs.
@@ -61,6 +96,15 @@ void display_loop() {
     // to dear imgui, and hide them from your application based on those two
     // flags.
     glfwPollEvents();
+    while (auto file = global::get_file_to_load()) {
+      load_new_file(file.value());
+    }
+
+    while (auto arr = global::get_rawarray3_to_load()) {
+      std::shared_ptr<AbstractRecording> r =
+          std::make_shared<InMemoryRecording>(arr->data, arr->nx, arr->ny, arr->nt, arr->name);
+      recordings.emplace_back(std::make_shared<RecordingWindow>(r));
+    }
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL2_NewFrame();
@@ -555,10 +599,10 @@ void display_loop() {
     }
 
     // Check if message window should be cleared
-    messages.erase(std::remove_if(messages.begin(), messages.end(),
-                                  [](const auto &msg) -> bool { return !msg.show; }),
-                   messages.end());
-    for (auto &msg : messages) {
+    global::messages.erase(std::remove_if(global::messages.begin(), global::messages.end(),
+                                          [](const auto &msg) -> bool { return !msg.show; }),
+                           global::messages.end());
+    for (auto &msg : global::messages) {
       if (msg.show) {
         auto label = fmt::format("Message {}", msg.id);
         ImGui::SetNextWindowSizeConstraints(ImVec2(0.6f * prm::main_window_width, 0),
@@ -575,7 +619,7 @@ void display_loop() {
     // Rendering
     ImGui::Render();
     int display_w, display_h;
-    glfwGetFramebufferSize(main_window, &display_w, &display_h);
+    glfwGetFramebufferSize(global::main_window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -599,38 +643,8 @@ void display_loop() {
       ImGui::RenderPlatformWindowsDefault();
       glfwMakeContextCurrent(backup_current_context);
     }
-    glfwSwapBuffers(main_window);
+    glfwSwapBuffers(global::main_window);
   }
-}
-
-void load_new_file(const filesystem::path& path) {
-  fmt::print("Loading {} ...\n", path.string());
-
-  if (!filesystem::is_regular_file(path)) {
-    new_ui_message("ERROR: {} does not appear to be a file, skipping", path.string());
-    return;
-  }
-
-  if (path.extension() != ".dat") {
-    new_ui_message("ERROR: {} does not have extension '.dat', skipping", path.string());
-    return;
-  }
-
-  recordings.emplace_back(std::make_shared<RecordingWindow>(path));
-  auto rec = recordings.back();
-  if (!rec->good()) {
-    recordings.pop_back();
-    new_ui_message("ERROR: loading file failed, skipping");
-    return;
-  }
-
-  if (auto br = rec->bitrange(); br) {
-    if (br.value() != prm::bitrange) {
-      prm::bitrange = br.value();
-    }
-  }
-
-  rec->open_window();
 }
 
 void drop_callback(GLFWwindow *window, int count, const char **paths) {
@@ -651,13 +665,13 @@ void open_main_window() {
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  main_window = glfwCreateWindow(prm::main_window_width, prm::main_window_height,
-                                 "Quick Raw Video Viewer", nullptr, nullptr);
-  if (!main_window) {
+  global::main_window = glfwCreateWindow(prm::main_window_width, prm::main_window_height,
+                                         "Quick Raw Video Viewer", nullptr, nullptr);
+  if (!global::main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
-  glfwMakeContextCurrent(main_window);
+  glfwMakeContextCurrent(global::main_window);
   // wait until the current frame has been drawn before drawing the next one
   glfwSwapInterval(2);
 
@@ -696,10 +710,10 @@ void open_main_window() {
   style.ScaleAllSizes(xscale);
 
   // Setup Platform/Renderer bindings
-  ImGui_ImplGlfw_InitForOpenGL(main_window, true);
+  ImGui_ImplGlfw_InitForOpenGL(global::main_window, true);
   ImGui_ImplOpenGL2_Init();
 
-  glfwSetDropCallback(main_window, drop_callback);
+  glfwSetDropCallback(global::main_window, drop_callback);
 
   // Load Fonts
   // - If no fonts are loaded, dear imgui will use the default font. You can

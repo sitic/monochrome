@@ -7,7 +7,9 @@
 #include "transformations.h"
 #include "videorecorder.h"
 
-extern GLFWwindow *main_window;
+namespace global {
+  extern GLFWwindow *main_window;
+}
 
 class RecordingWindow;
 extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
@@ -342,7 +344,7 @@ class RecordingWindow : public Recording {
       }
     }
 
-    glfwMakeContextCurrent(main_window);
+    glfwMakeContextCurrent(global::main_window);
   }
 
   void reset_traces() {
@@ -508,7 +510,7 @@ class RecordingWindow : public Recording {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glfwMakeContextCurrent(main_window);
+    glfwMakeContextCurrent(global::main_window);
   }
 
   static void close_callback(GLFWwindow *window) {

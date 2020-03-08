@@ -40,6 +40,12 @@ if (MSVC)
     target_compile_definitions(asio INTERFACE _WIN32_WINNT=0x0501)
 endif ()
 
+add_library(readerwriterqueue INTERFACE)
+target_include_directories(readerwriterqueue INTERFACE readerwriterqueue/include)
+
+add_library(flatbuffers INTERFACE)
+target_include_directories(flatbuffers INTERFACE flatbuffers/include)
+
 add_subdirectory(CLI11)
 
 set_property(TARGET imgui_glfw_gl2 glfw fmt APPEND_STRING PROPERTY COMPILE_FLAGS " -w")

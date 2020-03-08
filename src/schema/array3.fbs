@@ -1,0 +1,11 @@
+namespace ipc;
+
+table Array3 {
+  data:[float];
+  nx:int;
+  ny:int;
+  nt:int;
+  name:string;
+}
+
+root_type Array3;

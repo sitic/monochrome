@@ -1,10 +1,11 @@
 #include <CLI/CLI.hpp>
+#include <fmt/format.h>
 
-#include "asio.hpp"
 #ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
 #endif
 
+#include "ipc.h"
 #include "main_window.h"
 
 int main(int argc, char **argv) {
@@ -41,7 +42,14 @@ int main(int argc, char **argv) {
   if (print_config) {
     app.remove_option(print_config_opt);
     fmt::print(app.config_to_str(true, true));
-    exit(EXIT_SUCCESS);
+    std::exit(EXIT_SUCCESS);
+  }
+
+  if (!files.empty()) {
+    if (ipc::is_another_instance_running()) {
+      ipc::load_files(files);
+      std::exit(EXIT_SUCCESS);
+    }
   }
 
   open_main_window();
@@ -50,15 +58,18 @@ int main(int argc, char **argv) {
     load_new_file(file);
   }
 
+  ipc::start_server();
+
   display_loop();
 
   // Cleanup
+  ipc::stop_server();
   ImGui_ImplOpenGL2_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 
-  glfwDestroyWindow(main_window);
+  glfwDestroyWindow(global::main_window);
   recordings.clear();
   glfwTerminate();
-  exit(EXIT_SUCCESS);
+  std::exit(EXIT_SUCCESS);
 }
