@@ -10,6 +10,7 @@
 
 #include "fonts/IconsFontAwesome5.h"
 #include "fonts/IconsMaterialDesignIcons.h"
+#include "fonts/MultiRecorderVideo.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
@@ -736,4 +737,6 @@ void open_main_window() {
   // ImFont* font =
   // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f,
   // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
+
+  add_window_icon(global::main_window);
 }

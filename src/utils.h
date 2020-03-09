@@ -202,3 +202,16 @@ void gl_save_snapshot(const std::string &out_png_path,
 
   glfwMakeContextCurrent(prev_context);
 }
+
+void add_window_icon(GLFWwindow* window) {
+  unsigned icon_width, icon_height;
+  std::vector<unsigned char> icon_image;
+  unsigned error =
+      lodepng::decode(icon_image, icon_width, icon_height,
+                      reinterpret_cast<const unsigned char *>(icons::multirecvideopng_data),
+                      icons::multirecvideopng_size);
+  if (error) fmt::print("lodepng error {}: {}\n", error, lodepng_error_text(error));
+  GLFWimage glfwicon = {static_cast<int>(icon_width), static_cast<int>(icon_height),
+                        icon_image.data()};
+  glfwSetWindowIcon(window, 1, &glfwicon);
+}

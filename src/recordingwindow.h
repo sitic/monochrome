@@ -402,6 +402,7 @@ class RecordingWindow : public Recording {
     // limits us to 60fps already
     glfwSwapInterval(0);
 
+    add_window_icon(window);
     glfwSetWindowCloseCallback(window, RecordingWindow::close_callback);
     glfwSetKeyCallback(window, RecordingWindow::key_callback);
     glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
