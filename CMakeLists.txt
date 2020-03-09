@@ -61,7 +61,7 @@ if (APPLE)
 endif ()
 
 add_executable(quickVidViewer src/main.cpp src/definitions.h src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h src/main_window.h src/globals.cpp src/globals.h src/ipc.h src/globals.cpp src/globals.h src/ipc.cpp)
-target_link_libraries(quickVidViewer CLI11::CLI11 imgui_glfw_gl2 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers)
+target_link_libraries(quickVidViewer CLI11::CLI11 imgui_glfw_gl2 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem)
 if (CMAKE_COMPILER_IS_GNUCXX)
     if (STATIC_GCC)
         target_link_libraries(quickVidViewer -static-libgcc -static-libstdc++)

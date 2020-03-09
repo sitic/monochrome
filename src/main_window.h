@@ -47,10 +47,10 @@ unsigned Transformation::MeanFilter::kernel_size          = 3;
 unsigned Transformation::MedianFilter::kernel_size        = 3;
 int Transformation::ContrastEnhancement::maskVersion      = 0;
 
-void load_new_file(const filesystem::path &path) {
+void load_new_file(const fs::path &path) {
   fmt::print("Loading {} ...\n", path.string());
 
-  if (!filesystem::is_regular_file(path)) {
+  if (!fs::is_regular_file(path)) {
     new_ui_message("ERROR: {} does not appear to be a file, skipping", path.string());
     return;
   }
@@ -482,7 +482,7 @@ void display_loop() {
       // Use the directory path of the recording as best guest for the
       // export directory, make it static so that it only has to be changed
       // by the user once
-      const auto gen_export_dir = [](const filesystem::path &dir) {
+      const auto gen_export_dir = [](const fs::path &dir) {
         std::string s = dir.string();
         std::vector<char> v(s.begin(), s.end());
         // Maximum size for user input
@@ -513,7 +513,7 @@ void display_loop() {
 
         ImGui::Spacing();
         if (ImGui::Button("Start Export (freezes everything)", ImVec2(-1.0f, 0.0f))) {
-          filesystem::path path(export_dir.data());
+          fs::path path(export_dir.data());
           path /= ctrl.filename.data();
           fmt::print("Exporting ROI to {}\n", path.string());
 
@@ -548,7 +548,7 @@ void display_loop() {
           ImGui::InputInt("FPS", &fps);
 
           if (ImGui::Button("Start Export")) {
-            filesystem::path path(export_dir.data());
+            fs::path path(export_dir.data());
             path /= ctrl.filename.data();
             recording->start_recording(path.string(), fps);
           }
@@ -574,7 +574,7 @@ void display_loop() {
         ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
 
         const auto make_snapshot = [&recording, &ctrl]() {
-          filesystem::path path(export_dir.data());
+          fs::path path(export_dir.data());
           path /= ctrl.filename.data();
           return recording->save_snapshot(path.string());
         };

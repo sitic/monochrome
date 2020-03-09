@@ -101,7 +101,7 @@ class Recording {
 
   void apply_rotation() { rotations.apply(frame); }
 
-  static std::shared_ptr<AbstractRecording> autoguess_filerecording(const filesystem::path &path) {
+  static std::shared_ptr<AbstractRecording> autoguess_filerecording(const fs::path &path) {
     std::shared_ptr<AbstractRecording> file = std::make_shared<RawFileRecording>(path);
     if (!file->good()) {
       file = std::make_shared<BmpFileRecording>(path);
@@ -117,7 +117,7 @@ class Recording {
  public:
   Eigen::MatrixXf frame;
 
-  Recording(const filesystem::path &path) : Recording(autoguess_filerecording(path)){};
+  Recording(const fs::path &path) : Recording(autoguess_filerecording(path)){};
   Recording(std::shared_ptr<AbstractRecording> _file) : file(std::move(_file)) {
     if (!file->good()) {
       return;
@@ -134,7 +134,7 @@ class Recording {
   int Nx() const { return frame.rows(); }
   int Ny() const { return frame.cols(); }
   int length() const { return file->length(); }
-  filesystem::path path() const { return file->path(); }
+  fs::path path() const { return file->path(); }
   std::string date() const { return file->date(); };
   std::string comment() const { return file->comment(); };
   std::chrono::duration<float> duration() const { return file->duration(); }
@@ -185,8 +185,7 @@ class Recording {
 
   float progress() { return _t / static_cast<float>(length() - 1); }
 
-  bool export_ROI(
-      filesystem::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax = {0, 0}) {
+  bool export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax = {0, 0}) {
     if (start[0] < 0 || start[1] < 0 || start[0] + size[0] > Nx() || start[1] + size[1] > Ny()) {
       new_ui_message(
           "ERROR: export_ROI() called with invalid array sizes, "
@@ -201,7 +200,7 @@ class Recording {
       return false;
     }
 
-    filesystem::remove(path);
+    fs::remove(path);
     std::ofstream out(path.string(), std::ios::out | std::ios::binary);
     auto cur_frame = t_frame;
 

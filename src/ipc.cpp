@@ -5,6 +5,15 @@
 #include <asio/write.hpp>
 #include <asio/ts/internet.hpp>
 
+// only use std filesystem on msvc for now, as gcc / clang sometimes require link options
+#if defined(__cplusplus) && _MSC_VER >= 1920
+#include <filesystem>
+namespace fs = std::filesystem;
+#else
+#include <ghc/filesystem.hpp>
+namespace fs = ghc::filesystem;
+#endif
+
 #include "ipc.h"
 
 #include "schema/array3_generated.h"
@@ -128,8 +137,10 @@ void ipc::load_files(const std::vector<std::string>& files) {
 
   flatbuffers::FlatBufferBuilder builder(1024);
   std::vector<flatbuffers::Offset<flatbuffers::String>> files_fb;
-  for (auto file : files) {
-    files_fb.push_back(builder.CreateString(file));
+
+  for (const auto& file : files) {
+    auto absolute_path = fs::absolute(file).generic_string();
+    files_fb.push_back(builder.CreateString(absolute_path));
   }
   auto files_fb2 = builder.CreateVector(files_fb.data(), files_fb.size());
   auto fp        = CreateFilepaths(builder, files_fb2);

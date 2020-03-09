@@ -5,8 +5,16 @@
 
 #include <fmt/format.h>
 
+// only use std filesystem on msvc for now, as gcc / clang sometimes require link options
+#if defined(__cplusplus) && _MSC_VER >= 1920
+#include <filesystem>
+namespace fs = std::filesystem;
+#else
+#include <ghc/filesystem.hpp>
+namespace fs = ghc::filesystem;
+#endif
+
 #include "definitions.h"
-#include "filesystem/filesystem.hpp"
 
 using namespace std::chrono_literals;
 
@@ -74,7 +82,7 @@ class BMPheader {
   const size_t HeaderLength    = 1024;
   const size_t FrameTailLength = sizeof(uint64);
 
-  BMPheader(filesystem::path path) : _in(path.string(), std::ios::in | std::ios::binary) {
+  BMPheader(fs::path path) : _in(path.string(), std::ios::in | std::ios::binary) {
 
     if (!_in.good() || get_filesize() <= HeaderLength) {
       _error_msg = fmt::format("ERROR: {} does not seem to be a file!", path.string());

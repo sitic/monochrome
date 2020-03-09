@@ -28,12 +28,12 @@ float bitrange_to_float(BitRange br) {
 
 class AbstractRecording {
  private:
-  filesystem::path _path;
+  fs::path _path;
 
  public:
-  AbstractRecording(filesystem::path path) : _path(std::move(path)){};
+  AbstractRecording(fs::path path) : _path(std::move(path)){};
   virtual ~AbstractRecording() = default;
-  filesystem::path path() { return _path; };
+  fs::path path() { return _path; };
 
   virtual bool good() const                             = 0;
   virtual int Nx() const                                = 0;
@@ -55,7 +55,7 @@ class BmpFileRecording : public AbstractRecording {
   Eigen::Matrix<uint16, Eigen::Dynamic, Eigen::Dynamic> frame_uint16;
 
  public:
-  BmpFileRecording(const filesystem::path &path) : AbstractRecording(path), file(path) {
+  BmpFileRecording(const fs::path &path) : AbstractRecording(path), file(path) {
     frame_uint16.setZero(file.Nx(), file.Ny());
   }
 
@@ -106,7 +106,7 @@ class RawFileRecording : public AbstractRecording {
   }
 
  public:
-  RawFileRecording(const filesystem::path &path)
+  RawFileRecording(const fs::path &path)
       : _in(path.string(), std::ios::in | std::ios::binary), AbstractRecording(path) {
 
     const std::regex rgx(R"(^.*?_(\d+)x(\d+)x(\d+)f.*?\.dat$)");

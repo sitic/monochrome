@@ -36,7 +36,7 @@ struct ExportCtrl {
     Vec2i frames;
     std::vector<char> filename = {};
 
-    void assign_auto_filename(const filesystem::path &bmp_path) {
+    void assign_auto_filename(const fs::path &bmp_path) {
       auto fn    = bmp_path.filename().string();
       auto parts = split_string(fn, "_"s.c_str());
       if (parts.size() > 4) {
@@ -65,7 +65,7 @@ struct ExportCtrl {
     std::vector<char> filename = {};
     VideoRecorder videoRecorder;
 
-    void assign_auto_filename(const filesystem::path &bmp_path) {
+    void assign_auto_filename(const fs::path &bmp_path) {
       videoRecorder.videotitle = bmp_path.filename().string();
 
       std::string fn = bmp_path.filename().stem().string() + ".mp4";
@@ -83,7 +83,7 @@ struct ExportCtrl {
     bool save_pngs             = false;
     std::vector<char> filename = {};
 
-    void assign_auto_filename(const filesystem::path &bmp_path) {
+    void assign_auto_filename(const fs::path &bmp_path) {
       std::string fn = bmp_path.filename().stem().string() + "_{t}.png";
       filename.assign(fn.begin(), fn.end());
 
@@ -237,7 +237,7 @@ class RecordingWindow : public Recording {
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
 
-  RecordingWindow(const filesystem::path &path) : RecordingWindow(autoguess_filerecording(path)){};
+  RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filerecording(path)){};
   RecordingWindow(std::shared_ptr<AbstractRecording> file)
       : Recording(file), transformationArena(*this) {
     if (!good()) {
@@ -533,7 +533,7 @@ class RecordingWindow : public Recording {
     }
   }
 
-  filesystem::path save_snapshot(std::string output_png_path_template = "") {
+  fs::path save_snapshot(std::string output_png_path_template = "") {
     if (output_png_path_template.empty()) {
       output_png_path_template = path().stem().string() + "_{t}.png";
     }
