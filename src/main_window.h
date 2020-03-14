@@ -100,11 +100,11 @@ void display_loop() {
       load_new_file(file.value());
     }
 
-    while (auto arr = global::get_rawarray3_to_load()) {
-      std::shared_ptr<AbstractRecording> r =
-          std::make_shared<InMemoryRecording>(arr->data, arr->nx, arr->ny, arr->nt, arr->name);
-      recordings.emplace_back(std::make_shared<RecordingWindow>(r));
-    }
+    //while (auto arr = global::get_rawarray3_to_load()) {
+    //  std::shared_ptr<AbstractRecording> r =
+    //      std::make_shared<InMemoryRecording>(arr->data, arr->nx, arr->ny, arr->nt, arr->name);
+    //  recordings.emplace_back(std::make_shared<RecordingWindow>(r));
+    //}
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL2_NewFrame();

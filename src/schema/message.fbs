@@ -1,0 +1,21 @@
+namespace fbs;
+
+table Array3 {
+  data:[float];
+  nx:int;
+  ny:int;
+  nt:int;
+  name:string;
+}
+
+table Filepaths {
+  file:[string];
+}
+
+union Data { Array3, Filepaths }
+
+table Root {
+    data:Data;
+}
+
+root_type Root;

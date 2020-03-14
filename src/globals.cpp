@@ -10,13 +10,10 @@ namespace {
   moodycamel::ReaderWriterQueue<global::RawArray3> array3_to_load(2);
 }  // namespace
 
-//#include <GLFW/glfw3.h>
-//
 namespace global {
-  //  GLFWwindow *main_window       = nullptr;
-  //  std::vector<Message> messages = {};
 
-  short tcp_port = 4864;
+  std::string tcp_host = "127.0.0.1";
+  short tcp_port       = 4864;
 
   void add_file_to_load(const std::string& file) { files_to_load.enqueue(file); }
 

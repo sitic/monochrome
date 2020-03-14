@@ -2,6 +2,8 @@
 #include <utility>
 
 #include <fmt/format.h>
+
+#include <asio/read.hpp>
 #include <asio/write.hpp>
 #include <asio/ts/internet.hpp>
 
@@ -16,111 +18,186 @@ namespace fs = ghc::filesystem;
 
 #include "ipc.h"
 
-#include "schema/array3_generated.h"
-#include "schema/filepath_generated.h"
+#include "schema/message_generated.h"
 
 using asio::ip::tcp;
 
-class session : public std::enable_shared_from_this<session> {
- public:
-  session(tcp::socket socket) : socket_(std::move(socket)) {}
+namespace {
+  class Message {
+   public:
+    static constexpr std::size_t HeaderSize = sizeof(flatbuffers::uoffset_t);
 
-  void start() { do_read(); }
+    Message() : body_size_(0) {}
 
- private:
-  int i = 0;
+    const uint8_t* header_data() const { return header_data_; }
 
-  void do_read() {
-    auto self(shared_from_this());
-    auto handler = [this, self](std::error_code ec, std::size_t length) {
-      if (!ec) {
-        auto filepaths = ipc::GetFilepaths(data_);
-        auto fp        = filepaths->file();
-        for (unsigned int i = 0; i < fp->size(); i++) {
-          auto file = fp->Get(i)->str();
-          global::add_file_to_load(file);
+    uint8_t* header_data() { return header_data_; }
+
+    std::size_t size() const { return body_size_; }
+
+    const uint8_t* body() const { return reinterpret_cast<const uint8_t*>(data_); }
+
+    uint8_t* body() { return reinterpret_cast<uint8_t*>(data_); }
+
+    std::size_t body_size() const { return body_size_; }
+
+    bool decode_header() {
+      body_size_ = flatbuffers::GetPrefixedSize(header_data());
+      fmt::print("Message Length {}\n", body_size_);
+      delete[] data_;
+      data_ = new uint8_t[body_size_ / sizeof(uint8_t)];
+      //data_ = std::make_shared<float[]>(body_size_ / sizeof(float));
+      return true;
+    }
+
+    void verify_and_deliver(const tcp::endpoint& remote_ep) {
+      auto verifier = flatbuffers::Verifier(body(), body_size());
+      if (fbs::VerifyRootBuffer(verifier)) {
+        auto root = fbs::GetRoot(body());
+        fmt::print("Rx {} message from {}:{}\n", fbs::EnumNameData(root->data_type()),
+                   remote_ep.address().to_string(), remote_ep.port());
+        switch (root->data_type()) {
+          case fbs::Data_Filepaths:
+            handle_message(root->data_as_Filepaths());
+            break;
+          case fbs::Data_Array3:
+            handle_message(root->data_as_Array3());
+            break;
+          default:
+            throw std::runtime_error("Unknown message body type");
         }
-        //i += 1;
-        //do_write(length);
-
-        //if (data_[0] == 'a') {
-        //  auto file = std::string(data_ + 1, length - 1);
-        //  global::add_file_to_load(file);
-        //  fmt::print("{}\n", file);
-        //} else if (data_[0] == 'b') {
-        //  std::size_t array_size;
-        //  std::copy(data_ + 1, data_ + 1 + sizeof(array_size), array_size);
-        //}
-      }
-    };
-    socket_.async_read_some(asio::buffer(data_, max_length), handler);
-  }
-
-  void do_write(std::size_t length) {
-    auto self(shared_from_this());
-    std::string number = std::to_string(i);
-    //std::copy(number.begin(), number.end(), data_);
-    asio::async_write(socket_, asio::buffer(number.data(), number.size()),
-                      [this, self](std::error_code ec, std::size_t /*length*/) {
-                        if (!ec) {
-                          do_read();
-                        } else {
-                          fmt::print("Error {}: {}\n", ec.value(), ec.message());
-                        }
-                      });
-  }
-
-  tcp::socket socket_;
-  enum { max_length = 1024 };
-  char data_[max_length];
-};
-
-class TcpServer {
- public:
-  TcpServer(short port)
-      : acceptor_(io_context_, tcp::endpoint(tcp::v4(), port)), socket_(io_context_) {
-    do_accept();
-  }
-
-  void run() { io_context_.run(); }
-
-  void stop() { io_context_.stop(); }
-
- private:
-  void do_accept() {
-    acceptor_.async_accept(socket_, [this](std::error_code ec) {
-      if (!ec) {
-        std::make_shared<session>(std::move(socket_))->start();
       } else {
-        fmt::print("Error {}: {}\n", ec.value(), ec.message());
+        fmt::print("ERROR: flatbuffers verifier failed\n");
+      }
+    }
+
+    void handle_message(const fbs::Filepaths* raw) {
+      if (!raw) {
+        fmt::print("Error parsing flatbuffer\n");
+        return;
       }
 
+      auto filepaths = raw->file();
+      for (unsigned int i = 0; i < filepaths->size(); i++) {
+        auto file = filepaths->Get(i)->str();
+        global::add_file_to_load(file);
+      }
+    }
+
+    void handle_message(const fbs::Array3* raw) {
+      //if (!raw) {
+      //  fmt::print("Error parsing flatbuffer\n");
+      //  return;
+      //}
+      //
+      //auto fbs_data = raw->data();
+      //auto nx       = raw->nx();
+      //auto ny       = raw->ny();
+      //auto nt       = raw->nt();
+      //auto name     = raw->name()->str();
+      //
+      //if (nx * ny * nt != fbs_data->size()) {
+      //  throw std::runtime_error("error parsing flatbuffer, sizes do not match!");
+      //}
+      //std::ptrdiff_t data_offset = fbs_data->data() - data_.get();
+      //if (data_offset < 0 || data_offset > body_size_ * sizeof(float)) {
+      //  throw std::runtime_error("error creating array, ptr arithmetic seem wrong");
+      //}
+      //global::add_RawArray3_to_load({nx, ny, nt, name, data_, data_offset});
+    }
+
+   private:
+    uint8_t header_data_[HeaderSize];
+    uint8_t* data_;
+    std::size_t body_size_;
+  };
+
+  class TcpSession : public std::enable_shared_from_this<TcpSession> {
+   public:
+    TcpSession(tcp::socket socket) : socket_(std::move(socket)) {}
+
+    void start() { do_read_header(); }
+
+   private:
+    void do_read_header() {
+      auto self(shared_from_this());
+      asio::async_read(socket_, asio::buffer(msg_.header_data(), Message::HeaderSize),
+                       [this, self](std::error_code ec, std::size_t length) {
+                         if (!ec && msg_.decode_header()) {
+                           do_read_body();
+                         }
+                       });
+    }
+
+    void do_read_body() {
+      auto self(shared_from_this());
+      asio::async_read(socket_, asio::buffer(msg_.body(), msg_.body_size()),
+                       [this, self](std::error_code ec, std::size_t /*length*/) {
+                         if (!ec) {
+                           msg_.verify_and_deliver(socket_.remote_endpoint());
+                           do_read_header();
+                         }
+                       });
+    }
+
+    Message msg_;
+    tcp::socket socket_;
+  };
+
+  class TcpServer {
+   public:
+    TcpServer(short port)
+        : acceptor_(io_context_, tcp::endpoint(tcp::v4(), port)), socket_(io_context_) {
       do_accept();
-    });
+    }
+
+    void run() { io_context_.run(); }
+
+    void stop() { io_context_.stop(); }
+
+   private:
+    void do_accept() {
+      acceptor_.async_accept(socket_, [this](std::error_code ec) {
+        if (!ec) {
+          std::make_shared<TcpSession>(std::move(socket_))->start();
+        } else {
+          fmt::print("Error {}: {}\n", ec.value(), ec.message());
+        }
+
+        do_accept();
+      });
+    }
+
+    asio::io_context io_context_;
+    tcp::acceptor acceptor_;
+    tcp::socket socket_;
+  };
+
+
+  std::unique_ptr<TcpServer> tcp_server;
+}  // namespace
+
+void ipc::start_server() {
+  assert(!tcp_server);
+
+  try {
+    tcp_server = std::make_unique<TcpServer>(global::tcp_port);
+    std::thread([]() { tcp_server->run(); }).detach();
+  } catch (const asio::system_error& error) {
+    fmt::print("Error starting tcp server {}: {}\n", error.code().value(), error.code().message());
   }
+}
 
-  asio::io_context io_context_;
-  tcp::acceptor acceptor_;
-  tcp::socket socket_;
-};
-
-void test_flat() {
-  using namespace ipc;
-
-  flatbuffers::FlatBufferBuilder builder(1024);
-  std::array<float, 10 * 10 * 10> test_arr = {};
-
-  auto arr  = builder.CreateVector(test_arr.data(), test_arr.size());
-  auto name = builder.CreateString("test");
-  CreateArray3(builder, arr, 10, 10, 10, name);
-  //const uint8_t *flatbuf;
-  //GetArray3(flatbuf);
+void ipc::stop_server() {
+  if (tcp_server) {
+    tcp_server->stop();
+  }
 }
 
 bool ipc::is_another_instance_running() {
   asio::io_context io_context;
   tcp::socket socket(io_context);
-  tcp::endpoint endpoint(asio::ip::make_address("127.0.0.1"), global::tcp_port);
+  tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
   try {
     socket.connect(endpoint);
     return true;
@@ -129,13 +206,13 @@ bool ipc::is_another_instance_running() {
   }
 }
 
-void ipc::load_files(const std::vector<std::string>& files) {
+void ipc::send_filepaths(const std::vector<std::string>& files) {
   asio::io_context io_context;
   tcp::socket socket(io_context);
-  tcp::endpoint endpoint(asio::ip::make_address("127.0.0.1"), global::tcp_port);
+  tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
   socket.connect(endpoint);
 
-  flatbuffers::FlatBufferBuilder builder(1024);
+  flatbuffers::FlatBufferBuilder builder(256);
   std::vector<flatbuffers::Offset<flatbuffers::String>> files_fb;
 
   for (const auto& file : files) {
@@ -143,26 +220,26 @@ void ipc::load_files(const std::vector<std::string>& files) {
     files_fb.push_back(builder.CreateString(absolute_path));
   }
   auto files_fb2 = builder.CreateVector(files_fb.data(), files_fb.size());
-  auto fp        = CreateFilepaths(builder, files_fb2);
-  builder.Finish(fp);
+  auto fp        = fbs::CreateFilepaths(builder, files_fb2);
+  auto root      = CreateRoot(builder, fbs::Data_Filepaths, fp.Union());
+  builder.FinishSizePrefixed(root);
 
   asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
   socket.close();
 }
 
-namespace {
-  std::unique_ptr<TcpServer> tcp_server;
-}
+void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::string& name) {
+  asio::io_context io_context;
+  tcp::socket socket(io_context);
+  tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+  socket.connect(endpoint);
 
-void ipc::start_server() {
-  assert(!tcp_server);
+  flatbuffers::FlatBufferBuilder builder(nx * ny * nt * sizeof(float) + 512);
+  auto fbs  = fbs::CreateArray3(builder, builder.CreateVector<float>(data, nx * ny * nt), nx, ny, nt,
+                               builder.CreateString(name));
+  auto root = CreateRoot(builder, fbs::Data_Filepaths, fbs.Union());
+  builder.FinishSizePrefixed(root);
 
-  tcp_server = std::make_unique<TcpServer>(global::tcp_port);
-  std::thread([]() { tcp_server->run(); }).detach();
-}
-
-void ipc::stop_server() {
-  if (tcp_server) {
-    tcp_server->stop();
-  }
+  asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
+  socket.close();
 }

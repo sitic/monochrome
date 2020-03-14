@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 
   if (!files.empty()) {
     if (ipc::is_another_instance_running()) {
-      ipc::load_files(files);
+      ipc::send_filepaths(files);
       std::exit(EXIT_SUCCESS);
     }
   }
@@ -58,7 +58,11 @@ int main(int argc, char **argv) {
     load_new_file(file);
   }
 
-  ipc::start_server();
+  if (!ipc::is_another_instance_running()) {
+    ipc::start_server();
+  } else {
+    fmt::print("Unable to start TCP server, another instance is running!\n");
+  }
 
   display_loop();
 
