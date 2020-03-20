@@ -268,19 +268,27 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
   tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
   socket.connect(endpoint);
 
-  constexpr std::size_t MAX_CHUNK_SIZE = (1ULL << 31) - 1 - 1024; // 2GB - 1 - 1KB
-  auto builder_size_hint = std::max(nx * ny * nt * sizeof(float) + 512, MAX_CHUNK_SIZE);
+  const std::size_t MAX_BUFFER_BYTES = (1ULL << 31) - 128;  // 2GB - 128
+  auto builder_size_hint = std::max(nx * ny * nt * sizeof(float) + 128, MAX_BUFFER_BYTES);
   flatbuffers::FlatBufferBuilder builder(builder_size_hint);
   auto fbs_start  = fbs::CreateArray3MetaDirect(builder, nx, ny, nt, name.c_str());
   auto root_start = CreateRoot(builder, fbs::Data_Array3Meta, fbs_start.Union());
   builder.FinishSizePrefixed(root_start);
   asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
-
   builder.Clear();
 
-  auto fbs = fbs::CreateArray3DataChunk(builder, 0, builder.CreateVector<float>(data, nx * ny * nt));
-  auto root = CreateRoot(builder, fbs::Data_Array3DataChunk, fbs.Union());
-  builder.FinishSizePrefixed(root);
-  asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
+  const std::size_t data_size      = nx * ny * nt;
+  const std::size_t MAX_FLOAT_ELMS = (MAX_BUFFER_BYTES - 128) / sizeof(float);
+  for (std::size_t idx = 0; idx < data_size; idx += MAX_FLOAT_ELMS) {
+    auto end      = std::min(idx + MAX_FLOAT_ELMS, data_size);
+    auto fbs_data = builder.CreateVector<float>(data + idx, end - idx);
+    auto fbs      = fbs::CreateArray3DataChunk(builder, 0, fbs_data);
+    auto root     = CreateRoot(builder, fbs::Data_Array3DataChunk, fbs.Union());
+    builder.FinishSizePrefixed(root);
+    asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
+    builder.Clear();
+  }
   socket.close();
+
+  fmt::print("File {} was uploaded to remote process\n", name);
 }
