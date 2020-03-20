@@ -7,7 +7,7 @@
 
 namespace {
   moodycamel::ReaderWriterQueue<std::string> files_to_load(3);
-  moodycamel::ReaderWriterQueue<global::RawArray3> array3_to_load(2);
+  moodycamel::ReaderWriterQueue<std::shared_ptr<global::RawArray3>> array3_to_load(2);
 }  // namespace
 
 namespace global {
@@ -22,10 +22,13 @@ namespace global {
     return files_to_load.try_dequeue(tmp) ? std::optional<std::string>(tmp) : std::nullopt;
   }
 
-  void add_RawArray3_to_load(const RawArray3& arr) { array3_to_load.enqueue(arr); }
+  void add_RawArray3_to_load(std::shared_ptr<global::RawArray3> arr) {
+    array3_to_load.enqueue(std::move(arr));
+  }
 
-  std::optional<RawArray3> get_rawarray3_to_load() {
-    RawArray3 tmp;
-    return array3_to_load.try_dequeue(tmp) ? std::optional<RawArray3>(tmp) : std::nullopt;
+  std::optional<std::shared_ptr<RawArray3>> get_rawarray3_to_load() {
+    std::shared_ptr<global::RawArray3> tmp;
+    return array3_to_load.try_dequeue(tmp) ? std::optional<std::shared_ptr<global::RawArray3>>(tmp)
+                                           : std::nullopt;
   }
 }  // namespace global

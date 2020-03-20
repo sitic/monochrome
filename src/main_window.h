@@ -77,6 +77,19 @@ void load_new_file(const fs::path &path) {
   rec->open_window();
 }
 
+void load_from_queue() {
+  while (auto file = global::get_file_to_load()) {
+    load_new_file(file.value());
+  }
+  while (auto arr = global::get_rawarray3_to_load()) {
+    std::shared_ptr<AbstractRecording> r = std::make_shared<InMemoryRecording>(arr.value());
+    recordings.emplace_back(std::make_shared<RecordingWindow>(r));
+    if (recordings.back()->good()) {
+      recordings.back()->open_window();
+    }
+  }
+}
+
 void display_loop() {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
@@ -96,15 +109,7 @@ void display_loop() {
     // to dear imgui, and hide them from your application based on those two
     // flags.
     glfwPollEvents();
-    while (auto file = global::get_file_to_load()) {
-      load_new_file(file.value());
-    }
-
-    //while (auto arr = global::get_rawarray3_to_load()) {
-    //  std::shared_ptr<AbstractRecording> r =
-    //      std::make_shared<InMemoryRecording>(arr->data, arr->nx, arr->ny, arr->nt, arr->name);
-    //  recordings.emplace_back(std::make_shared<RecordingWindow>(r));
-    //}
+    load_from_queue();
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL2_NewFrame();

@@ -23,30 +23,37 @@ namespace fs = ghc::filesystem;
 using asio::ip::tcp;
 
 namespace {
+
+  struct Array3Msg {
+    std::size_t counter = 0;
+    std::shared_ptr<global::RawArray3> array;
+
+    void clear() {
+      counter = 0;
+      array   = nullptr;
+    }
+    bool empty() { return !array && !counter; }
+    bool complete() { return array ? counter == array->data.size() : false; }
+  };
+
   class Message {
    public:
     static constexpr std::size_t HeaderSize = sizeof(flatbuffers::uoffset_t);
 
-    Message() : body_size_(0) {}
-
-    const uint8_t* header_data() const { return header_data_; }
+    Message() {}
 
     uint8_t* header_data() { return header_data_; }
 
-    std::size_t size() const { return body_size_; }
+    uint8_t* body() { return data_.data(); }
 
-    const uint8_t* body() const { return reinterpret_cast<const uint8_t*>(data_); }
-
-    uint8_t* body() { return reinterpret_cast<uint8_t*>(data_); }
-
-    std::size_t body_size() const { return body_size_; }
+    [[nodiscard]] std::size_t body_size() const { return data_.size(); }
 
     bool decode_header() {
-      body_size_ = flatbuffers::GetPrefixedSize(header_data());
-      fmt::print("Message Length {}\n", body_size_);
-      delete[] data_;
-      data_ = new uint8_t[body_size_ / sizeof(uint8_t)];
-      //data_ = std::make_shared<float[]>(body_size_ / sizeof(float));
+      auto msg_size = flatbuffers::GetPrefixedSize(header_data());
+      fmt::print("Message Length {}\n", msg_size);
+      if (msg_size > body_size()) {
+        data_.resize(msg_size);
+      }
       return true;
     }
 
@@ -60,8 +67,11 @@ namespace {
           case fbs::Data_Filepaths:
             handle_message(root->data_as_Filepaths());
             break;
-          case fbs::Data_Array3:
-            handle_message(root->data_as_Array3());
+          case fbs::Data_Array3Meta:
+            handle_message(root->data_as_Array3Meta());
+            break;
+          case fbs::Data_Array3DataChunk:
+            handle_message(root->data_as_Array3DataChunk());
             break;
           default:
             throw std::runtime_error("Unknown message body type");
@@ -84,32 +94,56 @@ namespace {
       }
     }
 
-    void handle_message(const fbs::Array3* raw) {
-      //if (!raw) {
-      //  fmt::print("Error parsing flatbuffer\n");
-      //  return;
-      //}
-      //
-      //auto fbs_data = raw->data();
-      //auto nx       = raw->nx();
-      //auto ny       = raw->ny();
-      //auto nt       = raw->nt();
-      //auto name     = raw->name()->str();
-      //
-      //if (nx * ny * nt != fbs_data->size()) {
-      //  throw std::runtime_error("error parsing flatbuffer, sizes do not match!");
-      //}
-      //std::ptrdiff_t data_offset = fbs_data->data() - data_.get();
-      //if (data_offset < 0 || data_offset > body_size_ * sizeof(float)) {
-      //  throw std::runtime_error("error creating array, ptr arithmetic seem wrong");
-      //}
-      //global::add_RawArray3_to_load({nx, ny, nt, name, data_, data_offset});
+    void handle_message(const fbs::Array3Meta* raw) {
+      if (!raw) {
+        fmt::print("Error parsing flatbuffer\n");
+        return;
+      }
+
+      auto nx   = raw->nx();
+      auto ny   = raw->ny();
+      auto nt   = raw->nt();
+      auto name = raw->name()->str();
+
+      if (!array_msg_.empty()) {
+        throw std::runtime_error(
+            "Array3Meta message arrived before previous array was completely loaded");
+      }
+
+      std::size_t size = static_cast<std::size_t>(nx) * ny * nt;
+      array_msg_.array = std::make_shared<global::RawArray3>(nx, ny, nt, name, size);
+    }
+
+
+    void handle_message(const fbs::Array3DataChunk* raw) {
+      if (!raw) {
+        fmt::print("Error parsing flatbuffer\n");
+        return;
+      }
+      if (array_msg_.empty()) {
+        throw std::runtime_error("Array3DataChunk message arrived before Array3Meta");
+      }
+
+      auto idx  = raw->startidx();
+      auto data = raw->data();
+
+      if (idx + data->size() > array_msg_.array->data.size()) {
+        throw std::runtime_error(
+            "Recieved Array3DataChunk does not fit into the dimensions specified in Array3Meta");
+      }
+      std::copy(data->begin(), data->end(), array_msg_.array->data.begin() + idx);
+      array_msg_.counter += data->size();
+      if (array_msg_.complete()) {
+        fmt::print("Loading of {} complete!\n", array_msg_.array->name);
+        global::add_RawArray3_to_load(array_msg_.array);
+        array_msg_.clear();
+      }
     }
 
    private:
     uint8_t header_data_[HeaderSize];
-    uint8_t* data_;
-    std::size_t body_size_;
+    std::vector<uint8_t> data_;
+    Array3Msg array_msg_;
   };
 
   class TcpSession : public std::enable_shared_from_this<TcpSession> {
@@ -234,12 +268,19 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
   tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
   socket.connect(endpoint);
 
-  flatbuffers::FlatBufferBuilder builder(nx * ny * nt * sizeof(float) + 512);
-  auto fbs  = fbs::CreateArray3(builder, builder.CreateVector<float>(data, nx * ny * nt), nx, ny, nt,
-                               builder.CreateString(name));
-  auto root = CreateRoot(builder, fbs::Data_Filepaths, fbs.Union());
-  builder.FinishSizePrefixed(root);
+  constexpr std::size_t MAX_CHUNK_SIZE = (1ULL << 31) - 1 - 1024; // 2GB - 1 - 1KB
+  auto builder_size_hint = std::max(nx * ny * nt * sizeof(float) + 512, MAX_CHUNK_SIZE);
+  flatbuffers::FlatBufferBuilder builder(builder_size_hint);
+  auto fbs_start  = fbs::CreateArray3MetaDirect(builder, nx, ny, nt, name.c_str());
+  auto root_start = CreateRoot(builder, fbs::Data_Array3Meta, fbs_start.Union());
+  builder.FinishSizePrefixed(root_start);
+  asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
 
+  builder.Clear();
+
+  auto fbs = fbs::CreateArray3DataChunk(builder, 0, builder.CreateVector<float>(data, nx * ny * nt));
+  auto root = CreateRoot(builder, fbs::Data_Array3DataChunk, fbs.Union());
+  builder.FinishSizePrefixed(root);
   asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
   socket.close();
 }

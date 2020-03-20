@@ -2,6 +2,7 @@
 
 #include <string>
 #include <optional>
+#include <utility>
 
 //#include <GLFW/glfw3.h>
 //
@@ -21,11 +22,15 @@ namespace global {
     int ny;
     int nt;
     std::string name;
-    std::shared_ptr<float[]> data;
-    std::ptrdiff_t data_ptr_offset = 0;
+    std::vector<float> data;
+
+    RawArray3(int nx_, int ny_, int nt_, std::string  name_, std::size_t data_size)
+        : nx(nx_), ny(ny_), nt(nt_), name(std::move(name_)) {
+      data.resize(data_size);
+    }
   };
 
-  void add_RawArray3_to_load(const RawArray3& arr);
+  void add_RawArray3_to_load(std::shared_ptr<RawArray3> arr);
 
-  std::optional<RawArray3> get_rawarray3_to_load();
+  std::optional<std::shared_ptr<RawArray3>> get_rawarray3_to_load();
 }  // namespace global

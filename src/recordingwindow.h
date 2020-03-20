@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <utility>
 #include <variant>
 
 #include "recording.h"
@@ -239,7 +240,7 @@ class RecordingWindow : public Recording {
 
   RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filerecording(path)){};
   RecordingWindow(std::shared_ptr<AbstractRecording> file)
-      : Recording(file), transformationArena(*this) {
+      : Recording(std::move(file)), transformationArena(*this) {
     if (!good()) {
       return;
     }

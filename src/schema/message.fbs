@@ -1,18 +1,23 @@
 namespace fbs;
 
-table Array3 {
-  data:[float];
+table Array3Meta {
   nx:int;
   ny:int;
   nt:int;
   name:string;
 }
 
+// flatbuffers currently restricted to 2GB, so unfortunately we may need to chunk the data
+table Array3DataChunk {
+  startidx: uint64;
+  data:[float];
+}
+
 table Filepaths {
   file:[string];
 }
 
-union Data { Array3, Filepaths }
+union Data { Filepaths, Array3Meta, Array3DataChunk }
 
 table Root {
     data:Data;

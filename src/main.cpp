@@ -11,6 +11,7 @@
 int main(int argc, char **argv) {
   CLI::App app{"Quick Raw Video Viewer"};
   std::vector<std::string> files;
+  bool send_files_over_wire = false;
   app.add_option("files", files, "List of files to open")->check(CLI::ExistingFile);
   app.add_option("--scale", RecordingWindow::scale_fct, "Recording window size multiplier")
       ->check(CLI::PositiveNumber);
@@ -19,6 +20,7 @@ int main(int argc, char **argv) {
   app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
   app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
   app.add_option("--max_trace_length", prm::max_trace_length);
+  app.add_flag("--remote-send", send_files_over_wire);
   std::string config_file;
 #ifdef _WIN32
   config_file = "%APPDATA%\\quickVidViewer\\quickVidViewer.ini";
@@ -47,7 +49,22 @@ int main(int argc, char **argv) {
 
   if (!files.empty()) {
     if (ipc::is_another_instance_running()) {
-      ipc::send_filepaths(files);
+      if (send_files_over_wire) {
+        for (const auto &file : files) {
+          auto rec       = Recording(fs::path(file));
+          auto framesize = rec.Nx() * rec.Ny();
+          auto size      = framesize * rec.length();
+          std::vector<float> data(size);
+          for (long t = 0; t < rec.length(); t++) {
+            rec.load_frame(t);
+            auto frame = rec.frame.reshaped();
+            std::copy(frame.begin(), frame.end(), data.begin() + t * framesize);
+          }
+          ipc::send_array3(data.data(), rec.Nx(), rec.Ny(), rec.length(), file);
+        }
+      } else {
+        ipc::send_filepaths(files);
+      }
       std::exit(EXIT_SUCCESS);
     }
   }

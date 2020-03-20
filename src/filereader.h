@@ -155,28 +155,29 @@ class RawFileRecording : public AbstractRecording {
 };
 
 class InMemoryRecording : public AbstractRecording {
-  int _nx    = 0;
-  int _ny    = 0;
-  int _nt    = 0;
   bool _good = false;
 
   std::string _error_msg = "";
 
-  std::shared_ptr<float> _data;
+  std::shared_ptr<global::RawArray3> _data;
   Eigen::MatrixXf _frame;
 
  public:
-  InMemoryRecording(std::shared_ptr<float> data, int nx, int ny, int nt, const std::string &name)
-      : AbstractRecording(name), _nx(nx), _ny(ny), _nt(nt), _data(std::move(data)) {
-    _good = true;
+  InMemoryRecording(std::shared_ptr<global::RawArray3> data)
+      : AbstractRecording(data ? data->name : ""), _data(data) {
+    _good = static_cast<bool>(_data);
+    if (!_good) {
+      _error_msg = "Empty array loaded";
+      return;
+    }
 
-    _frame.setZero(_nx, _ny);
+    _frame.setZero(Nx(), Ny());
   }
 
   bool good() const final { return _good; };
-  int Nx() const final { return _nx; };
-  int Ny() const final { return _ny; };
-  int length() const final { return _nt; };
+  int Nx() const final { return _data->nx; };
+  int Ny() const final { return _data->ny; };
+  int length() const final { return _data->nt; };
   std::string error_msg() final { return _error_msg; };
   std::string date() const final { return ""; };
   std::string comment() const final { return ""; };
@@ -184,8 +185,8 @@ class InMemoryRecording : public AbstractRecording {
   float fps() const final { return 0; };
 
   Eigen::MatrixXf read_frame(long t) final {
-    auto frame_size = _nx * _nx;
-    auto data_ptr   = _data.get() + frame_size * t;
+    auto frame_size = Nx() * Ny();
+    auto data_ptr   = _data->data.data() + frame_size * t;
     std::copy(data_ptr, data_ptr + frame_size, _frame.data());
     return _frame;
   };
