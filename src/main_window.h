@@ -11,7 +11,6 @@
 
 #include "fonts/IconsFontAwesome5.h"
 #include "fonts/IconsMaterialDesignIcons.h"
-#include "fonts/MultiRecorderVideo.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
@@ -39,13 +38,6 @@ namespace prm {
 }  // namespace prm
 
 RotationCtrl Recording::rotations        = {};
-float RecordingWindow::scale_fct         = 1;
-float Transformation::GaussFilter::sigma = 1;
-deriche_coeffs Transformation::GaussFilter::c;
-unsigned Transformation::ContrastEnhancement::kernel_size = 3;
-unsigned Transformation::MeanFilter::kernel_size          = 3;
-unsigned Transformation::MedianFilter::kernel_size        = 3;
-int Transformation::ContrastEnhancement::maskVersion      = 0;
 
 void load_new_file(const fs::path &path) {
   fmt::print("Loading {} ...\n", path.string());
