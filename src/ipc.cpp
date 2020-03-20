@@ -263,6 +263,7 @@ void ipc::send_filepaths(const std::vector<std::string>& files) {
 }
 
 void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::string& name) {
+  auto start_time = std::chrono::high_resolution_clock::now();
   asio::io_context io_context;
   tcp::socket socket(io_context);
   tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
@@ -288,7 +289,10 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
     asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
     builder.Clear();
   }
-  socket.close();
 
-  fmt::print("File {} was uploaded to remote process\n", name);
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto to_ms    = [](const auto& d) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
+  };
+  fmt::print("File {} was uploaded to remote process in {}ms\n", name, to_ms(end_time - start_time));
 }
