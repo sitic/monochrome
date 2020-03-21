@@ -1,7 +1,9 @@
 #include <lodepng/lodepng.h>
 
-#include "utils.h"
 #include "fonts/MultiRecorderVideo.h"
+
+#include "utils.h"
+#include "globals.h"
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
 #include <unistd.h>
@@ -132,7 +134,7 @@ void gl_save_snapshot(const std::string& out_png_path, GLFWwindow* window, bool 
   unsigned error = lodepng::encode(out_png_path, image, width, height, png_px_format);
 
   if (error) {
-    new_ui_message("snapshot png encoder error {}: {}", error, lodepng_error_text(error));
+    global::new_ui_message("snapshot png encoder error {}: {}", error, lodepng_error_text(error));
   }
 
   glfwMakeContextCurrent(prev_context);

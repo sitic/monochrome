@@ -46,7 +46,7 @@ void RotationCtrl::flipud() {
   }
 }
 
-void RotationCtrl::apply(Eigen::MatrixXf& arr) {
+void RotationCtrl::apply(Eigen::MatrixXf &arr) {
   if (_fliplr && _flipud) {
     arr = arr.rowwise().reverse().colwise().reverse().eval();
   } else if (_fliplr) {
@@ -80,7 +80,7 @@ std::shared_ptr<AbstractRecording> Recording::autoguess_filerecording(const fs::
   }
 
   if (!file->error_msg().empty()) {
-    new_ui_message(file->error_msg());
+    global::new_ui_message(file->error_msg());
   }
 
   return file;
@@ -120,16 +120,14 @@ void Recording::restart() {
 
 bool Recording::export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax) {
   if (start[0] < 0 || start[1] < 0 || start[0] + size[0] > Nx() || start[1] + size[1] > Ny()) {
-    new_ui_message(
-        "ERROR: export_ROI() called with invalid array sizes, "
-        "start={}, size={}",
-        start, size);
+    global::new_ui_message("ERROR: export_ROI() called with invalid array sizes, start={}, size={}",
+                           start, size);
     return false;
   }
 
   if (t0tmax[0] < 0 || t0tmax[1] > length() || t0tmax[0] > t0tmax[1]) {
-    new_ui_message("ERROR: start or end frame invalid, start frame {}, end frame {}", t0tmax[0],
-                   t0tmax[1]);
+    global::new_ui_message("ERROR: start or end frame invalid, start frame {}, end frame {}",
+                           t0tmax[0], t0tmax[1]);
     return false;
   }
 
@@ -153,7 +151,7 @@ bool Recording::export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax,
   load_frame(cur_frame);
 
   if (!out.good()) {
-    new_ui_message("ERROR: the writing to file {} seems to have failed", path.string());
+    global::new_ui_message("ERROR: the writing to file {} seems to have failed", path.string());
     return false;
   }
 

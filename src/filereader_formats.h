@@ -1,5 +1,7 @@
 #pragma once
 
+#include <regex>
+
 #include "filereader.h"
 #include "bmp.h"
 

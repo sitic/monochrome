@@ -23,8 +23,7 @@
 std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
 
 namespace global {
-  GLFWwindow *main_window       = nullptr;
-  std::vector<Message> messages = {};
+  GLFWwindow *main_window = nullptr;
 }  // namespace global
 
 namespace prm {
@@ -44,18 +43,18 @@ void load_new_file(const fs::path &path) {
   fmt::print("Loading {} ...\n", path.string());
 
   if (!fs::is_regular_file(path)) {
-    new_ui_message("ERROR: {} does not appear to be a file, skipping", path.string());
+    global::new_ui_message("ERROR: {} does not appear to be a file, skipping", path.string());
     return;
   }
 
   if (path.extension() != ".dat") {
-    new_ui_message("ERROR: {} does not have extension '.dat', skipping", path.string());
+    global::new_ui_message("ERROR: {} does not have extension '.dat', skipping", path.string());
     return;
   }
 
   auto rec = std::make_shared<RecordingWindow>(path);
   if (!rec->good()) {
-    new_ui_message("ERROR: loading file failed, skipping");
+    global::new_ui_message("ERROR: loading file failed, skipping");
     return;
   }
 
@@ -75,9 +74,9 @@ void load_from_queue() {
   }
   while (auto arr = global::get_rawarray3_to_load()) {
     std::shared_ptr<AbstractRecording> r = std::make_shared<InMemoryRecording>(arr.value());
-    auto rec = std::make_shared<RecordingWindow>(r);
+    auto rec                             = std::make_shared<RecordingWindow>(r);
     if (!rec->good()) {
-      new_ui_message("ERROR: loading file failed, skipping");
+      global::new_ui_message("ERROR: loading file failed, skipping");
       continue;
     }
 
@@ -495,7 +494,7 @@ void show_export_recording_ui(const std::shared_ptr<RecordingWindow> &recording)
       bool success = recording->export_ROI(path, ctrl.start, ctrl.size, ctrl.frames, minmax);
 
       if (success) {
-        new_ui_message("Export to {} completed successfully", path.string());
+        global::new_ui_message("Export to {} completed successfully", path.string());
         ctrl.export_window = false;
       }
     }
@@ -531,7 +530,7 @@ void show_export_recording_ui(const std::shared_ptr<RecordingWindow> &recording)
 
       if (ImGui::Button(ICON_FA_STOP " Stop Export")) {
         recording->stop_recording();
-        new_ui_message("Exporting video stopped");
+        global::new_ui_message("Exporting video stopped");
       }
     }
     ImGui::End();
@@ -553,7 +552,7 @@ void show_export_recording_ui(const std::shared_ptr<RecordingWindow> &recording)
     if (!ctrl.save_pngs) {
       if (ImGui::Button("Single .png")) {
         auto fn = make_snapshot();
-        new_ui_message("Saved screenshot to {}", fn.string());
+        global::new_ui_message("Saved screenshot to {}", fn.string());
       }
 
       ctrl.save_pngs = ImGui::Button("Start exporting .png series");
@@ -562,7 +561,7 @@ void show_export_recording_ui(const std::shared_ptr<RecordingWindow> &recording)
       if (ImGui::Button("Stop exporting .png series")) {
         ctrl.save_pngs     = false;
         ctrl.export_window = false;
-        new_ui_message("Stopped exporting .png series, last screenshot {}", fn.string());
+        global::new_ui_message("Stopped exporting .png series, last screenshot {}", fn.string());
       }
     }
     ImGui::End();

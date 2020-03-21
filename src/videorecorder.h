@@ -56,7 +56,7 @@ class VideoRecorder {
     if (ffmpeg) return;  // if already recording, silently return
 
     if (fps <= 0) {
-      new_ui_message("FPS has to be >0");
+      global::new_ui_message("FPS has to be >0");
       return;
     }
 
@@ -82,13 +82,13 @@ class VideoRecorder {
 
     ffmpeg = popen(cmd.c_str(), "w");
     if (!ffmpeg) {
-      new_ui_message("unable to open ffmpeg with popen(), can't record output");
+      global::new_ui_message("unable to open ffmpeg with popen(), can't record output");
     }
   }
 
   void add_frame() {
     if (!ffmpeg) {
-      new_ui_message(
+      global::new_ui_message(
           "VideoRecorder::start_recording has to be called before "
           "using ::add_frame!");
     }

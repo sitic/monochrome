@@ -36,13 +36,13 @@ namespace {
     bool complete() { return array ? counter == array->data.size() : false; }
   };
 
-  class Message {
+  class TcpMessage {
    public:
     static constexpr std::size_t HeaderSize = sizeof(flatbuffers::uoffset_t);
 
-    Message() = default;
+    TcpMessage() = default;
 
-    ~Message() {
+    ~TcpMessage() {
       if (!array_msg_.empty()) {
         fmt::print("ERROR: Client disconnected before full array was recieved!\n");
       }
@@ -166,7 +166,7 @@ namespace {
    private:
     void do_read_header() {
       auto self(shared_from_this());
-      asio::async_read(socket_, asio::buffer(msg_.header_data(), Message::HeaderSize),
+      asio::async_read(socket_, asio::buffer(msg_.header_data(), TcpMessage::HeaderSize),
                        [this, self](std::error_code ec, std::size_t length) {
                          if (!ec && msg_.decode_header()) {
                            do_read_body();
@@ -185,7 +185,7 @@ namespace {
                        });
     }
 
-    Message msg_;
+    TcpMessage msg_;
     tcp::socket socket_;
   };
 

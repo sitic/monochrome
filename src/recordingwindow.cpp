@@ -206,7 +206,7 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
   } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
     std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
     auto fn                              = rec->save_snapshot();
-    new_ui_message("Saved screenshot to {}", fn.string());
+    global::new_ui_message("Saved screenshot to {}", fn.string());
   } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
     prm::playbackCtrl.toggle_play_pause();
   }
@@ -222,7 +222,7 @@ void RecordingWindow::open_window() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   window = glfwCreateWindow(Nx(), Ny(), title.c_str(), nullptr, nullptr);
   if (!window) {
-    new_ui_message("ERROR: window created failed for {}", title);
+    global::new_ui_message("ERROR: window created failed for {}", title);
     return;
   }
 
@@ -346,7 +346,7 @@ void RecordingWindow::display(float speed,
     auto cur = progress();
     if (cur < export_ctrl.video.progress) {
       stop_recording();
-      new_ui_message("Exporting video finished!");
+      global::new_ui_message("Exporting video finished!");
     } else {
       export_ctrl.video.videoRecorder.add_frame();
       export_ctrl.video.progress = cur;

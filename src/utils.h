@@ -10,34 +10,6 @@
 std::string get_user_homedir();
 #endif
 
-class Message {
- public:
-  bool show = true;
-  std::string msg;
-  int id = 0;
-
-  Message(const std::string &msg) : msg(msg) {
-    static int _id = -1;
-    _id += 1;
-    id = _id;
-  };
-};
-
-namespace global {
-  extern std::vector<Message> messages;
-}
-template <typename... Args>
-inline void new_ui_message(const char *fmt, Args &&... args) {
-  const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
-  global::messages.emplace_back(msg);
-  fmt::print(msg + "\n");
-}
-
-template <typename... Args>
-inline void new_ui_message(const std::string &fmt, Args &&... args) {
-  return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
-}
-
 template <typename T, size_t bin_count>
 class Histogram {
  public:

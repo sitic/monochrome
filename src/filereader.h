@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <optional>
-#include <regex>
 #include <string>
 
 #include <Eigen/Dense>
@@ -67,6 +66,8 @@ class InMemoryRecording : public AbstractRecording {
 
   std::shared_ptr<global::RawArray3> _data;
   Eigen::MatrixXf _frame;
+  std::optional<BitRange> _bitrange;
+  std::size_t _frame_size;
 
  public:
   InMemoryRecording(std::shared_ptr<global::RawArray3> data)
@@ -77,7 +78,19 @@ class InMemoryRecording : public AbstractRecording {
       return;
     }
 
+    _frame_size = Nx() * Ny();
     _frame.setZero(Nx(), Ny());
+
+    auto max = *std::max_element(_data->data.begin(), _data->data.begin() + _frame_size);
+    if (max <= 1) {
+      _bitrange = BitRange::FLOAT;
+    } else if (max < (1 << 8)) {
+      _bitrange = BitRange::U8;
+    } else if (max < (1 << 12)) {
+      _bitrange = BitRange::U12;
+    } else {
+      _bitrange = BitRange::U16;
+    }
   }
 
   bool good() const final { return _good; };
@@ -91,12 +104,10 @@ class InMemoryRecording : public AbstractRecording {
   float fps() const final { return 0; };
 
   Eigen::MatrixXf read_frame(long t) final {
-    std::size_t frame_size = Nx() * Ny();
-
-    auto data_ptr = _data->data.data() + frame_size * t;
-    std::copy(data_ptr, data_ptr + frame_size, _frame.data());
+    auto data_ptr = _data->data.data() + _frame_size * t;
+    std::copy(data_ptr, data_ptr + _frame_size, _frame.data());
     return _frame;
   };
 
-  std::optional<BitRange> bitrange() const final { return BitRange::FLOAT; }
+  std::optional<BitRange> bitrange() const final { return _bitrange; }
 };
