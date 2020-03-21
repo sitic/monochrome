@@ -55,7 +55,6 @@ void load_new_file(const fs::path &path) {
 
   auto rec = std::make_shared<RecordingWindow>(path);
   if (!rec->good()) {
-    recordings.pop_back();
     new_ui_message("ERROR: loading file failed, skipping");
     return;
   }
@@ -66,7 +65,7 @@ void load_new_file(const fs::path &path) {
     }
   }
 
-  recordings.emplace_back(rec);
+  recordings.push_back(rec);
   rec->open_window();
 }
 
@@ -76,10 +75,20 @@ void load_from_queue() {
   }
   while (auto arr = global::get_rawarray3_to_load()) {
     std::shared_ptr<AbstractRecording> r = std::make_shared<InMemoryRecording>(arr.value());
-    recordings.emplace_back(std::make_shared<RecordingWindow>(r));
-    if (recordings.back()->good()) {
-      recordings.back()->open_window();
+    auto rec = std::make_shared<RecordingWindow>(r);
+    if (!rec->good()) {
+      new_ui_message("ERROR: loading file failed, skipping");
+      continue;
     }
+
+    if (auto br = rec->bitrange(); br) {
+      if (br.value() != prm::bitrange) {
+        prm::bitrange = br.value();
+      }
+    }
+
+    recordings.push_back(rec);
+    rec->open_window();
   }
 }
 
