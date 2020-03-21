@@ -4,13 +4,14 @@
 #include <optional>
 #include <utility>
 #include <memory>
+#include <vector>
 
 #include <fmt/format.h>
 
 namespace global {
   class Message;
-  extern std::vector<Message> messages;
 
+  extern std::vector<Message> messages;
   extern std::string tcp_host;
   extern short tcp_port;
 
@@ -20,11 +21,7 @@ namespace global {
     std::string msg;
     int id = 0;
 
-    Message(std::string msg) : msg(std::move(msg)) {
-      static int _id = -1;
-      _id += 1;
-      id = _id;
-    };
+    Message(std::string msg);
   };
 
   template <typename... Args>

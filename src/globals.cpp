@@ -11,8 +11,13 @@ namespace {
 }  // namespace
 
 namespace global {
-
   std::vector<Message> messages = {};
+
+  Message::Message(std::string msg) : msg(std::move(msg)) {
+    static int _id = -1;
+    _id += 1;
+    id = _id;
+  }
 
   std::string tcp_host = "127.0.0.1";
   short tcp_port       = 4864;
