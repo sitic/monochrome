@@ -10,6 +10,34 @@
 std::string get_user_homedir();
 #endif
 
+class Message {
+ public:
+  bool show = true;
+  std::string msg;
+  int id = 0;
+
+  Message(const std::string &msg) : msg(msg) {
+    static int _id = -1;
+    _id += 1;
+    id = _id;
+  };
+};
+
+namespace global {
+  extern std::vector<Message> messages;
+}
+template <typename... Args>
+inline void new_ui_message(const char *fmt, Args &&... args) {
+  const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
+  global::messages.emplace_back(msg);
+  fmt::print(msg + "\n");
+}
+
+template <typename... Args>
+inline void new_ui_message(const std::string &fmt, Args &&... args) {
+  return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
+}
+
 template <typename T, size_t bin_count>
 class Histogram {
  public:
@@ -52,6 +80,8 @@ class Histogram {
   }
 };
 
+std::vector<std::string_view> split_string(std::string_view input, std::string_view delims = " ");
+
 template <typename T>
 Vector3<T> val_to_color(const T &val, const T &min, const T &max) {
   float x = static_cast<float>(val - min) / static_cast<float>(max - min);
@@ -65,70 +95,20 @@ Vector3<T> val_to_color(const T &val, const T &min, const T &max) {
   return {x, x, x};
 }
 
-template <typename T>
-void draw2dArray(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &arr, float min, float max) {
-  const int Nx = arr.rows();
-  const int Ny = arr.cols();
+std::vector<GLint> generate_quad_vert(int Nx, int Ny);
 
-  for (int x = 0; x < Nx; x++) {
-    for (int y = 0; y < Ny; y++) {
-      const Vec2i pos1 = {x, Ny - y};
-      const Vec2i pos2 = {x + 1, Ny - y};
-      const Vec2i pos3 = {x + 1, Ny - (y + 1)};
-      const Vec2i pos4 = {x, Ny - (y + 1)};
-
-      const auto val = arr(x, y);
-      const auto c   = val_to_color<T>(val, min, max);
-
-      glBegin(GL_QUADS);
-      glColor3fv(c.data());
-      glVertex2iv(pos1.data());
-      glVertex2iv(pos2.data());
-      glVertex2iv(pos3.data());
-      glVertex2iv(pos4.data());
-      glEnd();
-    }
-  }
-}
+void draw2dArray(const Eigen::MatrixXf &arr,
+                 const std::vector<GLint> &vert,
+                 std::vector<GLfloat> &buffer,
+                 float min,
+                 float max);
 
 void drawPixel(int x, int y, int Ny, int dx, const Vec4f &color);
-
-static void glfw_error_callback(int error, const char *description) {
-  fprintf(stderr, "Glfw Error %d: %s\n", error, description);
-}
-
-std::vector<std::string_view> split_string(std::string_view input, std::string_view delims = " ");
-
-class Message {
- public:
-  bool show = true;
-  std::string msg;
-  int id = 0;
-
-  Message(const std::string &msg) : msg(msg) {
-    static int _id = -1;
-    _id += 1;
-    id = _id;
-  };
-};
-
-namespace global {
-  extern std::vector<Message> messages;
-}
-template <typename... Args>
-inline void new_ui_message(const char *fmt, Args &&... args) {
-  const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
-  global::messages.emplace_back(msg);
-  fmt::print(msg + "\n");
-}
-
-template <typename... Args>
-inline void new_ui_message(const std::string &fmt, Args &&... args) {
-  return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
-}
 
 void gl_save_snapshot(const std::string &out_png_path,
                       GLFWwindow *window = nullptr,
                       bool alpha_channel = false);
 
-void add_window_icon(GLFWwindow* window);
+void add_window_icon(GLFWwindow *window);
+
+void glfw_error_callback(int error, const char *description);

@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
 
   // Cleanup
   ipc::stop_server();
-  ImGui_ImplOpenGL2_Shutdown();
+  ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 

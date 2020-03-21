@@ -153,6 +153,7 @@ class RecordingWindow : public Recording {
       auto val = std::min(Nx(), Ny()) / 64;
       Trace::width(std::max(val, 2));
     }
+    vert = generate_quad_vert(Nx(), Ny());
   }
 
   virtual ~RecordingWindow() {
@@ -210,6 +211,7 @@ class RecordingWindow : public Recording {
     load_frame(t_frame);
     transformationArena.reallocate();
     resize_window();
+    vert = generate_quad_vert(Nx(), Ny());
   }
 
   void open_window();
@@ -223,6 +225,8 @@ class RecordingWindow : public Recording {
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
  protected:
+  std::vector<GLint> vert;
+  std::vector<GLfloat> vert_color_buffer;
   Vec2d mousepos;
   struct {
     bool left  = false;

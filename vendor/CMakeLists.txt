@@ -7,18 +7,22 @@ set(GLFW_INSTALL OFF CACHE BOOL "Generate glfw installation target" FORCE)
 add_subdirectory(glfw)
 set_target_properties(glfw PROPERTIES FOLDER libs)
 
-add_library(imgui_glfw_gl2
+add_library(glad glad/src/glad.c)
+target_include_directories(glad PUBLIC glad/include)
+
+add_library(imgui_glfw_gl3
         imgui/imgui.cpp
         imgui/imgui_draw.cpp
         imgui/imgui_widgets.cpp
         imgui/imgui_demo.cpp
         imgui/examples/imgui_impl_glfw.cpp
-        imgui/examples/imgui_impl_opengl2.cpp
+        imgui/examples/imgui_impl_opengl3.cpp
         fonts/IconsFontAwesome5.cpp fonts/IconsMaterialDesignIcons.cpp
         fonts/MultiRecorderVideo.cpp)
-target_include_directories(imgui_glfw_gl2 SYSTEM PUBLIC imgui imgui/examples)
-target_link_libraries(imgui_glfw_gl2 PUBLIC glfw OpenGL::GL)
-set_target_properties(imgui_glfw_gl2 PROPERTIES FOLDER libs)
+target_include_directories(imgui_glfw_gl3 SYSTEM PUBLIC imgui imgui/examples)
+target_link_libraries(imgui_glfw_gl3 PUBLIC glad glfw OpenGL::GL)
+set_target_properties(imgui_glfw_gl3 PROPERTIES FOLDER libs)
+target_compile_definitions(imgui_glfw_gl3 PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
 
 add_library(lodepng lodepng/lodepng.cpp lodepng/lodepng.h)
 set_target_properties(lodepng PROPERTIES PUBLIC_HEADER "lodepng/lodepng.h")
@@ -49,4 +53,4 @@ target_include_directories(flatbuffers INTERFACE flatbuffers/include)
 
 add_subdirectory(CLI11)
 
-set_property(TARGET imgui_glfw_gl2 glfw fmt APPEND_STRING PROPERTY COMPILE_FLAGS " -w")
+set_property(TARGET imgui_glfw_gl3 glad glfw fmt APPEND_STRING PROPERTY COMPILE_FLAGS " -w")

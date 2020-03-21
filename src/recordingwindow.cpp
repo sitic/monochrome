@@ -313,7 +313,7 @@ void RecordingWindow::display(float speed,
   posttransform->compute(*arr, t_frame);
   arr = &posttransform->frame;
 
-  draw2dArray(*arr, get_min(transformation), get_max(transformation));
+  draw2dArray(*arr, vert, vert_color_buffer, get_min(transformation), get_max(transformation));
   histogram.compute(arr->reshaped());
 
   // draw and update traces
