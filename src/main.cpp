@@ -53,9 +53,9 @@ int main(int argc, char **argv) {
     if (ipc::is_another_instance_running()) {
       if (send_files_over_wire) {
         for (const auto &file : files) {
-          auto rec       = Recording(fs::path(file));
-          auto framesize = rec.Nx() * rec.Ny();
-          auto size      = framesize * rec.length();
+          auto rec              = Recording(fs::path(file));
+          std::size_t framesize = rec.Nx() * rec.Ny();
+          std::size_t size      = framesize * rec.length();
           std::vector<float> data(size);
           for (long t = 0; t < rec.length(); t++) {
             rec.load_frame(t);

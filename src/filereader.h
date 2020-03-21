@@ -91,8 +91,9 @@ class InMemoryRecording : public AbstractRecording {
   float fps() const final { return 0; };
 
   Eigen::MatrixXf read_frame(long t) final {
-    auto frame_size = Nx() * Ny();
-    auto data_ptr   = _data->data.data() + frame_size * t;
+    std::size_t frame_size = Nx() * Ny();
+
+    auto data_ptr = _data->data.data() + frame_size * t;
     std::copy(data_ptr, data_ptr + frame_size, _frame.data());
     return _frame;
   };

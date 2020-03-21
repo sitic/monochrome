@@ -40,21 +40,32 @@ namespace {
    public:
     static constexpr std::size_t HeaderSize = sizeof(flatbuffers::uoffset_t);
 
-    Message() {}
+    Message() = default;
 
-    uint8_t* header_data() { return header_data_; }
+    ~Message() {
+      if (!array_msg_.empty()) {
+        fmt::print("ERROR: Client disconnected before full array was recieved!\n");
+      }
+    }
+
+    uint8_t* header_data() { return header_data_.data(); }
 
     uint8_t* body() { return data_.data(); }
+
+    [[nodiscard]] std::size_t header_size() const { return data_.size(); }
 
     [[nodiscard]] std::size_t body_size() const { return data_.size(); }
 
     bool decode_header() {
       auto msg_size = flatbuffers::GetPrefixedSize(header_data());
-      fmt::print("Message Length {}\n", msg_size);
-      if (msg_size > body_size()) {
+      // 2GB - 1, max flatbuffer size, see FLATBUFFERS_MAX_BUFFER_SIZE
+      constexpr std::size_t max_size = ((1ULL << (sizeof(flatbuffers::soffset_t) * 8 - 1)) - 1);
+      if (msg_size > max_size) {
+        return false;
+      } else {
         data_.resize(msg_size);
+        return true;
       }
-      return true;
     }
 
     void verify_and_deliver(const tcp::endpoint& remote_ep) {
@@ -141,7 +152,7 @@ namespace {
     }
 
    private:
-    uint8_t header_data_[HeaderSize];
+    std::array<uint8_t, HeaderSize> header_data_ = {};
     std::vector<uint8_t> data_;
     Array3Msg array_msg_;
   };
@@ -264,26 +275,30 @@ void ipc::send_filepaths(const std::vector<std::string>& files) {
 
 void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::string& name) {
   auto start_time = std::chrono::high_resolution_clock::now();
+
   asio::io_context io_context;
   tcp::socket socket(io_context);
   tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
   socket.connect(endpoint);
 
-  const std::size_t MAX_BUFFER_BYTES = (1ULL << 31) - 128;  // 2GB - 128
-  auto builder_size_hint = std::max(nx * ny * nt * sizeof(float) + 128, MAX_BUFFER_BYTES);
-  flatbuffers::FlatBufferBuilder builder(builder_size_hint);
+  // flatbuffers can only be 2GB - 1B large, so often not large enough to contain the complete array.
+  // Testing by me (only local connection) has shown that 64KB max message size seems to be the
+  // fastest end-to-end transfer speed
+  flatbuffers::FlatBufferBuilder builder(65536);
+  const std::size_t MAX_FLOAT_ELMS = (65536 - 128) / sizeof(float);
+
+  /* Metadata Message */
   auto fbs_start  = fbs::CreateArray3MetaDirect(builder, nx, ny, nt, name.c_str());
   auto root_start = CreateRoot(builder, fbs::Data_Array3Meta, fbs_start.Union());
   builder.FinishSizePrefixed(root_start);
   asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
   builder.Clear();
 
-  const std::size_t data_size      = nx * ny * nt;
-  const std::size_t MAX_FLOAT_ELMS = (MAX_BUFFER_BYTES - 128) / sizeof(float);
+  const std::size_t data_size = nx * ny * static_cast<std::size_t>(nt);
   for (std::size_t idx = 0; idx < data_size; idx += MAX_FLOAT_ELMS) {
     auto end      = std::min(idx + MAX_FLOAT_ELMS, data_size);
     auto fbs_data = builder.CreateVector<float>(data + idx, end - idx);
-    auto fbs      = fbs::CreateArray3DataChunk(builder, 0, fbs_data);
+    auto fbs      = fbs::CreateArray3DataChunk(builder, idx, fbs_data);
     auto root     = CreateRoot(builder, fbs::Data_Array3DataChunk, fbs.Union());
     builder.FinishSizePrefixed(root);
     asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
