@@ -28,9 +28,6 @@ struct RotationCtrl {
 class Recording {
  protected:
   std::shared_ptr<AbstractRecording> file;
-  int _t    = 0;
-  float _tf = 0;
-
   long t_frame = 0;
 
   static RotationCtrl rotations;
@@ -69,20 +66,7 @@ class Recording {
 
   void load_frame(long t);
 
-  void load_next_frame(float speed = 1);
-
-  void restart();
-
-  int current_frame() { return _t; }
-
-  // Set the internal frame index to some value, use if want to manipulate the
-  // next load_next_frame() call without calling load_frame()
-  void set_frame_index(int t) {
-    _t  = t;
-    _tf = t;
-  }
-
-  float progress() { return _t / static_cast<float>(length() - 1); }
+  int current_frame() { return t_frame; }
 
   bool export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax = {0, 0});
 };

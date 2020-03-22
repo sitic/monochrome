@@ -22,6 +22,27 @@ namespace prm {
   } playbackCtrl;
 }  // namespace prm
 
+class RecordingPlaybackCtrl {
+ private:
+  int t_    = 0;
+  float tf_ = 0;
+  const int length_;
+
+  std::pair<int, float> next_timestep(float speed_) const;
+
+ public:
+  RecordingPlaybackCtrl(int length) : length_(length) {}
+
+  int current_t() const { return t_; }
+  int step();
+  [[nodiscard]] int next_t() const;
+  [[nodiscard]] int next_t(int iterations) const;
+  [[nodiscard]] float progress() const;
+
+  void set(int t);
+  void restart();
+};
+
 struct ExportCtrl {
   struct {
     bool export_window = false;
@@ -46,8 +67,8 @@ struct ExportCtrl {
       filename.assign(fn.begin(), fn.end());
 
       // Make sure there is enough space for the user input
-      if (filename.size() < 64) {
-        filename.resize(64);
+      if (filename.size() < 256) {
+        filename.resize(256);
       }
     }
   } raw;
@@ -66,8 +87,8 @@ struct ExportCtrl {
       filename.assign(fn.begin(), fn.end());
 
       // Make sure there is enough space for the user input
-      if (filename.size() < 64) {
-        filename.resize(64);
+      if (filename.size() < 256) {
+        filename.resize(256);
       }
     }
   } video;
@@ -131,6 +152,8 @@ class RecordingWindow : public Recording {
   GLFWwindow *window = nullptr;
   static float scale_fct;
 
+  RecordingPlaybackCtrl playback;
+
   TransformationList transformationArena;
 
   float &get_max(Transformations type) { return transformationArena.create_if_needed(type)->max; }
@@ -143,7 +166,7 @@ class RecordingWindow : public Recording {
 
   RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filerecording(path)){};
   RecordingWindow(std::shared_ptr<AbstractRecording> file)
-      : Recording(std::move(file)), transformationArena(*this) {
+      : Recording(std::move(file)), transformationArena(*this), playback(good() ? length() : 0) {
     if (!good()) {
       return;
     }
@@ -161,6 +184,8 @@ class RecordingWindow : public Recording {
       glfwDestroyWindow(window);
     }
   }
+
+  virtual void load_next_frame() { load_frame(playback.step()); }
 
   virtual void display(float speed,
                        Filters prefilter,
@@ -191,7 +216,7 @@ class RecordingWindow : public Recording {
   }
 
   void start_recording(const std::string &filename, int fps = 30) {
-    restart();
+    playback.restart();
     export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
     export_ctrl.video.recording = true;
     export_ctrl.video.progress  = 0;

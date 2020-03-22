@@ -20,9 +20,13 @@ int main(int argc, char **argv) {
       ->check(CLI::NonNegativeNumber);
   app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
   app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
-  app.add_option("--max_trace_length", prm::max_trace_length);
-  app.add_flag("--disable-ipc", disable_ipc);
-  app.add_flag("--remote-send", send_files_over_wire);
+  app.add_option("--max_trace_length", prm::max_trace_length,
+                 "Default length (in frames) for traces");
+  app.add_flag(
+      "--disable-ipc", disable_ipc,
+      "Disable the TCP server which is used for interprocess-communication with python clients");
+  app.add_flag("--remote-send", send_files_over_wire,
+               "Test option to send file as array instead of the filename to the main process");
   std::string config_file;
 #ifdef _WIN32
   config_file = "%APPDATA%\\quickVidViewer\\quickVidViewer.ini";
@@ -94,7 +98,7 @@ int main(int argc, char **argv) {
   ImGui::DestroyContext();
 
   glfwDestroyWindow(global::main_window);
-  recordings.clear();
+  global::recordings.clear();
   glfwTerminate();
   std::exit(EXIT_SUCCESS);
 }

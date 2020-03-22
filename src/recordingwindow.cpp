@@ -1,18 +1,62 @@
 #include "recordingwindow.h"
 
-extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
 namespace global {
   extern GLFWwindow *main_window;
-}
+  extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
+}  // namespace global
 
 float RecordingWindow::scale_fct = 1;
 
 namespace {
   std::shared_ptr<RecordingWindow> from_window_ptr(GLFWwindow *_window) {
-    return *std::find_if(recordings.begin(), recordings.end(),
+    return *std::find_if(global::recordings.begin(), global::recordings.end(),
                          [_window](const auto &r) { return r->window == _window; });
   }
 }  // namespace
+
+std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
+  auto tf = tf_ + speed_;
+  auto t  = tf_;
+
+  while (tf > length_ - 1) {
+    tf -= length_ - 1;
+    t = 0;
+  }
+
+  if (std::floor(tf_) > t_) {
+    t = std::floor(tf_);
+  }
+
+  if (t < 0) {
+    // should never happen, but just in case
+    t  = 0;
+    tf = 0;
+  }
+  return {t, tf};
+}
+
+int RecordingPlaybackCtrl::step() {
+  std::tie(t_, tf_) = next_timestep(prm::playbackCtrl.val);
+  return t_;
+}
+
+int RecordingPlaybackCtrl::next_t() const {
+  return next_timestep(prm::playbackCtrl.val).first;
+}
+int RecordingPlaybackCtrl::next_t(int iterations) const {
+  return next_timestep(iterations * prm::playbackCtrl.val).first;
+}
+float RecordingPlaybackCtrl::progress() const {
+  return t_ / static_cast<float>(length_ - 1);
+}
+void RecordingPlaybackCtrl::set(int t) {
+  t_  = t;
+  tf_ = t;
+}
+void RecordingPlaybackCtrl::restart() {
+  t_  = std::numeric_limits<int>::lowest();
+  tf_ = std::numeric_limits<float>::lowest();
+}
 
 void Trace::set_pos(const Vec2i &npos) {
   clear();
@@ -127,7 +171,7 @@ void RecordingWindow::scroll_callback(GLFWwindow *window, double xoffset, double
     Trace::width(new_w);
   } else {
     scale_fct = (yoffset < 0) ? 0.95f * scale_fct : 1.05f * scale_fct;
-    for (const auto &r : recordings) {
+    for (const auto &r : global::recordings) {
       r->resize_window();
     }
   }
@@ -193,9 +237,9 @@ void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
 }
 
 void RecordingWindow::close_callback(GLFWwindow *window) {
-  recordings.erase(std::remove_if(recordings.begin(), recordings.end(),
-                                  [window](auto r) { return r->window == window; }),
-                   recordings.end());
+  global::recordings.erase(std::remove_if(global::recordings.begin(), global::recordings.end(),
+                                          [window](auto r) { return r->window == window; }),
+                           global::recordings.end());
 }
 
 void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -275,7 +319,7 @@ void RecordingWindow::display(float speed,
 
   glfwMakeContextCurrent(window);
 
-  load_next_frame(speed);
+  load_next_frame();
 
   Eigen::MatrixXf *arr = &frame;
 
@@ -343,7 +387,7 @@ void RecordingWindow::display(float speed,
   glfwSwapBuffers(window);
 
   if (export_ctrl.video.recording) {
-    auto cur = progress();
+    auto cur = playback.progress();
     if (cur < export_ctrl.video.progress) {
       stop_recording();
       global::new_ui_message("Exporting video finished!");

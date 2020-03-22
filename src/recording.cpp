@@ -2,6 +2,8 @@
 
 #include "filereader_formats.h"
 
+RotationCtrl Recording::rotations = {};
+
 void RotationCtrl::set_rotation(short rotation) {
   const std::array<short, 4> valid_rotations = {{0, 90, 180, 270}};
   if (std::none_of(valid_rotations.begin(), valid_rotations.end(),
@@ -90,32 +92,6 @@ void Recording::load_frame(long t) {
   frame   = file->read_frame(t);
   t_frame = t;
   apply_rotation();
-}
-
-void Recording::load_next_frame(float speed) {
-  _tf += speed;
-
-  while (_tf > length() - 1) {
-    _tf -= length() - 1;
-    _t = 0;
-  }
-
-  if (std::floor(_tf) > _t) {
-    _t = std::floor(_tf);
-  }
-
-  if (_t < 0) {
-    // should never happen, but just in case
-    _t  = 0;
-    _tf = 0;
-  }
-
-  load_frame(_t);
-}
-
-void Recording::restart() {
-  _tf = std::numeric_limits<float>::lowest();
-  _t  = std::numeric_limits<int>::lowest();
 }
 
 bool Recording::export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax) {
