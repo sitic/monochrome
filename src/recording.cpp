@@ -10,7 +10,7 @@ void RotationCtrl::set_rotation(short rotation) {
                    [rotation](auto r) { return r == rotation; })) {
     throw std::logic_error(
         "set_rotation() has to be called with either "
-        "0, 90, 180,  or 270 as parameter");
+        "0, 90, 180, or 270 as parameter");
   }
 
   _rotation = rotation;

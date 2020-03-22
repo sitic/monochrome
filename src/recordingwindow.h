@@ -231,6 +231,7 @@ class RecordingWindow : public Recording {
 
   static void fliplr() { rotations.flipud(); }
   static void flipud() { rotations.fliplr(); }
+  static void set_default_rotation(short rotation) { rotations.set_rotation(rotation); }
   void add_rotation(short d_rotation) {
     rotations.add_rotation(d_rotation);
     load_frame(t_frame);

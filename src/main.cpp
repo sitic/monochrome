@@ -18,6 +18,16 @@ int main(int argc, char **argv) {
       ->check(CLI::PositiveNumber);
   app.add_option("--speed", prm::playbackCtrl.val, "Recording playback speed multiplier")
       ->check(CLI::NonNegativeNumber);
+  app.add_option_function<short>(
+         "--rotation",
+         [](const short &rotation) { RecordingWindow::set_default_rotation(rotation); },
+         "Default rotation of videos")
+      ->check(CLI::IsMember({0, 90, 180, 270}))
+      ->default_str("0");
+  app.add_flag(
+      "--fliph", [](std::int64_t count) { RecordingWindow::fliplr(); }, "Flip video horizontally");
+  app.add_flag(
+      "--flipv", [](std::int64_t count) { RecordingWindow::flipud(); }, "Flip video vertically");
   app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
   app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
   app.add_option("--max_trace_length", prm::max_trace_length,
