@@ -178,7 +178,7 @@ void drop_callback(GLFWwindow *window, int count, const char **paths) {
   }
 }
 
-void open_main_window() {
+void open_main_window(float font_scale = 0) {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit()) exit(EXIT_FAILURE);
 
@@ -222,7 +222,7 @@ void open_main_window() {
   // io.ConfigViewportsNoTaskBarIcon = true;
 
   // Disable .ini generation/loading for now
-  io.IniFilename = NULL;
+  io.IniFilename = nullptr;
 
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
@@ -236,10 +236,12 @@ void open_main_window() {
   }
 
   // TODO: Better HIDIP handling
-  float xscale, yscale;
-  glfwGetMonitorContentScale(primary_monitor, &xscale, &yscale);
-  xscale = std::max(xscale, yscale);
-  style.ScaleAllSizes(xscale);
+  if (font_scale == 0) {
+    float xscale, yscale;
+    glfwGetMonitorContentScale(primary_monitor, &xscale, &yscale);
+    font_scale = std::max(xscale, yscale);
+  }
+  style.ScaleAllSizes(font_scale);
 
   // Setup Platform/Renderer bindings
   ImGui_ImplGlfw_InitForOpenGL(global::main_window, true);

@@ -13,6 +13,7 @@ int main(int argc, char **argv) {
   std::vector<std::string> files;
   bool send_files_over_wire = false;
   bool disable_ipc          = false;
+  float font_scale          = 0;
   app.add_option("files", files, "List of files to open")->check(CLI::ExistingFile);
   app.add_option("--scale", RecordingWindow::scale_fct, "Recording window size multiplier")
       ->check(CLI::PositiveNumber);
@@ -30,6 +31,7 @@ int main(int argc, char **argv) {
       "--flipv", [](std::int64_t count) { RecordingWindow::flipud(); }, "Flip video vertically");
   app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
   app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
+  app.add_option("--font-scale", font_scale, "Fonts scaling factor");
   app.add_option("--max_trace_length", prm::max_trace_length,
                  "Default length (in frames) for traces");
   app.add_flag(
@@ -85,7 +87,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  open_main_window();
+  open_main_window(font_scale);
 
   for (const auto &file : files) {
     load_new_file(file);
