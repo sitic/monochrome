@@ -33,8 +33,8 @@ class RecordingPlaybackCtrl {
  public:
   RecordingPlaybackCtrl(int length) : length_(length) {}
 
-  int current_t() const { return t_; }
   int step();
+  [[nodiscard]] int current_t() const { return t_; }
   [[nodiscard]] int next_t() const;
   [[nodiscard]] int next_t(int iterations) const;
   [[nodiscard]] float progress() const;
@@ -153,16 +153,10 @@ class RecordingWindow : public Recording {
   static float scale_fct;
 
   RecordingPlaybackCtrl playback;
-
-  TransformationList transformationArena;
-
-  float &get_max(Transformations type) { return transformationArena.create_if_needed(type)->max; }
-
-  float &get_min(Transformations type) { return transformationArena.create_if_needed(type)->min; }
-
   Histogram<float, 256> histogram;
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
+  TransformationList transformationArena;
 
   RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filerecording(path)){};
   RecordingWindow(std::shared_ptr<AbstractRecording> file)
@@ -187,33 +181,18 @@ class RecordingWindow : public Recording {
 
   virtual void load_next_frame() { load_frame(playback.step()); }
 
-  virtual void display(float speed,
-                       Filters prefilter,
+  virtual void display(Filters prefilter,
                        Transformations transformation,
                        Filters postfilter,
                        BitRange bitrange);
 
-  void reset_traces() {
-    for (auto &t : traces) {
-      t.clear();
-    }
-  }
+  float &get_min(Transformations type) { return transformationArena.create_if_needed(type)->min; }
+  float &get_max(Transformations type) { return transformationArena.create_if_needed(type)->max; }
 
-  void add_trace_pos(const Vec2i &npos) {
-    for (auto &t : traces) {
-      if (t.is_near_point(npos)) {
-        t.set_pos(npos);
-        return;
-      }
-    }
-    traces.push_back({{}, npos, Trace::next_color()});
-  }
-
-  void remove_trace_pos(const Vec2i &pos) {
-    const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
-
-    traces.erase(std::remove_if(traces.begin(), traces.end(), pred), traces.end());
-  }
+  void reset_traces();
+  void add_trace_pos(const Vec2i &npos);
+  void remove_trace_pos(const Vec2i &pos);
+  void auto_shrink_traces();
 
   void start_recording(const std::string &filename, int fps = 30) {
     playback.restart();
@@ -238,6 +217,7 @@ class RecordingWindow : public Recording {
     transformationArena.reallocate();
     resize_window();
     vert = generate_quad_vert(Nx(), Ny());
+    traces.clear();
   }
 
   void open_window();

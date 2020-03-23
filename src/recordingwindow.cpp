@@ -91,6 +91,9 @@ int Trace::width(int new_width) {
 
   if (new_width > 0) {
     w = new_width;
+    for (auto rec : global::recordings) {
+      rec->auto_shrink_traces();
+    }
   }
 
   return w;
@@ -310,8 +313,7 @@ fs::path RecordingWindow::save_snapshot(std::string output_png_path_template) {
   return out_path;
 }
 
-void RecordingWindow::display(float speed,
-                              Filters prefilter,
+void RecordingWindow::display(Filters prefilter,
                               Transformations transformation,
                               Filters postfilter,
                               BitRange bitrange) {
@@ -353,7 +355,7 @@ void RecordingWindow::display(float speed,
       break;
   }
 
-  auto posttransform = transformationArena.create_if_needed(prefilter, 0);
+  auto posttransform = transformationArena.create_if_needed(postfilter, 0);
   posttransform->compute(*arr, t_frame);
   arr = &posttransform->frame;
 
@@ -361,24 +363,11 @@ void RecordingWindow::display(float speed,
   histogram.compute(arr->reshaped());
 
   // draw and update traces
-  if (speed != 0.f) {
+  if (playback.next_t() != playback.current_t()) {
     for (auto &[trace, pos, color] : traces) {
-      // We need to make sure, the block is inside the frame
-      const auto test_fct = [Nx = Nx(), Ny = Ny(), w = Trace::width()](const Vec2i &v) {
-        auto lim = [](auto x, auto N) { return ((x > 0) && (x < N)); };
-        return (lim(v[0], Nx) && lim(v[1], Ny));
-      };
-
       auto w      = Trace::width();
       Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
-      // shrink the trace block width if it is too large
-      while (!test_fct(start) || !test_fct(start + Vec2i(w, w))) {
-        w -= 1;
-        Trace::width(w);
-        start = {pos[0] - w / 2, pos[1] - w / 2};
-      }
-
-      auto block = arr->block(start[0], start[1], w, w);
+      auto block  = arr->block(start[0], start[1], w, w);
       trace.push_back(block.mean());
       drawPixel(pos[0], pos[1], Ny(), w, color);
     }
@@ -398,4 +387,42 @@ void RecordingWindow::display(float speed,
   }
 
   glfwMakeContextCurrent(global::main_window);
+}
+
+void RecordingWindow::reset_traces() {
+  for (auto &t : traces) {
+    t.clear();
+  }
+}
+void RecordingWindow::add_trace_pos(const Vec2i &npos) {
+  for (auto &t : traces) {
+    if (t.is_near_point(npos)) {
+      t.set_pos(npos);
+      return;
+    }
+  }
+  traces.push_back({{}, npos, Trace::next_color()});
+}
+void RecordingWindow::remove_trace_pos(const Vec2i &pos) {
+  const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
+
+  traces.erase(std::remove_if(traces.begin(), traces.end(), pred), traces.end());
+}
+void RecordingWindow::auto_shrink_traces() {
+  for (auto &[trace, pos, color] : traces) {
+    // We need to make sure, the block is inside the frame
+    const auto test_fct = [Nx = Nx(), Ny = Ny(), w = Trace::width()](const Vec2i &v) {
+      auto lim = [](auto x, auto N) { return ((x > 0) && (x < N)); };
+      return (lim(v[0], Nx) && lim(v[1], Ny));
+    };
+
+    auto w      = Trace::width();
+    Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
+    // shrink the trace block width if it is too large
+    while (!test_fct(start) || !test_fct(start + Vec2i(w, w))) {
+      w -= 1;
+      Trace::width(w);
+      start = {pos[0] - w / 2, pos[1] - w / 2};
+    }
+  }
 }

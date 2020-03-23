@@ -131,8 +131,7 @@ void display_loop() {
         global::recordings.end());
 
     for (const auto &recording : global::recordings) {
-      recording->display(prm::playbackCtrl.val, prm::prefilter, prm::transformation, prm::postfilter,
-                         prm::bitrange);
+      recording->display(prm::prefilter, prm::transformation, prm::postfilter, prm::bitrange);
 
       show_recording_ui(recording);
 
