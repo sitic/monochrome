@@ -188,7 +188,6 @@ void show_main_ui() {
     }
     if (selectable("Mean", Filters::Mean)) {
       kernel_size_select(Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
-        // TODO: clean up
         auto transform = r->transformationArena.create_if_needed(Filters::Mean, 0);
         auto c         = dynamic_cast<Transformation::MeanFilter *>(transform);
         assert(c);
@@ -197,7 +196,6 @@ void show_main_ui() {
     }
     if (selectable("Median", Filters::Median)) {
       kernel_size_select(Transformation::MedianFilter::kernel_size, [](RecordingWindow *r) {
-        // TODO: clean up
         auto transform = r->transformationArena.create_if_needed(Filters::Median, 0);
         auto c         = dynamic_cast<Transformation::MedianFilter *>(transform);
         assert(c);
@@ -221,7 +219,6 @@ void show_main_ui() {
                              &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
                              "%d")) {
         for (const auto &r : global::recordings) {
-          // TODO: clean up
           auto transform =
               r->transformationArena.create_if_needed(Transformations::ContrastEnhancement, 0);
           auto c = dynamic_cast<Transformation::ContrastEnhancement *>(transform);
@@ -253,8 +250,7 @@ void show_main_ui() {
     }
     if (selectable("Mean", Filters::Mean)) {
       kernel_size_select(Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
-        // TODO: clean up
-        auto transform = r->transformationArena.create_if_needed(Filters::Mean, 0);
+        auto transform = r->transformationArena.create_if_needed(Filters::Mean, 1);
         auto c         = dynamic_cast<Transformation::MeanFilter *>(transform);
         assert(c);
         c->reset();
@@ -262,8 +258,7 @@ void show_main_ui() {
     }
     if (selectable("Median", Filters::Median)) {
       kernel_size_select(Transformation::MedianFilter::kernel_size, [](RecordingWindow *r) {
-        // TODO: clean up
-        auto transform = r->transformationArena.create_if_needed(Filters::Median, 0);
+        auto transform = r->transformationArena.create_if_needed(Filters::Median, 1);
         auto c         = dynamic_cast<Transformation::MedianFilter *>(transform);
         assert(c);
         c->reset();

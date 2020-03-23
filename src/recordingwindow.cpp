@@ -355,7 +355,7 @@ void RecordingWindow::display(Filters prefilter,
       break;
   }
 
-  auto posttransform = transformationArena.create_if_needed(postfilter, 0);
+  auto posttransform = transformationArena.create_if_needed(postfilter, 1);
   posttransform->compute(*arr, t_frame);
   arr = &posttransform->frame;
 
