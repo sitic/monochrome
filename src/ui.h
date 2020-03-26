@@ -210,7 +210,11 @@ void show_main_ui() {
   ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Transformations")) {
     auto selectable = selectable_factory(prm::transformation, Transformations::None);
-    selectable("Frame Difference", Transformations::FrameDiff);
+    if (selectable("Frame Difference", Transformations::FrameDiff)) {
+      ImGui::Indent(10);
+      ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 20);
+      ImGui::Unindent(10);
+    }
     if (selectable("Contrast Enhancement", Transformations::ContrastEnhancement)) {
       ImGui::Indent(10);
       const int step = 2;

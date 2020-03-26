@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 #include "recording.h"
 
 extern "C" {
@@ -62,21 +64,29 @@ namespace Transformation {
 
   class FrameDiff : public Base {
    private:
-    Eigen::MatrixXf prev_frame;
-    long t_prev_frame = 0;
+    struct QueueEntry {
+      Eigen::MatrixXf frame;
+      long t;
+
+      QueueEntry(Eigen::MatrixXf frame_, long t_) : frame(std::move(frame_)), t(t_) {}
+      QueueEntry(const QueueEntry& t) = delete;
+      QueueEntry(QueueEntry&& t) : frame(std::move(t.frame)), t(t.t) {}
+    };
+    std::queue<QueueEntry> prev_frames;
 
     // initial values from allocate() for min and max
     float m_min_init = 0;
     float m_max_init = 0;
 
    public:
+    static int n_frame_diff;
+
     using Base::Base;
     FrameDiff(Recording &rec) : Base() { allocate(rec); }
 
     void allocate(Recording &rec) final {
       rec.load_frame(rec.length() / 2);
-      prev_frame   = rec.frame;
-      t_prev_frame = rec.length() / 2;
+      compute(rec.frame, rec.length() / 2);
 
       rec.load_frame(rec.length() / 2 + 2);
       compute(rec.frame, rec.length() / 2 + 2);
@@ -88,10 +98,21 @@ namespace Transformation {
     }
 
     void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
-      if (t_prev_frame != new_frame_counter) {
-        frame        = new_frame - prev_frame;
-        prev_frame   = new_frame;
-        t_prev_frame = new_frame_counter;
+      while (n_frame_diff < prev_frames.size()) {
+        prev_frames.pop();
+      }
+      while (n_frame_diff > prev_frames.size()) {
+        prev_frames.emplace(new_frame, new_frame_counter);
+      }
+
+      if (prev_frames.front().t != new_frame_counter) {
+        // TODO: this is really ugly (is it undefined behavior?), look for some replacement
+        auto front = std::move(prev_frames.front());
+        prev_frames.pop();
+        frame       = new_frame - front.frame;
+        front.frame = new_frame;
+        front.t     = new_frame_counter;
+        prev_frames.push(std::move(front));
       }
     }
 
