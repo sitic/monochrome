@@ -198,7 +198,7 @@ void open_main_window(float font_scale = 0) {
   }
   glfwMakeContextCurrent(global::main_window);
   // wait until the current frame has been drawn before drawing the next one
-  glfwSwapInterval(2);
+  glfwSwapInterval(1);
   if (gladLoadGL() ==
       0) {  //(!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) == 0) {
     fprintf(stderr, "Failed to initialize OpenGL loader!\n");
