@@ -1,5 +1,9 @@
 #include "recordingwindow.h"
 
+namespace prm {
+  PlaybackCtrl playbackCtrl;
+}
+
 namespace global {
   extern GLFWwindow *main_window;
   extern std::vector<std::shared_ptr<RecordingWindow>> recordings;

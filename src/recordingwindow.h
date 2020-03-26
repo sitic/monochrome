@@ -8,19 +8,22 @@
 #include "transformations.h"
 #include "videorecorder.h"
 
+class PlaybackCtrl;
 namespace prm {
-  static struct {
-    float val = 1;
-
-    void toggle_play_pause() {
-      std::swap(old_val, val);
-      if (old_val > 0) val = 0;
-    }
-
-   private:
-    float old_val = 0;
-  } playbackCtrl;
+  extern PlaybackCtrl playbackCtrl;
 }  // namespace prm
+
+struct PlaybackCtrl {
+  float val = 1;
+
+  void toggle_play_pause() {
+    std::swap(old_val, val);
+    if (old_val > 0) val = 0;
+  }
+
+ private:
+  float old_val = 0;
+};
 
 class RecordingPlaybackCtrl {
  private:
