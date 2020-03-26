@@ -56,7 +56,8 @@ class AbstractRecording {
   virtual float fps() const                             = 0;
   virtual std::optional<BitRange> bitrange() const      = 0;
 
-  [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t) = 0;
+  [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
+  [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
 };
 
 class InMemoryRecording : public AbstractRecording {
@@ -102,6 +103,7 @@ class InMemoryRecording : public AbstractRecording {
   std::string comment() const final { return ""; };
   std::chrono::duration<float> duration() const final { return 0s; };
   float fps() const final { return 0; };
+  std::optional<BitRange> bitrange() const final { return _bitrange; }
 
   Eigen::MatrixXf read_frame(long t) final {
     auto data_ptr = _data->data.data() + _frame_size * t;
@@ -109,5 +111,7 @@ class InMemoryRecording : public AbstractRecording {
     return _frame;
   };
 
-  std::optional<BitRange> bitrange() const final { return _bitrange; }
+  float get_pixel(long t, long x, long y) final {
+    return _data->data[_frame_size * t + y * Nx() + x];
+  }
 };

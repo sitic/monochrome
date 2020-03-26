@@ -1,9 +1,9 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
 #include <array>
+#include <Eigen/Dense>
+#include <GLFW/glfw3.h>
 
-#include "definitions.h"
 #include "vectors.h"
 
 #if defined(unix) || defined(__unix__) || defined(__unix)

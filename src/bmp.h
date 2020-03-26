@@ -14,13 +14,18 @@ namespace fs = std::filesystem;
 namespace fs = ghc::filesystem;
 #endif
 
-#include "definitions.h"
+#include "mio/mio.hpp"
 
 using namespace std::chrono_literals;
+
+using uint16 = uint16_t;
+using uint32 = uint32_t;
+using uint64 = uint64_t;
 
 class BMPheader {
  private:
   std::ifstream _in;
+  mio::mmap_source _mmap;
 
   uint32 mNumFrames = 0;
   uint32 mFormat;
@@ -71,6 +76,11 @@ class BMPheader {
     auto file_size = _in.tellg();
     _in.seekg(pos, std::ios::beg);
     return file_size;
+  }
+
+  const uint16 *get_data_ptr(long t) const {
+    auto ptr = _mmap.data() + t * (mFrameBytes + FrameTailLength);
+    return reinterpret_cast<const uint16 *>(ptr);
   }
 
   bool _good             = false;
@@ -142,8 +152,16 @@ class BMPheader {
     mRecordingLength = std::chrono::milliseconds(mLastFrameTime - mFirstFrameTime);
     mFPS             = mNumFrames / mRecordingLength.count();
 
+    std::error_code error;
+    _mmap.map(path.string(), HeaderLength, mio::map_entire_file, error);
+    if (error) {
+      _good      = false;
+      _error_msg = error.message();
+      return;
+    }
     // if we got to this point, this is a valid MultiRecoder header
     _good = _in.good();
+    _in.close();
   }
 
   // Does it appear to be a valid MultiRecorder file?
@@ -162,16 +180,15 @@ class BMPheader {
   std::chrono::duration<float> duration() const { return mRecordingLength; }
   float fps() const { return mFPS; }
 
-  void read_frame(long t, uint16 *data) {
+  template <typename T>
+  void read_frame(long t, T data) const {
     if (!data) {
       throw std::runtime_error("read_frame() called with nullptr as argument");
     }
 
-    _in.seekg(HeaderLength + t * (mFrameBytes + FrameTailLength), std::ios::beg);
-
-    if (!_in.good()) {
-      throw std::runtime_error("Reading failed!");
-    }
-    _in.read(reinterpret_cast<char *>(data), mFrameBytes);
+    auto start = get_data_ptr(t);
+    std::copy(start, start + (mFrameWidth * mFrameHeight), data);
   }
+
+  uint16 get_pixel(long t, long x, long y) const { return get_data_ptr(t)[y * Nx() + x]; }
 };
