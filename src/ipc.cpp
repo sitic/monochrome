@@ -191,8 +191,8 @@ namespace {
 
   class TcpServer {
    public:
-    TcpServer(short port)
-        : acceptor_(io_context_, tcp::endpoint(tcp::v4(), port)), socket_(io_context_) {
+    TcpServer(const tcp::endpoint& endpoint)
+        : acceptor_(io_context_, endpoint), socket_(io_context_) {
       do_accept();
     }
 
@@ -226,7 +226,9 @@ void ipc::start_server() {
   assert(!tcp_server);
 
   try {
-    tcp_server = std::make_unique<TcpServer>(global::tcp_port);
+    // auto endpoint = tcp::endpoint(tcp::v4(), global::tcp_port); // accept connections from all hosts
+    auto endpoint = tcp::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+    tcp_server    = std::make_unique<TcpServer>(endpoint);
     std::thread([]() { tcp_server->run(); }).detach();
   } catch (const asio::system_error& error) {
     fmt::print("Error starting tcp server {}: {}\n", error.code().value(), error.code().message());
