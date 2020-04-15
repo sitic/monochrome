@@ -2,6 +2,7 @@ import flatbuffers
 import numpy as np
 from pathlib import Path
 import socket
+from typing import List, Text, Union
 
 from .fbs import Root, Data, Filepaths, Array3Meta, Array3DataChunk
 
@@ -55,11 +56,11 @@ def create_array3meta_msg(name, shape):
     return buf
 
 
-def create_array3data_msg(array):
+def create_array3data_msg(array, idx=0):
     builder = flatbuffers.Builder(65536)
     data = builder.CreateNumpyVector(array)
     Array3DataChunk.Array3DataChunkStart(builder)
-    Array3DataChunk.Array3DataChunkAddStartidx(builder, 0)
+    Array3DataChunk.Array3DataChunkAddStartidx(builder, idx)
     Array3DataChunk.Array3DataChunkAddData(builder, data)
     d = Array3DataChunk.Array3DataChunkEnd(builder)
 
@@ -69,7 +70,11 @@ def create_array3data_msg(array):
     return buf
 
 
-def send_filepaths(paths):
+def open_file(filepath: Union[Text, Path]):
+    open_files([filepath])
+
+
+def open_files(paths: List[Union[Text, Path]]):
     paths = [Path(path) for path in paths]
     assert all([path.exists() for path in paths])
     paths = [str(path.absolute()) for path in paths]
@@ -82,7 +87,7 @@ def send_filepaths(paths):
     s.sendall(buf)
 
 
-def send_array3(name, array):
+def open_array3(array: np.ndarray, name: Text = ""):
     assert array.ndim == 3
     assert array.dtype == np.float32
 
@@ -99,5 +104,5 @@ def send_array3(name, array):
     max_size = 16352
     for idx in range(0, length, max_size):
         end = length if idx + max_size > length else idx + max_size
-        buf = create_array3data_msg(flat[idx:end])
+        buf = create_array3data_msg(flat[idx:end], idx)
         s.sendall(buf)

@@ -1,5 +1,5 @@
-# %%
-from quickVidViewer import send_filepaths
+from quickVidViewer import open_file, open_files
 
 paths = ['../2019-09-24_Exp001_Rec022_IDS_Cam1.dat']
-send_filepaths(paths)
+open_file(paths[0])
+open_files(paths)

@@ -1,1 +1,1 @@
-from .utils import send_filepaths, send_array3
+from .utils import open_file, open_files, open_array3
