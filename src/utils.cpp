@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "globals.h"
 
-#if defined(unix) || defined(__unix__) || defined(__unix)
+#if defined(__unix__) || defined(__unix) || defined(__APPLE__)
 #include <unistd.h>
 #include <pwd.h>
 std::string get_user_homedir() {
@@ -17,6 +17,16 @@ std::string get_user_homedir() {
   return homedir;
 }
 #endif
+
+std::string config_file_path() {
+#ifdef _WIN32
+  return "%APPDATA%\\quickVidViewer\\quickVidViewer.ini";
+#elif defined(__unix__) || defined(__unix) || defined(__APPLE__)
+  return fmt::format("{}/.config/quickVidViewer.ini", get_user_homedir());
+#else
+  return "";
+#endif
+}
 
 std::vector<std::string_view> split_string(std::string_view input, std::string_view delims) {
   std::vector<std::string_view> output;

@@ -8,7 +8,7 @@
 #include "transformations.h"
 #include "videorecorder.h"
 
-class PlaybackCtrl;
+struct PlaybackCtrl;
 namespace prm {
   extern PlaybackCtrl playbackCtrl;
 }  // namespace prm
@@ -163,7 +163,7 @@ class RecordingWindow : public Recording {
 
   RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filerecording(path)){};
   RecordingWindow(std::shared_ptr<AbstractRecording> file)
-      : Recording(std::move(file)), transformationArena(*this), playback(good() ? length() : 0) {
+      : Recording(std::move(file)), playback(good() ? length() : 0), transformationArena(*this) {
     if (!good()) {
       return;
     }

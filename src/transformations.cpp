@@ -158,37 +158,6 @@ namespace Transformation {
       }
     }
 
-    template <typename Derived, typename Derived2>
-    Derived conv2d(const Eigen::MatrixBase<Derived> &I, const Eigen::MatrixBase<Derived2> &kernel) {
-      Derived O = Derived::Zero(I.rows(), I.cols());
-
-      typedef typename Derived::Scalar Scalar;
-      typedef typename Derived2::Scalar Scalar2;
-
-      int col = 0, row = 0;
-      int KSizeX = kernel.rows();
-      int KSizeY = kernel.cols();
-
-      int limitRow = I.rows() - KSizeX;
-      int limitCol = I.cols() - KSizeY;
-
-      Derived2 block;
-      Scalar normalization = kernel.sum();
-      if (normalization < 1E-6) {
-        normalization = 1;
-      }
-      for (row = KSizeX; row < limitRow; row++) {
-
-        for (col = KSizeY; col < limitCol; col++) {
-          Scalar b =
-              (static_cast<Derived2>(I.block(row, col, KSizeX, KSizeY)).cwiseProduct(kernel)).sum();
-          O.coeffRef(row, col) = b;
-        }
-      }
-
-      return O / normalization;
-    }
-
     void gauss_conv(const Eigen::MatrixXf &in,
                     Eigen::MatrixXf &buffer,
                     Eigen::MatrixXf &out,
