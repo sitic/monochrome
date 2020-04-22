@@ -8,14 +8,16 @@
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__)
 #include <unistd.h>
 #include <pwd.h>
-std::string get_user_homedir() {
-  const char* homedir;
+namespace {
+  std::string get_user_homedir() {
+    const char* homedir;
 
-  if ((homedir = getenv("HOME")) == nullptr) {
-    homedir = getpwuid(getuid())->pw_dir;
+    if ((homedir = getenv("HOME")) == nullptr) {
+      homedir = getpwuid(getuid())->pw_dir;
+    }
+    return homedir;
   }
-  return homedir;
-}
+}  // namespace
 #endif
 
 std::string config_file_path() {
@@ -43,79 +45,6 @@ std::vector<std::string_view> split_string(std::string_view input, std::string_v
   }
 
   return output;
-}
-
-std::vector<GLint> generate_quad_vert(int Nx, int Ny) {
-  std::vector<GLint> vert(Nx * Ny * 8);
-  for (int x = 0; x < Nx; x++) {
-    for (int y = 0; y < Ny; y++) {
-      vert[x * Ny * 8 + y * 8 + 0] = x;
-      vert[x * Ny * 8 + y * 8 + 1] = Ny - y;
-      vert[x * Ny * 8 + y * 8 + 2] = x + 1;
-      vert[x * Ny * 8 + y * 8 + 3] = Ny - y;
-      vert[x * Ny * 8 + y * 8 + 4] = x + 1;
-      vert[x * Ny * 8 + y * 8 + 5] = Ny - (y + 1);
-      vert[x * Ny * 8 + y * 8 + 6] = x;
-      vert[x * Ny * 8 + y * 8 + 7] = Ny - (y + 1);
-    }
-  }
-  return vert;
-}
-
-
-void draw2dArray(const Eigen::MatrixXf& arr,
-                 const std::vector<GLint>& vert,
-                 std::vector<GLfloat>& buffer,
-                 float min,
-                 float max) {
-  const int Nx = arr.rows();
-  const int Ny = arr.cols();
-
-  const std::size_t buffer_size = Nx * Ny * 4 * 3;
-  if (buffer.size() != buffer_size) {
-    buffer.resize(buffer_size);
-  }
-
-  for (int x = 0; x < Nx; x++) {
-    for (int y = 0; y < Ny; y++) {
-      const auto val = arr(x, y);
-      const auto c   = val_to_color<float>(val, min, max);
-      for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 3; j++) {
-          buffer[x * Ny * 4 * 3 + y * 4 * 3 + i * 3 + j] = c[j];
-        }
-      }
-    }
-  }
-
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(2, GL_INT, 0, vert.data());
-  glEnableClientState(GL_COLOR_ARRAY);
-  glColorPointer(3, GL_FLOAT, 0, buffer.data());
-  glDrawArrays(GL_QUADS, 0, Nx * Ny * 4);
-  glDisableClientState(GL_COLOR_ARRAY);
-  glDisableClientState(GL_VERTEX_ARRAY);
-}
-
-void drawPixel(int x, int y, int Ny, int dx, const Vec4f& color) {
-  y -= dx / 2;
-  x -= dx / 2;
-
-  /* clang-format off */
-  std::array<GLint, 4*2> vert = {{
-    x, Ny - y,
-    x + dx, Ny - y,
-    x + dx, Ny - (y + dx),
-    x, Ny - (y + dx)
-  }};
-  /* clang-format on */
-
-  glLineWidth(2);
-  glColor4fv(color.data());
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(2, GL_INT, 0, vert.data());
-  glDrawArrays(GL_LINE_LOOP, 0, 4);
-  glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void gl_save_snapshot(const std::string& out_png_path, GLFWwindow* window, bool alpha_channel) {
@@ -164,4 +93,66 @@ void add_window_icon(GLFWwindow* window) {
 
 void glfw_error_callback(int error, const char* description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+}
+
+void checkGlError(std::string desc) {
+  if (GLenum e = glGetError(); e) fmt::print("opengl error on {}: {}\n", desc, e);
+}
+
+void Shader::init(const std::string& vertexCode,
+                  const std::string& fragmentCode,
+                  const std::string& geometryCode) {
+  // compile shaders
+  GLuint vertex, fragment, geometry;
+  // vertex shader
+  vertex                  = glCreateShader(GL_VERTEX_SHADER);
+  const char* vShaderCode = vertexCode.c_str();
+  glShaderSource(vertex, 1, &vShaderCode, nullptr);
+  glCompileShader(vertex);
+  checkCompileErrors(vertex, "VERTEX");
+  // fragment Shader
+  fragment                = glCreateShader(GL_FRAGMENT_SHADER);
+  const char* fShaderCode = fragmentCode.c_str();
+  glShaderSource(fragment, 1, &fShaderCode, nullptr);
+  glCompileShader(fragment);
+  checkCompileErrors(fragment, "FRAGMENT");
+  // if geometry shader is given, compile geometry shader
+  if (!geometryCode.empty()) {
+    const char* gShaderCode = geometryCode.c_str();
+    geometry                = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(geometry, 1, &gShaderCode, nullptr);
+    glCompileShader(geometry);
+    checkCompileErrors(geometry, "GEOMETRY");
+  }
+  // shader Program
+  ID = glCreateProgram();
+  glAttachShader(ID, vertex);
+  glAttachShader(ID, fragment);
+  if (!geometryCode.empty()) glAttachShader(ID, geometry);
+  glLinkProgram(ID);
+  checkCompileErrors(ID, "PROGRAM");
+  // delete the shaders as they're linked into our program now and no longer necessery
+  glDeleteShader(vertex);
+  glDeleteShader(fragment);
+  if (!geometryCode.empty()) glDeleteShader(geometry);
+}
+
+void Shader::checkCompileErrors(GLuint shader, const std::string& type) {
+  GLint success;
+  GLchar infoLog[1024];
+  if (type != "PROGRAM") {
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+      glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
+      fmt::print("ERROR::SHADER_COMPILATION_ERROR of type: {}\n", type);
+      fmt::print("{}\n\n -- --------------------------------------------------- --\n", infoLog);
+    }
+  } else {
+    glGetProgramiv(shader, GL_LINK_STATUS, &success);
+    if (!success) {
+      glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
+      fmt::print("ERROR::PROGRAM_LINKING_ERROR of type: {}\n", type);
+      fmt::print("{}\n\n -- --------------------------------------------------- --\n", infoLog);
+    }
+  }
 }

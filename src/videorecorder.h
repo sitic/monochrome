@@ -18,6 +18,7 @@ inline void pclose(FILE *file) {
 
 #include "utils.h"
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <fmt/format.h>
 

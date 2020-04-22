@@ -103,31 +103,15 @@ void show_main_ui() {
     {
       ImGui::Text("Image Flip");
       ImGui::SameLine();
-      if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) {
-        for (const auto &r : global::recordings) {
-          r->flipud();
-        }
-      }
+      if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) RecordingWindow::flipud();
       ImGui::SameLine();
-      if (ImGui::Button(ICON_MDI_FLIP_HORIZONTAL)) {
-        for (const auto &r : global::recordings) {
-          r->fliplr();
-        }
-      }
+      if (ImGui::Button(ICON_MDI_FLIP_HORIZONTAL)) RecordingWindow::fliplr();
       ImGui::SameLine();
       ImGui::Text("Rotate");
       ImGui::SameLine();
-      if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) {
-        for (const auto &r : global::recordings) {
-          r->add_rotation(-90);
-        }
-      }
+      if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) RecordingWindow::add_rotation(-90);
       ImGui::SameLine();
-      if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) {
-        for (const auto &r : global::recordings) {
-          r->add_rotation(90);
-        }
-      }
+      if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) RecordingWindow::add_rotation(90);
     }
 
     ImGui::NextColumn();
@@ -406,8 +390,11 @@ void show_export_recording_ui(const std::shared_ptr<RecordingWindow> &recording)
     ImGui::InputText("Directory", export_dir.data(), export_dir.size());
     ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
 
-    static bool norm = false;
-    ImGui::Checkbox("Normalize to [0, 1]", &norm);
+    static bool norm  = false;
+    auto checkbox_lbl = fmt::format("Normalize values to [0, 1] using min = {} and max = {}",
+                                    recording->get_min(Transformations::None),
+                                    recording->get_max(Transformations::None));
+    ImGui::Checkbox(checkbox_lbl.c_str(), &norm);
 
     ImGui::Spacing();
     if (ImGui::Button("Start Export (freezes everything)", ImVec2(-1.0f, 0.0f))) {
@@ -434,9 +421,9 @@ void show_export_recording_ui(const std::shared_ptr<RecordingWindow> &recording)
                                         ImVec2(prm::main_window_width, FLT_MAX));
     ImGui::Begin("Export Video", &(ctrl.export_window));
     ImGui::TextWrapped(
-        "Export the recording window as an .mp4 file."
+        "Export the recording window as an .mp4 file. "
         "Exports exactly what is shown in the recording "
-        "window, so don't change anything during the export."
+        "window, so don't change anything during the export. "
         "Restarts to the beginning of the file and ends automatically.");
 
     if (!ctrl.recording) {

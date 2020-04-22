@@ -104,14 +104,10 @@ void display_loop() {
   // keep running until main window is closed
   while (!glfwWindowShouldClose(global::main_window)) {
     // Poll and handle events (inputs, window resize, etc.)
-    // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to
-    // tell if dear imgui wants to use your inputs.
-    // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
-    // your main application.
-    // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input
-    // data to your main application. Generally you may always pass all inputs
-    // to dear imgui, and hide them from your application based on those two
-    // flags.
+    // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
+    // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
+    // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
+    // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
     glfwPollEvents();
     load_from_queue();
 
@@ -147,20 +143,11 @@ void display_loop() {
     glViewport(0, 0, display_w, display_h);
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
-
-    // If you are using this code with non-legacy OpenGL header/contexts
-    // (which you should not, prefer using imgui_impl_opengl3.cpp!!), you may
-    // need to backup/reset/restore current shader using the commented lines
-    // below. GLint last_program; glGetIntegerv(GL_CURRENT_PROGRAM,
-    // &last_program); glUseProgram(0);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    // glUseProgram(last_program);
 
     // Update and Render additional Platform Windows
-    // (Platform functions may change the current OpenGL context, so we
-    // save/restore it to make it easier to paste this code elsewhere.
-    //  For this specific demo app we could also call
-    //  glfwMakeContextCurrent(window) directly)
+    // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
+    //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
       GLFWwindow *backup_current_context = glfwGetCurrentContext();
       ImGui::UpdatePlatformWindows();
@@ -187,9 +174,9 @@ void open_main_window(float font_scale = 0) {
   if (prm::main_window_width == 0) prm::main_window_width = std::max(600, mode->width / 4);
   if (prm::main_window_height == 0) prm::main_window_height = 1.5 * prm::main_window_width;
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   global::main_window = glfwCreateWindow(prm::main_window_width, prm::main_window_height,
                                          "Quick Raw Video Viewer", nullptr, nullptr);
   if (!global::main_window) {
@@ -199,8 +186,7 @@ void open_main_window(float font_scale = 0) {
   glfwMakeContextCurrent(global::main_window);
   // wait until the current frame has been drawn before drawing the next one
   glfwSwapInterval(1);
-  if (gladLoadGL() ==
-      0) {  //(!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) == 0) {
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     fprintf(stderr, "Failed to initialize OpenGL loader!\n");
     glfwTerminate();
     exit(EXIT_FAILURE);

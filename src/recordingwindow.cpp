@@ -16,6 +16,155 @@ namespace {
     return *std::find_if(global::recordings.begin(), global::recordings.end(),
                          [_window](const auto &r) { return r->window == _window; });
   }
+
+  Shader create_frame_shader() {
+    // Shader sources
+    std::string vertexSource   = R"glsl(
+      #version 330 core
+      layout (location = 0) in vec2 position;
+      layout (location = 1) in vec2 texcoord;
+      out vec2 Texcoord;
+
+      void main() {
+          Texcoord = texcoord;
+          gl_Position = vec4(position, 0.0, 1.0);
+      })glsl";
+    std::string fragmentSource = R"glsl(
+      #version 330 core
+      out vec4 FragColor;
+      in vec2 Texcoord;
+      uniform sampler2D texture0;
+      uniform vec2 minmax;
+
+      vec4 colormap(float x);
+      void main() {
+          float val = texture(texture0, Texcoord).r;
+          val = (val - minmax.x) / (minmax.y - minmax.x);
+          FragColor = colormap(val);
+      })glsl";
+    std::string bw_colormap    = R"glsl(
+      vec4 colormap(float x) {
+          float d = clamp(x, 0.0, 1.0);
+          return vec4(d, d, d, 1.0);
+      })glsl";
+    fragmentSource += bw_colormap;
+    return Shader::create(vertexSource, fragmentSource);
+  }
+
+  std::tuple<GLuint, GLuint, GLuint> create_frame_vaovboebo() {
+    GLuint vao, vbo, ebo;
+    // Create Vertex Array Object
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    // Create a Vertex Buffer Object and copy the vertex data to it
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    GLfloat vertices[] = {
+        //  Position  Texcoords
+        -1.f, 1.f,  0.0f, 0.0f,  // Top-left
+        1.f,  1.f,  1.0f, 0.0f,  // Top-right
+        1.f,  -1.f, 1.0f, 1.0f,  // Bottom-right
+        -1.f, -1.f, 0.0f, 1.0f   // Bottom-left
+    };
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Create an element array
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    GLuint indices[] = {
+        0, 1, 2,  // first triangle
+        2, 3, 0   // second triangle
+    };
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // position attribute
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
+    // texcoord attribute
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat),
+                          (void *)(2 * sizeof(GLfloat)));
+    return {vao, vbo, ebo};
+  }
+
+  Shader create_trace_shader() {
+    std::string vertexSource   = R"glsl(
+      #version 330 core
+      layout (location = 0) in vec2 aPos;
+      layout (location = 1) in vec3 aColor;
+
+      out VS_OUT {
+          vec3 color;
+      } vs_out;
+
+      void main()
+      {
+          vs_out.color = aColor;
+          gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+      })glsl";
+    std::string fragmentSource = R"glsl(
+      #version 330 core
+      out vec4 FragColor;
+
+      in vec3 fColor;
+
+      void main()
+      {
+          FragColor = vec4(fColor, 1.0);
+      })glsl";
+    std::string geometrySource = R"glsl(
+      #version 330 core
+      layout (points) in;
+      layout (line_strip, max_vertices = 5) out;
+      uniform vec2 halfwidth;
+
+      in VS_OUT {
+          vec3 color;
+      } gs_in[];
+
+      out vec3 fColor;
+
+      void build_rect(vec4 position)
+      {
+          fColor = gs_in[0].color; // gs_in[0] since there's only one input vertex
+          vec4 vert = position + vec4(-halfwidth.x, -halfwidth.y, 0.0, 0.0); // bottom-left
+          gl_Position = clamp(vert, -1, 1);
+          EmitVertex();
+          vert = position + vec4(halfwidth.x, -halfwidth.y, 0.0, 0.0); // bottom-right
+          gl_Position = clamp(vert, -1, 1);
+          EmitVertex();
+          vert = position + vec4(halfwidth.x, halfwidth.y, 0.0, 0.0); // top-right
+          gl_Position = clamp(vert, -1, 1);
+          EmitVertex();
+          vert = position + vec4(-halfwidth.x, halfwidth.y, 0.0, 0.0); // top-left
+          gl_Position = clamp(vert, -1, 1);
+          EmitVertex();
+          vert = position + vec4(-halfwidth.x, -halfwidth.y, 0.0, 0.0); // bottom-left
+          gl_Position = clamp(vert, -1, 1);
+          EmitVertex();
+          EndPrimitive();
+      }
+
+      void main() {
+          build_rect(gl_in[0].gl_Position);
+      })glsl";
+    return Shader::create(vertexSource, fragmentSource, geometrySource);
+  }
+
+  std::pair<GLuint, GLuint> create_trace_vaovbo() {
+    GLuint vao, vbo;
+    glGenBuffers(1, &vbo);
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindVertexArray(0);
+    return {vao, vbo};
+  }
 }  // namespace
 
 std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
@@ -95,9 +244,6 @@ int Trace::width(int new_width) {
 
   if (new_width > 0) {
     w = new_width;
-    for (auto rec : global::recordings) {
-      rec->auto_shrink_traces();
-    }
   }
 
   return w;
@@ -106,7 +252,7 @@ int Trace::width(int new_width) {
 TransformationList::TransformationCtrl::TransformationCtrl(
     std::variant<Transformations, Filters> type, Recording &rec, int _gen)
     : m_gen(_gen), m_type(type) {
-  if (auto t = std::get_if<Transformations>(&type)) {
+  if (auto *t = std::get_if<Transformations>(&type)) {
     switch (*t) {
       case Transformations::None:
         m_transform = std::make_unique<Transformation::None>(rec);
@@ -121,7 +267,7 @@ TransformationList::TransformationCtrl::TransformationCtrl(
         m_transform = std::make_unique<Transformation::FlickerSegmentation>(rec);
         break;
     }
-  } else if (auto t = std::get_if<Filters>(&type)) {
+  } else if (auto *t = std::get_if<Filters>(&type)) {
     switch (*t) {
       case Filters::None:
         m_transform = std::make_unique<Transformation::None>(rec);
@@ -164,6 +310,240 @@ void TransformationList::reallocate() {
   for (auto &t : transformations) {
     t.transformation()->allocate(m_parent);
   }
+}
+
+void RecordingWindow::open_window() {
+  if (window) {
+    throw std::runtime_error("ERROR: window was already initialized");
+  }
+
+  auto title = path().filename().string();
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  window = glfwCreateWindow(Nx(), Ny(), title.c_str(), nullptr, nullptr);
+  if (!window) {
+    global::new_ui_message("ERROR: window created failed for {}", title);
+    return;
+  }
+
+  auto *prev_window = glfwGetCurrentContext();
+  glfwMakeContextCurrent(window);
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    fprintf(stderr, "Failed to initialize OpenGL loader!\n");
+    glfwTerminate();
+    exit(EXIT_FAILURE);
+  }
+
+  // we don't need to wait for the next frame here, because the main window
+  // limits us to 60fps already
+  glfwSwapInterval(0);
+
+  add_window_icon(window);
+  glfwSetWindowCloseCallback(window, RecordingWindow::close_callback);
+  glfwSetKeyCallback(window, RecordingWindow::key_callback);
+  glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
+  glfwSetCursorPosCallback(window, RecordingWindow::cursor_position_callback);
+  glfwSetMouseButtonCallback(window, RecordingWindow::mouse_button_callback);
+  glfwSetScrollCallback(window, RecordingWindow::scroll_callback);
+  glfwSetWindowAspectRatio(window, Nx(), Ny());
+  glfwRequestWindowAttention(window);
+
+  resize_window();
+
+  glfwMakeContextCurrent(window);
+
+  frame_shader                              = create_frame_shader();
+  std::tie(frame_vao, frame_vbo, frame_ebo) = create_frame_vaovboebo();
+  trace_shader                              = create_trace_shader();
+  std::tie(trace_vao, trace_vbo)            = create_trace_vaovbo();
+
+  update_gl_texture();
+  frame_shader.use();
+  frame_shader.setInt("texture0", 0);
+  checkGlError("init");
+
+  glfwMakeContextCurrent(prev_window);
+}
+
+void RecordingWindow::update_gl_texture() {
+  auto *prev_window = glfwGetCurrentContext();
+  glfwMakeContextCurrent(window);
+  if (texture) {
+    glDeleteTextures(1, &texture);
+  }
+
+  if (!frame_shader) {
+    throw std::runtime_error("shader not compiled yet!");
+  }
+  frame_shader.use();
+
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, Nx(), Ny(), 0, GL_RED, GL_FLOAT, frame.data());
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // GL_LINEAR
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // GL_LINEAR
+  glfwMakeContextCurrent(prev_window);
+}
+
+void RecordingWindow::display(Filters prefilter,
+                              Transformations transformation,
+                              Filters postfilter,
+                              BitRange bitrange) {
+  if (!window) throw std::runtime_error("No window set, but RecordingWindow::display() called");
+
+  glfwMakeContextCurrent(window);
+
+  load_next_frame();
+
+  Eigen::MatrixXf *arr = &frame;
+
+  auto *pretransform = transformationArena.create_if_needed(prefilter, 0);
+  pretransform->compute(*arr, t_frame);
+  arr = &pretransform->frame;
+
+  auto *transform = transformationArena.create_if_needed(transformation, 0);
+  transform->compute(*arr, t_frame);
+  arr = &transform->frame;
+
+  switch (transformation) {
+    case Transformations::None:
+      histogram.min = 0;
+      histogram.max = bitrange_to_float(bitrange);
+      break;
+    case Transformations::FrameDiff: {
+      auto *frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
+      assert(frameDiff);
+
+      histogram.min = frameDiff->min_init() * 1.5f;
+      histogram.max = frameDiff->max_init() * 1.5f;
+    } break;
+    case Transformations::ContrastEnhancement:
+      histogram.min = -0.1f;
+      histogram.max = 1.1f;
+      break;
+    case Transformations::FlickerSegmentation:
+      histogram.min = 0;
+      histogram.max = (*arr).maxCoeff();
+      break;
+  }
+
+  auto *posttransform = transformationArena.create_if_needed(postfilter, 1);
+  posttransform->compute(*arr, t_frame);
+  arr = &posttransform->frame;
+
+  histogram.compute(arr->reshaped());
+
+  // update traces
+  if (playback.next_t() != playback.current_t()) {
+    for (auto &[trace, pos, color] : traces) {
+      auto w      = Trace::width();
+      Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
+      if (start[0] + w >= Nx()) start[0] = Nx() - w - 1;
+      if (start[1] + w >= Ny()) start[1] = Ny() - w - 1;
+      if (start[0] < 0) start[0] = 0;
+      if (start[1] < 0) start[1] = 0;
+      int wx     = std::min(w, Nx());
+      int wy     = std::min(w, Ny());
+      auto block = arr->block(start[0], start[1], wx, wy);
+      trace.push_back(block.mean());
+    }
+  }
+
+  /* render code */
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  frame_shader.use();
+  frame_shader.setVec2("minmax", get_min(transformation), get_max(transformation));
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, arr->data());
+
+  // Draw the frame
+  glBindVertexArray(frame_vao);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+  // Draw the traces rectangle
+  if (!traces.empty()) {
+    trace_vert.clear();
+    auto coordtrans = [this](const Vec2i &pos) {
+      float x = 2.f * pos[0] / static_cast<float>(Nx()) - 1;
+      float y = 1 - 2.f * pos[1] / static_cast<float>(Ny());
+      trace_vert.push_back(x);
+      trace_vert.push_back(y);
+    };
+    for (auto &[trace, pos, color] : traces) {
+      coordtrans(pos);
+      trace_vert.push_back(color[0]);
+      trace_vert.push_back(color[1]);
+      trace_vert.push_back(color[2]);
+    }
+
+    trace_shader.use();
+    trace_shader.setVec2("halfwidth", Trace::width() / static_cast<float>(Nx()),
+                         Trace::width() / static_cast<float>(Ny()));
+    glBindVertexArray(trace_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, trace_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * trace_vert.size(), trace_vert.data(),
+                 GL_STREAM_DRAW);
+    glLineWidth(1.5);
+    glDrawArrays(GL_POINTS, 0, traces.size());
+  }
+
+  checkGlError("frame");
+  glfwSwapBuffers(window);
+
+  if (export_ctrl.video.recording) {
+    auto cur = playback.progress();
+    if (cur < export_ctrl.video.progress) {
+      stop_recording();
+      global::new_ui_message("Exporting video finished!");
+    } else {
+      export_ctrl.video.videoRecorder.add_frame();
+      export_ctrl.video.progress = cur;
+    }
+  }
+
+  glfwMakeContextCurrent(global::main_window);
+}
+
+void RecordingWindow::reset_traces() {
+  for (auto &t : traces) {
+    t.clear();
+  }
+}
+void RecordingWindow::add_trace_pos(const Vec2i &npos) {
+  for (auto &t : traces) {
+    if (t.is_near_point(npos)) {
+      t.set_pos(npos);
+      return;
+    }
+  }
+  traces.push_back({{}, npos, Trace::next_color()});
+}
+void RecordingWindow::remove_trace_pos(const Vec2i &pos) {
+  const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
+
+  traces.erase(std::remove_if(traces.begin(), traces.end(), pred), traces.end());
+}
+
+void RecordingWindow::resize_window() {
+  int width  = std::ceil(RecordingWindow::scale_fct * Nx());
+  int height = std::ceil(RecordingWindow::scale_fct * Ny());
+
+  glfwSetWindowSize(window, width, height);
+  reshape_callback(window, width, height);
+}
+
+fs::path RecordingWindow::save_snapshot(std::string output_png_path_template) {
+  if (output_png_path_template.empty()) {
+    output_png_path_template = path().stem().string() + "_{t}.png";
+  }
+  auto out_path = fmt::format(output_png_path_template, fmt::arg("t", t_frame));
+
+  gl_save_snapshot(out_path, window);
+  return out_path;
 }
 
 void RecordingWindow::scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
@@ -229,16 +609,7 @@ void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
 
   glfwMakeContextCurrent(window);
   glViewport(0, 0, w, h);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();  // Reset The Projection Matrix
-  glOrtho(0, rec->Nx(), 0, rec->Ny(), -1, 1);
-  // https://docs.microsoft.com/en-us/previous-versions//ms537249(v=vs.85)?redirectedfrom=MSDN
-  // http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
-  glMatrixMode(GL_MODELVIEW);  // Select The Modelview Matrix
-  glLoadIdentity();            // Reset The Modelview Matrix
-
-  glClearColor(0, 0, 0, 1);
-  glClear(GL_COLOR_BUFFER_BIT);
+  glClearColor(0.f, 0.f, 0.f, 1.f);
 
   glfwMakeContextCurrent(global::main_window);
 }
@@ -263,170 +634,36 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
   }
 }
 
-void RecordingWindow::open_window() {
-  if (window) {
-    throw std::runtime_error("ERROR: window was already initialized");
+void RecordingWindow::stop_recording() {
+  export_ctrl.video.videoRecorder.stop_recording();
+  export_ctrl.video.recording     = false;
+  export_ctrl.video.progress      = 0;
+  export_ctrl.video.export_window = false;
+}
+void RecordingWindow::start_recording(const std::string &filename, int fps) {
+  playback.restart();
+  export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
+  export_ctrl.video.recording = true;
+  export_ctrl.video.progress  = 0;
+}
+
+void RecordingWindow::set_rotation(short rotation) {
+  rotations.set_rotation(rotation);
+  for (const auto &rec : global::recordings) {
+    rec->rotation_was_changed();
   }
-
-  auto title = path().filename().string();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  window = glfwCreateWindow(Nx(), Ny(), title.c_str(), nullptr, nullptr);
-  if (!window) {
-    global::new_ui_message("ERROR: window created failed for {}", title);
-    return;
+}
+void RecordingWindow::add_rotation(short d_rotation) {
+  rotations.add_rotation(d_rotation);
+  for (const auto &rec : global::recordings) {
+    rec->rotation_was_changed();
   }
-
-  auto prev_window = glfwGetCurrentContext();
-  glfwMakeContextCurrent(window);
-
-  // we don't need to wait for the next frame here, because the main window
-  // limits us to 60fps already
-  glfwSwapInterval(0);
-
-  add_window_icon(window);
-  glfwSetWindowCloseCallback(window, RecordingWindow::close_callback);
-  glfwSetKeyCallback(window, RecordingWindow::key_callback);
-  glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
-  glfwSetCursorPosCallback(window, RecordingWindow::cursor_position_callback);
-  glfwSetMouseButtonCallback(window, RecordingWindow::mouse_button_callback);
-  glfwSetScrollCallback(window, RecordingWindow::scroll_callback);
-  glfwSetWindowAspectRatio(window, Nx(), Ny());
-  glfwRequestWindowAttention(window);
-
+}
+void RecordingWindow::rotation_was_changed() {
+  load_frame(t_frame);
+  transformationArena.reallocate();
   resize_window();
-
-  glfwMakeContextCurrent(prev_window);
-}
-
-void RecordingWindow::resize_window() {
-  int width  = std::ceil(RecordingWindow::scale_fct * Nx());
-  int height = std::ceil(RecordingWindow::scale_fct * Ny());
-
-  glfwSetWindowSize(window, width, height);
-  reshape_callback(window, width, height);
-}
-
-fs::path RecordingWindow::save_snapshot(std::string output_png_path_template) {
-  if (output_png_path_template.empty()) {
-    output_png_path_template = path().stem().string() + "_{t}.png";
-  }
-  auto out_path = fmt::format(output_png_path_template, fmt::arg("t", t_frame));
-
-  gl_save_snapshot(out_path, window);
-  return out_path;
-}
-
-void RecordingWindow::display(Filters prefilter,
-                              Transformations transformation,
-                              Filters postfilter,
-                              BitRange bitrange) {
-  if (!window) throw std::runtime_error("No window set, but RecordingWindow::display() called");
-
-  glfwMakeContextCurrent(window);
-
-  load_next_frame();
-
-  Eigen::MatrixXf *arr = &frame;
-
-  auto pretransform = transformationArena.create_if_needed(prefilter, 0);
-  pretransform->compute(*arr, t_frame);
-  arr = &pretransform->frame;
-
-  auto transform = transformationArena.create_if_needed(transformation, 0);
-  transform->compute(*arr, t_frame);
-  arr = &transform->frame;
-
-  switch (transformation) {
-    case Transformations::None:
-      histogram.min = 0;
-      histogram.max = bitrange_to_float(bitrange);
-      break;
-    case Transformations::FrameDiff: {
-      auto frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
-      assert(frameDiff);
-
-      histogram.min = frameDiff->min_init() * 1.5f;
-      histogram.max = frameDiff->max_init() * 1.5f;
-    } break;
-    case Transformations::ContrastEnhancement:
-      histogram.min = -0.1f;
-      histogram.max = 1.1f;
-      break;
-    case Transformations::FlickerSegmentation:
-      histogram.min = 0;
-      histogram.max = (*arr).maxCoeff();
-      break;
-  }
-
-  auto posttransform = transformationArena.create_if_needed(postfilter, 1);
-  posttransform->compute(*arr, t_frame);
-  arr = &posttransform->frame;
-
-  draw2dArray(*arr, vert, vert_color_buffer, get_min(transformation), get_max(transformation));
-  histogram.compute(arr->reshaped());
-
-  // draw and update traces
-  if (playback.next_t() != playback.current_t()) {
-    for (auto &[trace, pos, color] : traces) {
-      auto w      = Trace::width();
-      Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
-      auto block  = arr->block(start[0], start[1], w, w);
-      trace.push_back(block.mean());
-      drawPixel(pos[0], pos[1], Ny(), w, color);
-    }
-  }
-
-  glfwSwapBuffers(window);
-
-  if (export_ctrl.video.recording) {
-    auto cur = playback.progress();
-    if (cur < export_ctrl.video.progress) {
-      stop_recording();
-      global::new_ui_message("Exporting video finished!");
-    } else {
-      export_ctrl.video.videoRecorder.add_frame();
-      export_ctrl.video.progress = cur;
-    }
-  }
-
-  glfwMakeContextCurrent(global::main_window);
-}
-
-void RecordingWindow::reset_traces() {
-  for (auto &t : traces) {
-    t.clear();
-  }
-}
-void RecordingWindow::add_trace_pos(const Vec2i &npos) {
-  for (auto &t : traces) {
-    if (t.is_near_point(npos)) {
-      t.set_pos(npos);
-      return;
-    }
-  }
-  traces.push_back({{}, npos, Trace::next_color()});
-}
-void RecordingWindow::remove_trace_pos(const Vec2i &pos) {
-  const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
-
-  traces.erase(std::remove_if(traces.begin(), traces.end(), pred), traces.end());
-}
-void RecordingWindow::auto_shrink_traces() {
-  for (auto &[trace, pos, color] : traces) {
-    // We need to make sure, the block is inside the frame
-    const auto test_fct = [Nx = Nx(), Ny = Ny(), w = Trace::width()](const Vec2i &v) {
-      auto lim = [](auto x, auto N) { return ((x > 0) && (x < N)); };
-      return (lim(v[0], Nx) && lim(v[1], Ny));
-    };
-
-    auto w      = Trace::width();
-    Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
-    // shrink the trace block width if it is too large
-    while (!test_fct(start) || !test_fct(start + Vec2i(w, w))) {
-      w -= 1;
-      Trace::width(w);
-      start = {pos[0] - w / 2, pos[1] - w / 2};
-    }
-  }
+  update_gl_texture();
+  glfwSetWindowAspectRatio(window, Nx(), Ny());
+  traces.clear();
 }

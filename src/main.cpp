@@ -20,8 +20,7 @@ int main(int argc, char **argv) {
   app.add_option("--speed", prm::playbackCtrl.val, "Recording playback speed multiplier")
       ->check(CLI::NonNegativeNumber);
   app.add_option_function<short>(
-         "--rotation",
-         [](const short &rotation) { RecordingWindow::set_default_rotation(rotation); },
+         "--rotation", [](const short &rotation) { RecordingWindow::set_rotation(rotation); },
          "Default rotation of videos")
       ->check(CLI::IsMember({0, 90, 180, 270}))
       ->default_str("0");
@@ -39,12 +38,7 @@ int main(int argc, char **argv) {
       "Disable the TCP server which is used for interprocess-communication with python clients");
   app.add_flag("--remote-send", send_files_over_wire,
                "Test option to send file as array instead of the filename to the main process");
-  std::string config_file;
-#ifdef _WIN32
-  config_file = "%APPDATA%\\quickVidViewer\\quickVidViewer.ini";
-#elif defined(unix) || defined(__unix__) || defined(__unix)
-  config_file = fmt::format("{}/.config/quickVidViewer.ini", get_user_homedir());
-#endif
+  std::string config_file       = config_file_path();
   bool print_config             = false;
   CLI::Option *print_config_opt = nullptr;
   if (!config_file.empty()) {

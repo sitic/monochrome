@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <utility>
 #include <variant>
@@ -173,21 +174,33 @@ class RecordingWindow : public Recording {
       auto val = std::min(Nx(), Ny()) / 64;
       Trace::width(std::max(val, 2));
     }
-    vert = generate_quad_vert(Nx(), Ny());
   }
 
   virtual ~RecordingWindow() {
     if (window != nullptr) {
+      auto *prev_window = glfwGetCurrentContext();
+      glfwMakeContextCurrent(window);
+      if (texture) {
+        glDeleteTextures(1, &texture);
+        glDeleteVertexArrays(1, &frame_vao);
+        glDeleteVertexArrays(1, &trace_vao);
+        glDeleteBuffers(1, &frame_vbo);
+        glDeleteBuffers(1, &frame_ebo);
+        glDeleteBuffers(1, &trace_vbo);
+        frame_shader.remove();
+        trace_shader.remove();
+      }
+      glfwMakeContextCurrent(prev_window);
       glfwDestroyWindow(window);
     }
   }
-
-  virtual void load_next_frame() { load_frame(playback.step()); }
 
   virtual void display(Filters prefilter,
                        Transformations transformation,
                        Filters postfilter,
                        BitRange bitrange);
+
+  virtual void load_next_frame() { load_frame(playback.step()); }
 
   float &get_min(Transformations type) { return transformationArena.create_if_needed(type)->min; }
   float &get_max(Transformations type) { return transformationArena.create_if_needed(type)->max; }
@@ -195,33 +208,6 @@ class RecordingWindow : public Recording {
   void reset_traces();
   void add_trace_pos(const Vec2i &npos);
   void remove_trace_pos(const Vec2i &pos);
-  void auto_shrink_traces();
-
-  void start_recording(const std::string &filename, int fps = 30) {
-    playback.restart();
-    export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
-    export_ctrl.video.recording = true;
-    export_ctrl.video.progress  = 0;
-  }
-
-  void stop_recording() {
-    export_ctrl.video.videoRecorder.stop_recording();
-    export_ctrl.video.recording     = false;
-    export_ctrl.video.progress      = 0;
-    export_ctrl.video.export_window = false;
-  }
-
-  static void fliplr() { rotations.flipud(); }
-  static void flipud() { rotations.fliplr(); }
-  static void set_default_rotation(short rotation) { rotations.set_rotation(rotation); }
-  void add_rotation(short d_rotation) {
-    rotations.add_rotation(d_rotation);
-    load_frame(t_frame);
-    transformationArena.reallocate();
-    resize_window();
-    vert = generate_quad_vert(Nx(), Ny());
-    traces.clear();
-  }
 
   void open_window();
   void resize_window();
@@ -233,12 +219,28 @@ class RecordingWindow : public Recording {
   static void close_callback(GLFWwindow *window);
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
+  void start_recording(const std::string &filename, int fps = 30);
+  void stop_recording();
+
+  static void fliplr() { rotations.flipud(); }
+  static void flipud() { rotations.fliplr(); }
+  static void set_rotation(short rotation);
+  static void add_rotation(short d_rotation);
+
  protected:
-  std::vector<GLint> vert;
-  std::vector<GLfloat> vert_color_buffer;
+  void rotation_was_changed();
+  void update_gl_texture();
+
   Vec2d mousepos;
   struct {
     bool left  = false;
     bool right = false;
   } mousebutton;
+
+  GLuint texture   = GL_FALSE;
+  Shader frame_shader;
+  GLuint frame_vao, frame_vbo, frame_ebo;
+  Shader trace_shader;
+  GLuint trace_vao, trace_vbo;
+  std::vector<float> trace_vert;
 };
