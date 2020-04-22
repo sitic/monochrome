@@ -53,6 +53,11 @@ class RawFileRecording : public AbstractRecording {
 
   Eigen::MatrixXf _frame;
 
+  const float *get_data_ptr(long t) const {
+    auto ptr = _mmap.data() + t * _frame_size * sizeof(float);
+    return reinterpret_cast<const float *>(ptr);
+  }
+
  public:
   RawFileRecording(const fs::path &path) : AbstractRecording(path) {
     std::error_code error;
@@ -99,13 +104,12 @@ class RawFileRecording : public AbstractRecording {
   std::optional<BitRange> bitrange() const final { return BitRange::FLOAT; }
 
   Eigen::MatrixXf read_frame(long t) final {
-    auto data = reinterpret_cast<const float *>(_mmap.data());
-    std::copy(data, data + _nx * _ny, _frame.data());
+    auto data = get_data_ptr(t);
+    std::copy(data, data + _frame_size, _frame.data());
     return _frame;
   };
 
   float get_pixel(long t, long x, long y) final {
-    auto data = reinterpret_cast<const float *>(_mmap.data());
-    return data[_frame_size * t + y * Nx() + x];
+    return get_data_ptr(t)[y * Nx() + x];
   }
 };
