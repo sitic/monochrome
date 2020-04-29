@@ -58,8 +58,35 @@ class RawFileRecording : public AbstractRecording {
     return reinterpret_cast<const float *>(ptr);
   }
 
+  static Vec3i calc_dims_from_filename(const fs::path &path) {
+    std::string filename = path.filename().string();
+    int nx, ny, nt;
+    const std::regex rgx(R"(^.*?_(\d+)x(\d+)(x(\d+))?f?.*?\.dat$)");
+    if (std::smatch matches; std::regex_match(filename, matches, rgx)) {
+      nx = std::stoi(matches[1]);
+      ny = std::stoi(matches[2]);
+      if (matches[4].matched) {
+        nt = std::stoi(matches[4]);
+      } else {
+        nt = 1;
+      }
+      return {nx, ny, nt};
+    } else {
+      return {-1, -1, -1};
+    }
+  }
+
  public:
-  RawFileRecording(const fs::path &path) : AbstractRecording(path) {
+  RawFileRecording(const fs::path &path) : RawFileRecording(path, calc_dims_from_filename(path)) {}
+  RawFileRecording(const fs::path &path, Vec3i dims)
+      : RawFileRecording(path, dims[0], dims[1], dims[2]) {}
+  RawFileRecording(const fs::path &path, int nx, int ny, int nt)
+      : AbstractRecording(path), _nx(nx), _ny(ny), _nt(nt), _frame_size(nx * ny) {
+    if (_nx <= 0 || _ny <= 0 || _nt <= 0) {
+      _error_msg = "Unable to determine dimensions from file name";
+      return;
+    }
+
     std::error_code error;
     _mmap.map(path.string(), error);
     if (error) {
@@ -67,24 +94,21 @@ class RawFileRecording : public AbstractRecording {
       _error_msg = error.message();
       return;
     }
-
-    const std::regex rgx(R"(^.*?_(\d+)x(\d+)x(\d+)f.*?\.dat$)");
-    std::string filename = path.filename().string();
-    if (std::smatch matches; std::regex_match(filename, matches, rgx)) {
-      _nx = std::stoi(matches[1]);
-      _ny = std::stoi(matches[2]);
-      _nt = std::stoi(matches[3]);
-
-      _frame_size = _nx * _ny;
-
-      auto l = _mmap.length();
-      if (l % (_nx * _ny * sizeof(float)) != 0 || l / (_nx * _ny * sizeof(float)) < _nt) {
-        _error_msg = "File size does not match expected dimensions";
-        return;
-      }
-    } else {
-      _error_msg = "Unable to determine dimensions from file name";
+    auto l               = _mmap.length();
+    auto bytes_per_frame = _frame_size * sizeof(float);
+    if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
+      _error_msg = "File size does not match expected dimensions";
       return;
+    }
+
+    if (l / bytes_per_frame > _nt) {
+      if (_nt != 1) {
+        fmt::print(
+            "detected incorrect dimensions, nt={} was given but based on the"
+            "filesize nt has to be {}\n",
+            _nt, l / bytes_per_frame);
+      }
+      _nt = l / bytes_per_frame;
     }
 
     _good = true;
@@ -109,7 +133,5 @@ class RawFileRecording : public AbstractRecording {
     return _frame;
   };
 
-  float get_pixel(long t, long x, long y) final {
-    return get_data_ptr(t)[y * Nx() + x];
-  }
+  float get_pixel(long t, long x, long y) final { return get_data_ptr(t)[y * Nx() + x]; }
 };

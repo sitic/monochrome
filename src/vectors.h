@@ -31,6 +31,7 @@ using Vec2i = Vector2<int>;
 using Vec2f = Vector2<float>;
 using Vec2d = Vector2<double>;
 
+using Vec3i = Vector3<int>;
 using Vec3f = Vector3<float>;
 using Vec4f = Vector4<float>;
 
