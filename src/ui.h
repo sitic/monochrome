@@ -13,6 +13,7 @@ namespace prm {
   static int main_window_width  = 0;
   static int main_window_height = 0;
   static int max_trace_length   = 200;
+  static int max_display_fps    = 60;
 
   static Filters prefilter              = Filters::None;
   static Transformations transformation = Transformations::None;
@@ -126,7 +127,14 @@ void show_main_ui() {
     ImGui::Columns(1);
   }
 
-  ImGui::Text("Application average %.1f FPS", ImGui::GetIO().Framerate);
+  {
+    int max_display_fps = prm::max_display_fps;
+    auto label =
+        fmt::format("Max FPS (current avg. {:.1f} fps)###dfps", ImGui::GetIO().Framerate);
+    if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
+      if (ImGui::IsItemDeactivated() && max_display_fps > 0) prm::max_display_fps = max_display_fps;
+    }
+  }
 
   ImGui::Separator();
   auto selectable_factory = [](auto &p, auto default_val) {

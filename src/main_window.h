@@ -98,9 +98,8 @@ void display_loop() {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
 
-  // Our state
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
+  double lastframetime = glfwGetTime();
   // keep running until main window is closed
   while (!glfwWindowShouldClose(global::main_window)) {
     // Poll and handle events (inputs, window resize, etc.)
@@ -115,6 +114,10 @@ void display_loop() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    while (glfwGetTime() < lastframetime + 1.0/prm::max_display_fps) {
+    }
+    lastframetime += 1.0/prm::max_display_fps;
 
     // ImGui::ShowDemoWindow();
 
@@ -185,7 +188,7 @@ void open_main_window(float font_scale = 0) {
   }
   glfwMakeContextCurrent(global::main_window);
   // wait until the current frame has been drawn before drawing the next one
-  glfwSwapInterval(1);
+  glfwSwapInterval(0);
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     fprintf(stderr, "Failed to initialize OpenGL loader!\n");
     glfwTerminate();
