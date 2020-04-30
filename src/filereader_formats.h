@@ -2,6 +2,7 @@
 
 #include <regex>
 
+#include "vectors.h"
 #include "filereader.h"
 #include "bmp.h"
 
@@ -29,6 +30,7 @@ class BmpFileRecording : public AbstractRecording {
       // Probably a PVCam recording
       return BitRange::U16;
     } else {
+      // Probably a IDS camera recording
       return BitRange::U12;
     }
   }
@@ -61,6 +63,8 @@ class RawFileRecording : public AbstractRecording {
   static Vec3i calc_dims_from_filename(const fs::path &path) {
     std::string filename = path.filename().string();
     int nx, ny, nt;
+    // The filename has to something like prefix_{width}x{height}x{#frames}_suffix.dat
+    // Note that we don't the same order as in numpy ({width}x{height} instead of {height}x{width})
     const std::regex rgx(R"(^.*?_(\d+)x(\d+)(x(\d+))?f?.*?\.dat$)");
     if (std::smatch matches; std::regex_match(filename, matches, rgx)) {
       nx = std::stoi(matches[1]);

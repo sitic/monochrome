@@ -46,8 +46,8 @@ def create_array3meta_msg(name, shape):
     Array3Meta.Array3MetaStart(builder)
     Array3Meta.Array3MetaAddName(builder, name_fb)
     Array3Meta.Array3MetaAddNt(builder, shape[0])
-    Array3Meta.Array3MetaAddNy(builder, shape[2])
-    Array3Meta.Array3MetaAddNx(builder, shape[1])
+    Array3Meta.Array3MetaAddNy(builder, shape[1])
+    Array3Meta.Array3MetaAddNx(builder, shape[2])
     d = Array3Meta.Array3MetaEnd(builder)
 
     root = build_root(builder, Data.Data.Array3Meta, d)
