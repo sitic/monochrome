@@ -22,7 +22,7 @@ namespace prm {
 }  // namespace prm
 
 void show_main_ui() {
-  ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Pos);
+  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
                                       ImVec2(prm::main_window_width, FLT_MAX));
   auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize |
