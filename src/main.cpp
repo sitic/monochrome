@@ -99,6 +99,9 @@ int main(int argc, char **argv) {
 
   // Cleanup
   ipc::stop_server();
+  for (auto [cmap, tex] : prm::cmap_texs) {
+    glDeleteTextures(1, &tex);
+  }
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();

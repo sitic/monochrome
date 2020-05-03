@@ -3,6 +3,8 @@
 # namespace: fbs
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Filepaths(object):
     __slots__ = ['_tab']
@@ -32,6 +34,11 @@ class Filepaths(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Filepaths
+    def FileIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        return o == 0
 
 def FilepathsStart(builder): builder.StartObject(1)
 def FilepathsAddFile(builder, file): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(file), 0)

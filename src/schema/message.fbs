@@ -1,10 +1,19 @@
 namespace fbs;
 
+enum BitRange : int { AUTODETECT = 0, UINT8, UINT10, UINT12, UINT16, FLOAT, DIFF, PHASE, PHASE_DIFF }
+enum ColorMap : int { DEFAULT = 0, GRAY, DIFF, HSV }
+
 table Array3Meta {
   nx:int;
   ny:int;
   nt:int;
   name:string;
+  duration:float; // in seconds
+  fps:float; // original framerate
+  date:string; // creation date
+  comment:string;
+  bitrange:BitRange;
+  cmap:ColorMap;
 }
 
 // flatbuffers currently restricted to 2GB, so unfortunately we may need to chunk the data

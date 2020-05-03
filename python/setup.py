@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='quickVidViewer',
-    version='0.0.2',
+    version='0.0.3',
     url='https://gitlab.gwdg.de/jlebert/quickmultrecviewer',
     classifiers=[
         "Private :: Do not Upload"

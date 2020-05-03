@@ -34,18 +34,19 @@ namespace {
       out vec4 FragColor;
       in vec2 Texcoord;
       uniform sampler2D texture0;
+      uniform sampler1D textureC;
       uniform vec2 minmax;
 
       vec4 colormap(float x);
       void main() {
           float val = texture(texture0, Texcoord).r;
           val = (val - minmax.x) / (minmax.y - minmax.x);
-          FragColor = colormap(val);
+          //FragColor = colormap(clamp(val, 0.0, 1.0));
+          FragColor = texture(textureC, clamp(val, 0.0, 1.0));
       })glsl";
     std::string bw_colormap    = R"glsl(
       vec4 colormap(float x) {
-          float d = clamp(x, 0.0, 1.0);
-          return vec4(d, d, d, 1.0);
+        return vec4(x, x, x, 1.0);
       })glsl";
     fragmentSource += bw_colormap;
     return Shader::create(vertexSource, fragmentSource);
@@ -91,7 +92,7 @@ namespace {
   Shader create_trace_shader() {
     std::string vertexSource   = R"glsl(
       #version 330 core
-      layout (location = 0) in vec2 aPos;
+      layout (location = 0) in vec2 position;
       layout (location = 1) in vec3 aColor;
 
       out VS_OUT {
@@ -101,7 +102,7 @@ namespace {
       void main()
       {
           vs_out.color = aColor;
-          gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+          gl_Position = vec4(position, 0.0, 1.0);
       })glsl";
     std::string fragmentSource = R"glsl(
       #version 330 core
@@ -159,7 +160,7 @@ namespace {
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
@@ -350,7 +351,17 @@ void RecordingWindow::open_window() {
   glfwRequestWindowAttention(window);
 
   resize_window();
+  set_context(window);
 
+  glfwMakeContextCurrent(prev_window);
+}
+
+void RecordingWindow::set_context(GLFWwindow *window_) {
+  auto *prev_window = glfwGetCurrentContext();
+  if (frame_shader) {
+    clear_gl_memory();
+  }
+  window = window_;
   glfwMakeContextCurrent(window);
 
   frame_shader                              = create_frame_shader();
@@ -359,8 +370,10 @@ void RecordingWindow::open_window() {
   std::tie(trace_vao, trace_vbo)            = create_trace_vaovbo();
 
   update_gl_texture();
+  colormap(cmap_);
   frame_shader.use();
   frame_shader.setInt("texture0", 0);
+  frame_shader.setInt("textureC", 1);
   checkGlError("init");
 
   glfwMakeContextCurrent(prev_window);
@@ -373,11 +386,6 @@ void RecordingWindow::update_gl_texture() {
     glDeleteTextures(1, &texture);
   }
 
-  if (!frame_shader) {
-    throw std::runtime_error("shader not compiled yet!");
-  }
-  frame_shader.use();
-
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, Nx(), Ny(), 0, GL_RED, GL_FLOAT, frame.data());
@@ -388,10 +396,43 @@ void RecordingWindow::update_gl_texture() {
   glfwMakeContextCurrent(prev_window);
 }
 
+void RecordingWindow::colormap(ColorMap cmap) {
+  auto *prev_window = glfwGetCurrentContext();
+  glfwMakeContextCurrent(window);
+  if (ctexture) {
+    glDeleteTextures(1, &ctexture);
+  }
+
+  cmap_ = cmap;
+  glGenTextures(1, &ctexture);
+  glBindTexture(GL_TEXTURE_1D, ctexture);
+  auto cdata = get_colormapdata(cmap);
+  glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, cdata.size() / 3, 0, GL_RGB, GL_FLOAT, cdata.data());
+  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // GL_LINEAR
+  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // GL_LINEAR
+  glfwMakeContextCurrent(prev_window);
+}
+
+void RecordingWindow::clear_gl_memory() {
+  auto *prev_window = glfwGetCurrentContext();
+  glfwMakeContextCurrent(window);
+  if (texture) {
+    glDeleteTextures(1, &texture);
+    glDeleteVertexArrays(1, &frame_vao);
+    glDeleteVertexArrays(1, &trace_vao);
+    glDeleteBuffers(1, &frame_vbo);
+    glDeleteBuffers(1, &frame_ebo);
+    glDeleteBuffers(1, &trace_vbo);
+    frame_shader.remove();
+    trace_shader.remove();
+  }
+  glfwMakeContextCurrent(prev_window);
+}
+
 void RecordingWindow::display(Filters prefilter,
                               Transformations transformation,
-                              Filters postfilter,
-                              BitRange bitrange) {
+                              Filters postfilter) {
   if (!window) throw std::runtime_error("No window set, but RecordingWindow::display() called");
 
   glfwMakeContextCurrent(window);
@@ -410,8 +451,7 @@ void RecordingWindow::display(Filters prefilter,
 
   switch (transformation) {
     case Transformations::None:
-      histogram.min = 0;
-      histogram.max = bitrange_to_float(bitrange);
+      std::tie(histogram.min, histogram.max) = bitrange_to_float(bitrange);
       break;
     case Transformations::FrameDiff: {
       auto *frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
@@ -457,8 +497,11 @@ void RecordingWindow::display(Filters prefilter,
 
   frame_shader.use();
   frame_shader.setVec2("minmax", get_min(transformation), get_max(transformation));
+  glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, arr->data());
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_1D, ctexture);
 
   // Draw the frame
   glBindVertexArray(frame_vao);

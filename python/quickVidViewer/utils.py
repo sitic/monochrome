@@ -5,6 +5,8 @@ import socket
 from typing import List, Text, Union
 
 from .fbs import Root, Data, Filepaths, Array3Meta, Array3DataChunk
+from .fbs.ColorMap import ColorMap
+from .fbs.BitRange import BitRange
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 4864
@@ -40,14 +42,23 @@ def create_filepaths_msg(paths):
     return buf
 
 
-def create_array3meta_msg(name, shape):
+def create_array3meta_msg(name, shape, duration=0., fps=0., date="", comment="",
+                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
+    date_fb = builder.CreateString(date)
+    comment_fb = builder.CreateString(comment)
     Array3Meta.Array3MetaStart(builder)
     Array3Meta.Array3MetaAddName(builder, name_fb)
     Array3Meta.Array3MetaAddNt(builder, shape[0])
     Array3Meta.Array3MetaAddNy(builder, shape[1])
     Array3Meta.Array3MetaAddNx(builder, shape[2])
+    Array3Meta.Array3MetaAddDuration(builder, duration)
+    Array3Meta.Array3MetaAddFps(builder, fps)
+    Array3Meta.Array3MetaAddDate(builder, date_fb)
+    Array3Meta.Array3MetaAddComment(builder, comment_fb)
+    Array3Meta.Array3MetaAddBitrange(builder, bitrange)
+    Array3Meta.Array3MetaAddCmap(builder, cmap)
     d = Array3Meta.Array3MetaEnd(builder)
 
     root = build_root(builder, Data.Data.Array3Meta, d)
@@ -87,7 +98,8 @@ def open_files(paths: List[Union[Text, Path]]):
     s.sendall(buf)
 
 
-def open_array3(array: np.ndarray, name: Text = ""):
+def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
+                comment: Text = "", bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT):
     assert array.ndim == 3
     assert array.dtype == np.float32
 
@@ -96,7 +108,7 @@ def open_array3(array: np.ndarray, name: Text = ""):
     except ConnectionRefusedError:
         print("Unable to connect to quickViewer")
         return
-    buf = create_array3meta_msg(name, array.shape)
+    buf = create_array3meta_msg(name, array.shape, duration_seconds, fps, date, comment, bitrange, cmap)
     s.sendall(buf)
 
     flat = array.flatten()

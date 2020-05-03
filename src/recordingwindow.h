@@ -5,6 +5,7 @@
 #include <utility>
 #include <variant>
 
+#include "colormap.h"
 #include "recording.h"
 #include "transformations.h"
 #include "videorecorder.h"
@@ -153,18 +154,19 @@ class TransformationList {
 
 class RecordingWindow : public Recording {
  public:
-  GLFWwindow *window = nullptr;
   static float scale_fct;
 
+  GLFWwindow *window = nullptr;
   RecordingPlaybackCtrl playback;
   Histogram<float, 256> histogram;
+  BitRange bitrange = BitRange::U16;
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
   TransformationList transformationArena;
 
   RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filerecording(path)){};
-  RecordingWindow(std::shared_ptr<AbstractRecording> file)
-      : Recording(std::move(file)), playback(good() ? length() : 0), transformationArena(*this) {
+  RecordingWindow(std::shared_ptr<AbstractRecording> file_)
+      : Recording(std::move(file_)), playback(good() ? length() : 0), transformationArena(*this) {
     if (!good()) {
       return;
     }
@@ -174,31 +176,26 @@ class RecordingWindow : public Recording {
       auto val = std::min(Nx(), Ny()) / 64;
       Trace::width(std::max(val, 2));
     }
+
+    if (file->bitrange()) {
+      bitrange = file->bitrange().value();
+    }
+    if (file->cmap()) {
+      cmap_ = file->cmap().value();
+    }
   }
 
   virtual ~RecordingWindow() {
     if (window != nullptr) {
-      auto *prev_window = glfwGetCurrentContext();
-      glfwMakeContextCurrent(window);
-      if (texture) {
-        glDeleteTextures(1, &texture);
-        glDeleteVertexArrays(1, &frame_vao);
-        glDeleteVertexArrays(1, &trace_vao);
-        glDeleteBuffers(1, &frame_vbo);
-        glDeleteBuffers(1, &frame_ebo);
-        glDeleteBuffers(1, &trace_vbo);
-        frame_shader.remove();
-        trace_shader.remove();
-      }
-      glfwMakeContextCurrent(prev_window);
+      clear_gl_memory();
       glfwDestroyWindow(window);
     }
   }
 
-  virtual void display(Filters prefilter,
-                       Transformations transformation,
-                       Filters postfilter,
-                       BitRange bitrange);
+  void open_window();
+  void set_context(GLFWwindow* window_);
+
+  virtual void display(Filters prefilter, Transformations transformation, Filters postfilter);
 
   virtual void load_next_frame() { load_frame(playback.step()); }
 
@@ -209,9 +206,19 @@ class RecordingWindow : public Recording {
   void add_trace_pos(const Vec2i &npos);
   void remove_trace_pos(const Vec2i &pos);
 
-  void open_window();
+  static void fliplr() { rotations.flipud(); }
+  static void flipud() { rotations.fliplr(); }
+  static void set_rotation(short rotation);
+  static void add_rotation(short d_rotation);
+
+  void colormap(ColorMap cmap);
+  ColorMap colormap() const { return cmap_; }
+
   void resize_window();
   fs::path save_snapshot(std::string output_png_path_template = "");
+  void start_recording(const std::string &filename, int fps = 30);
+  void stop_recording();
+
   static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
   static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos);
   static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
@@ -219,17 +226,10 @@ class RecordingWindow : public Recording {
   static void close_callback(GLFWwindow *window);
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-  void start_recording(const std::string &filename, int fps = 30);
-  void stop_recording();
-
-  static void fliplr() { rotations.flipud(); }
-  static void flipud() { rotations.fliplr(); }
-  static void set_rotation(short rotation);
-  static void add_rotation(short d_rotation);
-
  protected:
   void rotation_was_changed();
   void update_gl_texture();
+  void clear_gl_memory();
 
   Vec2d mousepos;
   struct {
@@ -237,7 +237,9 @@ class RecordingWindow : public Recording {
     bool right = false;
   } mousebutton;
 
-  GLuint texture   = GL_FALSE;
+  ColorMap cmap_     = ColorMap::GRAY;
+  GLuint texture     = GL_FALSE;
+  GLuint ctexture    = GL_FALSE;
   Shader frame_shader;
   GLuint frame_vao, frame_vbo, frame_ebo;
   Shader trace_shader;

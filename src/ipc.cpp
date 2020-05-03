@@ -111,18 +111,27 @@ namespace {
         return;
       }
 
-      auto nx   = raw->nx();
-      auto ny   = raw->ny();
-      auto nt   = raw->nt();
-      auto name = raw->name()->str();
-
       if (!array_msg_.empty()) {
         throw std::runtime_error(
             "Array3Meta message arrived before previous array was completely loaded");
       }
 
-      std::size_t size = static_cast<std::size_t>(nx) * ny * nt;
-      array_msg_.array = std::make_shared<global::RawArray3>(nx, ny, nt, name, size);
+      int cmap     = raw->cmap() - 1;
+      int bitrange = raw->bitrange() - 1;
+      global::RawArray3MetaData meta{
+          raw->nx(),
+          raw->ny(),
+          raw->nt(),
+          raw->name()->str(),
+          raw->duration(),
+          raw->fps(),
+          raw->date()->str(),
+          raw->comment()->str(),
+          bitrange < 0 ? std::nullopt : std::optional<BitRange>(static_cast<BitRange>(bitrange)),
+          cmap < 0 ? std::nullopt : std::optional<ColorMap>(static_cast<ColorMap>(cmap))};
+
+      std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
+      array_msg_.array = std::make_shared<global::RawArray3>(meta, size);
     }
 
 
@@ -145,7 +154,7 @@ namespace {
       std::copy(data->begin(), data->end(), array_msg_.array->data.begin() + idx);
       array_msg_.counter += data->size();
       if (array_msg_.complete()) {
-        fmt::print("Loading of {} complete!\n", array_msg_.array->name);
+        fmt::print("Loading of {} complete!\n", array_msg_.array->meta.name);
         global::add_RawArray3_to_load(array_msg_.array);
         array_msg_.clear();
       }

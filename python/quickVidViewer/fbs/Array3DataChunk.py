@@ -3,6 +3,8 @@
 # namespace: fbs
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Array3DataChunk(object):
     __slots__ = ['_tab']
@@ -46,6 +48,11 @@ class Array3DataChunk(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Array3DataChunk
+    def DataIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        return o == 0
 
 def Array3DataChunkStart(builder): builder.StartObject(2)
 def Array3DataChunkAddStartidx(builder, startidx): builder.PrependUint64Slot(0, startidx, 0)

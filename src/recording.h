@@ -48,6 +48,9 @@ class Recording {
     frame.setZero(file->Nx(), file->Ny());
     apply_rotation();
   }
+  std::shared_ptr<Recording> copy() const {
+    return std::make_shared<Recording>(file);
+  }
 
   std::shared_ptr<AbstractRecording> get_file_ptr() const { return file; }
   void set_file_ptr(std::shared_ptr<AbstractRecording> new_file) { file = new_file; }
@@ -61,8 +64,8 @@ class Recording {
   std::string comment() const { return file->comment(); };
   std::chrono::duration<float> duration() const { return file->duration(); }
   float fps() const { return file->fps(); }
-
   std::optional<BitRange> bitrange() const { return file->bitrange(); }
+  std::optional<ColorMap> cmap() const { return file->cmap(); }
 
   void load_frame(long t);
 

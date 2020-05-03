@@ -3,6 +3,8 @@
 # namespace: fbs
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Root(object):
     __slots__ = ['_tab']

@@ -34,6 +34,7 @@ class BmpFileRecording : public AbstractRecording {
       return BitRange::U12;
     }
   }
+  std::optional<ColorMap> cmap() const final { return ColorMap::GRAY; }
 
   Eigen::MatrixXf read_frame(long t) final {
     file.read_frame(t, frame_uint16.data());
@@ -54,6 +55,7 @@ class RawFileRecording : public AbstractRecording {
   std::string _error_msg  = "";
 
   Eigen::MatrixXf _frame;
+  std::optional<BitRange> _bitrange;
 
   const float *get_data_ptr(long t) const {
     auto ptr = _mmap.data() + t * _frame_size * sizeof(float);
@@ -118,6 +120,7 @@ class RawFileRecording : public AbstractRecording {
     _good = true;
 
     _frame.setZero(_nx, _ny);
+    _bitrange = detect_bitrange(get_data_ptr(0), get_data_ptr(1));
   }
 
   bool good() const final { return _good; };
@@ -129,7 +132,8 @@ class RawFileRecording : public AbstractRecording {
   std::string comment() const final { return ""; };
   std::chrono::duration<float> duration() const final { return 0s; };
   float fps() const final { return 0; };
-  std::optional<BitRange> bitrange() const final { return BitRange::FLOAT; }
+  std::optional<BitRange> bitrange() const final { return _bitrange; }
+  std::optional<ColorMap> cmap() const final { return std::nullopt; }
 
   Eigen::MatrixXf read_frame(long t) final {
     auto data = get_data_ptr(t);

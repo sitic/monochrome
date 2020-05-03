@@ -41,12 +41,6 @@ void load_new_file(const fs::path &path) {
     return;
   }
 
-  if (auto br = rec->bitrange(); br) {
-    if (br.value() != prm::bitrange) {
-      prm::bitrange = br.value();
-    }
-  }
-
   global::recordings.push_back(rec);
   rec->open_window();
 }
@@ -61,12 +55,6 @@ void load_from_queue() {
     if (!rec->good()) {
       global::new_ui_message("ERROR: loading file failed, skipping");
       continue;
-    }
-
-    if (auto br = rec->bitrange(); br) {
-      if (br.value() != prm::bitrange) {
-        prm::bitrange = br.value();
-      }
     }
 
     global::recordings.push_back(rec);
@@ -98,7 +86,7 @@ void display_loop() {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
 
-  ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+  ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
   double lastframetime = glfwGetTime();
   // keep running until main window is closed
   while (!glfwWindowShouldClose(global::main_window)) {
@@ -115,9 +103,9 @@ void display_loop() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    while (glfwGetTime() < lastframetime + 1.0/prm::max_display_fps) {
+    while (glfwGetTime() < lastframetime + 1.0 / prm::max_display_fps) {
     }
-    lastframetime += 1.0/prm::max_display_fps;
+    lastframetime += 1.0 / prm::max_display_fps;
 
     // ImGui::ShowDemoWindow();
 
@@ -129,10 +117,12 @@ void display_loop() {
                        [](const auto &r) -> bool { return glfwWindowShouldClose(r->window); }),
         global::recordings.end());
 
+    int rec_nr = 0;
     for (const auto &recording : global::recordings) {
-      recording->display(prm::prefilter, prm::transformation, prm::postfilter, prm::bitrange);
+      recording->display(prm::prefilter, prm::transformation, prm::postfilter);
 
-      show_recording_ui(recording);
+      show_recording_ui(recording, rec_nr);
+      rec_nr++;
 
       show_export_recording_ui(recording);
     }
@@ -148,12 +138,6 @@ void display_loop() {
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(global::main_window);
-  }
-}
-
-void drop_callback(GLFWwindow *window, int count, const char **paths) {
-  for (int i = 0; i < count; i++) {
-    load_new_file(paths[i]);
   }
 }
 
@@ -176,6 +160,21 @@ void open_main_window(float font_scale = 0) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
+  glfwSetWindowSizeCallback(global::main_window, [](GLFWwindow *window, int w, int h) {
+    prm::main_window_width  = w;
+    prm::main_window_height = h;
+  });
+  glfwSetKeyCallback(global::main_window,
+                     [](GLFWwindow *window, int key, int scancode, int action, int mods) {
+                       if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+                         glfwSetWindowShouldClose(window, GLFW_TRUE);
+                       }
+                     });
+  glfwSetDropCallback(global::main_window, [](GLFWwindow *window, int count, const char **paths) {
+    for (int i = 0; i < count; i++) {
+      load_new_file(paths[i]);
+    }
+  });
   glfwMakeContextCurrent(global::main_window);
   // wait until the current frame has been drawn before drawing the next one
   glfwSwapInterval(0);
@@ -207,8 +206,6 @@ void open_main_window(float font_scale = 0) {
   // Setup Platform/Renderer bindings
   ImGui_ImplGlfw_InitForOpenGL(global::main_window, true);
   ImGui_ImplOpenGL3_Init();
-
-  glfwSetDropCallback(global::main_window, drop_callback);
 
   // Load Fonts
   // - If no fonts are loaded, dear imgui will use the default font. You can
@@ -248,4 +245,18 @@ void open_main_window(float font_scale = 0) {
   // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
 
   add_window_icon(global::main_window);
+
+  for (auto cmap : prm::cmaps) {
+    GLuint tex = GL_FALSE;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    auto cdata = get_colormapdata(cmap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, cdata.size() / 3, 1, 0, GL_RGB, GL_FLOAT,
+                 cdata.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // GL_LINEAR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // GL_LINEAR
+
+    prm::cmap_texs[cmap] = tex;
+  }
 }

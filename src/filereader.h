@@ -19,23 +19,6 @@ namespace fs = ghc::filesystem;
 
 using namespace std::chrono_literals;
 
-enum class BitRange : int { FLOAT, U8, U12, U16 };
-inline const char *BitRangeNames[4] = {"float", "uint8", "uint12", "uint16"};
-
-inline float bitrange_to_float(BitRange br) {
-  switch (br) {
-    case BitRange::FLOAT:
-      return 1;
-    case BitRange::U8:
-      return (1 << 8) - 1;
-    case BitRange::U12:
-      return (1 << 12) - 1;
-    case BitRange::U16:
-      return (1 << 16) - 1;
-  }
-  throw std::logic_error("This line should not be reached");
-}
-
 class AbstractRecording {
  private:
   fs::path _path;
@@ -55,6 +38,7 @@ class AbstractRecording {
   virtual std::chrono::duration<float> duration() const = 0;
   virtual float fps() const                             = 0;
   virtual std::optional<BitRange> bitrange() const      = 0;
+  virtual std::optional<ColorMap> cmap() const          = 0;
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
@@ -67,12 +51,11 @@ class InMemoryRecording : public AbstractRecording {
 
   std::shared_ptr<global::RawArray3> _data;
   Eigen::MatrixXf _frame;
-  std::optional<BitRange> _bitrange;
   std::size_t _frame_size;
 
  public:
   InMemoryRecording(std::shared_ptr<global::RawArray3> data)
-      : AbstractRecording(data ? data->name : ""), _data(data) {
+      : AbstractRecording(data ? data->meta.name : ""), _data(data) {
     _good = static_cast<bool>(_data);
     if (!_good) {
       _error_msg = "Empty array loaded";
@@ -82,28 +65,24 @@ class InMemoryRecording : public AbstractRecording {
     _frame_size = Nx() * Ny();
     _frame.setZero(Nx(), Ny());
 
-    auto max = *std::max_element(_data->data.begin(), _data->data.begin() + _frame_size);
-    if (max <= 1) {
-      _bitrange = BitRange::FLOAT;
-    } else if (max < (1 << 8)) {
-      _bitrange = BitRange::U8;
-    } else if (max < (1 << 12)) {
-      _bitrange = BitRange::U12;
-    } else {
-      _bitrange = BitRange::U16;
+    if (!_data->meta.bitrange) {
+      _data->meta.bitrange = detect_bitrange(_data->data.begin(), _data->data.begin() + _frame_size);
     }
   }
 
   bool good() const final { return _good; };
-  int Nx() const final { return _data->nx; };
-  int Ny() const final { return _data->ny; };
-  int length() const final { return _data->nt; };
+  int Nx() const final { return _data->meta.nx; };
+  int Ny() const final { return _data->meta.ny; };
+  int length() const final { return _data->meta.nt; };
   std::string error_msg() final { return _error_msg; };
   std::string date() const final { return ""; };
   std::string comment() const final { return ""; };
-  std::chrono::duration<float> duration() const final { return 0s; };
-  float fps() const final { return 0; };
-  std::optional<BitRange> bitrange() const final { return _bitrange; }
+  std::chrono::duration<float> duration() const final {
+    return std::chrono::duration<float>(_data->meta.duration);
+  };
+  float fps() const final { return _data->meta.fps; };
+  std::optional<BitRange> bitrange() const final { return _data->meta.bitrange; }
+  std::optional<ColorMap> cmap() const final { return _data->meta.cmap; }
 
   Eigen::MatrixXf read_frame(long t) final {
     auto data_ptr = _data->data.data() + _frame_size * t;

@@ -18,7 +18,10 @@ namespace prm {
   static Filters prefilter              = Filters::None;
   static Transformations transformation = Transformations::None;
   static Filters postfilter             = Filters::None;
-  static BitRange bitrange              = BitRange::U12;
+
+  const std::array<ColorMap, 4> cmaps = {ColorMap::GRAY, ColorMap::DIFF, ColorMap::HSV,
+                                         ColorMap::BLACKBODY};
+  static std::map<ColorMap, GLuint> cmap_texs;
 }  // namespace prm
 
 void show_main_ui() {
@@ -95,9 +98,10 @@ void show_main_ui() {
 
     ImGui::NextColumn();
     {
-      int item = static_cast<int>(prm::bitrange);
-      ImGui::Combo("Data Format", &item, BitRangeNames, IM_ARRAYSIZE(BitRangeNames));
-      prm::bitrange = static_cast<BitRange>(item);
+      int trace_width = Trace::width();
+      if (ImGui::InputInt("ROI Width", &trace_width, 2, 5)) {
+        Trace::width(trace_width);
+      }
     }
 
     ImGui::NextColumn();
@@ -116,24 +120,20 @@ void show_main_ui() {
     }
 
     ImGui::NextColumn();
+    { ImGui::SliderInt("Trace Length", &prm::max_trace_length, 10, 1000); }
+
+    ImGui::NextColumn();
     {
-      int trace_width = Trace::width();
-      if (ImGui::InputInt("Trace Width", &trace_width, 2, 5)) {
-        Trace::width(trace_width);
+      int max_display_fps = prm::max_display_fps;
+      auto label = fmt::format("Max FPS (current avg. {:.1f}fps)###dfps", ImGui::GetIO().Framerate);
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
+      if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
+        if (ImGui::IsItemDeactivated() && max_display_fps > 0)
+          prm::max_display_fps = max_display_fps;
       }
     }
-    ImGui::NextColumn();
-    { ImGui::SliderInt("Trace Length", &prm::max_trace_length, 10, 1000); }
-    ImGui::Columns(1);
-  }
 
-  {
-    int max_display_fps = prm::max_display_fps;
-    auto label =
-        fmt::format("Max FPS (current avg. {:.1f} fps)###dfps", ImGui::GetIO().Framerate);
-    if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
-      if (ImGui::IsItemDeactivated() && max_display_fps > 0) prm::max_display_fps = max_display_fps;
-    }
+    ImGui::Columns(1);
   }
 
   ImGui::Separator();
@@ -204,6 +204,7 @@ void show_main_ui() {
     auto selectable = selectable_factory(prm::transformation, Transformations::None);
     if (selectable("Frame Difference", Transformations::FrameDiff)) {
       ImGui::Indent(10);
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
       ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 20);
       ImGui::Unindent(10);
     }
@@ -266,7 +267,9 @@ void show_main_ui() {
   ImGui::End();
 }
 
-void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording) {
+void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording, int rec_nr) {
+  ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.25f + 0.177f) * prm::main_window_height),
+                          ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
   ImGui::Begin(recording->path().filename().string().c_str(), nullptr,
                ImGuiWindowFlags_AlwaysAutoResize);
@@ -323,11 +326,53 @@ void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording) {
   }
   ImGui::Columns(1);
 
-  ImGui::PushItemWidth(prm::main_window_width * 0.75f);
-  ImGui::PlotHistogram("Histogram", recording->histogram.data.data(),
+  ImGui::PushItemWidth(prm::main_window_width * 0.7f);
+  ImGui::PlotHistogram("##histogram", recording->histogram.data.data(),
                        recording->histogram.data.size(), 0, nullptr, 0,
                        recording->histogram.max_value(), ImVec2(0, 100));
-
+  ImGui::SameLine();
+  {
+    ImGui::BeginGroup();
+    ImGui::Text("Histogram");
+    ImGui::NewLine();
+    {
+      int item = static_cast<int>(recording->bitrange);
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+      ImGui::Combo("Format", &item, BitRangeNames, IM_ARRAYSIZE(BitRangeNames));
+      recording->bitrange = static_cast<BitRange>(item);
+    }
+    {
+      ColorMap current_cmap = recording->colormap();
+      auto itemwidth        = ImGui::GetContentRegionAvail().x * 0.5f;
+      ImGui::SetNextItemWidth(itemwidth);
+      ImVec2 combo_pos = ImGui::GetCursorScreenPos();
+      if (ImGui::BeginCombo("Colormap", "")) {
+        for (auto [cmap, tex_id] : prm::cmap_texs) {
+          auto l = ColorMapsNames[static_cast<int>(cmap)];
+          ImGui::PushID(l);
+          bool is_selected = (cmap == current_cmap);
+          if (ImGui::Selectable("", is_selected) && (cmap != current_cmap)) {
+            recording->colormap(cmap);
+          }
+          ImGui::SameLine();
+          ImGui::Image((void *)(intptr_t)tex_id, ImVec2(80, ImGui::GetTextLineHeight()));
+          ImGui::SameLine();
+          ImGui::Text(l);
+          ImGui::SameLine();
+          ImGui::Spacing();
+          ImGui::PopID();
+        }
+        ImGui::EndCombo();
+      }
+      const auto style = ImGui::GetStyle();
+      ImGui::SetCursorScreenPos(
+          ImVec2(combo_pos.x + style.FramePadding.x, combo_pos.y + style.FramePadding.y));
+      const ImVec2 i_size = {itemwidth - ImGui::GetFrameHeight() - 2.5f * style.FramePadding.x,
+                             ImGui::GetTextLineHeight()};
+      ImGui::Image((void *)(intptr_t)prm::cmap_texs[current_cmap], i_size);
+    }
+    ImGui::EndGroup();
+  }
   ImGui::SliderFloat("min", &recording->get_min(prm::transformation), recording->histogram.min,
                      recording->histogram.max);
   ImGui::SliderFloat("max", &recording->get_max(prm::transformation), recording->histogram.min,

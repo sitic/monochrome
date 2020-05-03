@@ -3,6 +3,8 @@
 # namespace: fbs
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Array3Meta(object):
     __slots__ = ['_tab']
@@ -46,9 +48,57 @@ class Array3Meta(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Array3MetaStart(builder): builder.StartObject(4)
+    # Array3Meta
+    def Duration(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+        return 0.0
+
+    # Array3Meta
+    def Fps(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+        return 0.0
+
+    # Array3Meta
+    def Date(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Array3Meta
+    def Comment(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Array3Meta
+    def Bitrange(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+        return 0
+
+    # Array3Meta
+    def Cmap(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+        return 0
+
+def Array3MetaStart(builder): builder.StartObject(10)
 def Array3MetaAddNx(builder, nx): builder.PrependInt32Slot(0, nx, 0)
 def Array3MetaAddNy(builder, ny): builder.PrependInt32Slot(1, ny, 0)
 def Array3MetaAddNt(builder, nt): builder.PrependInt32Slot(2, nt, 0)
 def Array3MetaAddName(builder, name): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+def Array3MetaAddDuration(builder, duration): builder.PrependFloat32Slot(4, duration, 0.0)
+def Array3MetaAddFps(builder, fps): builder.PrependFloat32Slot(5, fps, 0.0)
+def Array3MetaAddDate(builder, date): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(date), 0)
+def Array3MetaAddComment(builder, comment): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(comment), 0)
+def Array3MetaAddBitrange(builder, bitrange): builder.PrependInt32Slot(8, bitrange, 0)
+def Array3MetaAddCmap(builder, cmap): builder.PrependInt32Slot(9, cmap, 0)
 def Array3MetaEnd(builder): return builder.EndObject()
