@@ -10,6 +10,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "fonts/DroidSans.h"
 #include "fonts/IconsFontAwesome5.h"
 #include "fonts/IconsMaterialDesignIcons.h"
 
@@ -166,7 +167,7 @@ void open_main_window(float font_scale = 0) {
   });
   glfwSetKeyCallback(global::main_window,
                      [](GLFWwindow *window, int key, int scancode, int action, int mods) {
-                       if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+                       if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_Q && action == GLFW_PRESS) {
                          glfwSetWindowShouldClose(window, GLFW_TRUE);
                        }
                      });
@@ -202,6 +203,7 @@ void open_main_window(float font_scale = 0) {
     font_scale = std::max(xscale, yscale);
   }
   ImGui::GetStyle().ScaleAllSizes(font_scale);
+  ImGui::GetStyle().FrameRounding = 3;
 
   // Setup Platform/Renderer bindings
   ImGui_ImplGlfw_InitForOpenGL(global::main_window, true);
@@ -223,11 +225,22 @@ void open_main_window(float font_scale = 0) {
   // - Read 'docs/FONTS.txt' for more instructions and details.
   // - Remember that in C/C++ if you want to include a backslash \ in a string
   // literal you need to write a double backslash \\ !
-  io.Fonts->AddFontDefault();
+  //io.Fonts->AddFontDefault();
+  ImFontAtlas::GlyphRangesBuilder builder;
+  builder.AddText(u8"σπ");
+  builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
+  static ImVector<ImWchar> ranges;
+  builder.BuildRanges(&ranges);
+  ImFontConfig font_config;
+  font_config.OversampleH = 3;
+  font_config.OversampleV = 2;
+  //font_config.PixelSnapH = true;
+  io.Fonts->AddFontFromMemoryCompressedTTF(fonts::DroidSans_compressed_data,
+                                           fonts::DroidSans_compressed_size, 14,
+                                           &font_config, ranges.Data);
   ImFontConfig icons_config;
   icons_config.MergeMode  = true;
   icons_config.PixelSnapH = true;
-
   static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
   io.Fonts->AddFontFromMemoryCompressedTTF(fonts::fontawesome5_solid_compressed_data,
                                            fonts::fontawesome5_solid_compressed_size, 11,

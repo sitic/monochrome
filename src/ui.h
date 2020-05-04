@@ -125,7 +125,7 @@ void show_main_ui() {
     ImGui::NextColumn();
     {
       int max_display_fps = prm::max_display_fps;
-      auto label = fmt::format("Max FPS (current avg. {:.1f}fps)###dfps", ImGui::GetIO().Framerate);
+      auto label = fmt::format("Max FPS (current avg. {:.0f}fps)###dfps", ImGui::GetIO().Framerate);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
       if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
         if (ImGui::IsItemDeactivated() && max_display_fps > 0)
@@ -173,7 +173,7 @@ void show_main_ui() {
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       float sigma = Transformation::GaussFilter::get_sigma();
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
-      if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, "sigma = %.2f")) {
+      if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, u8"σ = %.2f")) {
         Transformation::GaussFilter::set_sigma(sigma);
       }
       ImGui::Unindent(10);
@@ -240,7 +240,7 @@ void show_main_ui() {
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       float sigma = Transformation::GaussFilter::get_sigma();
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
-      if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, "sigma = %.2f")) {
+      if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, u8"σ = %.2f")) {
         Transformation::GaussFilter::set_sigma(sigma);
       }
       ImGui::Unindent(10);
@@ -268,7 +268,7 @@ void show_main_ui() {
 }
 
 void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording, int rec_nr) {
-  ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.25f + 0.177f) * prm::main_window_height),
+  ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.3f + 0.2f) * prm::main_window_height),
                           ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
   ImGui::Begin(recording->path().filename().string().c_str(), nullptr,

@@ -87,7 +87,8 @@ def open_file(filepath: Union[Text, Path]):
 
 def open_files(paths: List[Union[Text, Path]]):
     paths = [Path(path) for path in paths]
-    assert all([path.exists() for path in paths])
+    if not all([path.exists() for path in paths]):
+        raise FileNotFoundError(f"One of more files of {paths} do not exist")
     paths = [str(path.absolute()) for path in paths]
     try:
         s = create_socket()
@@ -100,8 +101,13 @@ def open_files(paths: List[Union[Text, Path]]):
 
 def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
                 comment: Text = "", bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT):
-    assert array.ndim == 3
-    assert array.dtype == np.float32
+    if array.ndim != 3:
+        raise ValueError("array is not three-dimensional")
+    if array.dtype != np.float32:
+        if np.iscomplexobj(array):
+            raise ValueError("Complex arrays not supported")
+        else:
+            array = array.astype(np.float32)
 
     try:
         s = create_socket()
