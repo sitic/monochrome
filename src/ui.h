@@ -273,6 +273,7 @@ void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording, int re
   ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
   ImGui::Begin(recording->path().filename().string().c_str(), nullptr,
                ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::PushID(recording.get());
   int t = recording->current_frame();
   ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
   ImGui::SetNextItemWidth(-1);
@@ -410,6 +411,7 @@ void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording, int re
     ImGui::EndGroup();
     ImGui::PopID();
   }
+  ImGui::PopID();
   ImGui::End();
 }
 
