@@ -97,6 +97,29 @@ constexpr std::pair<float, float> bitrange_to_float(BitRange br) {
 }
 
 template <typename It>
+std::pair<It, It> minmax_element_skipNaN(It first, It last) {
+  It min = first, max;
+  for (; first < last; first++) {
+    if (!std::isnan(*first)) {
+      min = first;
+      max = first;
+      break;
+    }
+  }
+
+  while (++first != last) {
+    if (std::isnan(*first)) {
+      continue;
+    } else if (*first > *max) {
+      max = first;
+    } else if (*first < *min) {
+      min = first;
+    }
+  }
+  return {min, max};
+}
+
+template <typename It>
 std::optional<BitRange> detect_bitrange(It begin, It end) {
   auto [min, max] = std::minmax_element(begin, end);
   if (*min == *max) {

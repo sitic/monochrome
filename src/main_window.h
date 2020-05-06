@@ -87,8 +87,8 @@ void display_loop() {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
 
-  ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-  double lastframetime = glfwGetTime();
+  ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+  prm::lastframetime = glfwGetTime();
   // keep running until main window is closed
   while (!glfwWindowShouldClose(global::main_window)) {
     // Poll and handle events (inputs, window resize, etc.)
@@ -104,9 +104,9 @@ void display_loop() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    while (glfwGetTime() < lastframetime + 1.0 / prm::max_display_fps) {
+    while (glfwGetTime() < prm::lastframetime + 1.0 / prm::max_display_fps) {
     }
-    lastframetime += 1.0 / prm::max_display_fps;
+    prm::lastframetime += 1.0 / prm::max_display_fps;
 
     // ImGui::ShowDemoWindow();
 
@@ -139,6 +139,14 @@ void display_loop() {
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(global::main_window);
+
+    //static int iii = 0;
+    //if (global::recordings.size() == 2 &&
+    //    global::recordings[0]->window != global::recordings[1]->window) {
+    //  if (iii == 10)
+    //  global::recordings.back()->set_context(global::recordings[0]->window);
+    //  else iii++;
+    //}
   }
 }
 
@@ -236,11 +244,12 @@ void open_main_window(float font_scale = 0) {
   font_config.OversampleV = 2;
   //font_config.PixelSnapH = true;
   io.Fonts->AddFontFromMemoryCompressedTTF(fonts::DroidSans_compressed_data,
-                                           fonts::DroidSans_compressed_size, 14,
-                                           &font_config, ranges.Data);
+                                           fonts::DroidSans_compressed_size, 14, &font_config,
+                                           ranges.Data);
   ImFontConfig icons_config;
   icons_config.MergeMode  = true;
   icons_config.PixelSnapH = true;
+
   static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
   io.Fonts->AddFontFromMemoryCompressedTTF(fonts::fontawesome5_solid_compressed_data,
                                            fonts::fontawesome5_solid_compressed_size, 11,

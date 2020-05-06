@@ -180,9 +180,19 @@ class RecordingWindow : public Recording {
     if (file->bitrange()) {
       bitrange = file->bitrange().value();
     }
+    float& min = get_min(Transformations::None);
+    float& max = get_max(Transformations::None);
+    if ((min == max) || std::isnan(min) || std::isnan(max)) {
+      std::tie(min, max) = bitrange_to_float(bitrange);
+    }
+
     if (file->cmap()) {
       cmap_ = file->cmap().value();
+    } else if (bitrange == BitRange::PHASE || bitrange == BitRange::PHASE_DIFF) {
+      // assume that's its a phase map and the user prefers HSV in this circumstances
+      cmap_ = ColorMap::HSV;
     }
+
   }
 
   virtual ~RecordingWindow() {

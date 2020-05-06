@@ -37,18 +37,16 @@ namespace {
       uniform sampler1D textureC;
       uniform vec2 minmax;
 
-      vec4 colormap(float x);
       void main() {
           float val = texture(texture0, Texcoord).r;
-          val = (val - minmax.x) / (minmax.y - minmax.x);
-          //FragColor = colormap(clamp(val, 0.0, 1.0));
-          FragColor = texture(textureC, clamp(val, 0.0, 1.0));
+          if (isnan(val)) {
+            //discard;
+            FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+          } else {
+            val = (val - minmax.x) / (minmax.y - minmax.x);
+            FragColor = texture(textureC, clamp(val, 0.0, 1.0));
+          }
       })glsl";
-    std::string bw_colormap    = R"glsl(
-      vec4 colormap(float x) {
-        return vec4(x, x, x, 1.0);
-      })glsl";
-    fragmentSource += bw_colormap;
     return Shader::create(vertexSource, fragmentSource);
   }
 
@@ -361,7 +359,10 @@ void RecordingWindow::set_context(GLFWwindow *window_) {
   if (frame_shader) {
     clear_gl_memory();
   }
-  window = window_;
+  if (window != window_) {
+    glfwHideWindow(window);
+    window = window_;
+  }
   glfwMakeContextCurrent(window);
 
   frame_shader                              = create_frame_shader();
@@ -652,7 +653,9 @@ void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
 
   glfwMakeContextCurrent(window);
   glViewport(0, 0, w, h);
-  glClearColor(0.f, 0.f, 0.f, 1.f);
+  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glfwMakeContextCurrent(global::main_window);
 }

@@ -26,6 +26,9 @@ class Histogram {
     data.fill(0);
 
     for (auto val : container) {
+      if (std::isnan(val)) {
+        continue;
+      }
 
       if (val > max) {
         val = max;
@@ -70,8 +73,8 @@ class Shader {
   Shader()               = default;
   Shader(const Shader &) = delete;
   Shader &operator=(Shader const &) = delete;
-  Shader(Shader &&other)  noexcept { ID = other.ID; }
-  Shader &operator=(Shader &&other)  noexcept {
+  Shader(Shader &&other) noexcept { ID = other.ID; }
+  Shader &operator=(Shader &&other) noexcept {
     ID = other.ID;
     return *this;
   }

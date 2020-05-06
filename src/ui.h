@@ -14,6 +14,7 @@ namespace prm {
   static int main_window_height = 0;
   static int max_trace_length   = 200;
   static int max_display_fps    = 60;
+  static double lastframetime   = 0;
 
   static Filters prefilter              = Filters::None;
   static Transformations transformation = Transformations::None;
@@ -129,6 +130,7 @@ void show_main_ui() {
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
       if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
         if (ImGui::IsItemDeactivated() && max_display_fps > 0)
+          prm::lastframetime = glfwGetTime();
           prm::max_display_fps = max_display_fps;
       }
     }

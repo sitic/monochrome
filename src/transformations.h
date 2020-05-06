@@ -69,8 +69,8 @@ namespace Transformation {
       long t;
 
       QueueEntry(Eigen::MatrixXf frame_, long t_) : frame(std::move(frame_)), t(t_) {}
-      QueueEntry(const QueueEntry& t) = delete;
-      QueueEntry(QueueEntry&& t) : frame(std::move(t.frame)), t(t.t) {}
+      QueueEntry(const QueueEntry &t) = delete;
+      QueueEntry(QueueEntry &&t) : frame(std::move(t.frame)), t(t.t) {}
     };
     std::queue<QueueEntry> prev_frames;
 
@@ -236,7 +236,7 @@ namespace Transformation {
       if (m_n == 2) {
         m_oldM = frame;
         m_newM = frame;
-        m_oldS.setZero(frame.cols(), frame.rows());
+        m_oldS.setZero(frame.rows(), frame.cols());
       } else {
         m_newM = m_oldM + (frame - m_oldM) / m_n;
         m_newS = m_oldS + (frame - m_oldM).cwiseProduct(frame - m_newM);
