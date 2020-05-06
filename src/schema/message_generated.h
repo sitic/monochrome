@@ -11,8 +11,11 @@ namespace fbs {
 struct Array3Meta;
 struct Array3MetaBuilder;
 
-struct Array3DataChunk;
-struct Array3DataChunkBuilder;
+struct Array3DataChunkf;
+struct Array3DataChunkfBuilder;
+
+struct Array3DataChunku16;
+struct Array3DataChunku16Builder;
 
 struct Filepaths;
 struct FilepathsBuilder;
@@ -76,69 +79,105 @@ enum ColorMap {
   ColorMap_GRAY = 1,
   ColorMap_DIFF = 2,
   ColorMap_HSV = 3,
+  ColorMap_BLACKBODY = 4,
   ColorMap_MIN = ColorMap_DEFAULT,
-  ColorMap_MAX = ColorMap_HSV
+  ColorMap_MAX = ColorMap_BLACKBODY
 };
 
-inline const ColorMap (&EnumValuesColorMap())[4] {
+inline const ColorMap (&EnumValuesColorMap())[5] {
   static const ColorMap values[] = {
     ColorMap_DEFAULT,
     ColorMap_GRAY,
     ColorMap_DIFF,
-    ColorMap_HSV
+    ColorMap_HSV,
+    ColorMap_BLACKBODY
   };
   return values;
 }
 
 inline const char * const *EnumNamesColorMap() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "DEFAULT",
     "GRAY",
     "DIFF",
     "HSV",
+    "BLACKBODY",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameColorMap(ColorMap e) {
-  if (flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_HSV)) return "";
+  if (flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_BLACKBODY)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesColorMap()[index];
+}
+
+enum ArrayDataType {
+  ArrayDataType_FLOAT = 0,
+  ArrayDataType_UINT16 = 1,
+  ArrayDataType_MIN = ArrayDataType_FLOAT,
+  ArrayDataType_MAX = ArrayDataType_UINT16
+};
+
+inline const ArrayDataType (&EnumValuesArrayDataType())[2] {
+  static const ArrayDataType values[] = {
+    ArrayDataType_FLOAT,
+    ArrayDataType_UINT16
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesArrayDataType() {
+  static const char * const names[3] = {
+    "FLOAT",
+    "UINT16",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameArrayDataType(ArrayDataType e) {
+  if (flatbuffers::IsOutRange(e, ArrayDataType_FLOAT, ArrayDataType_UINT16)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesArrayDataType()[index];
 }
 
 enum Data {
   Data_NONE = 0,
   Data_Filepaths = 1,
   Data_Array3Meta = 2,
-  Data_Array3DataChunk = 3,
+  Data_Array3DataChunkf = 3,
+  Data_Array3DataChunku16 = 4,
   Data_MIN = Data_NONE,
-  Data_MAX = Data_Array3DataChunk
+  Data_MAX = Data_Array3DataChunku16
 };
 
-inline const Data (&EnumValuesData())[4] {
+inline const Data (&EnumValuesData())[5] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
     Data_Array3Meta,
-    Data_Array3DataChunk
+    Data_Array3DataChunkf,
+    Data_Array3DataChunku16
   };
   return values;
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
-    "Array3DataChunk",
+    "Array3DataChunkf",
+    "Array3DataChunku16",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameData(Data e) {
-  if (flatbuffers::IsOutRange(e, Data_NONE, Data_Array3DataChunk)) return "";
+  if (flatbuffers::IsOutRange(e, Data_NONE, Data_Array3DataChunku16)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesData()[index];
 }
@@ -155,8 +194,12 @@ template<> struct DataTraits<fbs::Array3Meta> {
   static const Data enum_value = Data_Array3Meta;
 };
 
-template<> struct DataTraits<fbs::Array3DataChunk> {
-  static const Data enum_value = Data_Array3DataChunk;
+template<> struct DataTraits<fbs::Array3DataChunkf> {
+  static const Data enum_value = Data_Array3DataChunkf;
+};
+
+template<> struct DataTraits<fbs::Array3DataChunku16> {
+  static const Data enum_value = Data_Array3DataChunku16;
 };
 
 bool VerifyData(flatbuffers::Verifier &verifier, const void *obj, Data type);
@@ -165,17 +208,21 @@ bool VerifyDataVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector
 struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   typedef Array3MetaBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_NX = 4,
-    VT_NY = 6,
-    VT_NT = 8,
-    VT_NAME = 10,
-    VT_DURATION = 12,
-    VT_FPS = 14,
-    VT_DATE = 16,
-    VT_COMMENT = 18,
-    VT_BITRANGE = 20,
-    VT_CMAP = 22
+    VT_TYPE = 4,
+    VT_NX = 6,
+    VT_NY = 8,
+    VT_NT = 10,
+    VT_NAME = 12,
+    VT_DURATION = 14,
+    VT_FPS = 16,
+    VT_DATE = 18,
+    VT_COMMENT = 20,
+    VT_BITRANGE = 22,
+    VT_CMAP = 24
   };
+  fbs::ArrayDataType type() const {
+    return static_cast<fbs::ArrayDataType>(GetField<int32_t>(VT_TYPE, 0));
+  }
   int32_t nx() const {
     return GetField<int32_t>(VT_NX, 0);
   }
@@ -208,6 +255,7 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_TYPE) &&
            VerifyField<int32_t>(verifier, VT_NX) &&
            VerifyField<int32_t>(verifier, VT_NY) &&
            VerifyField<int32_t>(verifier, VT_NT) &&
@@ -229,6 +277,9 @@ struct Array3MetaBuilder {
   typedef Array3Meta Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
+  void add_type(fbs::ArrayDataType type) {
+    fbb_.AddElement<int32_t>(Array3Meta::VT_TYPE, static_cast<int32_t>(type), 0);
+  }
   void add_nx(int32_t nx) {
     fbb_.AddElement<int32_t>(Array3Meta::VT_NX, nx, 0);
   }
@@ -273,6 +324,7 @@ struct Array3MetaBuilder {
 
 inline flatbuffers::Offset<Array3Meta> CreateArray3Meta(
     flatbuffers::FlatBufferBuilder &_fbb,
+    fbs::ArrayDataType type = fbs::ArrayDataType_FLOAT,
     int32_t nx = 0,
     int32_t ny = 0,
     int32_t nt = 0,
@@ -294,11 +346,13 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3Meta(
   builder_.add_nt(nt);
   builder_.add_ny(ny);
   builder_.add_nx(nx);
+  builder_.add_type(type);
   return builder_.Finish();
 }
 
 inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
+    fbs::ArrayDataType type = fbs::ArrayDataType_FLOAT,
     int32_t nx = 0,
     int32_t ny = 0,
     int32_t nt = 0,
@@ -314,6 +368,7 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
   auto comment__ = comment ? _fbb.CreateString(comment) : 0;
   return fbs::CreateArray3Meta(
       _fbb,
+      type,
       nx,
       ny,
       nt,
@@ -326,8 +381,8 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
       cmap);
 }
 
-struct Array3DataChunk FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef Array3DataChunkBuilder Builder;
+struct Array3DataChunkf FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef Array3DataChunkfBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_STARTIDX = 4,
     VT_DATA = 6
@@ -347,44 +402,108 @@ struct Array3DataChunk FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
 };
 
-struct Array3DataChunkBuilder {
-  typedef Array3DataChunk Table;
+struct Array3DataChunkfBuilder {
+  typedef Array3DataChunkf Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_startidx(uint64_t startidx) {
-    fbb_.AddElement<uint64_t>(Array3DataChunk::VT_STARTIDX, startidx, 0);
+    fbb_.AddElement<uint64_t>(Array3DataChunkf::VT_STARTIDX, startidx, 0);
   }
   void add_data(flatbuffers::Offset<flatbuffers::Vector<float>> data) {
-    fbb_.AddOffset(Array3DataChunk::VT_DATA, data);
+    fbb_.AddOffset(Array3DataChunkf::VT_DATA, data);
   }
-  explicit Array3DataChunkBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit Array3DataChunkfBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  Array3DataChunkBuilder &operator=(const Array3DataChunkBuilder &);
-  flatbuffers::Offset<Array3DataChunk> Finish() {
+  Array3DataChunkfBuilder &operator=(const Array3DataChunkfBuilder &);
+  flatbuffers::Offset<Array3DataChunkf> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<Array3DataChunk>(end);
+    auto o = flatbuffers::Offset<Array3DataChunkf>(end);
     return o;
   }
 };
 
-inline flatbuffers::Offset<Array3DataChunk> CreateArray3DataChunk(
+inline flatbuffers::Offset<Array3DataChunkf> CreateArray3DataChunkf(
     flatbuffers::FlatBufferBuilder &_fbb,
     uint64_t startidx = 0,
     flatbuffers::Offset<flatbuffers::Vector<float>> data = 0) {
-  Array3DataChunkBuilder builder_(_fbb);
+  Array3DataChunkfBuilder builder_(_fbb);
   builder_.add_startidx(startidx);
   builder_.add_data(data);
   return builder_.Finish();
 }
 
-inline flatbuffers::Offset<Array3DataChunk> CreateArray3DataChunkDirect(
+inline flatbuffers::Offset<Array3DataChunkf> CreateArray3DataChunkfDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     uint64_t startidx = 0,
     const std::vector<float> *data = nullptr) {
   auto data__ = data ? _fbb.CreateVector<float>(*data) : 0;
-  return fbs::CreateArray3DataChunk(
+  return fbs::CreateArray3DataChunkf(
+      _fbb,
+      startidx,
+      data__);
+}
+
+struct Array3DataChunku16 FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef Array3DataChunku16Builder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_STARTIDX = 4,
+    VT_DATA = 6
+  };
+  uint64_t startidx() const {
+    return GetField<uint64_t>(VT_STARTIDX, 0);
+  }
+  const flatbuffers::Vector<uint16_t> *data() const {
+    return GetPointer<const flatbuffers::Vector<uint16_t> *>(VT_DATA);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint64_t>(verifier, VT_STARTIDX) &&
+           VerifyOffset(verifier, VT_DATA) &&
+           verifier.VerifyVector(data()) &&
+           verifier.EndTable();
+  }
+};
+
+struct Array3DataChunku16Builder {
+  typedef Array3DataChunku16 Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_startidx(uint64_t startidx) {
+    fbb_.AddElement<uint64_t>(Array3DataChunku16::VT_STARTIDX, startidx, 0);
+  }
+  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint16_t>> data) {
+    fbb_.AddOffset(Array3DataChunku16::VT_DATA, data);
+  }
+  explicit Array3DataChunku16Builder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  Array3DataChunku16Builder &operator=(const Array3DataChunku16Builder &);
+  flatbuffers::Offset<Array3DataChunku16> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Array3DataChunku16>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Array3DataChunku16> CreateArray3DataChunku16(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    uint64_t startidx = 0,
+    flatbuffers::Offset<flatbuffers::Vector<uint16_t>> data = 0) {
+  Array3DataChunku16Builder builder_(_fbb);
+  builder_.add_startidx(startidx);
+  builder_.add_data(data);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Array3DataChunku16> CreateArray3DataChunku16Direct(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    uint64_t startidx = 0,
+    const std::vector<uint16_t> *data = nullptr) {
+  auto data__ = data ? _fbb.CreateVector<uint16_t>(*data) : 0;
+  return fbs::CreateArray3DataChunku16(
       _fbb,
       startidx,
       data__);
@@ -462,8 +581,11 @@ struct Root FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const fbs::Array3Meta *data_as_Array3Meta() const {
     return data_type() == fbs::Data_Array3Meta ? static_cast<const fbs::Array3Meta *>(data()) : nullptr;
   }
-  const fbs::Array3DataChunk *data_as_Array3DataChunk() const {
-    return data_type() == fbs::Data_Array3DataChunk ? static_cast<const fbs::Array3DataChunk *>(data()) : nullptr;
+  const fbs::Array3DataChunkf *data_as_Array3DataChunkf() const {
+    return data_type() == fbs::Data_Array3DataChunkf ? static_cast<const fbs::Array3DataChunkf *>(data()) : nullptr;
+  }
+  const fbs::Array3DataChunku16 *data_as_Array3DataChunku16() const {
+    return data_type() == fbs::Data_Array3DataChunku16 ? static_cast<const fbs::Array3DataChunku16 *>(data()) : nullptr;
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -482,8 +604,12 @@ template<> inline const fbs::Array3Meta *Root::data_as<fbs::Array3Meta>() const 
   return data_as_Array3Meta();
 }
 
-template<> inline const fbs::Array3DataChunk *Root::data_as<fbs::Array3DataChunk>() const {
-  return data_as_Array3DataChunk();
+template<> inline const fbs::Array3DataChunkf *Root::data_as<fbs::Array3DataChunkf>() const {
+  return data_as_Array3DataChunkf();
+}
+
+template<> inline const fbs::Array3DataChunku16 *Root::data_as<fbs::Array3DataChunku16>() const {
+  return data_as_Array3DataChunku16();
 }
 
 struct RootBuilder {
@@ -531,8 +657,12 @@ inline bool VerifyData(flatbuffers::Verifier &verifier, const void *obj, Data ty
       auto ptr = reinterpret_cast<const fbs::Array3Meta *>(obj);
       return verifier.VerifyTable(ptr);
     }
-    case Data_Array3DataChunk: {
-      auto ptr = reinterpret_cast<const fbs::Array3DataChunk *>(obj);
+    case Data_Array3DataChunkf: {
+      auto ptr = reinterpret_cast<const fbs::Array3DataChunkf *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_Array3DataChunku16: {
+      auto ptr = reinterpret_cast<const fbs::Array3DataChunku16 *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;

@@ -1,9 +1,11 @@
 namespace fbs;
 
 enum BitRange : int { AUTODETECT = 0, UINT8, UINT10, UINT12, UINT16, FLOAT, DIFF, PHASE, PHASE_DIFF }
-enum ColorMap : int { DEFAULT = 0, GRAY, DIFF, HSV }
+enum ColorMap : int { DEFAULT = 0, GRAY, DIFF, HSV, BLACKBODY }
+enum ArrayDataType : int { FLOAT = 0, UINT16 }
 
 table Array3Meta {
+  type:ArrayDataType;
   nx:int;
   ny:int;
   nt:int;
@@ -17,16 +19,21 @@ table Array3Meta {
 }
 
 // flatbuffers currently restricted to 2GB, so unfortunately we may need to chunk the data
-table Array3DataChunk {
+table Array3DataChunkf {
   startidx: uint64;
   data:[float];
+}
+
+table Array3DataChunku16 {
+  startidx: uint64;
+  data:[uint16];
 }
 
 table Filepaths {
   file:[string];
 }
 
-union Data { Filepaths, Array3Meta, Array3DataChunk }
+union Data { Filepaths, Array3Meta, Array3DataChunkf, Array3DataChunku16 }
 
 table Root {
     data:Data;

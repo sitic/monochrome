@@ -7,4 +7,5 @@ class ColorMap(object):
     GRAY = 1
     DIFF = 2
     HSV = 3
+    BLACKBODY = 4
 

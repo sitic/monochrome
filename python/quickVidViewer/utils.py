@@ -4,7 +4,8 @@ from pathlib import Path
 import socket
 from typing import List, Text, Union
 
-from .fbs import Root, Data, Filepaths, Array3Meta, Array3DataChunk
+from .fbs import Root, Data, Filepaths, Array3Meta, Array3DataChunkf, Array3DataChunku16
+from .fbs.ArrayDataType import ArrayDataType
 from .fbs.ColorMap import ColorMap
 from .fbs.BitRange import BitRange
 
@@ -42,17 +43,18 @@ def create_filepaths_msg(paths):
     return buf
 
 
-def create_array3meta_msg(name, shape, duration=0., fps=0., date="", comment="",
+def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0., date="", comment="",
                           bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
     date_fb = builder.CreateString(date)
     comment_fb = builder.CreateString(comment)
     Array3Meta.Array3MetaStart(builder)
-    Array3Meta.Array3MetaAddName(builder, name_fb)
-    Array3Meta.Array3MetaAddNt(builder, shape[0])
-    Array3Meta.Array3MetaAddNy(builder, shape[1])
+    Array3Meta.Array3MetaAddType(builder, type)
     Array3Meta.Array3MetaAddNx(builder, shape[2])
+    Array3Meta.Array3MetaAddNy(builder, shape[1])
+    Array3Meta.Array3MetaAddNt(builder, shape[0])
+    Array3Meta.Array3MetaAddName(builder, name_fb)
     Array3Meta.Array3MetaAddDuration(builder, duration)
     Array3Meta.Array3MetaAddFps(builder, fps)
     Array3Meta.Array3MetaAddDate(builder, date_fb)
@@ -67,15 +69,29 @@ def create_array3meta_msg(name, shape, duration=0., fps=0., date="", comment="",
     return buf
 
 
-def create_array3data_msg(array, idx=0):
+def create_array3dataf_msg(array, idx=0):
     builder = flatbuffers.Builder(65536)
     data = builder.CreateNumpyVector(array)
-    Array3DataChunk.Array3DataChunkStart(builder)
-    Array3DataChunk.Array3DataChunkAddStartidx(builder, idx)
-    Array3DataChunk.Array3DataChunkAddData(builder, data)
-    d = Array3DataChunk.Array3DataChunkEnd(builder)
+    Array3DataChunkf.Array3DataChunkfStart(builder)
+    Array3DataChunkf.Array3DataChunkfAddStartidx(builder, idx)
+    Array3DataChunkf.Array3DataChunkfAddData(builder, data)
+    d = Array3DataChunkf.Array3DataChunkfEnd(builder)
 
-    root = build_root(builder, Data.Data.Array3DataChunk, d)
+    root = build_root(builder, Data.Data.Array3DataChunkf, d)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    return buf
+
+
+def create_array3datau16_msg(array, idx=0):
+    builder = flatbuffers.Builder(65536)
+    data = builder.CreateNumpyVector(array)
+    Array3DataChunku16.Array3DataChunku16Start(builder)
+    Array3DataChunku16.Array3DataChunku16AddStartidx(builder, idx)
+    Array3DataChunku16.Array3DataChunku16AddData(builder, data)
+    d = Array3DataChunku16.Array3DataChunku16End(builder)
+
+    root = build_root(builder, Data.Data.Array3DataChunku16, d)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -103,18 +119,24 @@ def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0,
                 comment: Text = "", bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT):
     if array.ndim != 3:
         raise ValueError("array is not three-dimensional")
-    if array.dtype != np.float32:
+    if array.dtype == np.float32:
+        dtype = ArrayDataType.FLOAT
+    elif array.dtype == np.uint16:
+        dtype = ArrayDataType.UINT16
+    else:
         if np.iscomplexobj(array):
             raise ValueError("Complex arrays not supported")
         else:
             array = array.astype(np.float32)
+            dtype = ArrayDataType.FLOAT
+
 
     try:
         s = create_socket()
     except ConnectionRefusedError:
         print("Unable to connect to quickViewer")
         return
-    buf = create_array3meta_msg(name, array.shape, duration_seconds, fps, date, comment, bitrange, cmap)
+    buf = create_array3meta_msg(dtype, name, array.shape, duration_seconds, fps, date, comment, bitrange, cmap)
     s.sendall(buf)
 
     flat = array.flatten()
@@ -122,5 +144,8 @@ def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0,
     max_size = 16352
     for idx in range(0, length, max_size):
         end = length if idx + max_size > length else idx + max_size
-        buf = create_array3data_msg(flat[idx:end], idx)
+        if array.dtype == np.float32:
+            buf = create_array3dataf_msg(flat[idx:end], idx)
+        else:
+            buf = create_array3datau16_msg(flat[idx:end], idx)
         s.sendall(buf)

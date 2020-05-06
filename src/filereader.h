@@ -66,7 +66,11 @@ class InMemoryRecording : public AbstractRecording {
     _frame.setZero(Nx(), Ny());
 
     if (!_data->meta.bitrange) {
-      _data->meta.bitrange = detect_bitrange(_data->data.begin(), _data->data.begin() + _frame_size);
+      std::visit(
+          [this](const auto& data) {
+            _data->meta.bitrange = detect_bitrange(data.begin(), data.begin() + _frame_size);
+          },
+          _data->data);
     }
   }
 
@@ -85,12 +89,20 @@ class InMemoryRecording : public AbstractRecording {
   std::optional<ColorMap> cmap() const final { return _data->meta.cmap; }
 
   Eigen::MatrixXf read_frame(long t) final {
-    auto data_ptr = _data->data.data() + _frame_size * t;
-    std::copy(data_ptr, data_ptr + _frame_size, _frame.data());
+    std::visit(
+        [this, t](const auto& data) {
+          auto data_ptr = data.data() + _frame_size * t;
+          std::copy(data_ptr, data_ptr + _frame_size, _frame.data());
+        },
+        _data->data);
     return _frame;
   };
 
   float get_pixel(long t, long x, long y) final {
-    return _data->data[_frame_size * t + y * Nx() + x];
+    return std::visit(
+        [this, t, x, y](const auto& data) {
+          return static_cast<float>(data[_frame_size * t + y * Nx() + x]);
+        },
+        _data->data);
   }
 };

@@ -33,7 +33,7 @@ namespace {
       array   = nullptr;
     }
     bool empty() { return !array && !counter; }
-    bool complete() { return array ? counter == array->data.size() : false; }
+    bool complete() { return array ? counter == array->size() : false; }
   };
 
   class TcpMessage {
@@ -81,8 +81,11 @@ namespace {
           case fbs::Data_Array3Meta:
             handle_message(root->data_as_Array3Meta());
             break;
-          case fbs::Data_Array3DataChunk:
-            handle_message(root->data_as_Array3DataChunk());
+          case fbs::Data_Array3DataChunkf:
+            handle_datachunk_message(root->data_as_Array3DataChunkf());
+            break;
+          case fbs::Data_Array3DataChunku16:
+            handle_datachunk_message(root->data_as_Array3DataChunku16());
             break;
           default:
             throw std::runtime_error("Unknown message body type");
@@ -131,11 +134,17 @@ namespace {
           cmap < 0 ? std::nullopt : std::optional<ColorMap>(static_cast<ColorMap>(cmap))};
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
-      array_msg_.array = std::make_shared<global::RawArray3>(meta, size);
+      if (raw->type() == fbs::ArrayDataType::ArrayDataType_FLOAT) {
+        array_msg_.array = global::RawArray3::create_float(meta, size);
+      } else if (raw->type() == fbs::ArrayDataType::ArrayDataType_UINT16) {
+        array_msg_.array = global::RawArray3::create_u16(meta, size);
+      } else {
+        throw std::runtime_error("TODO");
+      }
     }
 
-
-    void handle_message(const fbs::Array3DataChunk* raw) {
+    template <typename ChunkPtr>
+    void handle_datachunk_message(const ChunkPtr* raw) {
       if (!raw) {
         fmt::print("Error parsing flatbuffer\n");
         return;
@@ -147,11 +156,12 @@ namespace {
       auto idx  = raw->startidx();
       auto data = raw->data();
 
-      if (idx + data->size() > array_msg_.array->data.size()) {
+      if (idx + data->size() > array_msg_.array->size()) {
         throw std::runtime_error(
             "Recieved Array3DataChunk does not fit into the dimensions specified in Array3Meta");
       }
-      std::copy(data->begin(), data->end(), array_msg_.array->data.begin() + idx);
+      std::visit([&data, idx](auto& v) { std::copy(data->begin(), data->end(), v.begin() + idx); },
+                 array_msg_.array->data);
       array_msg_.counter += data->size();
       if (array_msg_.complete()) {
         fmt::print("Loading of {} complete!\n", array_msg_.array->meta.name);
@@ -299,7 +309,8 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
   const std::size_t MAX_FLOAT_ELMS = (65536 - 128) / sizeof(float);
 
   /* Metadata Message */
-  auto fbs_start  = fbs::CreateArray3MetaDirect(builder, nx, ny, nt, name.c_str());
+  auto fbs_start =
+      fbs::CreateArray3MetaDirect(builder, fbs::ArrayDataType_FLOAT, nx, ny, nt, name.c_str());
   auto root_start = CreateRoot(builder, fbs::Data_Array3Meta, fbs_start.Union());
   builder.FinishSizePrefixed(root_start);
   asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
@@ -309,8 +320,8 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
   for (std::size_t idx = 0; idx < data_size; idx += MAX_FLOAT_ELMS) {
     auto end      = std::min(idx + MAX_FLOAT_ELMS, data_size);
     auto fbs_data = builder.CreateVector<float>(data + idx, end - idx);
-    auto fbs      = fbs::CreateArray3DataChunk(builder, idx, fbs_data);
-    auto root     = CreateRoot(builder, fbs::Data_Array3DataChunk, fbs.Union());
+    auto fbs      = fbs::CreateArray3DataChunkf(builder, idx, fbs_data);
+    auto root     = CreateRoot(builder, fbs::Data_Array3DataChunkf, fbs.Union());
     builder.FinishSizePrefixed(root);
     asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
     builder.Clear();

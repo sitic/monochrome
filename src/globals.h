@@ -4,6 +4,7 @@
 #include <optional>
 #include <utility>
 #include <memory>
+#include <variant>
 #include <vector>
 
 #include <fmt/format.h>
@@ -47,27 +48,47 @@ namespace global {
   std::optional<std::string> get_file_to_load();
 
   struct RawArray3MetaData {
-    int nx;
-    int ny;
-    int nt;
+    int nx = -1;
+    int ny = -1;
+    int nt = -1;
 
     std::string name;
-    float duration                   = 0;  // in seconds
-    float fps                        = 0;
-    std::string date                 = "";
-    std::string comment              = "";
+    float duration = 0;  // in seconds
+    float fps      = 0;
+    std::string date;
+    std::string comment;
     std::optional<BitRange> bitrange = std::nullopt;
     std::optional<ColorMap> cmap     = std::nullopt;
   };
 
-  struct RawArray3 {
-    RawArray3MetaData meta;
-    std::vector<float> data;
+  class RawArray3 {
+   private:
+    RawArray3() = default;
 
-    RawArray3(RawArray3MetaData metadata_, std::size_t data_size) : meta(std::move(metadata_)) {
-      data.resize(data_size);
+   public:
+    RawArray3MetaData meta;
+    std::variant<std::vector<float>, std::vector<uint16_t>> data;
+
+    static std::shared_ptr<RawArray3> create_float(RawArray3MetaData metadata_,
+                                                   std::size_t data_size) {
+      auto a  = std::shared_ptr<RawArray3>(new RawArray3);
+      a->meta = std::move(metadata_);
+      a->data = std::vector<float>(data_size);
+      return a;
     }
-  };
+
+    static std::shared_ptr<RawArray3> create_u16(RawArray3MetaData metadata_,
+                                                 std::size_t data_size) {
+      auto a  = std::shared_ptr<RawArray3>(new RawArray3);
+      a->meta = std::move(metadata_);
+      a->data = std::vector<uint16_t>(data_size);
+      return a;
+    }
+
+    std::size_t size() const {
+      return std::visit([](auto &v) { return v.size(); }, data);
+    }
+  };  // namespace global
 
   void add_RawArray3_to_load(std::shared_ptr<RawArray3> arr);
 

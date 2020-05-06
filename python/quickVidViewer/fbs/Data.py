@@ -6,5 +6,6 @@ class Data(object):
     NONE = 0
     Filepaths = 1
     Array3Meta = 2
-    Array3DataChunk = 3
+    Array3DataChunkf = 3
+    Array3DataChunku16 = 4
 
