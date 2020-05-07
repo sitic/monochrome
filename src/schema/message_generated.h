@@ -218,7 +218,8 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_DATE = 18,
     VT_COMMENT = 20,
     VT_BITRANGE = 22,
-    VT_CMAP = 24
+    VT_CMAP = 24,
+    VT_PARENTNAME = 26
   };
   fbs::ArrayDataType type() const {
     return static_cast<fbs::ArrayDataType>(GetField<int32_t>(VT_TYPE, 0));
@@ -253,6 +254,9 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   fbs::ColorMap cmap() const {
     return static_cast<fbs::ColorMap>(GetField<int32_t>(VT_CMAP, 0));
   }
+  const flatbuffers::String *parentName() const {
+    return GetPointer<const flatbuffers::String *>(VT_PARENTNAME);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_TYPE) &&
@@ -269,6 +273,8 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyString(comment()) &&
            VerifyField<int32_t>(verifier, VT_BITRANGE) &&
            VerifyField<int32_t>(verifier, VT_CMAP) &&
+           VerifyOffset(verifier, VT_PARENTNAME) &&
+           verifier.VerifyString(parentName()) &&
            verifier.EndTable();
   }
 };
@@ -310,6 +316,9 @@ struct Array3MetaBuilder {
   void add_cmap(fbs::ColorMap cmap) {
     fbb_.AddElement<int32_t>(Array3Meta::VT_CMAP, static_cast<int32_t>(cmap), 0);
   }
+  void add_parentName(flatbuffers::Offset<flatbuffers::String> parentName) {
+    fbb_.AddOffset(Array3Meta::VT_PARENTNAME, parentName);
+  }
   explicit Array3MetaBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -334,8 +343,10 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3Meta(
     flatbuffers::Offset<flatbuffers::String> date = 0,
     flatbuffers::Offset<flatbuffers::String> comment = 0,
     fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
-    fbs::ColorMap cmap = fbs::ColorMap_DEFAULT) {
+    fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
+    flatbuffers::Offset<flatbuffers::String> parentName = 0) {
   Array3MetaBuilder builder_(_fbb);
+  builder_.add_parentName(parentName);
   builder_.add_cmap(cmap);
   builder_.add_bitrange(bitrange);
   builder_.add_comment(comment);
@@ -362,10 +373,12 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
     const char *date = nullptr,
     const char *comment = nullptr,
     fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
-    fbs::ColorMap cmap = fbs::ColorMap_DEFAULT) {
+    fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
+    const char *parentName = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto date__ = date ? _fbb.CreateString(date) : 0;
   auto comment__ = comment ? _fbb.CreateString(comment) : 0;
+  auto parentName__ = parentName ? _fbb.CreateString(parentName) : 0;
   return fbs::CreateArray3Meta(
       _fbb,
       type,
@@ -378,7 +391,8 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
       date__,
       comment__,
       bitrange,
-      cmap);
+      cmap,
+      parentName__);
 }
 
 struct Array3DataChunkf FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

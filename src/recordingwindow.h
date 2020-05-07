@@ -37,6 +37,14 @@ class RecordingPlaybackCtrl {
 
  public:
   RecordingPlaybackCtrl(int length) : length_(length) {}
+  RecordingPlaybackCtrl &operator=(const RecordingPlaybackCtrl &other) {
+    if (length_ < other.length_) {
+      throw std::runtime_error("Error: videos of unequal length");
+    }
+    t_  = other.t_;
+    tf_ = other.tf_;
+    return *this;
+  };
 
   int step();
   [[nodiscard]] int current_t() const { return t_; }
@@ -156,7 +164,11 @@ class RecordingWindow : public Recording {
  public:
   static float scale_fct;
 
-  GLFWwindow *window = nullptr;
+  GLFWwindow *window    = nullptr;
+  GLFWwindow *glcontext = nullptr;
+  bool active           = true;
+  std::vector<std::shared_ptr<RecordingWindow>> children;
+
   RecordingPlaybackCtrl playback;
   Histogram<float, 256> histogram;
   BitRange bitrange = BitRange::U16;
@@ -180,8 +192,8 @@ class RecordingWindow : public Recording {
     if (file->bitrange()) {
       bitrange = file->bitrange().value();
     }
-    float& min = get_min(Transformations::None);
-    float& max = get_max(Transformations::None);
+    float &min = get_min(Transformations::None);
+    float &max = get_max(Transformations::None);
     if ((min == max) || std::isnan(min) || std::isnan(max)) {
       std::tie(min, max) = bitrange_to_float(bitrange);
     }
@@ -192,7 +204,6 @@ class RecordingWindow : public Recording {
       // assume that's its a phase map and the user prefers HSV in this circumstances
       cmap_ = ColorMap::HSV;
     }
-
   }
 
   virtual ~RecordingWindow() {
@@ -203,9 +214,12 @@ class RecordingWindow : public Recording {
   }
 
   void open_window();
-  void set_context(GLFWwindow* window_);
+  void set_context(GLFWwindow *new_context);
 
   virtual void display(Filters prefilter, Transformations transformation, Filters postfilter);
+  virtual void render() {
+    if (glcontext == window) glfwSwapBuffers(window);
+  }
 
   virtual void load_next_frame() { load_frame(playback.step()); }
 
@@ -247,9 +261,9 @@ class RecordingWindow : public Recording {
     bool right = false;
   } mousebutton;
 
-  ColorMap cmap_     = ColorMap::GRAY;
-  GLuint texture     = GL_FALSE;
-  GLuint ctexture    = GL_FALSE;
+  ColorMap cmap_  = ColorMap::GRAY;
+  GLuint texture  = GL_FALSE;
+  GLuint ctexture = GL_FALSE;
   Shader frame_shader;
   GLuint frame_vao, frame_vbo, frame_ebo;
   Shader trace_shader;

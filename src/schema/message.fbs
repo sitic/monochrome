@@ -16,6 +16,7 @@ table Array3Meta {
   comment:string;
   bitrange:BitRange;
   cmap:ColorMap;
+  parentName:string;
 }
 
 // flatbuffers currently restricted to 2GB, so unfortunately we may need to chunk the data

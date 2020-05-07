@@ -2,7 +2,7 @@ import flatbuffers
 import numpy as np
 from pathlib import Path
 import socket
-from typing import List, Text, Union
+from typing import List, Text, Union, Optional
 
 from .fbs import Root, Data, Filepaths, Array3Meta, Array3DataChunkf, Array3DataChunku16
 from .fbs.ArrayDataType import ArrayDataType
@@ -44,11 +44,12 @@ def create_filepaths_msg(paths):
 
 
 def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0., date="", comment="",
-                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT):
+                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parentName=None):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
     date_fb = builder.CreateString(date)
     comment_fb = builder.CreateString(comment)
+    parent_fb = builder.CreateString(parentName) if parentName else None
     Array3Meta.Array3MetaStart(builder)
     Array3Meta.Array3MetaAddType(builder, type)
     Array3Meta.Array3MetaAddNx(builder, shape[2])
@@ -61,6 +62,8 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     Array3Meta.Array3MetaAddComment(builder, comment_fb)
     Array3Meta.Array3MetaAddBitrange(builder, bitrange)
     Array3Meta.Array3MetaAddCmap(builder, cmap)
+    if parent_fb:
+        Array3Meta.Array3MetaAddParentName(builder, parent_fb)
     d = Array3Meta.Array3MetaEnd(builder)
 
     root = build_root(builder, Data.Data.Array3Meta, d)
@@ -116,7 +119,8 @@ def open_files(paths: List[Union[Text, Path]]):
 
 
 def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
-                comment: Text = "", bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT):
+                comment: Text = "", bitrange: BitRange = BitRange.AUTODETECT, cmap: ColorMap = ColorMap.DEFAULT,
+                parentName: Optional[Text] = None):
     if array.ndim != 3:
         raise ValueError("array is not three-dimensional")
     if array.dtype == np.float32:
@@ -130,13 +134,13 @@ def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0,
             array = array.astype(np.float32)
             dtype = ArrayDataType.FLOAT
 
-
     try:
         s = create_socket()
     except ConnectionRefusedError:
         print("Unable to connect to quickViewer")
         return
-    buf = create_array3meta_msg(dtype, name, array.shape, duration_seconds, fps, date, comment, bitrange, cmap)
+    buf = create_array3meta_msg(dtype, name, array.shape, duration_seconds, fps, date, comment, bitrange, cmap,
+                                parentName)
     s.sendall(buf)
 
     flat = array.flatten()

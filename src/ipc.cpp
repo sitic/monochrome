@@ -121,6 +121,7 @@ namespace {
 
       int cmap     = raw->cmap() - 1;
       int bitrange = raw->bitrange() - 1;
+
       global::RawArray3MetaData meta{
           raw->nx(),
           raw->ny(),
@@ -131,7 +132,10 @@ namespace {
           raw->date()->str(),
           raw->comment()->str(),
           bitrange < 0 ? std::nullopt : std::optional<BitRange>(static_cast<BitRange>(bitrange)),
-          cmap < 0 ? std::nullopt : std::optional<ColorMap>(static_cast<ColorMap>(cmap))};
+          cmap < 0 ? std::nullopt : std::optional<ColorMap>(static_cast<ColorMap>(cmap)),
+          flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_PARENTNAME)
+              ? std::optional<std::string>(raw->parentName()->str())
+              : std::nullopt};
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
       if (raw->type() == fbs::ArrayDataType::ArrayDataType_FLOAT) {
@@ -139,7 +143,7 @@ namespace {
       } else if (raw->type() == fbs::ArrayDataType::ArrayDataType_UINT16) {
         array_msg_.array = global::RawArray3::create_u16(meta, size);
       } else {
-        throw std::runtime_error("TODO");
+        throw std::runtime_error("IPC: unkown ArrayDataType recieved");
       }
     }
 

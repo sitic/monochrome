@@ -97,7 +97,14 @@ class Array3Meta(object):
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
-def Array3MetaStart(builder): builder.StartObject(11)
+    # Array3Meta
+    def ParentName(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+def Array3MetaStart(builder): builder.StartObject(12)
 def Array3MetaAddType(builder, type): builder.PrependInt32Slot(0, type, 0)
 def Array3MetaAddNx(builder, nx): builder.PrependInt32Slot(1, nx, 0)
 def Array3MetaAddNy(builder, ny): builder.PrependInt32Slot(2, ny, 0)
@@ -109,4 +116,5 @@ def Array3MetaAddDate(builder, date): builder.PrependUOffsetTRelativeSlot(7, fla
 def Array3MetaAddComment(builder, comment): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(comment), 0)
 def Array3MetaAddBitrange(builder, bitrange): builder.PrependInt32Slot(9, bitrange, 0)
 def Array3MetaAddCmap(builder, cmap): builder.PrependInt32Slot(10, cmap, 0)
+def Array3MetaAddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
 def Array3MetaEnd(builder): return builder.EndObject()

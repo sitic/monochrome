@@ -60,6 +60,24 @@ void load_from_queue() {
 
     global::recordings.push_back(rec);
     rec->open_window();
+
+    if (auto parentName = arr.value()->meta.parentName) {
+      auto parent = std::find_if(global::recordings.begin(), global::recordings.end(),
+                                 [name = parentName.value()](const auto &r) {
+                                   return name == r->path().filename().string();
+                                 });
+      if (parent == std::end(global::recordings)) {
+        global::new_ui_message(
+            "Array \"{}\" has requested \"{}\" as its parent recording, but no such recording "
+            "exists!",
+            rec->path().filename().string(), parentName.value());
+      } else {
+        (*parent)->children.push_back(rec);
+        rec->set_context((*parent)->window);
+        global::recordings.pop_back();
+        rec->playback = (*parent)->playback;
+      }
+    }
   }
 }
 
@@ -119,18 +137,20 @@ void display_loop() {
         global::recordings.end());
 
     int rec_nr = 0;
-    for (const auto &recording : global::recordings) {
-      recording->display(prm::prefilter, prm::transformation, prm::postfilter);
-
-      show_recording_ui(recording, rec_nr);
-      rec_nr++;
-
-      show_export_recording_ui(recording);
+    for (const auto &rec : global::recordings) {
+      if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);
+      for (const auto &crec : rec->children) {
+        if (crec->active) crec->display(prm::prefilter, prm::transformation, prm::postfilter);
+      }
+      rec_nr = show_recording_ui(rec, rec_nr);
     }
 
     show_messages();
 
     // Rendering
+    for (const auto &recording : global::recordings) {
+      recording->render();
+    }
     ImGui::Render();
     int display_w, display_h;
     glfwGetFramebufferSize(global::main_window, &display_w, &display_h);
@@ -139,14 +159,7 @@ void display_loop() {
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(global::main_window);
-
-    //static int iii = 0;
-    //if (global::recordings.size() == 2 &&
-    //    global::recordings[0]->window != global::recordings[1]->window) {
-    //  if (iii == 10)
-    //  global::recordings.back()->set_context(global::recordings[0]->window);
-    //  else iii++;
-    //}
+    checkGlError("frame");
   }
 }
 

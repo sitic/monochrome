@@ -354,17 +354,13 @@ void RecordingWindow::open_window() {
   glfwMakeContextCurrent(prev_window);
 }
 
-void RecordingWindow::set_context(GLFWwindow *window_) {
+void RecordingWindow::set_context(GLFWwindow *new_context) {
   auto *prev_window = glfwGetCurrentContext();
-  if (frame_shader) {
-    clear_gl_memory();
-  }
-  if (window != window_) {
-    glfwHideWindow(window);
-    window = window_;
-  }
-  glfwMakeContextCurrent(window);
+  if (window != new_context) glfwHideWindow(window);
+  if (glcontext && frame_shader) clear_gl_memory();
 
+  glcontext = new_context;
+  glfwMakeContextCurrent(glcontext);
   frame_shader                              = create_frame_shader();
   std::tie(frame_vao, frame_vbo, frame_ebo) = create_frame_vaovboebo();
   trace_shader                              = create_trace_shader();
@@ -381,8 +377,9 @@ void RecordingWindow::set_context(GLFWwindow *window_) {
 }
 
 void RecordingWindow::update_gl_texture() {
+  if (!glcontext) return;
   auto *prev_window = glfwGetCurrentContext();
-  glfwMakeContextCurrent(window);
+  glfwMakeContextCurrent(glcontext);
   if (texture) {
     glDeleteTextures(1, &texture);
   }
@@ -398,8 +395,9 @@ void RecordingWindow::update_gl_texture() {
 }
 
 void RecordingWindow::colormap(ColorMap cmap) {
+  if (!glcontext) return;
   auto *prev_window = glfwGetCurrentContext();
-  glfwMakeContextCurrent(window);
+  glfwMakeContextCurrent(glcontext);
   if (ctexture) {
     glDeleteTextures(1, &ctexture);
   }
@@ -416,10 +414,14 @@ void RecordingWindow::colormap(ColorMap cmap) {
 }
 
 void RecordingWindow::clear_gl_memory() {
+  if (!glcontext) return;
   auto *prev_window = glfwGetCurrentContext();
-  glfwMakeContextCurrent(window);
+  glfwMakeContextCurrent(glcontext);
   if (texture) {
     glDeleteTextures(1, &texture);
+    texture = GL_FALSE;
+    glDeleteTextures(1, &ctexture);
+    ctexture = GL_FALSE;
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteVertexArrays(1, &trace_vao);
     glDeleteBuffers(1, &frame_vbo);
@@ -434,9 +436,7 @@ void RecordingWindow::clear_gl_memory() {
 void RecordingWindow::display(Filters prefilter,
                               Transformations transformation,
                               Filters postfilter) {
-  if (!window) throw std::runtime_error("No window set, but RecordingWindow::display() called");
-
-  glfwMakeContextCurrent(window);
+  if (!glcontext) throw std::runtime_error("No window set, but RecordingWindow::display() called");
 
   load_next_frame();
 
@@ -494,7 +494,9 @@ void RecordingWindow::display(Filters prefilter,
   }
 
   /* render code */
+  glfwMakeContextCurrent(window);
   glClear(GL_COLOR_BUFFER_BIT);
+  glfwMakeContextCurrent(glcontext);
 
   frame_shader.use();
   frame_shader.setVec2("minmax", get_min(transformation), get_max(transformation));
@@ -534,9 +536,6 @@ void RecordingWindow::display(Filters prefilter,
     glLineWidth(1.5);
     glDrawArrays(GL_POINTS, 0, traces.size());
   }
-
-  checkGlError("frame");
-  glfwSwapBuffers(window);
 
   if (export_ctrl.video.recording) {
     auto cur = playback.progress();

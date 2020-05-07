@@ -7,6 +7,16 @@
 namespace global {
   extern GLFWwindow *main_window;
   extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
+
+  template <typename Func>
+  void do_forall_recordings(Func &&f) {
+    for (const auto &rec : recordings) {
+      f(rec);
+      for (const auto &crec : rec->children) {
+        f(crec);
+      }
+    }
+  }
 }  // namespace global
 
 namespace prm {
@@ -37,9 +47,7 @@ void show_main_ui() {
     ImGui::Columns(2);
     {
       if (ImGui::Button(ICON_FA_REDO_ALT)) {
-        for (const auto &r : global::recordings) {
-          r->playback.restart();
-        }
+        global::do_forall_recordings([](auto &r) { r->playback.restart(); });
       }
       ImGui::SameLine();
       if (prm::playbackCtrl.val == 0) {
@@ -129,9 +137,10 @@ void show_main_ui() {
       auto label = fmt::format("Max FPS (current avg. {:.0f}fps)###dfps", ImGui::GetIO().Framerate);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
       if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
-        if (ImGui::IsItemDeactivated() && max_display_fps > 0)
-          prm::lastframetime = glfwGetTime();
+        if (ImGui::IsItemDeactivated() && max_display_fps > 0) {
           prm::max_display_fps = max_display_fps;
+          prm::lastframetime   = glfwGetTime();
+        }
       }
     }
 
@@ -145,9 +154,8 @@ void show_main_ui() {
       if (ImGui::Selectable(label, is_active)) {
 
         p = is_active ? default_val : e;
-        for (const auto &r : global::recordings) {
-          r->reset_traces();
-        }
+
+        global::do_forall_recordings([](auto &r) { r->reset_traces(); });
       }
 
       return is_active;
@@ -159,9 +167,7 @@ void show_main_ui() {
     const int step = 2;
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
     if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32, &val, &step, nullptr, "%d")) {
-      for (const auto &r : global::recordings) {
-        reset_fn(r.get());
-      }
+      global::do_forall_recordings([&reset_fn](auto &r) { reset_fn(r.get()); });
     }
     ImGui::Unindent(10);
   };
@@ -217,13 +223,13 @@ void show_main_ui() {
       if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32,
                              &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
                              "%d")) {
-        for (const auto &r : global::recordings) {
+        global::do_forall_recordings([](auto &r) {
           auto transform =
               r->transformationArena.create_if_needed(Transformations::ContrastEnhancement, 0);
           auto c = dynamic_cast<Transformation::ContrastEnhancement *>(transform);
           assert(c);
           c->reset();
-        }
+        });
       }
       ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
       ImGui::Unindent(10);
@@ -269,83 +275,100 @@ void show_main_ui() {
   ImGui::End();
 }
 
-void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording, int rec_nr) {
-  ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.3f + 0.2f) * prm::main_window_height),
-                          ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
-  ImGui::Begin(recording->path().filename().string().c_str(), nullptr,
-               ImGuiWindowFlags_AlwaysAutoResize);
-  ImGui::PushID(recording.get());
-  int t = recording->current_frame();
+int show_recording_ui(const std::shared_ptr<RecordingWindow> &rec,
+                      int rec_nr,
+                      RecordingWindow *parent = nullptr) {
+  if (!parent) {
+    ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.3f + 0.2f) * prm::main_window_height),
+                            ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
+    rec->active = ImGui::Begin(rec->path().filename().string().c_str(), nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize);
+  } else {
+    if (ImGui::CollapsingHeader(rec->path().filename().string().c_str(),
+                                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanFullWidth)) {
+      if (!rec->active) {
+        // layer was just activated
+        rec->active   = true;
+        rec->playback = parent->playback;
+      }
+    } else {
+      rec->active = false;
+      return rec_nr;
+    }
+  }
+  ImGui::PushID(rec.get());
+  int t = rec->current_frame();
   ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
   ImGui::SetNextItemWidth(-1);
-  if (ImGui::SliderInt("##progress", &t, 0, recording->length() - 1, "Frame %d")) {
-    recording->playback.set(t - static_cast<int>(prm::playbackCtrl.val));
+  if (ImGui::SliderInt("##progress", &t, 0, rec->length() - 1, "Frame %d")) {
+    rec->playback.set(t - static_cast<int>(prm::playbackCtrl.val));
   }
   ImGui::PopStyleColor(1);
 
-  if (!recording->date().empty()) {
-    ImGui::Text("Date: %s", recording->date().c_str());
+  if (!rec->date().empty()) {
+    ImGui::Text("Date: %s", rec->date().c_str());
   }
 
-  if (!recording->comment().empty()) {
-    ImGui::Text("Comment: %s", recording->comment().c_str());
+  if (!rec->comment().empty()) {
+    ImGui::Text("Comment: %s", rec->comment().c_str());
   }
 
   ImGui::Columns(3);
-  if (recording->duration().count() > 0) {
-    ImGui::Text("Duration  %.3fs", recording->duration().count());
+  if (rec->duration().count() > 0) {
+    ImGui::Text("Duration  %.3fs", rec->duration().count());
     ImGui::NextColumn();
   }
-  if (recording->fps() != 0) {
-    ImGui::Text("FPS  %.3f", recording->fps());
+  if (rec->fps() != 0) {
+    ImGui::Text("FPS  %.3f", rec->fps());
     ImGui::NextColumn();
   }
-  ImGui::Text("Frames %d", recording->length());
+  ImGui::Text("Frames %d", rec->length());
   ImGui::NextColumn();
-  ImGui::Text("Width  %d", recording->Nx());
+  ImGui::Text("Width  %d", rec->Nx());
   ImGui::NextColumn();
-  ImGui::Text("Height %d", recording->Ny());
-  ImGui::NextColumn();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
-    auto &ctrl         = recording->export_ctrl.raw;
-    ctrl.export_window = true;
-    ctrl.start         = {0, 0};
-    ctrl.size          = {recording->Nx(), recording->Ny()};
-    ctrl.frames        = {0, recording->length()};
-    ctrl.assign_auto_filename(recording->path());
-  }
-  ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
-    auto &ctrl         = recording->export_ctrl.video;
-    ctrl.export_window = true;
-    ctrl.assign_auto_filename(recording->path());
-  }
-  ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
-    auto &ctrl         = recording->export_ctrl.png;
-    ctrl.export_window = true;
-    ctrl.assign_auto_filename(recording->path());
+  ImGui::Text("Height %d", rec->Ny());
+  if (rec_nr != -1) {
+    ImGui::NextColumn();
+    if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
+      auto &ctrl         = rec->export_ctrl.raw;
+      ctrl.export_window = true;
+      ctrl.start         = {0, 0};
+      ctrl.size          = {rec->Nx(), rec->Ny()};
+      ctrl.frames        = {0, rec->length()};
+      ctrl.assign_auto_filename(rec->path());
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
+      auto &ctrl         = rec->export_ctrl.video;
+      ctrl.export_window = true;
+      ctrl.assign_auto_filename(rec->path());
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
+      auto &ctrl         = rec->export_ctrl.png;
+      ctrl.export_window = true;
+      ctrl.assign_auto_filename(rec->path());
+    }
   }
   ImGui::Columns(1);
 
   ImGui::PushItemWidth(prm::main_window_width * 0.7f);
-  ImGui::PlotHistogram("##histogram", recording->histogram.data.data(),
-                       recording->histogram.data.size(), 0, nullptr, 0,
-                       recording->histogram.max_value(), ImVec2(0, 100));
+  ImGui::PlotHistogram("##histogram", rec->histogram.data.data(), rec->histogram.data.size(), 0,
+                       nullptr, 0, rec->histogram.max_value(), ImVec2(0, 100));
   ImGui::SameLine();
   {
     ImGui::BeginGroup();
     ImGui::Text("Histogram");
     ImGui::NewLine();
     {
-      int item = static_cast<int>(recording->bitrange);
+      int item = static_cast<int>(rec->bitrange);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       ImGui::Combo("Format", &item, BitRangeNames, IM_ARRAYSIZE(BitRangeNames));
-      recording->bitrange = static_cast<BitRange>(item);
+      rec->bitrange = static_cast<BitRange>(item);
     }
     {
-      ColorMap current_cmap = recording->colormap();
+      ColorMap current_cmap = rec->colormap();
       auto itemwidth        = ImGui::GetContentRegionAvail().x * 0.5f;
       ImGui::SetNextItemWidth(itemwidth);
       ImVec2 combo_pos = ImGui::GetCursorScreenPos();
@@ -355,7 +378,7 @@ void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording, int re
           ImGui::PushID(l);
           bool is_selected = (cmap == current_cmap);
           if (ImGui::Selectable("", is_selected) && (cmap != current_cmap)) {
-            recording->colormap(cmap);
+            rec->colormap(cmap);
           }
           ImGui::SameLine();
           ImGui::Image((void *)(intptr_t)tex_id, ImVec2(80, ImGui::GetTextLineHeight()));
@@ -376,12 +399,12 @@ void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording, int re
     }
     ImGui::EndGroup();
   }
-  ImGui::SliderFloat("min", &recording->get_min(prm::transformation), recording->histogram.min,
-                     recording->histogram.max);
-  ImGui::SliderFloat("max", &recording->get_max(prm::transformation), recording->histogram.min,
-                     recording->histogram.max);
+  ImGui::SliderFloat("min", &rec->get_min(prm::transformation), rec->histogram.min,
+                     rec->histogram.max);
+  ImGui::SliderFloat("max", &rec->get_max(prm::transformation), rec->histogram.min,
+                     rec->histogram.max);
 
-  for (auto &[trace, pos, color] : recording->traces) {
+  for (auto &[trace, pos, color] : rec->traces) {
     auto label = pos.to_string();
     ImGui::PushID(label.c_str());
     int size  = trace.size();
@@ -402,19 +425,25 @@ void show_recording_ui(const std::shared_ptr<RecordingWindow> &recording, int re
       trace.clear();
     }
     if (ImGui::Button("Export ROI")) {
-      auto &ctrl         = recording->export_ctrl.raw;
+      auto &ctrl         = rec->export_ctrl.raw;
       ctrl.export_window = true;
-      ctrl.assign_auto_filename(recording->path());
+      ctrl.assign_auto_filename(rec->path());
       auto w      = Trace::width();
       ctrl.start  = {pos[0] - w / 2, pos[1] - w / 2};
       ctrl.size   = {w, w};
-      ctrl.frames = {0, recording->length()};
+      ctrl.frames = {0, rec->length()};
     }
     ImGui::EndGroup();
     ImGui::PopID();
   }
   ImGui::PopID();
-  ImGui::End();
+  for (const auto &crec : rec->children) {
+    rec_nr = show_recording_ui(crec, rec_nr, rec.get());
+  }
+  if (!parent) {
+    ImGui::End();
+  }
+  return rec_nr++;
 }
 
 void show_export_recording_ui(const std::shared_ptr<RecordingWindow> &recording) {

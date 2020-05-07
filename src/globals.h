@@ -57,8 +57,9 @@ namespace global {
     float fps      = 0;
     std::string date;
     std::string comment;
-    std::optional<BitRange> bitrange = std::nullopt;
-    std::optional<ColorMap> cmap     = std::nullopt;
+    std::optional<BitRange> bitrange      = std::nullopt;
+    std::optional<ColorMap> cmap          = std::nullopt;
+    std::optional<std::string> parentName = std::nullopt;
   };
 
   class RawArray3 {
