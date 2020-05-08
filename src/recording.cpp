@@ -76,13 +76,29 @@ void RotationCtrl::apply(Eigen::MatrixXf &arr) {
 }
 
 std::shared_ptr<AbstractRecording> Recording::autoguess_filerecording(const fs::path &path) {
-  std::shared_ptr<AbstractRecording> file = std::make_shared<RawFileRecording>(path);
-  if (!file->good()) {
-    file = std::make_shared<BmpFileRecording>(path);
+  std::shared_ptr<AbstractRecording> file;
+  if (!fs::is_regular_file(path)) {
+    global::new_ui_message("ERROR: {} does not appear to be a file", path.string());
+    return file;
   }
 
-  if (!file->error_msg().empty()) {
-    global::new_ui_message(file->error_msg());
+  if (path.extension() == ".npy") {
+    file = std::make_shared<NpyFileRecording>(path);
+  } else if (path.extension() == ".dat") {
+    file = std::make_shared<RawFileRecording>(path);
+    if (!file->good()) {
+      file = std::make_shared<BmpFileRecording>(path);
+    }
+  } else {
+    global::new_ui_message("ERROR: {} does has unkown extension. Only .dat and .npy are supported",
+                           path.string());
+    return file;
+  }
+
+  if (file && !file->error_msg().empty()) {
+    auto msg = fmt::format("ERROR: loading file {} has failed with error message: {}", path.string(),
+                           file->error_msg());
+    global::new_ui_message(msg);
   }
 
   return file;

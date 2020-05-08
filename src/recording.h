@@ -55,7 +55,7 @@ class Recording {
   std::shared_ptr<AbstractRecording> get_file_ptr() const { return file; }
   void set_file_ptr(std::shared_ptr<AbstractRecording> new_file) { file = new_file; }
 
-  [[nodiscard]] bool good() const { return file->good(); }
+  [[nodiscard]] bool good() const { return file && file->good(); }
   int Nx() const { return frame.rows(); }
   int Ny() const { return frame.cols(); }
   int length() const { return file->length(); }

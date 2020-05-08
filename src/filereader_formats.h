@@ -2,9 +2,11 @@
 
 #include <regex>
 
+#include "bmp.h"
+#include "npy.hpp"
+
 #include "vectors.h"
 #include "filereader.h"
-#include "bmp.h"
 
 class BmpFileRecording : public AbstractRecording {
  protected:
@@ -142,4 +144,162 @@ class RawFileRecording : public AbstractRecording {
   };
 
   float get_pixel(long t, long x, long y) final { return get_data_ptr(t)[y * Nx() + x]; }
+};
+
+class NpyFileRecording : public AbstractRecording {
+  mio::mmap_source _mmap;
+  int _nx    = 0;
+  int _ny    = 0;
+  int _nt    = 0;
+  bool _good = false;
+
+  std::size_t _frame_size = 0;
+  std::string _error_msg  = "";
+
+  Eigen::MatrixXf _frame;
+  std::optional<BitRange> _bitrange;
+
+  enum DataType { UINT8 = 1, UINT16 = 2, FLOAT = 4 };
+  DataType dataType;
+
+  template <typename Scalar>
+  const Scalar *get_data_ptr(long t) const {
+    auto ptr = _mmap.data() + t * _frame_size * sizeof(Scalar);
+    return reinterpret_cast<const Scalar *>(ptr);
+  }
+
+  template <typename Scalar>
+  npy::dtype_t get_dtype() const {
+    static_assert(npy::has_typestring<Scalar>::value, "scalar type not understood");
+    return npy::has_typestring<Scalar>::dtype;
+  }
+
+ public:
+  NpyFileRecording(const fs::path &path) : AbstractRecording(path) {
+
+    std::size_t header_size = 0;
+    try {
+      std::ifstream in(path.string(), std::ios::in | std::ios::binary);
+      std::string header_s = npy::read_header(in);
+      auto header          = npy::parse_header(header_s);
+      header_size          = in.tellg();
+
+      if (get_dtype<uint8>().str() == header.dtype.str()) {
+        dataType = UINT8;
+      } else if (get_dtype<uint16>().str() == header.dtype.str()) {
+        dataType = UINT16;
+      } else if (get_dtype<float>().str() == header.dtype.str()) {
+        dataType = FLOAT;
+      } else {
+        _error_msg = fmt::format(
+            "numpy dtype {} is unsupported, only uint8, uint16 and float32 are supported",
+            header.dtype.str());
+        return;
+      }
+
+      if (header.shape.size() != 3) {
+        _error_msg =
+            fmt::format("only 3D arrays are suppored, found {}D array", header.shape.size());
+        return;
+      }
+      _nt         = header.shape[0];
+      _ny         = header.shape[1];
+      _nx         = header.shape[2];
+      _frame_size = _nx * _ny;
+      if (_nx <= 0 || _ny <= 0 || _nt <= 0) {
+        _error_msg = fmt::format("Invalid array dimensions ({}, {}, {})", _nt, _ny, _nx);
+        return;
+      }
+
+      std::error_code error;
+      _mmap.map(path.string(), header_size, mio::map_entire_file, error);
+      if (error) {
+        _error_msg = error.message();
+        return;
+      }
+    } catch (const std::runtime_error &e) {
+      _error_msg = e.what();
+      return;
+    }
+
+    std::error_code error;
+    _mmap.map(path.string(), error);
+    if (error) {
+      _error_msg = error.message();
+      return;
+    }
+    auto l               = _mmap.length() - header_size;
+    auto bytes_per_frame = _frame_size * dataType;
+    if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
+      _error_msg = "File size does not match expected dimensions";
+      return;
+    }
+
+    if (l / bytes_per_frame > _nt) {
+      if (_nt != 1) {
+        fmt::print(
+            "detected incorrect dimensions (file corrupted?), nt={} was given but based on the "
+            "filesize nt has to be {}\n",
+            _nt, l / bytes_per_frame);
+      }
+      _nt = l / bytes_per_frame;
+    }
+
+    _good = true;
+
+    _frame.setZero(_nx, _ny);
+    switch (dataType) {
+      case UINT8:
+        _bitrange = detect_bitrange(get_data_ptr<uint8>(0), get_data_ptr<uint8>(1));
+        break;
+      case FLOAT:
+        _bitrange = detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
+        break;
+      case UINT16:
+        _bitrange = detect_bitrange(get_data_ptr<uint16>(0), get_data_ptr<uint16>(1));
+        break;
+    }
+  }
+
+  bool good() const final { return _good; };
+  int Nx() const final { return _nx; };
+  int Ny() const final { return _ny; };
+  int length() const final { return _nt; };
+  std::string error_msg() final { return _error_msg; };
+  std::string date() const final { return ""; };
+  std::string comment() const final { return ""; };
+  std::chrono::duration<float> duration() const final { return 0s; };
+  float fps() const final { return 0; };
+  std::optional<BitRange> bitrange() const final { return _bitrange; }
+  std::optional<ColorMap> cmap() const final { return std::nullopt; }
+
+  Eigen::MatrixXf read_frame(long t) final {
+    switch (dataType) {
+      case FLOAT:
+        std::copy(get_data_ptr<float>(t), get_data_ptr<float>(t) + _frame_size, _frame.data());
+        break;
+      case UINT16:
+        std::copy(get_data_ptr<uint16>(t), get_data_ptr<uint16>(t) + _frame_size, _frame.data());
+        break;
+      case UINT8:
+        std::copy(get_data_ptr<uint8>(t), get_data_ptr<uint8>(t) + _frame_size, _frame.data());
+        break;
+      default:
+        throw std::logic_error("This line should never be reached");
+    }
+    return _frame;
+  };
+
+  float get_pixel(long t, long x, long y) final {
+    switch (dataType) {
+      case FLOAT:
+        return get_data_ptr<float>(t)[y * Nx() + x];
+      case UINT16:
+        return get_data_ptr<uint16>(t)[y * Nx() + x];
+      case UINT8:
+        return get_data_ptr<uint8>(t)[y * Nx() + x];
+      default:
+        throw std::logic_error("This line should never be reached");
+    }
+  }
 };

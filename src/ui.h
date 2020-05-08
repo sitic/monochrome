@@ -41,7 +41,7 @@ void show_main_ui() {
                                       ImVec2(prm::main_window_width, FLT_MAX));
   auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize |
                ImGuiWindowFlags_NoSavedSettings;
-  ImGui::Begin("Drag & drop .dat files into this window", nullptr, flags);
+  ImGui::Begin("Drag & drop .dat or .npy files into this window", nullptr, flags);
 
   {
     ImGui::Columns(2);

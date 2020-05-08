@@ -26,22 +26,10 @@ namespace global {
 void load_new_file(const fs::path &path) {
   fmt::print("Loading {} ...\n", path.string());
 
-  if (!fs::is_regular_file(path)) {
-    global::new_ui_message("ERROR: {} does not appear to be a file, skipping", path.string());
-    return;
-  }
-
-  if (path.extension() != ".dat") {
-    global::new_ui_message("ERROR: {} does not have extension '.dat', skipping", path.string());
-    return;
-  }
-
   auto rec = std::make_shared<RecordingWindow>(path);
   if (!rec->good()) {
-    global::new_ui_message("ERROR: loading file failed, skipping");
     return;
   }
-
   global::recordings.push_back(rec);
   rec->open_window();
 }
@@ -54,7 +42,7 @@ void load_from_queue() {
     auto r   = std::make_shared<InMemoryRecording>(arr.value());
     auto rec = std::make_shared<RecordingWindow>(r);
     if (!rec->good()) {
-      global::new_ui_message("ERROR: loading file failed, skipping");
+      global::new_ui_message("ERROR: loading file failed");
       continue;
     }
 
