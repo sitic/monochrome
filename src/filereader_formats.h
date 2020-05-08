@@ -176,13 +176,18 @@ class NpyFileRecording : public AbstractRecording {
 
  public:
   NpyFileRecording(const fs::path &path) : AbstractRecording(path) {
-
-    std::size_t header_size = 0;
     try {
       std::ifstream in(path.string(), std::ios::in | std::ios::binary);
       std::string header_s = npy::read_header(in);
       auto header          = npy::parse_header(header_s);
-      header_size          = in.tellg();
+
+      // the rest of the file is the raw data, memory-map it
+      std::error_code error;
+      _mmap.map(path.string(), in.tellg(), mio::map_entire_file, error);
+      if (error) {
+        _error_msg = error.message();
+        return;
+      }
 
       if (get_dtype<uint8>().str() == header.dtype.str()) {
         dataType = UINT8;
@@ -211,53 +216,40 @@ class NpyFileRecording : public AbstractRecording {
         return;
       }
 
-      std::error_code error;
-      _mmap.map(path.string(), header_size, mio::map_entire_file, error);
-      if (error) {
-        _error_msg = error.message();
+      auto l               = _mmap.length();
+      auto bytes_per_frame = _frame_size * dataType;
+      if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
+        _error_msg = "File size does not match expected dimensions";
         return;
+      }
+
+      if (l / bytes_per_frame > _nt) {
+        if (_nt != 1) {
+          fmt::print(
+              "detected incorrect dimensions (file corrupted?), nt={} was given but based on the "
+              "filesize nt has to be {}\n",
+              _nt, l / bytes_per_frame);
+        }
+        _nt = l / bytes_per_frame;
+      }
+
+      _good = true;
+
+      _frame.setZero(_nx, _ny);
+      switch (dataType) {
+        case UINT8:
+          _bitrange = detect_bitrange(get_data_ptr<uint8>(0), get_data_ptr<uint8>(1));
+          break;
+        case FLOAT:
+          _bitrange = detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
+          break;
+        case UINT16:
+          _bitrange = detect_bitrange(get_data_ptr<uint16>(0), get_data_ptr<uint16>(1));
+          break;
       }
     } catch (const std::runtime_error &e) {
       _error_msg = e.what();
       return;
-    }
-
-    std::error_code error;
-    _mmap.map(path.string(), error);
-    if (error) {
-      _error_msg = error.message();
-      return;
-    }
-    auto l               = _mmap.length() - header_size;
-    auto bytes_per_frame = _frame_size * dataType;
-    if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
-      _error_msg = "File size does not match expected dimensions";
-      return;
-    }
-
-    if (l / bytes_per_frame > _nt) {
-      if (_nt != 1) {
-        fmt::print(
-            "detected incorrect dimensions (file corrupted?), nt={} was given but based on the "
-            "filesize nt has to be {}\n",
-            _nt, l / bytes_per_frame);
-      }
-      _nt = l / bytes_per_frame;
-    }
-
-    _good = true;
-
-    _frame.setZero(_nx, _ny);
-    switch (dataType) {
-      case UINT8:
-        _bitrange = detect_bitrange(get_data_ptr<uint8>(0), get_data_ptr<uint8>(1));
-        break;
-      case FLOAT:
-        _bitrange = detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
-        break;
-      case UINT16:
-        _bitrange = detect_bitrange(get_data_ptr<uint16>(0), get_data_ptr<uint16>(1));
-        break;
     }
   }
 
