@@ -316,7 +316,7 @@ void RecordingWindow::open_window() {
     throw std::runtime_error("ERROR: window was already initialized");
   }
 
-  auto title = path().filename().string();
+  auto title = name();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);

@@ -50,15 +50,14 @@ void load_from_queue() {
     rec->open_window();
 
     if (auto parentName = arr.value()->meta.parentName) {
-      auto parent = std::find_if(global::recordings.begin(), global::recordings.end(),
-                                 [name = parentName.value()](const auto &r) {
-                                   return name == r->path().filename().string();
-                                 });
+      auto parent =
+          std::find_if(global::recordings.begin(), global::recordings.end(),
+                       [name = parentName.value()](const auto &r) { return name == r->name(); });
       if (parent == std::end(global::recordings)) {
         global::new_ui_message(
             "Array \"{}\" has requested \"{}\" as its parent recording, but no such recording "
             "exists!",
-            rec->path().filename().string(), parentName.value());
+            rec->name(), parentName.value());
       } else {
         (*parent)->children.push_back(rec);
         rec->set_context((*parent)->window);

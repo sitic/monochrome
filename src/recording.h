@@ -48,9 +48,7 @@ class Recording {
     frame.setZero(file->Nx(), file->Ny());
     apply_rotation();
   }
-  std::shared_ptr<Recording> copy() const {
-    return std::make_shared<Recording>(file);
-  }
+  std::shared_ptr<Recording> copy() const { return std::make_shared<Recording>(file); }
 
   std::shared_ptr<AbstractRecording> get_file_ptr() const { return file; }
   void set_file_ptr(std::shared_ptr<AbstractRecording> new_file) { file = new_file; }
@@ -60,6 +58,7 @@ class Recording {
   int Ny() const { return frame.cols(); }
   int length() const { return file->length(); }
   fs::path path() const { return file->path(); }
+  std::string name() const { return file->path().filename().string(); }
   std::string date() const { return file->date(); };
   std::string comment() const { return file->comment(); };
   std::chrono::duration<float> duration() const { return file->duration(); }
@@ -69,7 +68,7 @@ class Recording {
 
   void load_frame(long t);
 
-  int current_frame() { return t_frame; }
+  int current_frame() const { return t_frame; }
 
   bool export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax = {0, 0});
 };

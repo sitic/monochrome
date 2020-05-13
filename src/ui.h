@@ -278,14 +278,14 @@ void show_main_ui() {
 int show_recording_ui(const std::shared_ptr<RecordingWindow> &rec,
                       int rec_nr,
                       RecordingWindow *parent = nullptr) {
+  auto name = rec->name();
   if (!parent) {
     ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.3f + 0.2f) * prm::main_window_height),
                             ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
-    rec->active = ImGui::Begin(rec->path().filename().string().c_str(), nullptr,
-                               ImGuiWindowFlags_AlwaysAutoResize);
+    rec->active = ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
   } else {
-    if (ImGui::CollapsingHeader(rec->path().filename().string().c_str(),
+    if (ImGui::CollapsingHeader(name.c_str(),
                                 ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanFullWidth)) {
       if (!rec->active) {
         // layer was just activated
