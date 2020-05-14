@@ -6,13 +6,13 @@ namespace prm {
 
 namespace global {
   extern GLFWwindow *main_window;
-  extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
+  extern std::vector<SharedRecordingPtr> recordings;
 }  // namespace global
 
 float RecordingWindow::scale_fct = 1;
 
 namespace {
-  std::shared_ptr<RecordingWindow> from_window_ptr(GLFWwindow *_window) {
+  SharedRecordingPtr rec_from_window_ptr(GLFWwindow *_window) {
     return *std::find_if(global::recordings.begin(), global::recordings.end(),
                          [_window](const auto &r) { return r->window == _window; });
   }
@@ -591,7 +591,7 @@ fs::path RecordingWindow::save_snapshot(std::string output_png_path_template) {
 
 void RecordingWindow::scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
   // if traces shown, change trace width, else window width
-  std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
+  auto rec = rec_from_window_ptr(window);
   if (!rec->traces.empty()) {
     auto w    = Trace::width();
     int new_w = (yoffset < 0) ? 0.95f * w : 1.05f * w;
@@ -608,8 +608,8 @@ void RecordingWindow::scroll_callback(GLFWwindow *window, double xoffset, double
 }
 
 void RecordingWindow::cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
-  std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
-  rec->mousepos                        = {xpos, ypos};
+  auto rec      = rec_from_window_ptr(window);
+  rec->mousepos = {xpos, ypos};
   if (rec->mousebutton.left) {
     int w, h;
     glfwGetWindowSize(window, &w, &h);
@@ -621,7 +621,7 @@ void RecordingWindow::cursor_position_callback(GLFWwindow *window, double xpos, 
 }
 
 void RecordingWindow::mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
-  std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
+  auto rec = rec_from_window_ptr(window);
   if (button == GLFW_MOUSE_BUTTON_LEFT) {
     if (action == GLFW_PRESS) {
       rec->mousebutton.left = true;
@@ -642,7 +642,7 @@ void RecordingWindow::mouse_button_callback(GLFWwindow *window, int button, int 
 }
 
 void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
-  std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
+  auto rec = rec_from_window_ptr(window);
 
   if (!rec) {
     throw std::runtime_error(
@@ -671,8 +671,8 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
     // causes a segfault in glfw
     glfwSetWindowShouldClose(window, GLFW_TRUE);
   } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-    std::shared_ptr<RecordingWindow> rec = from_window_ptr(window);
-    auto fn                              = rec->save_snapshot();
+    auto rec = rec_from_window_ptr(window);
+    auto fn  = rec->save_snapshot();
     global::new_ui_message("Saved screenshot to {}", fn.string());
   } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
     prm::playbackCtrl.toggle_play_pause();

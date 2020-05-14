@@ -19,8 +19,10 @@
 #include "ui.h"
 
 namespace global {
-  GLFWwindow *main_window                                  = nullptr;
-  std::vector<std::shared_ptr<RecordingWindow>> recordings = {};
+  GLFWwindow *main_window = nullptr;
+
+  std::vector<SharedRecordingPtr> recordings = {};
+  std::queue<std::pair<SharedRecordingPtr, SharedRecordingPtr>> merge_queue;
 }  // namespace global
 
 void load_new_file(const fs::path &path) {
@@ -59,12 +61,20 @@ void load_from_queue() {
             "exists!",
             rec->name(), parentName.value());
       } else {
-        (*parent)->children.push_back(rec);
-        rec->set_context((*parent)->window);
-        global::recordings.pop_back();
-        rec->playback = (*parent)->playback;
+        global::merge_queue.push({rec, *parent});
       }
     }
+  }
+  while (!global::merge_queue.empty()) {
+    auto [child, parent] = global::merge_queue.front();
+    global::merge_queue.pop();
+    parent->children.push_back(child);
+    child->set_context(parent->window);
+    child->playback = parent->playback;
+    global::recordings.erase(
+        std::remove_if(global::recordings.begin(), global::recordings.end(),
+                       [ptr = child.get()](const auto &r) -> bool { return r.get() == ptr; }),
+        global::recordings.end());
   }
 }
 

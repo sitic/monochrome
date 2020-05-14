@@ -120,7 +120,7 @@ constexpr std::pair<float, float> bitrange_to_float(BitRange br) {
 
 template <typename It>
 std::pair<It, It> minmax_element_skipNaN(It first, It last) {
-  It min = first, max;
+  It min = first, max = first;
   for (; first < last; first++) {
     if (!std::isnan(*first)) {
       min = first;

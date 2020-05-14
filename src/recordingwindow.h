@@ -270,3 +270,5 @@ class RecordingWindow : public Recording {
   GLuint trace_vao, trace_vbo;
   std::vector<float> trace_vert;
 };
+
+using SharedRecordingPtr = std::shared_ptr<RecordingWindow>;

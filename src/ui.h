@@ -6,7 +6,8 @@
 
 namespace global {
   extern GLFWwindow *main_window;
-  extern std::vector<std::shared_ptr<RecordingWindow>> recordings;
+  extern std::vector<SharedRecordingPtr> recordings;
+  extern std::queue<std::pair<SharedRecordingPtr, SharedRecordingPtr>> merge_queue;
 
   template <typename Func>
   void do_forall_recordings(Func &&f) {
@@ -275,9 +276,7 @@ void show_main_ui() {
   ImGui::End();
 }
 
-int show_recording_ui(const std::shared_ptr<RecordingWindow> &rec,
-                      int rec_nr,
-                      RecordingWindow *parent = nullptr) {
+int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow *parent = nullptr) {
   auto name = rec->name();
   if (!parent) {
     ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.3f + 0.2f) * prm::main_window_height),
@@ -349,6 +348,20 @@ int show_recording_ui(const std::shared_ptr<RecordingWindow> &rec,
       auto &ctrl         = rec->export_ctrl.png;
       ctrl.export_window = true;
       ctrl.assign_auto_filename(rec->path());
+    }
+    if (global::recordings.size() > 1) {
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_LAYER_GROUP)) ImGui::OpenPopup("merge_popup");
+      if (ImGui::BeginPopup("merge_popup")) {
+        for (auto &r : global::recordings) {
+          if (r.get() == rec.get()) continue;
+          auto l = fmt::format("Merge into '{}'", r->get_file_ptr()->path().filename().string());
+          if (ImGui::Selectable(l.c_str())) {
+            global::merge_queue.push({rec, r});
+          }
+        }
+        ImGui::EndPopup();
+      }
     }
   }
   ImGui::Columns(1);
@@ -446,7 +459,7 @@ int show_recording_ui(const std::shared_ptr<RecordingWindow> &rec,
   return rec_nr++;
 }
 
-void show_export_recording_ui(const std::shared_ptr<RecordingWindow> &recording) {
+void show_export_recording_ui(const SharedRecordingPtr &recording) {
   // Use the directory path of the recording as best guest for the
   // export directory, make it static so that it only has to be changed
   // by the user once
