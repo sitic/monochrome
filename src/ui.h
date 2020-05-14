@@ -378,7 +378,12 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       int item = static_cast<int>(rec->bitrange);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       ImGui::Combo("Format", &item, BitRangeNames, IM_ARRAYSIZE(BitRangeNames));
-      rec->bitrange = static_cast<BitRange>(item);
+      if (auto br = static_cast<BitRange>(item); rec->bitrange != br) {
+        rec->bitrange      = br;
+        float &min         = rec->get_min(Transformations::None);
+        float &max         = rec->get_max(Transformations::None);
+        std::tie(min, max) = bitrange_to_float(br);
+      }
     }
     {
       ColorMap current_cmap = rec->colormap();

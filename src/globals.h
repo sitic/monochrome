@@ -143,7 +143,7 @@ std::pair<It, It> minmax_element_skipNaN(It first, It last) {
 
 template <typename It>
 std::optional<BitRange> detect_bitrange(It begin, It end) {
-  auto [min, max] = std::minmax_element(begin, end);
+  auto [min, max] = minmax_element_skipNaN(begin, end);
   if (*min == *max) {
     return std::nullopt;
   }
