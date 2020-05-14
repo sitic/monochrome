@@ -140,6 +140,7 @@ void display_loop() {
         if (crec->active) crec->display(prm::prefilter, prm::transformation, prm::postfilter);
       }
       rec_nr = show_recording_ui(rec, rec_nr);
+      show_export_recording_ui(rec);
     }
 
     show_messages();
