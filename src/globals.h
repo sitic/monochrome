@@ -120,25 +120,33 @@ constexpr std::pair<float, float> bitrange_to_float(BitRange br) {
 
 template <typename It>
 std::pair<It, It> minmax_element_skipNaN(It first, It last) {
-  It min = first, max = first;
-  for (; first < last; first++) {
-    if (!std::isnan(*first)) {
-      min = first;
-      max = first;
-      break;
+  // If arguments point to non-floating point values fallback to std::minmax_element(), because
+  // only floating point values can have NaN
+  using value_t = typename std::iterator_traits<It>::value_type;
+  // std::is_floating_point<value_t>::value
+  if constexpr (!std::is_same<value_t, float>::value) {
+    return std::minmax_element(first, last);
+  } else {
+    It min = first, max = first;
+    for (; first < last; first++) {
+      if (!std::isnan(*first)) {
+        min = first;
+        max = first;
+        break;
+      }
     }
-  }
 
-  while (++first != last) {
-    if (std::isnan(*first)) {
-      continue;
-    } else if (*first > *max) {
-      max = first;
-    } else if (*first < *min) {
-      min = first;
+    while (++first != last) {
+      if (std::isnan(*first)) {
+        continue;
+      } else if (*first > *max) {
+        max = first;
+      } else if (*first < *min) {
+        min = first;
+      }
     }
+    return {min, max};
   }
-  return {min, max};
 }
 
 template <typename It>
