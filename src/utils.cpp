@@ -47,7 +47,7 @@ std::vector<std::string_view> split_string(std::string_view input, std::string_v
   return output;
 }
 
-void gl_save_snapshot(const std::string& out_png_path, GLFWwindow* window, bool alpha_channel) {
+void gl_save_snapshot(std::string out_png_path, GLFWwindow* window, bool alpha_channel) {
   auto prev_context = glfwGetCurrentContext();
   if (window) glfwMakeContextCurrent(window);
 

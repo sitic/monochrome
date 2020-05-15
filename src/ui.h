@@ -21,19 +21,19 @@ namespace global {
 }  // namespace global
 
 namespace prm {
-  static int main_window_width  = 0;
-  static int main_window_height = 0;
-  static int max_trace_length   = 200;
-  static int max_display_fps    = 60;
-  static double lastframetime   = 0;
+  int main_window_width  = 0;
+  int main_window_height = 0;
+  int max_trace_length   = 200;
+  int max_display_fps    = 60;
+  double lastframetime   = 0;
 
-  static Filters prefilter              = Filters::None;
-  static Transformations transformation = Transformations::None;
-  static Filters postfilter             = Filters::None;
+  Filters prefilter              = Filters::None;
+  Transformations transformation = Transformations::None;
+  Filters postfilter             = Filters::None;
 
   const std::array<ColorMap, 4> cmaps = {ColorMap::GRAY, ColorMap::DIFF, ColorMap::HSV,
                                          ColorMap::BLACKBODY};
-  static std::map<ColorMap, GLuint> cmap_texs;
+  std::map<ColorMap, GLuint> cmap_texs;
 }  // namespace prm
 
 void show_main_ui() {

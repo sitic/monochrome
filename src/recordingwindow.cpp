@@ -2,7 +2,8 @@
 
 namespace prm {
   PlaybackCtrl playbackCtrl;
-}
+  extern double lastframetime;
+}  // namespace prm
 
 namespace global {
   extern GLFWwindow *main_window;
@@ -679,17 +680,20 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
   }
 }
 
-void RecordingWindow::stop_recording() {
-  export_ctrl.video.videoRecorder.stop_recording();
-  export_ctrl.video.recording     = false;
-  export_ctrl.video.progress      = 0;
-  export_ctrl.video.export_window = false;
-}
 void RecordingWindow::start_recording(const std::string &filename, int fps) {
   playback.restart();
   export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
   export_ctrl.video.recording = true;
   export_ctrl.video.progress  = 0;
+  prm::lastframetime          = std::numeric_limits<float>::lowest();
+}
+
+void RecordingWindow::stop_recording() {
+  export_ctrl.video.videoRecorder.stop_recording();
+  export_ctrl.video.recording     = false;
+  export_ctrl.video.progress      = 0;
+  export_ctrl.video.export_window = false;
+  prm::lastframetime              = glfwGetTime();
 }
 
 void RecordingWindow::set_rotation(short rotation) {

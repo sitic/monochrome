@@ -76,7 +76,7 @@ class VideoRecorder {
         "-y -threads 0 {encoder_args} -pix_fmt yuv420p "
         // ensure height and width are divisible by 2
         "-vf \"[in]vflip,scale=trunc(iw/2)*2:trunc(ih/2)*2[out]\" "
-        "-metadata title=\"{title}\" {filename}",
+        "-metadata title=\"{title}\" \"{filename}\"",
         fmt::arg("fps", fps), fmt::arg("width", width), fmt::arg("height", height),
         fmt::arg("encoder_args", ffmpeg_encoder_args()), fmt::arg("title", videotitle),
         fmt::arg("filename", filename));
