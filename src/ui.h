@@ -401,7 +401,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
           ImGui::SameLine();
           ImGui::Image((void *)(intptr_t)tex_id, ImVec2(80, ImGui::GetTextLineHeight()));
           ImGui::SameLine();
-          ImGui::Text(l);
+          ImGui::Text("%s", l);
           ImGui::SameLine();
           ImGui::Spacing();
           ImGui::PopID();
