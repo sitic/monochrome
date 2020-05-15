@@ -27,6 +27,7 @@
 
 .xcode_generator: &xcode_generator
   CMAKE_GENERATOR: 'Xcode'
+  CMAKE_OSX_DEPLOYMENT_TARGET: '10.13.6'
 
 .vs_generator: &vs_generator
   CMAKE_GENERATOR: 'Visual Studio 16 2019'
@@ -93,11 +94,19 @@ clang Release:
 osx Release:
   <<: [*osx, *build_config_generator]
   variables:
-    <<: *xcode_generator
+    CMAKE_GENERATOR: 'Xcode'
+    CMAKE_OSX_DEPLOYMENT_TARGET: '10.13.6'
+    CMAKE_PARAMS: '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13.6'
   artifacts:
     paths:
       - build/Release/quickVidViewer
     expire_in: 3 months
+  before_script:
+    - curl --insecure -o MacOSX10.13.sdk.tar.xz -L https://github.com/phracker/MacOSX-SDKs/releases/download/10.15/MacOSX10.13.sdk.tar.xz
+    - tar xf MacOSX10.13.sdk.tar.xz
+    - sudo mv MacOSX10.13.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
+  after_script:
+    - otool -l build/Release/quickVidViewer
 
 windows Release:
   <<: [*windows, *build_config_generator]

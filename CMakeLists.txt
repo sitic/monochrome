@@ -58,6 +58,10 @@ endif ()
 if (APPLE)
     # OpenGL was depricated on MacOS, ignore warnings
     add_definitions(-DGL_SILENCE_DEPRECATION)
+    # For backwards compatibility with MacOS High Sierra, this is not a good solution and should be avoided ...
+    # https://stackoverflow.com/a/53868971/1393377
+    # TODO: remove when not longer supporting MacOS 10.13 / 10.14
+    add_definitions(-D_LIBCPP_DISABLE_AVAILABILITY)
 endif ()
 
 add_executable(quickVidViewer src/main.cpp src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h src/main_window.h src/globals.cpp src/globals.h src/ipc.h src/globals.cpp src/globals.h src/ipc.cpp src/recordingwindow.cpp src/utils.cpp src/transformations.cpp src/filereader_formats.h src/recording.cpp src/ui.h src/colormap.cpp src/colormap.h)
