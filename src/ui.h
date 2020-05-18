@@ -278,6 +278,7 @@ void show_main_ui() {
 
 int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow *parent = nullptr) {
   auto name = rec->name();
+  if (name.empty()) name = fmt::format("##{}", static_cast<void *>(rec.get()));
   if (!parent) {
     ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.3f + 0.2f) * prm::main_window_height),
                             ImGuiCond_FirstUseEver);

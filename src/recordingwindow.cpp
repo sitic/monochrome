@@ -169,16 +169,11 @@ namespace {
 
 std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
   auto tf = tf_ + speed_;
-  auto t  = tf_;
-
-  while (tf > length_ - 1) {
-    tf -= length_ - 1;
-    t = 0;
+  while (tf >= length_) {
+    tf -= length_;
   }
 
-  if (std::floor(tf_) > t_) {
-    t = std::floor(tf_);
-  }
+  int t = std::floor(tf_);
 
   if (t < 0) {
     // should never happen, but just in case
