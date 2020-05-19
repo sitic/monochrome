@@ -444,13 +444,11 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       trace.clear();
     }
     if (ImGui::Button("Export ROI")) {
-      auto &ctrl         = rec->export_ctrl.raw;
-      ctrl.export_window = true;
-      ctrl.assign_auto_filename(rec->path());
-      auto w      = Trace::width();
-      ctrl.start  = {pos[0] - w / 2, pos[1] - w / 2};
-      ctrl.size   = {w, w};
+      auto &ctrl                      = rec->export_ctrl.raw;
+      ctrl.export_window              = true;
+      std::tie(ctrl.start, ctrl.size) = Trace::clamp(pos, {rec->Nx(), rec->Ny()});
       ctrl.frames = {0, rec->length()};
+      ctrl.assign_auto_filename(rec->path());
     }
     ImGui::EndGroup();
     ImGui::PopID();
@@ -488,10 +486,17 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     bool refresh = ImGui::InputInt2("Top Left Position", ctrl.start.data());
     refresh |= ImGui::InputInt2("Array Size", ctrl.size.data());
     refresh |= ImGui::InputInt2("Start & End Frames", ctrl.frames.data());
-    if (refresh) ctrl.assign_auto_filename(recording->path());
-
     ImGui::Spacing();
 
+    int item                           = static_cast<int>(ctrl.type);
+    const char *ExportFileTypenames[2] = {"Binary .dat", ".npy"};
+    ImGui::Combo("Format", &item, ExportFileTypenames, IM_ARRAYSIZE(ExportFileTypenames));
+    if (auto type = static_cast<ExportFileType>(item); ctrl.type != type) {
+      ctrl.type = type;
+      refresh   = true;
+    }
+
+    if (refresh) ctrl.assign_auto_filename(recording->path());
     ImGui::InputText("Directory", export_dir.data(), export_dir.size());
     ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
 
@@ -511,7 +516,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
                                   recording->get_max(Transformations::None))
                           : Vec2f(0, 0);
 
-      bool success = recording->export_ROI(path, ctrl.start, ctrl.size, ctrl.frames, minmax);
+      bool success =
+          recording->export_ROI(path, ctrl.start, ctrl.size, ctrl.frames, ctrl.type, minmax);
 
       if (success) {
         global::new_ui_message("Export to {} completed successfully", path.string());

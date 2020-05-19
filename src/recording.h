@@ -8,6 +8,8 @@
 
 using namespace std::string_literals;
 
+enum class ExportFileType { Binary, Npy };
+
 struct RotationCtrl {
  private:
   short _rotation = 0;
@@ -41,7 +43,7 @@ class Recording {
 
   Recording(const fs::path &path) : Recording(autoguess_filerecording(path)){};
   Recording(std::shared_ptr<AbstractRecording> _file) : file(std::move(_file)) {
-    if (!file->good()) {
+    if (!file || !file->good()) {
       return;
     }
 
@@ -70,5 +72,10 @@ class Recording {
 
   int current_frame() const { return t_frame; }
 
-  bool export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax = {0, 0});
+  bool export_ROI(fs::path path,
+                  Vec2i start,
+                  Vec2i size,
+                  Vec2i t0tmax,
+                  ExportFileType exportType,
+                  Vec2f minmax = {0, 0});
 };

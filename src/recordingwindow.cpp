@@ -243,6 +243,18 @@ int Trace::width(int new_width) {
 
   return w;
 }
+std::pair<Vec2i, Vec2i> Trace::clamp(const Vec2i &pos, const Vec2i &max_size) {
+  Vec2i size  = {Trace::width(), Trace::width()};
+  Vec2i start = pos - size / 2;
+  for (int i = 0; i < 2; i++) {
+    if (start[i] < 0) {
+      size[i] += start[i];
+      start[i] = 0;
+    }
+    size[i] = std::max(std::min(size[i], max_size[i] - start[i]), 0);
+  }
+  return {start, size};
+}
 
 TransformationList::TransformationCtrl::TransformationCtrl(
     std::variant<Transformations, Filters> type, Recording &rec, int _gen)
@@ -476,16 +488,12 @@ void RecordingWindow::display(Filters prefilter,
   // update traces
   if (playback.next_t() != playback.current_t()) {
     for (auto &[trace, pos, color] : traces) {
-      auto w      = Trace::width();
-      Vec2i start = {pos[0] - w / 2, pos[1] - w / 2};
-      if (start[0] + w >= Nx()) start[0] = Nx() - w - 1;
-      if (start[1] + w >= Ny()) start[1] = Ny() - w - 1;
-      if (start[0] < 0) start[0] = 0;
-      if (start[1] < 0) start[1] = 0;
-      int wx     = std::min(w, Nx());
-      int wy     = std::min(w, Ny());
-      auto block = arr->block(start[0], start[1], wx, wy);
-      trace.push_back(block.mean());
+      auto [start, size] = Trace::clamp(pos, {Nx(), Ny()});
+      if (size[0] > 0 && size[1] > 0) {
+        auto block = arr->block(start[0], start[1], size[0], size[1]);
+        trace.push_back(block.mean());
+        //block.setConstant(0);  // for testing
+      }
     }
   }
 
@@ -510,8 +518,9 @@ void RecordingWindow::display(Filters prefilter,
   if (!traces.empty()) {
     trace_vert.clear();
     auto coordtrans = [this](const Vec2i &pos) {
-      float x = 2.f * pos[0] / static_cast<float>(Nx()) - 1;
-      float y = 1 - 2.f * pos[1] / static_cast<float>(Ny());
+      int isodd = Trace::width() % 2;
+      float x   = (2.f * pos[0] + isodd) / static_cast<float>(Nx()) - 1;
+      float y   = 1 - (2.f * pos[1] + isodd) / static_cast<float>(Ny());
       trace_vert.push_back(x);
       trace_vert.push_back(y);
     };

@@ -110,7 +110,8 @@ void Recording::load_frame(long t) {
   apply_rotation();
 }
 
-bool Recording::export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, Vec2f minmax) {
+bool Recording::export_ROI(
+    fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, ExportFileType exportType, Vec2f minmax) {
   if (start[0] < 0 || start[1] < 0 || start[0] + size[0] > Nx() || start[1] + size[1] > Ny()) {
     global::new_ui_message("ERROR: export_ROI() called with invalid array sizes, start={}, size={}",
                            start, size);
@@ -125,19 +126,27 @@ bool Recording::export_ROI(fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax,
 
   fs::remove(path);
   std::ofstream out(path.string(), std::ios::out | std::ios::binary);
-  auto cur_frame = t_frame;
+  // write file header if necessary
+  if (exportType == ExportFileType::Npy) {
+    bool fortran_order    = npy::big_endian;  // compile-time test for byte order
+    npy::dtype_t dtype    = npy::has_typestring<float>::dtype;
+    npy::ndarray_len_t nt = (t0tmax[1] - t0tmax[0]);
+    npy::ndarray_len_t nx = size[0], ny = size[1];
+    npy::header_t header{dtype, fortran_order, {nt, ny, nx}};
+    npy::write_header(out, header);
+  }
 
+  auto cur_frame = t_frame;
   for (int t = t0tmax[0]; t < t0tmax[1]; t++) {
     load_frame(t);
-    auto block = frame.block(start[0], start[1], size[0], size[1]);
-
+    Eigen::MatrixXf block = frame.block(start[0], start[1], size[0], size[1]);
     if (minmax[0] != minmax[1]) {
       auto normalize = [min = minmax[0], max = minmax[1]](const float &val) {
-        return (val - min) / (max - min);
+        auto result = (val - min) / (max - min);
+        return std::max(std::min(result, 1.f), 0.f);
       };
       block = block.unaryExpr(normalize);
     }
-
     out.write(reinterpret_cast<const char *>(block.data()), block.size() * sizeof(float));
   }
   load_frame(cur_frame);

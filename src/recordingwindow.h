@@ -63,9 +63,12 @@ struct ExportCtrl {
     Vec2i size;
     Vec2i frames;
     std::vector<char> filename = {};
+    ExportFileType type        = ExportFileType::Npy;
 
-    void assign_auto_filename(const fs::path &bmp_path) {
-      auto fn    = bmp_path.filename().string();
+    void assign_auto_filename(const fs::path &file_path) {
+      auto fn = file_path.stem().string();
+
+      // TODO: This removes some common, unnecessary parts. But this is propably to BMP filerecording specific and should be removed?
       auto parts = split_string(fn, "_"s.c_str());
       if (parts.size() > 4) {
         fn = fmt::format("{}_{}", parts[1], parts[2]);
@@ -75,7 +78,15 @@ struct ExportCtrl {
         fn += "_o"s + std::to_string(frames[0]);
       }
 
-      fn = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1], frames[1] - frames[0]);
+      std::string extension;
+      if (type == ExportFileType::Binary)
+        extension = ".dat";
+      else if (type == ExportFileType::Npy)
+        extension = ".npy";
+      else
+        throw std::logic_error("Unkown ExportFileType type");
+
+      fn = fmt::format("{}_{}x{}x{}f{}", fn, size[0], size[1], frames[1] - frames[0], extension);
 
       filename.assign(fn.begin(), fn.end());
 
@@ -133,6 +144,8 @@ struct Trace {
   bool is_near_point(const Vec2i &npos) const;
   static Vec4f next_color();
   static int width(int new_width = 0);
+  // get valid starting position and size based on the position of center and max size
+  static std::pair<Vec2i, Vec2i> clamp(const Vec2i &pos, const Vec2i &max_size);
 };
 
 class TransformationList {
