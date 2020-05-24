@@ -11,6 +11,9 @@ namespace fbs {
 struct Array3Meta;
 struct Array3MetaBuilder;
 
+struct Array3MetaFlow;
+struct Array3MetaFlowBuilder;
+
 struct Array3DataChunkf;
 struct Array3DataChunkfBuilder;
 
@@ -147,17 +150,19 @@ enum Data {
   Data_NONE = 0,
   Data_Filepaths = 1,
   Data_Array3Meta = 2,
-  Data_Array3DataChunkf = 3,
-  Data_Array3DataChunku16 = 4,
+  Data_Array3MetaFlow = 3,
+  Data_Array3DataChunkf = 4,
+  Data_Array3DataChunku16 = 5,
   Data_MIN = Data_NONE,
   Data_MAX = Data_Array3DataChunku16
 };
 
-inline const Data (&EnumValuesData())[5] {
+inline const Data (&EnumValuesData())[6] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
     Data_Array3Meta,
+    Data_Array3MetaFlow,
     Data_Array3DataChunkf,
     Data_Array3DataChunku16
   };
@@ -165,10 +170,11 @@ inline const Data (&EnumValuesData())[5] {
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[6] = {
+  static const char * const names[7] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
+    "Array3MetaFlow",
     "Array3DataChunkf",
     "Array3DataChunku16",
     nullptr
@@ -192,6 +198,10 @@ template<> struct DataTraits<fbs::Filepaths> {
 
 template<> struct DataTraits<fbs::Array3Meta> {
   static const Data enum_value = Data_Array3Meta;
+};
+
+template<> struct DataTraits<fbs::Array3MetaFlow> {
+  static const Data enum_value = Data_Array3MetaFlow;
 };
 
 template<> struct DataTraits<fbs::Array3DataChunkf> {
@@ -395,6 +405,108 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
       parentName__);
 }
 
+struct Array3MetaFlow FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef Array3MetaFlowBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NX = 4,
+    VT_NY = 6,
+    VT_NT = 8,
+    VT_NAME = 10,
+    VT_PARENTNAME = 12
+  };
+  int32_t nx() const {
+    return GetField<int32_t>(VT_NX, 0);
+  }
+  int32_t ny() const {
+    return GetField<int32_t>(VT_NY, 0);
+  }
+  int32_t nt() const {
+    return GetField<int32_t>(VT_NT, 0);
+  }
+  const flatbuffers::String *name() const {
+    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  }
+  const flatbuffers::String *parentName() const {
+    return GetPointer<const flatbuffers::String *>(VT_PARENTNAME);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_NX) &&
+           VerifyField<int32_t>(verifier, VT_NY) &&
+           VerifyField<int32_t>(verifier, VT_NT) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffset(verifier, VT_PARENTNAME) &&
+           verifier.VerifyString(parentName()) &&
+           verifier.EndTable();
+  }
+};
+
+struct Array3MetaFlowBuilder {
+  typedef Array3MetaFlow Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_nx(int32_t nx) {
+    fbb_.AddElement<int32_t>(Array3MetaFlow::VT_NX, nx, 0);
+  }
+  void add_ny(int32_t ny) {
+    fbb_.AddElement<int32_t>(Array3MetaFlow::VT_NY, ny, 0);
+  }
+  void add_nt(int32_t nt) {
+    fbb_.AddElement<int32_t>(Array3MetaFlow::VT_NT, nt, 0);
+  }
+  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+    fbb_.AddOffset(Array3MetaFlow::VT_NAME, name);
+  }
+  void add_parentName(flatbuffers::Offset<flatbuffers::String> parentName) {
+    fbb_.AddOffset(Array3MetaFlow::VT_PARENTNAME, parentName);
+  }
+  explicit Array3MetaFlowBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  Array3MetaFlowBuilder &operator=(const Array3MetaFlowBuilder &);
+  flatbuffers::Offset<Array3MetaFlow> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Array3MetaFlow>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Array3MetaFlow> CreateArray3MetaFlow(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t nx = 0,
+    int32_t ny = 0,
+    int32_t nt = 0,
+    flatbuffers::Offset<flatbuffers::String> name = 0,
+    flatbuffers::Offset<flatbuffers::String> parentName = 0) {
+  Array3MetaFlowBuilder builder_(_fbb);
+  builder_.add_parentName(parentName);
+  builder_.add_name(name);
+  builder_.add_nt(nt);
+  builder_.add_ny(ny);
+  builder_.add_nx(nx);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Array3MetaFlow> CreateArray3MetaFlowDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t nx = 0,
+    int32_t ny = 0,
+    int32_t nt = 0,
+    const char *name = nullptr,
+    const char *parentName = nullptr) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto parentName__ = parentName ? _fbb.CreateString(parentName) : 0;
+  return fbs::CreateArray3MetaFlow(
+      _fbb,
+      nx,
+      ny,
+      nt,
+      name__,
+      parentName__);
+}
+
 struct Array3DataChunkf FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   typedef Array3DataChunkfBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -595,6 +707,9 @@ struct Root FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const fbs::Array3Meta *data_as_Array3Meta() const {
     return data_type() == fbs::Data_Array3Meta ? static_cast<const fbs::Array3Meta *>(data()) : nullptr;
   }
+  const fbs::Array3MetaFlow *data_as_Array3MetaFlow() const {
+    return data_type() == fbs::Data_Array3MetaFlow ? static_cast<const fbs::Array3MetaFlow *>(data()) : nullptr;
+  }
   const fbs::Array3DataChunkf *data_as_Array3DataChunkf() const {
     return data_type() == fbs::Data_Array3DataChunkf ? static_cast<const fbs::Array3DataChunkf *>(data()) : nullptr;
   }
@@ -616,6 +731,10 @@ template<> inline const fbs::Filepaths *Root::data_as<fbs::Filepaths>() const {
 
 template<> inline const fbs::Array3Meta *Root::data_as<fbs::Array3Meta>() const {
   return data_as_Array3Meta();
+}
+
+template<> inline const fbs::Array3MetaFlow *Root::data_as<fbs::Array3MetaFlow>() const {
+  return data_as_Array3MetaFlow();
 }
 
 template<> inline const fbs::Array3DataChunkf *Root::data_as<fbs::Array3DataChunkf>() const {
@@ -669,6 +788,10 @@ inline bool VerifyData(flatbuffers::Verifier &verifier, const void *obj, Data ty
     }
     case Data_Array3Meta: {
       auto ptr = reinterpret_cast<const fbs::Array3Meta *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_Array3MetaFlow: {
+      auto ptr = reinterpret_cast<const fbs::Array3MetaFlow *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case Data_Array3DataChunkf: {

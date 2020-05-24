@@ -148,6 +148,19 @@ struct Trace {
   static std::pair<Vec2i, Vec2i> clamp(const Vec2i &pos, const Vec2i &max_size);
 };
 
+class FlowData {
+ public:
+  std::shared_ptr<Recording> data;
+  Vec4f color;
+  bool show = true;
+  static int skip;
+  static float pointsize;
+
+  FlowData(std::shared_ptr<Recording> data_, unsigned color_count)
+      : data(std::move(data_)), color(next_color(color_count)) {}
+  Vec4f next_color(unsigned color_count);
+};
+
 class TransformationList {
  private:
   Recording &m_parent;
@@ -188,36 +201,10 @@ class RecordingWindow : public Recording {
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
   TransformationList transformationArena;
+  std::vector<FlowData> flows;  // use add_flow() to add members
 
-  RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filerecording(path)){};
-  RecordingWindow(std::shared_ptr<AbstractRecording> file_)
-      : Recording(std::move(file_)), playback(good() ? length() : 0), transformationArena(*this) {
-    if (!good()) {
-      return;
-    }
-
-    if (Trace::width() == 0) {
-      // if unset, set trace edge length to something reasonable
-      auto val = std::min(Nx(), Ny()) / 64;
-      Trace::width(std::max(val, 2));
-    }
-
-    if (file->bitrange()) {
-      bitrange = file->bitrange().value();
-    }
-    float &min = get_min(Transformations::None);
-    float &max = get_max(Transformations::None);
-    if ((min == max) || std::isnan(min) || std::isnan(max)) {
-      std::tie(min, max) = bitrange_to_float(bitrange);
-    }
-
-    if (file->cmap()) {
-      cmap_ = file->cmap().value();
-    } else if (bitrange == BitRange::PHASE || bitrange == BitRange::PHASE_DIFF) {
-      // assume that's its a phase map and the user prefers HSV in this circumstances
-      cmap_ = ColorMap::HSV;
-    }
-  }
+  RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filetype(path)){};
+  RecordingWindow(std::shared_ptr<AbstractRecording> file_);
 
   virtual ~RecordingWindow() {
     if (window != nullptr) {
@@ -256,6 +243,8 @@ class RecordingWindow : public Recording {
   void start_recording(const std::string &filename, int fps = 30);
   void stop_recording();
 
+  void add_flow(std::shared_ptr<Recording> flow) { flows.emplace_back(flow, flows.size()); }
+
   static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
   static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos);
   static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
@@ -274,14 +263,18 @@ class RecordingWindow : public Recording {
     bool right = false;
   } mousebutton;
 
-  ColorMap cmap_  = ColorMap::GRAY;
-  GLuint texture  = GL_FALSE;
-  GLuint ctexture = GL_FALSE;
+  ColorMap cmap_      = ColorMap::GRAY;
+  GLuint texture      = GL_FALSE;
+  GLuint ctexture     = GL_FALSE;
+  GLuint ctexturediff = GL_FALSE;
   Shader frame_shader;
   GLuint frame_vao, frame_vbo, frame_ebo;
   Shader trace_shader;
   GLuint trace_vao, trace_vbo;
   std::vector<float> trace_vert;
+  Shader flow_shader;
+  GLuint flow_vao, flow_vbo;
+  std::vector<float> flow_vert;
 };
 
 using SharedRecordingPtr = std::shared_ptr<RecordingWindow>;

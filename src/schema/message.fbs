@@ -19,6 +19,14 @@ table Array3Meta {
   parentName:string;
 }
 
+table Array3MetaFlow {
+  nx:int;
+  ny:int;
+  nt:int;
+  name:string;
+  parentName:string;
+}
+
 // flatbuffers currently restricted to 2GB, so unfortunately we may need to chunk the data
 table Array3DataChunkf {
   startidx: uint64;
@@ -34,7 +42,7 @@ table Filepaths {
   file:[string];
 }
 
-union Data { Filepaths, Array3Meta, Array3DataChunkf, Array3DataChunku16 }
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16 }
 
 table Root {
     data:Data;

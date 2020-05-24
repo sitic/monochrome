@@ -1,4 +1,5 @@
 #include "recordingwindow.h"
+#include "globals.h"
 
 namespace prm {
   PlaybackCtrl playbackCtrl;
@@ -11,6 +12,8 @@ namespace global {
 }  // namespace global
 
 float RecordingWindow::scale_fct = 1;
+int FlowData::skip               = 4;
+float FlowData::pointsize        = 1.5;
 
 namespace {
   SharedRecordingPtr rec_from_window_ptr(GLFWwindow *_window) {
@@ -165,6 +168,44 @@ namespace {
     glBindVertexArray(0);
     return {vao, vbo};
   }
+
+  Shader create_flow_shader() {
+    std::string vertexSource = R"glsl(
+      #version 330 core
+      layout (location = 0) in vec2 position;
+
+      void main()
+      {
+          gl_Position = vec4(position, 0.0, 1.0);
+      })glsl";
+    // https://rubendv.be/posts/fwidth/
+    std::string fragmentSource = R"glsl(
+      #version 330 core
+      out vec4 FragColor;
+      uniform vec4 color;
+
+      void main()
+      {
+          vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+          float dist_squared = dot(circCoord, circCoord);
+          float alpha = smoothstep(0.9, 1.1, dist_squared);
+          FragColor = color;
+          FragColor.a -= alpha;
+      })glsl";
+    return Shader::create(vertexSource, fragmentSource);
+  }
+
+  std::pair<GLuint, GLuint> create_flow_vaovbo() {
+    GLuint vao, vbo;
+    glGenBuffers(1, &vbo);
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+    glBindVertexArray(0);
+    return {vao, vbo};
+  }
 }  // namespace
 
 std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
@@ -219,7 +260,7 @@ bool Trace::is_near_point(const Vec2i &npos) const {
 
 Vec4f Trace::next_color() {
   // List of colors to cycle through
-  static std::array<Vec4f, 4> cycle_list = {{
+  const std::array<Vec4f, 4> cycle_list = {{
       {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
       {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
       {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
@@ -254,6 +295,22 @@ std::pair<Vec2i, Vec2i> Trace::clamp(const Vec2i &pos, const Vec2i &max_size) {
     size[i] = std::max(std::min(size[i], max_size[i] - start[i]), 0);
   }
   return {start, size};
+}
+
+Vec4f FlowData::next_color(unsigned color_count) {
+  // List of colors to cycle through
+  const std::array<Vec4f, 5> cycle_list = {{
+      {0, 0, 0, 1},
+      {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
+      {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
+      {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
+      {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
+  }};
+
+  if (color_count >= cycle_list.size()) {
+    color_count %= cycle_list.size();
+  }
+  return cycle_list.at(color_count);
 }
 
 TransformationList::TransformationCtrl::TransformationCtrl(
@@ -319,6 +376,35 @@ void TransformationList::reallocate() {
   }
 }
 
+RecordingWindow::RecordingWindow(std::shared_ptr<AbstractRecording> file_)
+    : Recording(std::move(file_)), playback(good() ? length() : 0), transformationArena(*this) {
+  if (!good()) {
+    return;
+  }
+
+  if (Trace::width() == 0) {
+    // if unset, set trace edge length to something reasonable
+    auto val = std::min(Nx(), Ny()) / 64;
+    Trace::width(std::max(val, 2));
+  }
+
+  if (file->bitrange()) {
+    bitrange = file->bitrange().value();
+  }
+  float &min = get_min(Transformations::None);
+  float &max = get_max(Transformations::None);
+  if ((min == max) || std::isnan(min) || std::isnan(max)) {
+    std::tie(min, max) = utils::bitrange_to_float(bitrange);
+  }
+
+  if (file->cmap()) {
+    cmap_ = file->cmap().value();
+  } else if (bitrange == BitRange::PHASE || bitrange == BitRange::PHASE_DIFF) {
+    // assume that's its a phase map and the user prefers HSV in this circumstances
+    cmap_ = ColorMap::HSV;
+  }
+}
+
 void RecordingWindow::open_window() {
   if (window) {
     throw std::runtime_error("ERROR: window was already initialized");
@@ -373,9 +459,15 @@ void RecordingWindow::set_context(GLFWwindow *new_context) {
   std::tie(frame_vao, frame_vbo, frame_ebo) = create_frame_vaovboebo();
   trace_shader                              = create_trace_shader();
   std::tie(trace_vao, trace_vbo)            = create_trace_vaovbo();
+  flow_shader                               = create_flow_shader();
+  std::tie(flow_vao, flow_vbo)              = create_flow_vaovbo();
 
   update_gl_texture();
-  colormap(cmap_);
+  ColorMap cmap_tmp = cmap_;
+  std::swap(ctexture, ctexturediff);
+  colormap(ColorMap::DIFF);
+  std::swap(ctexture, ctexturediff);
+  colormap(cmap_tmp);
   frame_shader.use();
   frame_shader.setInt("texture0", 0);
   frame_shader.setInt("textureC", 1);
@@ -430,6 +522,8 @@ void RecordingWindow::clear_gl_memory() {
     texture = GL_FALSE;
     glDeleteTextures(1, &ctexture);
     ctexture = GL_FALSE;
+    glDeleteTextures(1, &ctexturediff);
+    ctexturediff = GL_FALSE;
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteVertexArrays(1, &trace_vao);
     glDeleteBuffers(1, &frame_vbo);
@@ -460,7 +554,7 @@ void RecordingWindow::display(Filters prefilter,
 
   switch (transformation) {
     case Transformations::None:
-      std::tie(histogram.min, histogram.max) = bitrange_to_float(bitrange);
+      std::tie(histogram.min, histogram.max) = utils::bitrange_to_float(bitrange);
       break;
     case Transformations::FrameDiff: {
       auto *frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
@@ -508,7 +602,8 @@ void RecordingWindow::display(Filters prefilter,
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, arr->data());
   glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_1D, ctexture);
+  glBindTexture(GL_TEXTURE_1D,
+                transformation == Transformations::FrameDiff ? ctexturediff : ctexture);
 
   // Draw the frame
   glBindVertexArray(frame_vao);
@@ -540,6 +635,40 @@ void RecordingWindow::display(Filters prefilter,
                  GL_STREAM_DRAW);
     glLineWidth(1.5);
     glDrawArrays(GL_POINTS, 0, traces.size());
+  }
+
+  for (const auto &flow : flows) {
+    if (!flow.show) continue;
+    flow_vert.clear();
+
+    flow.data->load_frame(t_frame);
+    Eigen::MatrixXf u = flow.data->frame;  // force a copy
+    flow.data->load_frame(t_frame + length());
+    auto v  = flow.data->frame;  // don't need to force a copy
+    auto nx = flow.data->Nx(), ny = flow.data->Ny();
+    for (int x = FlowData::skip / 2; x < nx; x += FlowData::skip) {
+      for (int y = FlowData::skip / 2; y < ny; y += FlowData::skip) {
+        // calculate screen position of the pixel center
+        float xx = (2.f * x + 1) / static_cast<float>(nx) - 1;
+        float yy = 1 - (2.f * y + 1) / static_cast<float>(ny);
+        // add the flow
+        xx += 2.f * u(x, y) / static_cast<float>(nx);
+        yy -= 2.f * v(x, y) / static_cast<float>(ny);
+
+        flow_vert.push_back(xx);
+        flow_vert.push_back(yy);
+      }
+    }
+
+    flow_shader.use();
+    flow_shader.setVec4("color", flow.color);
+    glBindVertexArray(flow_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, flow_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * flow_vert.size(), flow_vert.data(),
+                 GL_STREAM_DRAW);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    glPointSize(FlowData::pointsize * scale_fct);
+    glDrawArrays(GL_POINTS, 0, flow_vert.size() / 2);
   }
 
   if (export_ctrl.video.recording) {

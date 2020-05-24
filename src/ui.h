@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "globals.h"
 
 namespace global {
   extern GLFWwindow *main_window;
@@ -66,7 +67,7 @@ void show_main_ui() {
       }
       ImGui::SameLine();
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
-      ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20, "playback speed = %.1f");
+      ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20, "playback speed = %.2f");
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FORWARD)) {
         prm::playbackCtrl.val *= 2;
@@ -383,7 +384,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
         rec->bitrange      = br;
         float &min         = rec->get_min(Transformations::None);
         float &max         = rec->get_max(Transformations::None);
-        std::tie(min, max) = bitrange_to_float(br);
+        std::tie(min, max) = utils::bitrange_to_float(br);
       }
     }
     {
@@ -423,6 +424,24 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   ImGui::SliderFloat("max", &rec->get_max(prm::transformation), rec->histogram.min,
                      rec->histogram.max);
 
+  if (!rec->flows.empty()) {
+    for (auto &flow : rec->flows) {
+      ImGui::PushID(flow.data.get());
+      ImGui::Text("Flow %s", flow.data->name().c_str());
+      ImGui::SameLine();
+      ImGui::ColorEdit4("", flow.color.data(),
+                        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+      ImGui::SameLine();
+      ImGui::Checkbox("Show", &flow.show);
+      ImGui::PopID();
+    }
+    ImGui::Columns(2);
+    ImGui::SliderInt("flow skip", &FlowData::skip, 1, 25);
+    ImGui::NextColumn();
+    ImGui::SliderFloat("flow point size", &FlowData::pointsize, 0, 10);
+    ImGui::Columns(1);
+  }
+
   for (auto &[trace, pos, color] : rec->traces) {
     auto label = pos.to_string();
     ImGui::PushID(label.c_str());
@@ -447,7 +466,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       auto &ctrl                      = rec->export_ctrl.raw;
       ctrl.export_window              = true;
       std::tie(ctrl.start, ctrl.size) = Trace::clamp(pos, {rec->Nx(), rec->Ny()});
-      ctrl.frames = {0, rec->length()};
+      ctrl.frames                     = {0, rec->length()};
       ctrl.assign_auto_filename(rec->path());
     }
     ImGui::EndGroup();

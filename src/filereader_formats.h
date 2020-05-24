@@ -7,6 +7,7 @@
 
 #include "vectors.h"
 #include "filereader.h"
+#include "globals.h"
 
 class BmpFileRecording : public AbstractRecording {
  protected:
@@ -37,6 +38,7 @@ class BmpFileRecording : public AbstractRecording {
     }
   }
   std::optional<ColorMap> cmap() const final { return ColorMap::GRAY; }
+  bool is_flow() const final { return false; };
 
   Eigen::MatrixXf read_frame(long t) final {
     file.read_frame(t, frame_uint16.data());
@@ -122,7 +124,7 @@ class RawFileRecording : public AbstractRecording {
     _good = true;
 
     _frame.setZero(_nx, _ny);
-    _bitrange = detect_bitrange(get_data_ptr(0), get_data_ptr(1));
+    _bitrange = utils::detect_bitrange(get_data_ptr(0), get_data_ptr(1));
   }
 
   bool good() const final { return _good; };
@@ -136,6 +138,7 @@ class RawFileRecording : public AbstractRecording {
   float fps() const final { return 0; };
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
+  bool is_flow() const final { return false; };
 
   Eigen::MatrixXf read_frame(long t) final {
     auto data = get_data_ptr(t);
@@ -148,10 +151,11 @@ class RawFileRecording : public AbstractRecording {
 
 class NpyFileRecording : public AbstractRecording {
   mio::mmap_source _mmap;
-  int _nx    = 0;
-  int _ny    = 0;
-  int _nt    = 0;
-  bool _good = false;
+  int _nx       = 0;
+  int _ny       = 0;
+  int _nt       = 0;
+  bool _good    = false;
+  bool _is_flow = false;
 
   std::size_t _frame_size = 0;
   std::string _error_msg  = "";
@@ -159,7 +163,7 @@ class NpyFileRecording : public AbstractRecording {
   Eigen::MatrixXf _frame;
   std::optional<BitRange> _bitrange;
 
-  enum DataType { UINT8 = 1, UINT16 = 2, FLOAT = 4 };
+  enum class DataType : int { UINT8 = 1, UINT16 = 2, FLOAT = 4 };
   DataType dataType;
 
   template <typename Scalar>
@@ -190,11 +194,11 @@ class NpyFileRecording : public AbstractRecording {
       }
 
       if (get_dtype<uint8>().str() == header.dtype.str()) {
-        dataType = UINT8;
+        dataType = DataType::UINT8;
       } else if (get_dtype<uint16>().str() == header.dtype.str()) {
-        dataType = UINT16;
+        dataType = DataType::UINT16;
       } else if (get_dtype<float>().str() == header.dtype.str()) {
-        dataType = FLOAT;
+        dataType = DataType::FLOAT;
       } else {
         _error_msg = fmt::format(
             "numpy dtype {} is unsupported, only uint8, uint16 and float32 are supported",
@@ -202,22 +206,37 @@ class NpyFileRecording : public AbstractRecording {
         return;
       }
 
-      if (header.shape.size() != 3) {
-        _error_msg =
-            fmt::format("only 3D arrays are suppored, found {}D array", header.shape.size());
+      if (header.shape.size() == 2) {
+        _nt      = 1;
+        _ny      = header.shape[0];
+        _nx      = header.shape[1];
+        _is_flow = false;
+      } else if (header.shape.size() == 3) {
+        _nt      = header.shape[0];
+        _ny      = header.shape[1];
+        _nx      = header.shape[2];
+        _is_flow = false;
+      } else if (header.shape.size() == 4) {
+        if (header.shape[0] != 2 || dataType != DataType::FLOAT) {
+          _error_msg = "Currently, flow fields have to be of shape [2, T, H, W]";
+          return;
+        }
+        _nt      = 2 * header.shape[1];
+        _ny      = header.shape[2];
+        _nx      = header.shape[3];
+        _is_flow = true;
+      } else {
+        _error_msg = fmt::format("found {}D array, which are unsupported", header.shape.size());
         return;
       }
-      _nt         = header.shape[0];
-      _ny         = header.shape[1];
-      _nx         = header.shape[2];
       _frame_size = _nx * _ny;
-      if (_nx <= 0 || _ny <= 0 || _nt <= 0) {
+      if (_nx < 1 || _ny < 1 || _nt < 1) {
         _error_msg = fmt::format("Invalid array dimensions ({}, {}, {})", _nt, _ny, _nx);
         return;
       }
 
       auto l               = _mmap.length();
-      auto bytes_per_frame = _frame_size * dataType;
+      auto bytes_per_frame = _frame_size * static_cast<int>(dataType);
       if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
         _error_msg = "File size does not match expected dimensions";
         return;
@@ -236,16 +255,18 @@ class NpyFileRecording : public AbstractRecording {
       _good = true;
 
       _frame.setZero(_nx, _ny);
-      switch (dataType) {
-        case UINT8:
-          _bitrange = detect_bitrange(get_data_ptr<uint8>(0), get_data_ptr<uint8>(1));
-          break;
-        case FLOAT:
-          _bitrange = detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
-          break;
-        case UINT16:
-          _bitrange = detect_bitrange(get_data_ptr<uint16>(0), get_data_ptr<uint16>(1));
-          break;
+      if (!is_flow()) {
+        switch (dataType) {
+          case DataType::UINT8:
+            _bitrange = utils::detect_bitrange(get_data_ptr<uint8>(0), get_data_ptr<uint8>(1));
+            break;
+          case DataType::FLOAT:
+            _bitrange = utils::detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
+            break;
+          case DataType::UINT16:
+            _bitrange = utils::detect_bitrange(get_data_ptr<uint16>(0), get_data_ptr<uint16>(1));
+            break;
+        }
       }
     } catch (const std::runtime_error &e) {
       _error_msg = e.what();
@@ -264,16 +285,17 @@ class NpyFileRecording : public AbstractRecording {
   float fps() const final { return 0; };
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
+  bool is_flow() const final { return _is_flow; };
 
   Eigen::MatrixXf read_frame(long t) final {
     switch (dataType) {
-      case FLOAT:
+      case DataType::FLOAT:
         std::copy(get_data_ptr<float>(t), get_data_ptr<float>(t) + _frame_size, _frame.data());
         break;
-      case UINT16:
+      case DataType::UINT16:
         std::copy(get_data_ptr<uint16>(t), get_data_ptr<uint16>(t) + _frame_size, _frame.data());
         break;
-      case UINT8:
+      case DataType::UINT8:
         std::copy(get_data_ptr<uint8>(t), get_data_ptr<uint8>(t) + _frame_size, _frame.data());
         break;
       default:
@@ -284,11 +306,11 @@ class NpyFileRecording : public AbstractRecording {
 
   float get_pixel(long t, long x, long y) final {
     switch (dataType) {
-      case FLOAT:
+      case DataType::FLOAT:
         return get_data_ptr<float>(t)[y * Nx() + x];
-      case UINT16:
+      case DataType::UINT16:
         return get_data_ptr<uint16>(t)[y * Nx() + x];
-      case UINT8:
+      case DataType::UINT8:
         return get_data_ptr<uint8>(t)[y * Nx() + x];
       default:
         throw std::logic_error("This line should never be reached");

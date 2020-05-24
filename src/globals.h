@@ -60,6 +60,8 @@ namespace global {
     std::optional<BitRange> bitrange      = std::nullopt;
     std::optional<ColorMap> cmap          = std::nullopt;
     std::optional<std::string> parentName = std::nullopt;
+
+    bool is_flowfield = false;
   };
 
   class RawArray3 {
@@ -96,84 +98,87 @@ namespace global {
   std::optional<std::shared_ptr<RawArray3>> get_rawarray3_to_load();
 }  // namespace global
 
-constexpr std::pair<float, float> bitrange_to_float(BitRange br) {
-  switch (br) {
-    case BitRange::FLOAT:
-      return {0, 1};
-    case BitRange::U8:
-      return {0, (1 << 8) - 1};
-    case BitRange::U10:
-      return {0, (1 << 10) - 1};
-    case BitRange::U12:
-      return {0, (1 << 12) - 1};
-    case BitRange::U16:
-      return {0, (1 << 16) - 1};
-    case BitRange::DIFF:
-      return {-1, 1};
-    case BitRange::PHASE:
-      return {0, 2 * M_PI};
-    case BitRange::PHASE_DIFF:
-      return {-M_PI, M_PI};
-  }
-  throw std::logic_error("This line should not be reached");
-}
-
-template <typename It>
-std::pair<It, It> minmax_element_skipNaN(It first, It last) {
-  // If arguments point to non-floating point values fallback to std::minmax_element(), because
-  // only floating point values can have NaN
-  using value_t = typename std::iterator_traits<It>::value_type;
-  // std::is_floating_point<value_t>::value
-  if constexpr (!std::is_same<value_t, float>::value) {
-    return std::minmax_element(first, last);
-  } else {
-    It min = first, max = first;
-    for (; first < last; first++) {
-      if (!std::isnan(*first)) {
-        min = first;
-        max = first;
-        break;
-      }
+namespace utils {
+  constexpr std::pair<float, float> bitrange_to_float(BitRange br) {
+    switch (br) {
+      case BitRange::FLOAT:
+        return {0, 1};
+      case BitRange::U8:
+        return {0, (1 << 8) - 1};
+      case BitRange::U10:
+        return {0, (1 << 10) - 1};
+      case BitRange::U12:
+        return {0, (1 << 12) - 1};
+      case BitRange::U16:
+        return {0, (1 << 16) - 1};
+      case BitRange::DIFF:
+        return {-1, 1};
+      case BitRange::PHASE:
+        return {0, 2 * M_PI};
+      case BitRange::PHASE_DIFF:
+        return {-M_PI, M_PI};
     }
-
-    while (++first != last) {
-      if (std::isnan(*first)) {
-        continue;
-      } else if (*first > *max) {
-        max = first;
-      } else if (*first < *min) {
-        min = first;
-      }
-    }
-    return {min, max};
+    throw std::logic_error("This line should not be reached");
   }
-}
 
-template <typename It>
-std::optional<BitRange> detect_bitrange(It begin, It end) {
-  auto [min, max] = minmax_element_skipNaN(begin, end);
-  if (*min == *max) {
-    return std::nullopt;
-  }
-  if (*min < 0) {
-    if (*min >= -1 && *max <= 1) {
-      return BitRange::DIFF;
-    } else if (*min >= -M_PI && *max <= M_PI) {
-      return BitRange::PHASE_DIFF;
+  template <typename It>
+  using ValueType = typename std::iterator_traits<It>::value_type;
+
+  template <typename It>
+  std::pair<ValueType<It>, ValueType<It>> minmax_element_skipNaN(It first, It last) {
+    // If arguments point to non-floating point values fallback to std::minmax_element(), because
+    // only floating point values can have NaN
+    if constexpr (!std::is_same<ValueType<It>, float>::value) {
+      auto [min, max] = std::minmax_element(first, last);
+      return {*min, *max};
     } else {
+      It min = first, max = first;
+      for (; first < last; first++) {
+        if (!std::isnan(*first)) {
+          min = first;
+          max = first;
+          break;
+        }
+      }
+
+      while (++first != last) {
+        if (std::isnan(*first)) {
+          continue;
+        } else if (*first > *max) {
+          max = first;
+        } else if (*first < *min) {
+          min = first;
+        }
+      }
+      return {*min, *max};
+    }
+  }
+  template <typename It>
+  std::optional<BitRange> detect_bitrange(It begin, It end) {
+    auto [min, max] = minmax_element_skipNaN(begin, end);
+    if (min == max) {
       return std::nullopt;
     }
-  } else if (*max <= 1) {
-    return BitRange::FLOAT;
-  } else if (*max <= 2 * M_PI) {
-    return BitRange::PHASE;
-  } else if (*max < (1 << 8)) {
-    return BitRange::U8;
-  } else if (*max < (1 << 10)) {
-    return BitRange::U10;
-  } else if (*max < (1 << 12)) {
-    return BitRange::U12;
-  } else {
-    return BitRange::U16;
+    if (min < 0) {
+      if (min >= -1 && max <= 1) {
+        return BitRange::DIFF;
+      } else if (min >= -M_PI && max <= M_PI) {
+        return BitRange::PHASE_DIFF;
+      } else {
+        return std::nullopt;
+      }
+    } else if (max <= 1) {
+      return BitRange::FLOAT;
+    } else if (max <= 2 * M_PI) {
+      return BitRange::PHASE;
+    } else if (max < (1 << 8)) {
+      return BitRange::U8;
+    } else if (max < (1 << 10)) {
+      return BitRange::U10;
+    } else if (max < (1 << 12)) {
+      return BitRange::U12;
+    } else {
+      return BitRange::U16;
+    }
   }
-}
+}  // namespace utils

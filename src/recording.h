@@ -36,12 +36,10 @@ class Recording {
 
   void apply_rotation() { rotations.apply(frame); }
 
-  static std::shared_ptr<AbstractRecording> autoguess_filerecording(const fs::path &path);
-
  public:
   Eigen::MatrixXf frame;
 
-  Recording(const fs::path &path) : Recording(autoguess_filerecording(path)){};
+  Recording(const fs::path &path) : Recording(autoguess_filetype(path)){};
   Recording(std::shared_ptr<AbstractRecording> _file) : file(std::move(_file)) {
     if (!file || !file->good()) {
       return;
@@ -52,6 +50,7 @@ class Recording {
   }
   std::shared_ptr<Recording> copy() const { return std::make_shared<Recording>(file); }
 
+  static std::shared_ptr<AbstractRecording> autoguess_filetype(const fs::path &path);
   std::shared_ptr<AbstractRecording> get_file_ptr() const { return file; }
   void set_file_ptr(std::shared_ptr<AbstractRecording> new_file) { file = new_file; }
 

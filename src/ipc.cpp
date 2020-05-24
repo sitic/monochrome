@@ -81,6 +81,9 @@ namespace {
           case fbs::Data_Array3Meta:
             handle_message(root->data_as_Array3Meta());
             break;
+          case fbs::Data_Array3MetaFlow:
+            handle_message(root->data_as_Array3MetaFlow());
+            break;
           case fbs::Data_Array3DataChunkf:
             handle_datachunk_message(root->data_as_Array3DataChunkf());
             break;
@@ -145,6 +148,25 @@ namespace {
       } else {
         throw std::runtime_error("IPC: unkown ArrayDataType recieved");
       }
+    }
+
+    void handle_message(const fbs::Array3MetaFlow* raw) {
+      if (!raw) {
+        fmt::print("Error parsing flatbuffer\n");
+        return;
+      }
+
+      if (!array_msg_.empty()) {
+        throw std::runtime_error(
+            "Array3Meta message arrived before previous array was completely loaded");
+      }
+
+      global::RawArray3MetaData meta{raw->nx(), raw->ny(), raw->nt(), raw->name()->str()};
+      meta.parentName   = raw->parentName()->str();
+      meta.is_flowfield = true;
+
+      std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
+      array_msg_.array = global::RawArray3::create_float(meta, size);
     }
 
     template <typename ChunkPtr>

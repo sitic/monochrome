@@ -4,7 +4,7 @@ from pathlib import Path
 import socket
 from typing import List, Text, Union, Optional
 
-from .fbs import Root, Data, Filepaths, Array3Meta, Array3DataChunkf, Array3DataChunku16
+from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16
 from .fbs.ArrayDataType import ArrayDataType
 from .fbs.ColorMap import ColorMap
 from .fbs.BitRange import BitRange
@@ -72,6 +72,24 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     return buf
 
 
+def create_array3metaflow_msg(shape, parentName, name=""):
+    builder = flatbuffers.Builder(1024)
+    name_fb = builder.CreateString(name)
+    parent_fb = builder.CreateString(parentName)
+    Array3MetaFlow.Array3MetaFlowStart(builder)
+    Array3MetaFlow.Array3MetaFlowAddNx(builder, shape[2])
+    Array3MetaFlow.Array3MetaFlowAddNy(builder, shape[1])
+    Array3MetaFlow.Array3MetaFlowAddNt(builder, shape[0])
+    Array3MetaFlow.Array3MetaFlowAddName(builder, name_fb)
+    Array3MetaFlow.Array3MetaFlowAddParentName(builder, parent_fb)
+    d = Array3MetaFlow.Array3MetaFlowEnd(builder)
+
+    root = build_root(builder, Data.Data.Array3MetaFlow, d)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    return buf
+
+
 def create_array3dataf_msg(array, idx=0):
     builder = flatbuffers.Builder(65536)
     data = builder.CreateNumpyVector(array)
@@ -121,8 +139,12 @@ def open_files(paths: List[Union[Text, Path]]):
 def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
                 comment: Text = "", bitrange: BitRange = BitRange.AUTODETECT, cmap: ColorMap = ColorMap.DEFAULT,
                 parentName: Optional[Text] = None):
-    if array.ndim != 3:
+    if array.ndim == 2:
+        # assume that it is a 2D image
+        array = np.expand_dims(array, 0)
+    elif array.ndim != 3:
         raise ValueError("array is not three-dimensional")
+
     if array.dtype == np.float32:
         dtype = ArrayDataType.FLOAT
     elif array.dtype == np.uint16:
@@ -152,4 +174,30 @@ def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0,
             buf = create_array3dataf_msg(flat[idx:end], idx)
         else:
             buf = create_array3datau16_msg(flat[idx:end], idx)
+        s.sendall(buf)
+
+
+def open_flow(flow_uv: np.ndarray, parentName: Text, name: Text = ""):
+    if flow_uv.ndim != 4:
+        raise ValueError("array is not three-dimensional")
+    if flow_uv.dtype != np.float32:
+        raise ValueError("array is not floating type")
+
+    try:
+        s = create_socket()
+    except ConnectionRefusedError:
+        print("Unable to connect to quickViewer")
+        return
+
+    flow_uv = np.moveaxis(flow_uv, -1, 0)
+    shape = (flow_uv.shape[1] * 2, flow_uv.shape[2], flow_uv.shape[3])
+    buf = create_array3metaflow_msg(shape, parentName)
+    s.sendall(buf)
+
+    flat = flow_uv.flatten()
+    length = flat.size
+    max_size = 16352
+    for idx in range(0, length, max_size):
+        end = length if idx + max_size > length else idx + max_size
+        buf = create_array3dataf_msg(flat[idx:end], idx)
         s.sendall(buf)

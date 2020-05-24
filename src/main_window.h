@@ -25,47 +25,72 @@ namespace global {
   std::queue<std::pair<SharedRecordingPtr, SharedRecordingPtr>> merge_queue;
 }  // namespace global
 
-void load_new_file(const fs::path &path) {
-  fmt::print("Loading {} ...\n", path.string());
+void load_new_file(std::shared_ptr<AbstractRecording> file,
+                   std::optional<std::string> parentName = std::nullopt) {
+  if (!file || !file->good()) return;
+  auto findParent = [](const std::string &parent_name) {
+    auto it = std::find_if(global::recordings.begin(), global::recordings.end(),
+                           [name = parent_name](const auto &r) { return name == r->name(); });
+    if (it == std::end(global::recordings))
+      return SharedRecordingPtr(nullptr);
+    else
+      return *it;
+  };
 
-  auto rec = std::make_shared<RecordingWindow>(path);
-  if (!rec->good()) {
-    return;
-  }
-  global::recordings.push_back(rec);
-  rec->open_window();
-}
-
-void load_from_queue() {
-  while (auto file = global::get_file_to_load()) {
-    load_new_file(file.value());
-  }
-  while (auto arr = global::get_rawarray3_to_load()) {
-    auto r   = std::make_shared<InMemoryRecording>(arr.value());
-    auto rec = std::make_shared<RecordingWindow>(r);
-    if (!rec->good()) {
-      global::new_ui_message("ERROR: loading file failed");
-      continue;
-    }
-
+  if (!file->is_flow()) {
+    auto rec = std::make_shared<RecordingWindow>(file);
     global::recordings.push_back(rec);
     rec->open_window();
 
-    if (auto parentName = arr.value()->meta.parentName) {
-      auto parent =
-          std::find_if(global::recordings.begin(), global::recordings.end(),
-                       [name = parentName.value()](const auto &r) { return name == r->name(); });
-      if (parent == std::end(global::recordings)) {
+    if (parentName) {
+      auto parent = findParent(parentName.value());
+      if (!parent) {
         global::new_ui_message(
             "Array \"{}\" has requested \"{}\" as its parent recording, but no such recording "
             "exists!",
             rec->name(), parentName.value());
       } else {
-        global::merge_queue.push({rec, *parent});
+        global::merge_queue.push({rec, parent});
       }
     }
+  } else {
+    SharedRecordingPtr parent;
+    if (parentName) {
+      parent = findParent(parentName.value());
+    }
+    if (!parent) {
+      if (parentName) {
+        global::new_ui_message("no such recording \"{}\" exists!", parentName.value());
+        return;
+      } else if (global::recordings.empty()) {
+        global::new_ui_message(
+            "You loaded flow vectors before any regular recording, load regular recording first");
+        return;
+      } else {
+        parent = global::recordings.back();
+      }
+    }
+
+    auto rec = std::make_shared<Recording>(file);
+    parent->add_flow(rec);
   }
-  while (!global::merge_queue.empty()) {
+}
+
+void load_new_file(const fs::path &path) {
+  fmt::print("Loading {} ...\n", path.string());
+  auto file = Recording::autoguess_filetype(path);
+  load_new_file(file);
+}
+
+void load_from_queue() {
+  if (auto filepath = global::get_file_to_load()) {
+    load_new_file(filepath.value());
+  }
+  if (auto arr = global::get_rawarray3_to_load()) {
+    auto file = std::make_shared<InMemoryRecording>(arr.value());
+    load_new_file(file);
+  }
+  if (!global::merge_queue.empty()) {
     auto [child, parent] = global::merge_queue.front();
     global::merge_queue.pop();
     parent->children.push_back(child);

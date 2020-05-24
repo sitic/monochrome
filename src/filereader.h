@@ -39,6 +39,7 @@ class AbstractRecording {
   virtual float fps() const                             = 0;
   virtual std::optional<BitRange> bitrange() const      = 0;
   virtual std::optional<ColorMap> cmap() const          = 0;
+  virtual bool is_flow() const                          = 0;
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
@@ -65,10 +66,10 @@ class InMemoryRecording : public AbstractRecording {
     _frame_size = Nx() * Ny();
     _frame.setZero(Nx(), Ny());
 
-    if (!_data->meta.bitrange) {
+    if (!bitrange() && !is_flow()) {
       std::visit(
           [this](const auto& data) {
-            _data->meta.bitrange = detect_bitrange(data.begin(), data.begin() + _frame_size);
+            _data->meta.bitrange = utils::detect_bitrange(data.begin(), data.begin() + _frame_size);
           },
           _data->data);
     }
@@ -87,6 +88,7 @@ class InMemoryRecording : public AbstractRecording {
   float fps() const final { return _data->meta.fps; };
   std::optional<BitRange> bitrange() const final { return _data->meta.bitrange; }
   std::optional<ColorMap> cmap() const final { return _data->meta.cmap; }
+  bool is_flow() const final { return _data->meta.is_flowfield; };
 
   Eigen::MatrixXf read_frame(long t) final {
     std::visit(

@@ -1,1 +1,1 @@
-from .utils import open_file, open_files, open_array3, ColorMap, BitRange
+from .utils import open_file, open_files, open_array3, open_flow, ColorMap, BitRange

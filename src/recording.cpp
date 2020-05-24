@@ -75,7 +75,7 @@ void RotationCtrl::apply(Eigen::MatrixXf &arr) {
   }
 }
 
-std::shared_ptr<AbstractRecording> Recording::autoguess_filerecording(const fs::path &path) {
+std::shared_ptr<AbstractRecording> Recording::autoguess_filetype(const fs::path &path) {
   std::shared_ptr<AbstractRecording> file;
   if (!fs::is_regular_file(path)) {
     global::new_ui_message("ERROR: {} does not appear to be a file", path.string());
@@ -90,7 +90,7 @@ std::shared_ptr<AbstractRecording> Recording::autoguess_filerecording(const fs::
       file = std::make_shared<BmpFileRecording>(path);
     }
   } else {
-    global::new_ui_message("ERROR: {} does has unkown extension. Only .dat and .npy are supported",
+    global::new_ui_message("ERROR: {} does has unknown extension. Only .dat and .npy are supported",
                            path.string());
     return file;
   }
