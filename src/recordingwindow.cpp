@@ -786,7 +786,7 @@ void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
 
   glfwMakeContextCurrent(window);
   glViewport(0, 0, w, h);
-  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClearColor(1.f, 1.f, 1.f, 0.f);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

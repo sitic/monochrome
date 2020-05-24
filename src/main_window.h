@@ -88,7 +88,7 @@ void load_from_queue() {
   }
   if (auto arr = global::get_rawarray3_to_load()) {
     auto file = std::make_shared<InMemoryRecording>(arr.value());
-    load_new_file(file);
+    load_new_file(file, arr.value()->meta.parentName);
   }
   if (!global::merge_queue.empty()) {
     auto [child, parent] = global::merge_queue.front();

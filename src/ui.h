@@ -419,10 +419,18 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     }
     ImGui::EndGroup();
   }
-  ImGui::SliderFloat("min", &rec->get_min(prm::transformation), rec->histogram.min,
-                     rec->histogram.max);
-  ImGui::SliderFloat("max", &rec->get_max(prm::transformation), rec->histogram.min,
-                     rec->histogram.max);
+  if (ImGui::SliderFloat("min", &rec->get_min(prm::transformation), rec->histogram.min,
+                         rec->histogram.max)) {
+    if (prm::transformation == Transformations::FrameDiff) {
+      rec->get_max(prm::transformation) = -rec->get_min(prm::transformation);
+    }
+  }
+  if (ImGui::SliderFloat("max", &rec->get_max(prm::transformation), rec->histogram.min,
+                         rec->histogram.max)) {
+    if (prm::transformation == Transformations::FrameDiff) {
+      rec->get_min(prm::transformation) = -rec->get_max(prm::transformation);
+    }
+  }
 
   if (!rec->flows.empty()) {
     for (auto &flow : rec->flows) {
