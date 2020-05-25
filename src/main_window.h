@@ -22,7 +22,7 @@ namespace global {
   GLFWwindow *main_window = nullptr;
 
   std::vector<SharedRecordingPtr> recordings = {};
-  std::queue<std::pair<SharedRecordingPtr, SharedRecordingPtr>> merge_queue;
+  std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
 }  // namespace global
 
 void load_new_file(std::shared_ptr<AbstractRecording> file,
@@ -50,7 +50,7 @@ void load_new_file(std::shared_ptr<AbstractRecording> file,
             "exists!",
             rec->name(), parentName.value());
       } else {
-        global::merge_queue.push({rec, parent});
+        global::merge_queue.push({rec, parent, false});
       }
     }
   } else {
@@ -91,11 +91,16 @@ void load_from_queue() {
     load_new_file(file, arr.value()->meta.parentName);
   }
   if (!global::merge_queue.empty()) {
-    auto [child, parent] = global::merge_queue.front();
+    auto [child, parent, as_flow] = global::merge_queue.front();
     global::merge_queue.pop();
-    parent->children.push_back(child);
-    child->set_context(parent->window);
-    child->playback = parent->playback;
+    if (!as_flow) {
+      parent->children.push_back(child);
+      child->set_context(parent->window);
+      child->playback = parent->playback;
+    } else {
+      child->set_context(parent->window);
+      parent->add_flow(child);
+    }
     global::recordings.erase(
         std::remove_if(global::recordings.begin(), global::recordings.end(),
                        [ptr = child.get()](const auto &r) -> bool { return r.get() == ptr; }),

@@ -849,3 +849,11 @@ void RecordingWindow::rotation_was_changed() {
   glfwSetWindowAspectRatio(window, Nx(), Ny());
   traces.clear();
 }
+
+void RecordingWindow::add_flow(std::shared_ptr<Recording> flow) {
+  if (flow->length() >= 2 * length())
+    flows.emplace_back(flow, flows.size());
+  else
+    global::new_ui_message("Failed to add '{}' as flow to '{}' because length does not match",
+                           flow->name(), name());
+}

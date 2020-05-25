@@ -243,7 +243,7 @@ class RecordingWindow : public Recording {
   void start_recording(const std::string &filename, int fps = 30);
   void stop_recording();
 
-  void add_flow(std::shared_ptr<Recording> flow) { flows.emplace_back(flow, flows.size()); }
+  void add_flow(std::shared_ptr<Recording> flow);
 
   static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
   static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos);

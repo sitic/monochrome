@@ -8,7 +8,7 @@
 namespace global {
   extern GLFWwindow *main_window;
   extern std::vector<SharedRecordingPtr> recordings;
-  extern std::queue<std::pair<SharedRecordingPtr, SharedRecordingPtr>> merge_queue;
+  extern std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
 
   template <typename Func>
   void do_forall_recordings(Func &&f) {
@@ -357,9 +357,13 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       if (ImGui::BeginPopup("merge_popup")) {
         for (auto &r : global::recordings) {
           if (r.get() == rec.get()) continue;
-          auto l = fmt::format("Merge into '{}'", r->get_file_ptr()->path().filename().string());
+          auto l = fmt::format("Merge into '{}'", r->name());
           if (ImGui::Selectable(l.c_str())) {
-            global::merge_queue.push({rec, r});
+            global::merge_queue.push({rec, r, false});
+          }
+          auto l2 = l + " as flow"s;
+          if (ImGui::Selectable(l2.c_str())) {
+            global::merge_queue.push({rec, r, true});
           }
         }
         ImGui::EndPopup();
