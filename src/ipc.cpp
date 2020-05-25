@@ -162,7 +162,8 @@ namespace {
       }
 
       global::RawArray3MetaData meta{raw->nx(), raw->ny(), raw->nt(), raw->name()->str()};
-      meta.parentName   = raw->parentName()->str();
+      if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_PARENTNAME))
+        meta.parentName = raw->parentName()->str();
       meta.is_flowfield = true;
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;

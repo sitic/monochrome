@@ -72,16 +72,17 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     return buf
 
 
-def create_array3metaflow_msg(shape, parentName, name=""):
+def create_array3metaflow_msg(shape, parentName=None, name=""):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
-    parent_fb = builder.CreateString(parentName)
+    parent_fb = builder.CreateString(parentName) if parentName else None
     Array3MetaFlow.Array3MetaFlowStart(builder)
     Array3MetaFlow.Array3MetaFlowAddNx(builder, shape[2])
     Array3MetaFlow.Array3MetaFlowAddNy(builder, shape[1])
     Array3MetaFlow.Array3MetaFlowAddNt(builder, shape[0])
     Array3MetaFlow.Array3MetaFlowAddName(builder, name_fb)
-    Array3MetaFlow.Array3MetaFlowAddParentName(builder, parent_fb)
+    if parent_fb:
+        Array3MetaFlow.Array3MetaFlowAddParentName(builder, parent_fb)
     d = Array3MetaFlow.Array3MetaFlowEnd(builder)
 
     root = build_root(builder, Data.Data.Array3MetaFlow, d)
@@ -177,7 +178,7 @@ def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0,
         s.sendall(buf)
 
 
-def open_flow(flow_uv: np.ndarray, parentName: Text, name: Text = ""):
+def open_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text = ""):
     if flow_uv.ndim != 4:
         raise ValueError("array is not three-dimensional")
     if flow_uv.dtype != np.float32:
