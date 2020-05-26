@@ -303,7 +303,9 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
   ImGui::SetNextItemWidth(-1);
   if (ImGui::SliderInt("##progress", &t, 0, rec->length() - 1, "Frame %d")) {
-    rec->playback.set(t - static_cast<int>(prm::playbackCtrl.val));
+    if (t < rec->length()) {
+      rec->playback.set_next(t);
+    }
   }
   ImGui::PopStyleColor(1);
 
@@ -329,7 +331,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   ImGui::Text("Width  %d", rec->Nx());
   ImGui::NextColumn();
   ImGui::Text("Height %d", rec->Ny());
-  if (rec_nr != -1) {
+  if (!parent) {
     ImGui::NextColumn();
     if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
       auto &ctrl         = rec->export_ctrl.raw;
@@ -344,6 +346,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       auto &ctrl         = rec->export_ctrl.video;
       ctrl.export_window = true;
       ctrl.assign_auto_filename(rec->path());
+      ctrl.tend = rec->length();
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
@@ -573,6 +576,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
       ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
       static int fps = 30;
       ImGui::InputInt("FPS", &fps);
+      ImGui::InputInt("t start", &ctrl.tstart);
+      ImGui::InputInt("t end", &ctrl.tend);
 
       if (ImGui::Button("Start Export")) {
         fs::path path(export_dir.data());

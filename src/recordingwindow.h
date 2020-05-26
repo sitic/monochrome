@@ -51,8 +51,10 @@ class RecordingPlaybackCtrl {
   [[nodiscard]] int next_t() const;
   [[nodiscard]] int next_t(int iterations) const;
   [[nodiscard]] float progress() const;
+  [[nodiscard]] bool is_last() const;
 
   void set(int t);
+  void set_next(int t);
   void restart();
 };
 
@@ -103,6 +105,8 @@ struct ExportCtrl {
     float progress             = 0;
     std::vector<char> filename = {};
     VideoRecorder videoRecorder;
+    int tstart                 = 0;
+    int tend                   = -1;
 
     void assign_auto_filename(const fs::path &bmp_path) {
       videoRecorder.videotitle = bmp_path.filename().string();
@@ -217,9 +221,7 @@ class RecordingWindow : public Recording {
   void set_context(GLFWwindow *new_context);
 
   virtual void display(Filters prefilter, Transformations transformation, Filters postfilter);
-  virtual void render() {
-    if (glcontext == window) glfwSwapBuffers(window);
-  }
+  virtual void render();
 
   virtual void load_next_frame() { load_frame(playback.step()); }
 

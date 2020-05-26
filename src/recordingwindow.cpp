@@ -242,9 +242,16 @@ void RecordingPlaybackCtrl::set(int t) {
   t_  = t;
   tf_ = t;
 }
+void RecordingPlaybackCtrl::set_next(int t) {
+  t_  = std::numeric_limits<int>::lowest();
+  tf_ = t - prm::playbackCtrl.val;
+}
 void RecordingPlaybackCtrl::restart() {
   t_  = std::numeric_limits<int>::lowest();
   tf_ = std::numeric_limits<float>::lowest();
+}
+bool RecordingPlaybackCtrl::is_last() const {
+  return tf_ + prm::playbackCtrl.val >= length_;
 }
 
 void Trace::set_pos(const Vec2i &npos) {
@@ -671,17 +678,6 @@ void RecordingWindow::display(Filters prefilter,
     glDrawArrays(GL_POINTS, 0, flow_vert.size() / 2);
   }
 
-  if (export_ctrl.video.recording) {
-    auto cur = playback.progress();
-    if (cur < export_ctrl.video.progress) {
-      stop_recording();
-      global::new_ui_message("Exporting video finished!");
-    } else {
-      export_ctrl.video.videoRecorder.add_frame();
-      export_ctrl.video.progress = cur;
-    }
-  }
-
   glfwMakeContextCurrent(global::main_window);
 }
 
@@ -814,7 +810,10 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
 }
 
 void RecordingWindow::start_recording(const std::string &filename, int fps) {
-  playback.restart();
+  playback.set_next(export_ctrl.video.tstart);
+  for (auto &child : children) {
+    child->playback.set_next(export_ctrl.video.tstart);
+  }
   export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
   export_ctrl.video.recording = true;
   export_ctrl.video.progress  = 0;
@@ -856,4 +855,26 @@ void RecordingWindow::add_flow(std::shared_ptr<Recording> flow) {
   else
     global::new_ui_message("Failed to add '{}' as flow to '{}' because length does not match",
                            flow->name(), name());
+}
+
+void RecordingWindow::render() {
+  if (glcontext == window) {
+    glfwMakeContextCurrent(window);
+
+    if (export_ctrl.video.recording) {
+      if (playback.current_t() < 0) {
+        // do nothing, this is the frame before the first one
+      } else if (playback.is_last()) {
+        stop_recording();
+        global::new_ui_message("Exporting video finished!");
+      } else {
+        export_ctrl.video.videoRecorder.add_frame();
+        export_ctrl.video.progress = playback.progress();
+      }
+    }
+
+    glfwSwapBuffers(window);
+
+    glfwMakeContextCurrent(global::main_window);
+  }
 }
