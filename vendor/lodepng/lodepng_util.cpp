@@ -1,7 +1,7 @@
 /*
 LodePNG Utils
 
-Copyright (c) 2005-2019 Lode Vandevenne
+Copyright (c) 2005-2020 Lode Vandevenne
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -39,11 +39,11 @@ LodePNGInfo getPNGHeaderInfo(const std::vector<unsigned char>& png) {
 unsigned getChunkInfo(std::vector<std::string>& names, std::vector<size_t>& sizes,
                       const std::vector<unsigned char>& png) {
   // Listing chunks is based on the original file, not the decoded png info.
-  const unsigned char *chunk, *begin, *end, *next;
+  const unsigned char *chunk, *end;
   end = &png.back() + 1;
-  begin = chunk = &png.front() + 8;
+  chunk = &png.front() + 8;
 
-  while(chunk + 8 < end && chunk >= begin) {
+  while(chunk < end && end - chunk >= 8) {
     char type[5];
     lodepng_chunk_type(type, chunk);
     if(std::string(type).size() != 4) return 1;
@@ -51,11 +51,7 @@ unsigned getChunkInfo(std::vector<std::string>& names, std::vector<size_t>& size
     unsigned length = lodepng_chunk_length(chunk);
     names.push_back(type);
     sizes.push_back(length);
-    if(chunk + length + 12 > end) return 1;
-
-    next = lodepng_chunk_next_const(chunk);
-    if (next <= chunk) return 1; // integer overflow
-    chunk = next;
+    chunk = lodepng_chunk_next_const(chunk, end);
   }
   return 0;
 }
@@ -63,20 +59,19 @@ unsigned getChunkInfo(std::vector<std::string>& names, std::vector<size_t>& size
 unsigned getChunks(std::vector<std::string> names[3],
                    std::vector<std::vector<unsigned char> > chunks[3],
                    const std::vector<unsigned char>& png) {
-  const unsigned char *chunk, *next, *begin, *end;
+  const unsigned char *chunk, *next, *end;
   end = &png.back() + 1;
-  begin = chunk = &png.front() + 8;
+  chunk = &png.front() + 8;
 
   int location = 0;
 
-  while(chunk + 8 < end && chunk >= begin) {
+  while(chunk < end && end - chunk >= 8) {
     char type[5];
     lodepng_chunk_type(type, chunk);
     std::string name(type);
     if(name.size() != 4) return 1;
 
-    next = lodepng_chunk_next_const(chunk);
-    if (next <= chunk) return 1; // integer overflow
+    next = lodepng_chunk_next_const(chunk, end);
 
     if(name == "IHDR") {
       location = 0;
@@ -87,7 +82,7 @@ unsigned getChunks(std::vector<std::string> names[3],
     } else if(name == "IEND") {
       break; // anything after IEND is not part of the PNG or the 3 groups here.
     } else {
-      if(next > end) return 1; // invalid chunk, content too far
+      if(next >= end) return 1; // invalid chunk, content too far
       names[location].push_back(name);
       chunks[location].push_back(std::vector<unsigned char>(chunk, next));
     }
@@ -100,7 +95,7 @@ unsigned getChunks(std::vector<std::string> names[3],
 
 unsigned insertChunks(std::vector<unsigned char>& png,
                       const std::vector<std::vector<unsigned char> > chunks[3]) {
-  const unsigned char *chunk, *next, *begin, *end;
+  const unsigned char *chunk, *begin, *end;
   end = &png.back() + 1;
   begin = chunk = &png.front() + 8;
 
@@ -108,14 +103,11 @@ unsigned insertChunks(std::vector<unsigned char>& png,
   long l1 = 0; //location 1: PLTE-l1-IDAT (or IHDR-l0-l1-IDAT)
   long l2 = 0; //location 2: IDAT-l2-IEND
 
-  while(chunk + 8 < end && chunk >= begin) {
+  while(chunk < end && end - chunk >= 8) {
     char type[5];
     lodepng_chunk_type(type, chunk);
     std::string name(type);
     if(name.size() != 4) return 1;
-
-    next = lodepng_chunk_next_const(chunk);
-    if (next <= chunk) return 1; // integer overflow
 
     if(name == "PLTE") {
       if(l0 == 0) l0 = chunk - begin + 8;
@@ -126,7 +118,7 @@ unsigned insertChunks(std::vector<unsigned char>& png,
       if(l2 == 0) l2 = chunk - begin + 8;
     }
 
-    chunk = next;
+    chunk = lodepng_chunk_next_const(chunk, end);
   }
 
   std::vector<unsigned char> result;
@@ -153,13 +145,13 @@ unsigned getFilterTypesInterlaced(std::vector<std::vector<unsigned char> >& filt
   if(error) return 1;
 
   //Read literal data from all IDAT chunks
-  const unsigned char *chunk, *begin, *end, *next;
+  const unsigned char *chunk, *begin, *end;
   end = &png.back() + 1;
   begin = chunk = &png.front() + 8;
 
   std::vector<unsigned char> zdata;
 
-  while(chunk + 8 < end && chunk >= begin) {
+  while(chunk < end && end - chunk >= 8) {
     char type[5];
     lodepng_chunk_type(type, chunk);
     if(std::string(type).size() != 4) break; //Probably not a PNG file
@@ -177,9 +169,7 @@ unsigned getFilterTypesInterlaced(std::vector<std::vector<unsigned char> >& filt
       }
     }
 
-    next = lodepng_chunk_next_const(chunk);
-    if (next <= chunk) break; // integer overflow
-    chunk = next;
+    chunk = lodepng_chunk_next_const(chunk, end);
   }
 
   //Decompress all IDAT data (if the while loop ended early, this might fail)
@@ -208,8 +198,7 @@ unsigned getFilterTypesInterlaced(std::vector<std::vector<unsigned char> >& filt
     for(size_t j = 0; j < 7; j++) {
       unsigned w2 = (w - ADAM7_IX[j] + ADAM7_DX[j] - 1) / ADAM7_DX[j];
       unsigned h2 = (h - ADAM7_IY[j] + ADAM7_DY[j] - 1) / ADAM7_DY[j];
-      if(ADAM7_IX[j] >= w) w2 = 0;
-      if(ADAM7_IY[j] >= h) h2 = 0;
+      if(ADAM7_IX[j] >= w || ADAM7_IY[j] >= h) continue;
       size_t linebytes = 1 + lodepng_get_raw_size(w2, 1, &state.info_png.color);
       for(size_t i = 0; i < h2; i++) {
         filterTypes[j].push_back(data[pos]);
@@ -229,17 +218,24 @@ unsigned getFilterTypes(std::vector<unsigned char>& filterTypes, const std::vect
   if(passes.size() == 1) {
     filterTypes.swap(passes[0]);
   } else {
+    // Simplify interlaced filter types to get a single filter value per scanline:
+    // put pass 6 and 7 alternating in the one vector, these filters
+    // correspond to the closest to what it would be for non-interlaced
+    // image. If the image is only 1 pixel wide, pass 6 doesn't exist so the
+    // alternative values column0 are used. The shift values are to match
+    // the y position in the interlaced sub-images.
+    // NOTE: the values 0-6 match Adam7's passes 1-7.
+    const unsigned column0[8] = {0, 6, 4, 6, 2, 6, 4, 6};
+    const unsigned column1[8] = {5, 6, 5, 6, 5, 6, 5, 6};
+    const unsigned shift0[8] = {3, 1, 2, 1, 3, 1, 2, 1};
+    const unsigned shift1[8] = {1, 1, 1, 1, 1, 1, 1, 1};
     lodepng::State state;
     unsigned w, h;
     lodepng_inspect(&w, &h, &state, &png[0], png.size());
-    /*
-    Interlaced. Simplify it: put pass 6 and 7 alternating in the one vector so
-    that one filter per scanline of the uninterlaced image is given, with that
-    filter corresponding the closest to what it would be for non-interlaced
-    image.
-    */
+    const unsigned* column = w > 1 ? column1 : column0;
+    const unsigned* shift = w > 1 ? shift1 : shift0;
     for(size_t i = 0; i < h; i++) {
-      filterTypes.push_back(i % 2 == 0 ? passes[5][i / 2] : passes[6][i / 2]);
+      filterTypes.push_back(passes[column[i & 7u]][i >> shift[i & 7u]]);
     }
   }
   return 0; /* OK */
@@ -281,8 +277,8 @@ void lodepng_free(void* ptr);
 static const float lodepng_flt_max = 3.40282346638528859811704183484516925e38f;
 
 /* define infinity and NaN in a way compatible with ANSI C90 (no INFINITY or NAN macros) yet also with visual studio */
-/* visual studio doesn't allow division through zero literal, but allows it through variable set to zero */
-static const float lodepng_flt_zero_ = 0.0f;
+/* visual studio doesn't allow division through a zero literal, but allows it through non-const variable set to zero */
+float lodepng_flt_zero_ = 0.0f;
 static const float lodepng_flt_inf = 1.0f / lodepng_flt_zero_; /* infinity */
 static const float lodepng_flt_nan = 0.0f / lodepng_flt_zero_; /* not a number */
 

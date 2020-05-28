@@ -1,7 +1,7 @@
 /*
 LodePNG Unit Test
 
-Copyright (c) 2005-2019 Lode Vandevenne
+Copyright (c) 2005-2020 Lode Vandevenne
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -44,6 +44,8 @@ mv lodepng.cpp lodepng.c ; clang -I ./ lodepng.c examples/example_decode.c -ansi
 *) Compile with C with -pedantic but not -ansi flag so it warns about // style comments in C++-only ifdefs
 mv lodepng.cpp lodepng.c ; gcc -I ./ lodepng.c examples/example_decode.c -pedantic -Werror -Wall -Wextra -O3 ; mv lodepng.c lodepng.cpp
 
+*) test other compilers
+
 *) try lodepng_benchmark.cpp
 g++ lodepng.cpp lodepng_benchmark.cpp -Werror -Wall -Wextra -pedantic -ansi -lSDL -O3 && ./a.out testdata/corpus/''*
 
@@ -75,6 +77,8 @@ g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_ZLIB -DLODE
 g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_ZLIB -DLODEPNG_NO_COMPILE_ENCODER
 g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_PNG -DLODEPNG_NO_COMPILE_DECODER
 g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_PNG -DLODEPNG_NO_COMPILE_ENCODER
+g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_DECODER -DLODEPNG_NO_COMPILE_ANCILLARY_CHUNKS -DLODEPNG_NO_COMPILE_ERROR_TEXT -DLODEPNG_NO_COMPILE_DISK
+g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_ENCODER -DLODEPNG_NO_COMPILE_ANCILLARY_CHUNKS -DLODEPNG_NO_COMPILE_ERROR_TEXT -DLODEPNG_NO_COMPILE_DISK
 rm *.o
 
 *) analyze with clang:
@@ -91,12 +95,9 @@ clang++ --analyze -Xanalyzer -analyzer-output=html lodepng.cpp
 g++ -DDISABLE_SLOW lodepng.cpp lodepng_util.cpp lodepng_unittest.cpp -Wall -Wextra -pedantic -ansi -O3 -DLODEPNG_MAX_ALLOC=100000000 && valgrind --leak-check=full --track-origins=yes ./a.out
 
 *) Try with clang++ and address sanitizer (to get line numbers, make sure 'llvm' is also installed to get 'llvm-symbolizer'
-clang++ -O3 -fsanitize=address lodepng.cpp lodepng_util.cpp lodepng_unittest.cpp -Werror -Wall -Wextra -Wshadow -pedantic -ansi && ASAN_OPTIONS=allocator_may_return_null=1 ./a.out
+clang++ -O3 -fsanitize=address,undefined lodepng.cpp lodepng_util.cpp lodepng_unittest.cpp -Werror -Wall -Wextra -Wshadow -pedantic -ansi && ASAN_OPTIONS=allocator_may_return_null=1 ./a.out
 
-clang++ -g3 -fsanitize=address lodepng.cpp lodepng_util.cpp lodepng_unittest.cpp -Werror -Wall -Wextra -Wshadow -pedantic -ansi && ASAN_OPTIONS=allocator_may_return_null=1 ./a.out
-
-*) Idem for undefined behavior
-clang++ -O3 -fsanitize=undefined lodepng.cpp lodepng_util.cpp lodepng_unittest.cpp -Werror -Wall -Wextra -Wshadow -pedantic -ansi && ASAN_OPTIONS=allocator_may_return_null=1 ./a.out
+clang++ -g3 -fsanitize=address,undefined lodepng.cpp lodepng_util.cpp lodepng_unittest.cpp -Werror -Wall -Wextra -Wshadow -pedantic -ansi && ASAN_OPTIONS=allocator_may_return_null=1 ./a.out
 
 *) remove "#include <iostream>" from lodepng.cpp if it's still in there (some are legit)
 cat lodepng.cpp lodepng_util.cpp | grep iostream
@@ -106,7 +107,7 @@ cat lodepng.cpp lodepng_util.cpp | grep "#include"
 *) try the Makefile
 make clean && make -j
 
-*) check that no plain "free", "malloc", "realloc", "strlen", "memcpy", ... used, but the lodepng_* versions instead
+*) check that no plain free, malloc, realloc, strlen, memcpy, memset, ... used, but the lodepng_* versions instead
 
 *) check version dates in copyright message and LODEPNG_VERSION_STRING
 
@@ -678,6 +679,24 @@ void doCodecTestNoLZ77(Image& image) {
   lodepng::State state;
   state.encoder.zlibsettings.use_lz77 = 0;
   doCodecTestWithEncState(image, state);
+}
+
+void testGetFilterTypes() {
+  std::cout << "testGetFilterTypes" << std::endl;
+  // Test that getFilterTypes works on the special case of 1-pixel wide interlaced image
+  std::string png64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAAHCAIAAAExKYBVAAAAHUlEQVR4ASXHAQoAAAjCwPX/R9tK4ZBN4EHKcPcLXCgGAQa0TV8AAAAASUVORK5CYII=";
+  std::vector<unsigned char> png;
+  fromBase64(png, png64);
+  std::vector<unsigned char> types;
+  lodepng::getFilterTypes(types, png);
+  ASSERT_EQUALS(7, types.size());
+  ASSERT_EQUALS(1, types[0]);
+  ASSERT_EQUALS(1, types[1]);
+  ASSERT_EQUALS(1, types[2]);
+  ASSERT_EQUALS(0, types[3]);
+  ASSERT_EQUALS(1, types[4]);
+  ASSERT_EQUALS(1, types[5]);
+  ASSERT_EQUALS(1, types[6]);
 }
 
 //Test LodePNG encoding and decoding the encoded result, using the C++ interface, with interlace
@@ -1291,13 +1310,14 @@ void createComplexPNG(std::vector<unsigned char>& png) {
 
 std::string extractChunkNames(const std::vector<unsigned char>& png) {
   const unsigned char* chunk = &png[8];
+  const unsigned char* end = &png.back() + 1;
   char name[5];
   std::string result = "";
   for(;;) {
     lodepng_chunk_type(name, chunk);
     result += (std::string(" ") + name);
     if(std::string(name) == "IEND") break;
-    chunk = lodepng_chunk_next_const(chunk);
+    chunk = lodepng_chunk_next_const(chunk, end);
     assertTrue(chunk < &png.back(), "jumped out of chunks");
   }
   return result;
@@ -2007,6 +2027,9 @@ void testAutoColorModels() {
   // 8-bit gray+alpha
   std::vector<unsigned char> gray8a;
   for(size_t i = 0; i < 17; i++) addColor(gray8a, i, i, i, i);
+  testAutoColorModel(gray8a, 8, LCT_PALETTE, 8, false);
+  // palette not possible, becomes gray alpha
+  for(size_t i = 0; i < 256; i++) addColor(gray8a, i, i, i, i ^ 1);
   testAutoColorModel(gray8a, 8, LCT_GREY_ALPHA, 8, false);
 
   // 16-bit gray+alpha
@@ -3116,6 +3139,20 @@ void testBase64Image(const std::string& png64, bool expect_error, unsigned expec
     }
     ASSERT_EQUALS(expected_rgb, rgb8);
   }
+
+  // test encode/decode
+  // TODO: also test state, for text chunks, ...
+  {
+    std::vector<unsigned char> rgba16;
+    ASSERT_NO_PNG_ERROR(lodepng::decode(rgba16, w, h, png, LCT_RGBA, 16));
+
+    std::vector<unsigned char> png_b;
+    ASSERT_NO_PNG_ERROR(lodepng::encode(png_b, rgba16, w, h, LCT_RGBA, 16));
+
+    std::vector<unsigned char> rgba16_b;
+    ASSERT_NO_PNG_ERROR(lodepng::decode(rgba16_b, w, h, png_b, LCT_RGBA, 16));
+    ASSERT_EQUALS(rgba16, rgba16_b);
+  }
 }
 // input is base64-encoded png image and base64-encoded RGBA pixels (8 bit per channel)
 void testPngSuiteImage(const std::string& png64, const std::string& name, bool expect_error, unsigned expect_w, unsigned expect_h, const std::string& expect_md5) {
@@ -3502,6 +3539,117 @@ void testErrorImages() {
   testBase64Image("iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAgMAAAAhHED1AAAAU0lEQVR4Ae3MwQAAAAxFoXnM3/NDvGsBdB8JBAKBQCAQCAQCgUAgEAgEAoFAIBAIBAKBQCAQCAQCgUAgEAgEAoFAIBAIBAKBQCAQCAQCgUAgEEQDHGPAW1eyhK0AAAAASUVORK5CYII=", true, 256, 256, "");
 }
 
+// defined in lodepng.cpp
+unsigned lode_png_test_bitreader(const unsigned char* data, size_t size, size_t numsteps, const size_t* steps, unsigned* result);
+
+void testBitReaderCase(const std::string& bits, const std::vector<size_t>& steps, bool expect_error, bool silent = false) {
+  if(!silent) std::cout << "testBitReaderCase: " << bits << ", #steps: " << steps.size() << std::endl;
+  std::vector<unsigned char> data;
+  std::vector<bool> bits0;
+  size_t bitcount = 0;
+  for(size_t i = 0; i < bits.size(); i++) {
+    char c = bits[i];
+    if(c != '0' && c != '1') continue;
+    if((bitcount & 7) == 0) data.push_back(0);
+    int bit = (c == '1');
+    data.back() |= (bit << (bitcount & 7));
+    bits0.push_back(bit);
+    bitcount++;
+  }
+  std::vector<unsigned> result(steps.size());
+  unsigned ok = lode_png_test_bitreader(data.data(), data.size(), steps.size(), steps.data(), result.data());
+  if(expect_error) {
+    assertEquals(0, ok, "expected it would give an error");
+    return;
+  }
+  assertEquals(1, ok, "expected there would be no error");
+
+  std::vector<bool> bits1;
+  for(size_t i = 0; i < steps.size(); i++) {
+    size_t step = steps[i];
+    size_t value = result[i];
+    for(size_t j = 0; j < step; j++) {
+      bits1.push_back((value >> j) & 1);
+    }
+  }
+  bits0.resize(bits1.size()); // only test those bits that were actually read for the test
+
+  assertEquals(bits0, bits1);
+}
+
+// This is still using C++98 for lodepng for compatibility, even though I'd love to use C++11 vector initializer lists here.
+// TODO: use modern C++ at least for the unit test
+#define V(arr) std::vector<size_t>(arr, arr + sizeof(arr) / sizeof(*arr))
+
+void testBitReader() {
+  std::string zeros = "0000000000000000000000000000000000000000000000000000000000000000";
+  testBitReaderCase("", std::vector<size_t>(0), false);
+  { size_t arr[] = {1}; testBitReaderCase("0", V(arr), false); }
+  { size_t arr[] = {1}; testBitReaderCase("1", V(arr), false); }
+  { size_t arr[] = {2}; testBitReaderCase("00", V(arr), false); }
+  { size_t arr[] = {2}; testBitReaderCase("01", V(arr), false); }
+  { size_t arr[] = {2}; testBitReaderCase("10", V(arr), false); }
+  { size_t arr[] = {2}; testBitReaderCase("11", V(arr), false); }
+  { size_t arr[] = {3}; testBitReaderCase("111", V(arr), false); }
+  { size_t arr[] = {4}; testBitReaderCase("1111", V(arr), false); }
+  { size_t arr[] = {8}; testBitReaderCase("11111111", V(arr), false); }
+  { size_t arr[] = {9}; testBitReaderCase("111111111", V(arr), false); }
+  { size_t arr[] = {9}; testBitReaderCase("11111111", V(arr), true); }
+  { size_t arr[] = {16}; testBitReaderCase("1111111111111111", V(arr), false); }
+  { size_t arr[] = {17}; testBitReaderCase("11111111111111111", V(arr), false); }
+  { size_t arr[] = {17}; testBitReaderCase("1111111111111111", V(arr), true); }
+  { size_t arr[] = {24}; testBitReaderCase("111111111111111111111111", V(arr), false); }
+  { size_t arr[] = {25}; testBitReaderCase("1111111111111111111111111", V(arr), false); }
+  { size_t arr[] = {25}; testBitReaderCase("111111111111111111111111", V(arr), true); }
+  { size_t arr[] = {31}; testBitReaderCase("1111111111111111111111111111111", V(arr), false); }
+  { size_t arr[] = {1, 31}; testBitReaderCase("11111111111111111111111111111111", V(arr), false); }
+  { size_t arr[] = {31}; testBitReaderCase("111111111111111111111111", V(arr), true); }
+  { size_t arr[] = {16, 16}; testBitReaderCase("11111111111111111111111111111111", V(arr), false); }
+  { size_t arr[] = {1}; testBitReaderCase("0" + zeros, V(arr), false); }
+  { size_t arr[] = {1}; testBitReaderCase("1" + zeros, V(arr), false); }
+  { size_t arr[] = {2}; testBitReaderCase("00" + zeros, V(arr), false); }
+  { size_t arr[] = {2}; testBitReaderCase("01" + zeros, V(arr), false); }
+  { size_t arr[] = {2}; testBitReaderCase("10" + zeros, V(arr), false); }
+  { size_t arr[] = {2}; testBitReaderCase("11" + zeros, V(arr), false); }
+  { size_t arr[] = {3}; testBitReaderCase("111" + zeros, V(arr), false); }
+  { size_t arr[] = {4}; testBitReaderCase("1111" + zeros, V(arr), false); }
+  { size_t arr[] = {8}; testBitReaderCase("11111111" + zeros, V(arr), false); }
+  { size_t arr[] = {9}; testBitReaderCase("111111111" + zeros, V(arr), false); }
+  { size_t arr[] = {16}; testBitReaderCase("1111111111111111" + zeros, V(arr), false); }
+  { size_t arr[] = {17}; testBitReaderCase("11111111111111111" + zeros, V(arr), false); }
+  { size_t arr[] = {24}; testBitReaderCase("111111111111111111111111" + zeros, V(arr), false); }
+  { size_t arr[] = {25}; testBitReaderCase("1111111111111111111111111" + zeros, V(arr), false); }
+  { size_t arr[] = {31}; testBitReaderCase("1111111111111111111111111111111" + zeros, V(arr), false); }
+  { size_t arr[] = {16, 16}; testBitReaderCase("11111111111111111111111111111111" + zeros, V(arr), false); }
+
+  // 128 arbitrary bits
+  std::string test = "10101011110000101110010010000101000100100000111000010010010010010010111100000100100100100000001010111111110001111010101011011001";
+  for(size_t i = 0; i < 32; i++) {
+    std::cout << "testBitReader loop " << i << std::endl;
+    { size_t arr[] = {i}; testBitReaderCase(test, V(arr), false, true); }
+    { size_t arr[] = {i, i}; testBitReaderCase(test, V(arr), false, true); }
+    { size_t arr[] = {i, i, i}; testBitReaderCase(test, V(arr), false, true); }
+    { size_t arr[] = {i, i, i, i}; testBitReaderCase(test, V(arr), false, true); }
+    { size_t arr[] = {1, i, i, i, i}; testBitReaderCase(test, V(arr), false, true); }
+    { size_t arr[] = {2, i, i, i, i}; testBitReaderCase(test, V(arr), false, true); }
+    { size_t arr[] = {3, i, i, i, i}; testBitReaderCase(test, V(arr), false, true); }
+    { size_t arr[] = {31, 31, 31, i}; testBitReaderCase(test, V(arr), false, true); }
+    { size_t arr[] = {i, i, i, i, i, i, i, i}; testBitReaderCase(test + test, V(arr), false, true); }
+    for(size_t j = 0; j < 32; j++) {
+      { size_t arr[] = {i, j}; testBitReaderCase(test, V(arr), false, true); }
+      { size_t arr[] = {i, j, i, j}; testBitReaderCase(test, V(arr), false, true); }
+      { size_t arr[] = {i, i, j, j}; testBitReaderCase(test, V(arr), false, true); }
+      { size_t arr[] = {31, 31, i, j}; testBitReaderCase(test, V(arr), false, true); }
+    }
+  }
+  { size_t arr[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}; testBitReaderCase(test, V(arr), false); }
+  { size_t arr[] = {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3}; testBitReaderCase(test, V(arr), false); }
+  { size_t arr[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,31,1,1,1,1,1,1,1,1,1,1,1}; testBitReaderCase(test, V(arr), false); }
+  { size_t arr[] = {16,1,2,4,7,3,6,28,28,31,1,17,12,1,3,8,3,3,14,21,25,24,1,8,7}; testBitReaderCase(test + test + test, V(arr), false); }
+  { size_t arr[] = {5,7,17,15,6,8,4,5,3,11,1,4,4,8,6,4,5,1,6,5,13,8,18,1,1,8,7,2}; testBitReaderCase(test + test + test, V(arr), false); }
+
+}
+
 void doMain() {
   //PNG
   testPngSuite();
@@ -3544,9 +3692,12 @@ void doMain() {
   testCustomDeflate();
   testCustomZlibDecompress();
   testCustomInflate();
+  testBitReader();
+  // TODO: add test for huffman code with exactly 0 and 1 symbols present
 
   //lodepng_util
   testChunkUtil();
+  testGetFilterTypes();
 
   std::cout << "\ntest successful" << std::endl;
 }
@@ -3556,7 +3707,9 @@ int main() {
     doMain();
   }
   catch(...) {
-    std::cout << "error!" << std::endl;
+    std::cout << std::endl;
+    std::cout << "caught error!" << std::endl;
+    std::cout << "*** TEST FAILED ***" << std::endl;
   }
 
   return 0;
