@@ -8,6 +8,7 @@
 #include "vectors.h"
 #include "filereader.h"
 #include "globals.h"
+#include "iterators.h"
 
 class BmpFileRecording : public AbstractRecording {
  protected:
@@ -39,6 +40,10 @@ class BmpFileRecording : public AbstractRecording {
   }
   std::optional<ColorMap> cmap() const final { return ColorMap::GRAY; }
   bool is_flow() const final { return false; };
+  bool set_flow(bool _is_flow) final {
+    global::new_ui_message("Unable to set BMP recording as flow");
+    return false;
+  }
 
   Eigen::MatrixXf read_frame(long t) final {
     file.read_frame(t, frame_uint16.data());
@@ -50,10 +55,11 @@ class BmpFileRecording : public AbstractRecording {
 
 class RawFileRecording : public AbstractRecording {
   mio::mmap_source _mmap;
-  int _nx    = 0;
-  int _ny    = 0;
-  int _nt    = 0;
-  bool _good = false;
+  int _nx       = 0;
+  int _ny       = 0;
+  int _nt       = 0;
+  bool _good    = false;
+  bool _is_flow = false;
 
   std::size_t _frame_size = 0;
   std::string _error_msg  = "";
@@ -138,11 +144,22 @@ class RawFileRecording : public AbstractRecording {
   float fps() const final { return 0; };
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
-  bool is_flow() const final { return false; };
+  bool is_flow() const final { return _is_flow; };
+  bool set_flow(bool _flow) final {
+    _is_flow = _flow;
+    return true;
+  }
 
   Eigen::MatrixXf read_frame(long t) final {
-    auto data = get_data_ptr(t);
-    std::copy(data, data + _frame_size, _frame.data());
+    if (!is_flow()) {
+      auto begin = get_data_ptr(t);
+      std::copy(begin, begin + _frame_size, _frame.data());
+    } else {
+      bool isodd = t % 2;
+      auto begin = get_data_ptr(t - isodd) + isodd;
+      auto end   = begin + 2 * _frame_size;
+      std::copy(StrideIterator(begin, 2), StrideIterator(end, 2), _frame.data());
+    }
     return _frame;
   };
 
@@ -170,6 +187,19 @@ class NpyFileRecording : public AbstractRecording {
   const Scalar *get_data_ptr(long t) const {
     auto ptr = _mmap.data() + t * _frame_size * sizeof(Scalar);
     return reinterpret_cast<const Scalar *>(ptr);
+  }
+
+  template <typename T>
+  void copy_frame(long t) {
+    if (!is_flow()) {
+      auto begin = get_data_ptr<T>(t);
+      std::copy(begin, begin + _frame_size, _frame.data());
+    } else {
+      bool isodd = t % 2;
+      auto begin = get_data_ptr<T>(t - isodd) + isodd;
+      auto end   = begin + 2 * _frame_size;
+      std::copy(StrideIterator(begin, 2), StrideIterator(end, 2), _frame.data());
+    }
   }
 
   template <typename Scalar>
@@ -217,8 +247,8 @@ class NpyFileRecording : public AbstractRecording {
         _nx      = header.shape[2];
         _is_flow = false;
       } else if (header.shape.size() == 4) {
-        if (header.shape[0] != 2 || dataType != DataType::FLOAT) {
-          _error_msg = "Currently, flow fields have to be of shape [2, T, H, W]";
+        if (header.shape[3] != 2 || dataType != DataType::FLOAT) {
+          _error_msg = "Flow fields have to be of shape [T, H, W, 2]";
           return;
         }
         _nt      = 2 * header.shape[1];
@@ -286,17 +316,21 @@ class NpyFileRecording : public AbstractRecording {
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
   bool is_flow() const final { return _is_flow; };
+  bool set_flow(bool _flow) final {
+    _is_flow = _flow;
+    return true;
+  }
 
   Eigen::MatrixXf read_frame(long t) final {
     switch (dataType) {
       case DataType::FLOAT:
-        std::copy(get_data_ptr<float>(t), get_data_ptr<float>(t) + _frame_size, _frame.data());
+        copy_frame<float>(t);
         break;
       case DataType::UINT16:
-        std::copy(get_data_ptr<uint16>(t), get_data_ptr<uint16>(t) + _frame_size, _frame.data());
+        copy_frame<uint16>(t);
         break;
       case DataType::UINT8:
-        std::copy(get_data_ptr<uint8>(t), get_data_ptr<uint8>(t) + _frame_size, _frame.data());
+        copy_frame<uint8>(t);
         break;
       default:
         throw std::logic_error("This line should never be reached");

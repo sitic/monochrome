@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "globals.h"
+#include "iterators.h"
 // only use std filesystem on msvc for now, as gcc / clang sometimes require link options
 #if defined(__cplusplus) && _MSC_VER >= 1920
 #include <filesystem>
@@ -40,6 +41,7 @@ class AbstractRecording {
   virtual std::optional<BitRange> bitrange() const      = 0;
   virtual std::optional<ColorMap> cmap() const          = 0;
   virtual bool is_flow() const                          = 0;
+  virtual bool set_flow(bool _is_flow)                  = 0;
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
@@ -89,12 +91,24 @@ class InMemoryRecording : public AbstractRecording {
   std::optional<BitRange> bitrange() const final { return _data->meta.bitrange; }
   std::optional<ColorMap> cmap() const final { return _data->meta.cmap; }
   bool is_flow() const final { return _data->meta.is_flowfield; };
-
+  bool set_flow(bool _is_flow) final {
+    _data->meta.is_flowfield = _is_flow;
+    return true;
+  }
   Eigen::MatrixXf read_frame(long t) final {
     std::visit(
         [this, t](const auto& data) {
           auto data_ptr = data.data() + _frame_size * t;
           std::copy(data_ptr, data_ptr + _frame_size, _frame.data());
+          if (!is_flow()) {
+            auto begin = data.data() + _frame_size * t;
+            std::copy(begin, begin + _frame_size, _frame.data());
+          } else {
+            bool isodd = t % 2;
+            auto begin = data.data() + _frame_size * (t - isodd) + isodd;
+            auto end   = begin + 2 * _frame_size;
+            std::copy(StrideIterator(begin, 2), StrideIterator(end, 2), _frame.data());
+          }
         },
         _data->data);
     return _frame;

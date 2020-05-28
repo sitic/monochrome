@@ -183,6 +183,8 @@ def open_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
         raise ValueError("array is not three-dimensional")
     if flow_uv.dtype != np.float32:
         raise ValueError("array is not floating type")
+    if flow_uv.shape[3] != 2:
+        raise ValueError("flow should be of shape [T, H, W, 2]")
 
     try:
         s = create_socket()
@@ -190,8 +192,7 @@ def open_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
         print("Unable to connect to quickViewer")
         return
 
-    flow_uv = np.moveaxis(flow_uv, -1, 0)
-    shape = (flow_uv.shape[1] * 2, flow_uv.shape[2], flow_uv.shape[3])
+    shape = (flow_uv.shape[0] * 2, flow_uv.shape[1], flow_uv.shape[2])
     buf = create_array3metaflow_msg(shape, parentName)
     s.sendall(buf)
 

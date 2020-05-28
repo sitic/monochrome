@@ -25,6 +25,9 @@ struct RotationCtrl {
   void flipud();
 
   void apply(Eigen::MatrixXf &arr);
+
+  // get flow signs based on current rotation and flip
+  std::pair<float, float> flow_signs();
 };
 
 class Recording {

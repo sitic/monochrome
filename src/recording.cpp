@@ -33,30 +33,14 @@ void RotationCtrl::add_rotation(short delta_rotation) {
 }
 
 void RotationCtrl::fliplr() {
-  if (_rotation == 0 || _rotation == 180) {
-    _fliplr = !_fliplr;
-  } else {
-    _flipud = !_flipud;
-  }
+  _fliplr = !_fliplr;
 }
 
 void RotationCtrl::flipud() {
-  if (_rotation == 0 || _rotation == 180) {
-    _flipud = !_flipud;
-  } else {
-    _fliplr = !_fliplr;
-  }
+  _flipud = !_flipud;
 }
 
 void RotationCtrl::apply(Eigen::MatrixXf &arr) {
-  if (_fliplr && _flipud) {
-    arr = arr.rowwise().reverse().colwise().reverse().eval();
-  } else if (_fliplr) {
-    arr.rowwise().reverseInPlace();
-  } else if (_flipud) {
-    arr.colwise().reverseInPlace();
-  }
-
   switch (_rotation) {
     case 0:
       // do nothing
@@ -73,6 +57,46 @@ void RotationCtrl::apply(Eigen::MatrixXf &arr) {
     default:
       throw std::logic_error("Invalid rotation value! (Should be 0, 90, 180, or 270");
   }
+
+  if (_fliplr && _flipud) {
+    arr = arr.rowwise().reverse().colwise().reverse().eval();
+  } else if (_fliplr) {
+    arr.rowwise().reverseInPlace();
+  } else if (_flipud) {
+    arr.colwise().reverseInPlace();
+  }
+}
+std::pair<float, float> RotationCtrl::flow_signs() {
+  float signx = +1;
+  float signy = +1;
+  switch (_rotation) {
+    case 0:
+      // do nothing
+      break;
+    case 90:
+      signx = -1;
+      break;
+    case 180:
+      signx = -1;
+      signy = -1;
+      break;
+    case 270:
+      signy = -1;
+      break;
+    default:
+      throw std::logic_error("Invalid rotation value! (Should be 0, 90, 180, or 270");
+  }
+
+  if (_fliplr && _flipud) {
+    signx *= -1;
+    signy *= -1;
+  } else if (_fliplr) {
+    signy *= -1;
+  } else if (_flipud) {
+    signx *= -1;
+  }
+
+  return {signx, signy};
 }
 
 std::shared_ptr<AbstractRecording> Recording::autoguess_filetype(const fs::path &path) {

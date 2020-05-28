@@ -98,8 +98,10 @@ void load_from_queue() {
       child->set_context(parent->window);
       child->playback = parent->playback;
     } else {
-      child->set_context(parent->window);
-      parent->add_flow(child);
+      if (child->get_file_ptr()->set_flow(true)) {
+        child->set_context(parent->window);
+        parent->add_flow(child);
+      }
     }
     global::recordings.erase(
         std::remove_if(global::recordings.begin(), global::recordings.end(),

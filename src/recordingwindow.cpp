@@ -648,19 +648,21 @@ void RecordingWindow::display(Filters prefilter,
     if (!flow.show) continue;
     flow_vert.clear();
 
-    flow.data->load_frame(t_frame);
+    flow.data->load_frame(2 * t_frame);
     Eigen::MatrixXf u = flow.data->frame;  // force a copy
-    flow.data->load_frame(t_frame + length());
+    flow.data->load_frame(2 * t_frame + 1);
     auto v  = flow.data->frame;  // don't need to force a copy
     auto nx = flow.data->Nx(), ny = flow.data->Ny();
+    // get flow signs based on current rotation and flip
+    auto [signx, signy] = rotations.flow_signs();
     for (int x = FlowData::skip / 2; x < nx; x += FlowData::skip) {
       for (int y = FlowData::skip / 2; y < ny; y += FlowData::skip) {
         // calculate screen position of the pixel center
         float xx = (2.f * x + 1) / static_cast<float>(nx) - 1;
         float yy = 1 - (2.f * y + 1) / static_cast<float>(ny);
         // add the flow
-        xx += 2.f * u(x, y) / static_cast<float>(nx);
-        yy -= 2.f * v(x, y) / static_cast<float>(ny);
+        xx += signx * 2.f * u(x, y) / static_cast<float>(nx);
+        yy -= signy * 2.f * v(x, y) / static_cast<float>(ny);
 
         flow_vert.push_back(xx);
         flow_vert.push_back(yy);
