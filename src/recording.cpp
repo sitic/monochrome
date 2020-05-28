@@ -17,10 +17,15 @@ void RotationCtrl::set_rotation(short rotation) {
 }
 
 void RotationCtrl::add_rotation(short delta_rotation) {
+  if (delta_rotation == 0) return;
   if (std::abs(delta_rotation) != 90) {
     throw std::logic_error(
         "add_rotation() has to be called with either "
-        "+90 or -90 as parameter");
+        "0, +90 or -90 as parameter");
+  }
+
+  if (_fliplr != _flipud) {  // XOR, consistent behavior when flipped
+    delta_rotation = -delta_rotation;
   }
 
   if (_rotation == 0 && delta_rotation < 0) {
