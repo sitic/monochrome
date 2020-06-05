@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <vector>
+#include <thread>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -151,9 +152,10 @@ void display_loop() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    while (glfwGetTime() < prm::lastframetime + 1.0 / prm::max_display_fps) {
-    }
+    // Sleep until we need to wake up for desired framerate
     prm::lastframetime += 1.0 / prm::max_display_fps;
+    std::chrono::duration<double> sleep_duration(prm::lastframetime - glfwGetTime());
+    std::this_thread::sleep_for(sleep_duration);
 
     // ImGui::ShowDemoWindow();
 
