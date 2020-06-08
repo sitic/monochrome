@@ -37,14 +37,8 @@ class RecordingPlaybackCtrl {
 
  public:
   RecordingPlaybackCtrl(int length) : length_(length) {}
-  RecordingPlaybackCtrl &operator=(const RecordingPlaybackCtrl &other) {
-    if (length_ < other.length_) {
-      throw std::runtime_error("Error: videos of unequal length");
-    }
-    t_  = other.t_;
-    tf_ = other.tf_;
-    return *this;
-  };
+  // Copies the current playback position
+  RecordingPlaybackCtrl &operator=(const RecordingPlaybackCtrl &other);;
 
   int step();
   [[nodiscard]] int current_t() const { return t_; }

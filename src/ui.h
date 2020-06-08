@@ -100,7 +100,7 @@ void show_main_ui() {
         RecordingWindow::scale_fct *= 2;
         resize_windows = true;
       }
-      if (resize_windows) {
+      if (resize_windows && RecordingWindow::scale_fct != 0.f) {
         for (const auto &r : global::recordings) {
           r->resize_window();
         }
@@ -472,8 +472,11 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::PopStyleColor(1);
     ImGui::SameLine();
     ImGui::BeginGroup();
+    ImGui::Text("%s", label.c_str());
+    ImGui::SameLine();
     ImGui::ColorEdit3(label.c_str(), color.data(),
                       ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+    ImGui::SameLine();
     if (ImGui::Button("Reset")) {
       trace.clear();
     }
