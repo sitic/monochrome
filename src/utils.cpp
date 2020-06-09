@@ -47,30 +47,27 @@ std::vector<std::string_view> split_string(std::string_view input, std::string_v
   return output;
 }
 
-void gl_save_snapshot(std::string out_png_path, GLFWwindow* window, bool alpha_channel) {
+void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {
   auto prev_context = glfwGetCurrentContext();
   if (window) glfwMakeContextCurrent(window);
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);
 
-  GLenum gl_px_format           = alpha_channel ? GL_RGBA : GL_RGB;
-  const unsigned pix_byte_count = alpha_channel ? 4 : 3;
-  LodePNGColorType png_px_format =
-      alpha_channel ? LodePNGColorType::LCT_RGBA : LodePNGColorType::LCT_RGB;
-
-  std::vector<GLubyte> image(width * height * pix_byte_count);
-  glReadPixels(0, 0, width, height, gl_px_format, GL_UNSIGNED_BYTE, image.data());
+  const unsigned channels = 4;
+  std::vector<GLubyte> image(width * height * channels);
+  //glPixelStorei(GL_PACK_ALIGNMENT, 1); // needed when using GL_RGB
+  glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
 
   // flip y
   for (int i = 0; i < height / 2; i++) {
-    std::swap_ranges(image.begin() + i * width * pix_byte_count,
-                     image.begin() + (i + 1) * width * pix_byte_count,
-                     image.begin() + (height - i - 1) * width * pix_byte_count);
+    std::swap_ranges(image.begin() + i * width * channels,
+                     image.begin() + (i + 1) * width * channels,
+                     image.begin() + (height - i - 1) * width * channels);
   }
 
   // Save as png
-  unsigned error = lodepng::encode(out_png_path, image, width, height, png_px_format);
+  unsigned error = lodepng::encode(out_png_path, image, width, height, LodePNGColorType::LCT_RGBA);
 
   if (error) {
     global::new_ui_message("snapshot png encoder error {}: {}", error, lodepng_error_text(error));

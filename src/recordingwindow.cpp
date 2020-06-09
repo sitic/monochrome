@@ -721,7 +721,8 @@ void RecordingWindow::resize_window() {
 
 fs::path RecordingWindow::save_snapshot(std::string output_png_path_template) {
   if (output_png_path_template.empty()) {
-    output_png_path_template = path().stem().string() + "_{t}.png";
+    auto stem                = path().stem().string();
+    output_png_path_template = stem.empty() ? "{t}.png" : stem + "_{t}.png";
   }
   auto out_path = fmt::format(output_png_path_template, fmt::arg("t", t_frame));
 

@@ -57,9 +57,7 @@ class Histogram {
 
 std::vector<std::string_view> split_string(std::string_view input, std::string_view delims = " ");
 
-void gl_save_snapshot(std::string out_png_path,
-                      GLFWwindow *window = nullptr,
-                      bool alpha_channel = false);
+void gl_save_snapshot(std::string out_png_path, GLFWwindow *window = nullptr);
 
 void add_window_icon(GLFWwindow *window);
 
