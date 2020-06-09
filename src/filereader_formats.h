@@ -180,7 +180,7 @@ class NpyFileRecording : public AbstractRecording {
   Eigen::MatrixXf _frame;
   std::optional<BitRange> _bitrange;
 
-  enum class DataType : int { UINT8 = 1, UINT16 = 2, FLOAT = 4 };
+  enum class DataType : int { UINT8 = 1, UINT16 = 2, FLOAT = 4, DOUBLE = 8 };
   DataType dataType;
 
   template <typename Scalar>
@@ -229,6 +229,8 @@ class NpyFileRecording : public AbstractRecording {
         dataType = DataType::UINT16;
       } else if (get_dtype<float>().str() == header.dtype.str()) {
         dataType = DataType::FLOAT;
+      } else if (get_dtype<double>().str() == header.dtype.str()) {
+        dataType = DataType::DOUBLE;
       } else {
         _error_msg = fmt::format(
             "numpy dtype {} is unsupported, only uint8, uint16 and float32 are supported",
@@ -290,11 +292,14 @@ class NpyFileRecording : public AbstractRecording {
           case DataType::UINT8:
             _bitrange = utils::detect_bitrange(get_data_ptr<uint8>(0), get_data_ptr<uint8>(1));
             break;
+          case DataType::UINT16:
+            _bitrange = utils::detect_bitrange(get_data_ptr<uint16>(0), get_data_ptr<uint16>(1));
+            break;
           case DataType::FLOAT:
             _bitrange = utils::detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
             break;
-          case DataType::UINT16:
-            _bitrange = utils::detect_bitrange(get_data_ptr<uint16>(0), get_data_ptr<uint16>(1));
+          case DataType::DOUBLE:
+            _bitrange = utils::detect_bitrange(get_data_ptr<double>(0), get_data_ptr<double>(1));
             break;
         }
       }
@@ -326,6 +331,9 @@ class NpyFileRecording : public AbstractRecording {
       case DataType::FLOAT:
         copy_frame<float>(t);
         break;
+      case DataType::DOUBLE:
+        copy_frame<double>(t);
+        break;
       case DataType::UINT16:
         copy_frame<uint16>(t);
         break;
@@ -342,6 +350,8 @@ class NpyFileRecording : public AbstractRecording {
     switch (dataType) {
       case DataType::FLOAT:
         return get_data_ptr<float>(t)[y * Nx() + x];
+      case DataType::DOUBLE:
+        return get_data_ptr<double>(t)[y * Nx() + x];
       case DataType::UINT16:
         return get_data_ptr<uint16>(t)[y * Nx() + x];
       case DataType::UINT8:
