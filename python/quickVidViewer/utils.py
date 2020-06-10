@@ -137,14 +137,15 @@ def open_files(paths: List[Union[Text, Path]]):
     s.sendall(buf)
 
 
-def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
-                comment: Text = "", bitrange: BitRange = BitRange.AUTODETECT, cmap: ColorMap = ColorMap.DEFAULT,
-                parentName: Optional[Text] = None):
+def open_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
+               comment: Text = "", bitrange: BitRange = BitRange.AUTODETECT, cmap: ColorMap = ColorMap.DEFAULT,
+               parentName: Optional[Text] = None):
+    array = np.squeeze(array)
     if array.ndim == 2:
         # assume that it is a 2D image
         array = np.expand_dims(array, 0)
     elif array.ndim != 3:
-        raise ValueError("array is not three-dimensional")
+        raise ValueError("array is not two- or three-dimensional")
 
     if array.dtype == np.float32:
         dtype = ArrayDataType.FLOAT
@@ -178,9 +179,13 @@ def open_array3(array: np.ndarray, name: Text = "", duration_seconds: float = 0,
         s.sendall(buf)
 
 
+def open_layer(array: np.ndarray, parentName: Text, name: Text = "", **kwargs):
+    open_array(array, parentName=parentName, name=name, **kwargs)
+
+
 def open_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text = ""):
     if flow_uv.ndim != 4:
-        raise ValueError("array is not three-dimensional")
+        raise ValueError("array is not four-dimensional")
     if flow_uv.dtype != np.float32:
         raise ValueError("array is not floating type")
     if flow_uv.shape[3] != 2:
@@ -193,7 +198,7 @@ def open_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
         return
 
     shape = (flow_uv.shape[0] * 2, flow_uv.shape[1], flow_uv.shape[2])
-    buf = create_array3metaflow_msg(shape, parentName)
+    buf = create_array3metaflow_msg(shape, parentName, name)
     s.sendall(buf)
 
     flat = flow_uv.flatten()
