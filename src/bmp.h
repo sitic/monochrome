@@ -18,10 +18,12 @@ namespace fs = ghc::filesystem;
 
 using namespace std::chrono_literals;
 
-using uint8 = uint8_t;
+using uint8  = uint8_t;
 using uint16 = uint16_t;
 using uint32 = uint32_t;
 using uint64 = uint64_t;
+
+enum class PixelDataFormat : int { UINT8 = 1, UINT16 = 2, FLOAT = 4, DOUBLE = 8 };
 
 class BMPheader {
  private:
@@ -44,6 +46,11 @@ class BMPheader {
   float mFPS = 0;
 
   size_t mFrameBytes = 0;
+
+  PixelDataFormat dataType;
+
+  bool _good             = false;
+  std::string _error_msg = "";
 
   template <typename T>
   bool read(T &x) {
@@ -79,13 +86,17 @@ class BMPheader {
     return file_size;
   }
 
-  const uint16 *get_data_ptr(long t) const {
+  template <typename Scalar>
+  const Scalar *get_data_ptr(long t) const {
     auto ptr = _mmap.data() + t * (mFrameBytes + FrameTailLength);
-    return reinterpret_cast<const uint16 *>(ptr);
+    return reinterpret_cast<const Scalar *>(ptr);
   }
 
-  bool _good             = false;
-  std::string _error_msg = "";
+  template <typename T, typename D>
+  void copy_frame(long t, D data) const {
+    auto begin = get_data_ptr<T>(t);
+    std::copy(begin, begin + (mFrameWidth * mFrameHeight), data);
+  }
 
  public:
   const char Version           = 'f';
@@ -116,14 +127,18 @@ class BMPheader {
     read(mFrameWidth);
     read(mFrameHeight);
     read(mFormat);
-    if (mFormat != 3) {
+    if (mFormat == 1) {
+      dataType = PixelDataFormat::UINT8;
+    } else if (mFormat == 3) {
+      dataType = PixelDataFormat::UINT16;
+    } else {
       _error_msg = fmt::format(
-          "ERROR: Only uint16 data supported currently, file "
-          "header says pixel format is '{}', expected '3'.",
+          "ERROR: Unkown pixel format, file header says pixel format is '{}', expected '3' (for "
+          "uint16) or '1' (for uint8).",
           mFormat);
       return;
     }
-    mFrameBytes = (mFrameWidth * mFrameHeight) * sizeof(uint16);
+    mFrameBytes = (mFrameWidth * mFrameHeight) * static_cast<int>(dataType);
 
     uint32 bin = 0;
     read(bin);
@@ -176,6 +191,8 @@ class BMPheader {
   uint32 Ny() const { return mFrameHeight; }
   long length() const { return mNumFrames; }
 
+  PixelDataFormat dataFormat() const { return dataType; }
+
   std::string date() const { return mDate; }
   std::string comment() const { return mComment; }
   std::chrono::duration<float> duration() const { return mRecordingLength; }
@@ -187,9 +204,26 @@ class BMPheader {
       throw std::runtime_error("read_frame() called with nullptr as argument");
     }
 
-    auto start = get_data_ptr(t);
-    std::copy(start, start + (mFrameWidth * mFrameHeight), data);
+    switch (dataType) {
+      case PixelDataFormat::UINT16:
+        copy_frame<uint16>(t, data);
+        break;
+      case PixelDataFormat::UINT8:
+        copy_frame<uint8>(t, data);
+        break;
+      default:
+        throw std::logic_error("This line should never be reached");
+    }
   }
 
-  uint16 get_pixel(long t, long x, long y) const { return get_data_ptr(t)[y * Nx() + x]; }
+  uint16 get_pixel(long t, long x, long y) const {
+    switch (dataType) {
+      case PixelDataFormat::UINT16:
+        return get_data_ptr<uint16>(t)[y * Nx() + x];
+      case PixelDataFormat::UINT8:
+        return get_data_ptr<uint8>(t)[y * Nx() + x];
+      default:
+        throw std::logic_error("This line should never be reached");
+    }
+  }
 };

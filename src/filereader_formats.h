@@ -13,11 +13,11 @@
 class BmpFileRecording : public AbstractRecording {
  protected:
   BMPheader file;
-  Eigen::Matrix<uint16_t, Eigen::Dynamic, Eigen::Dynamic> frame_uint16;
+  Eigen::MatrixXf _frame;
 
  public:
   BmpFileRecording(const fs::path &path) : AbstractRecording(path), file(path) {
-    frame_uint16.setZero(file.Nx(), file.Ny());
+    _frame.setZero(file.Nx(), file.Ny());
   }
 
   bool good() const final { return file.good(); };
@@ -30,12 +30,16 @@ class BmpFileRecording : public AbstractRecording {
   std::chrono::duration<float> duration() const final { return file.duration(); };
   float fps() const final { return file.fps(); };
   std::optional<BitRange> bitrange() const final {
-    if (Nx() == 128 && Ny() == 128) {
-      // Probably a PVCam recording
-      return BitRange::U16;
+    if (file.dataFormat() == PixelDataFormat::UINT8) {
+      return BitRange::U8;
     } else {
-      // Probably a IDS camera recording
-      return BitRange::U12;
+      if (Nx() == 128 && Ny() == 128) {
+        // Probably a PVCam recording
+        return BitRange::U16;
+      } else {
+        // Probably a IDS camera recording
+        return BitRange::U12;
+      }
     }
   }
   std::optional<ColorMap> cmap() const final { return ColorMap::GRAY; }
@@ -46,8 +50,8 @@ class BmpFileRecording : public AbstractRecording {
   }
 
   Eigen::MatrixXf read_frame(long t) final {
-    file.read_frame(t, frame_uint16.data());
-    return frame_uint16.cast<float>();
+    file.read_frame(t, _frame.data());
+    return _frame;
   };
 
   float get_pixel(long t, long x, long y) final { return file.get_pixel(t, x, y); }
@@ -180,8 +184,7 @@ class NpyFileRecording : public AbstractRecording {
   Eigen::MatrixXf _frame;
   std::optional<BitRange> _bitrange;
 
-  enum class DataType : int { UINT8 = 1, UINT16 = 2, FLOAT = 4, DOUBLE = 8 };
-  DataType dataType;
+  PixelDataFormat dataType;
 
   template <typename Scalar>
   const Scalar *get_data_ptr(long t) const {
@@ -224,13 +227,13 @@ class NpyFileRecording : public AbstractRecording {
       }
 
       if (get_dtype<uint8>().str() == header.dtype.str()) {
-        dataType = DataType::UINT8;
+        dataType = PixelDataFormat::UINT8;
       } else if (get_dtype<uint16>().str() == header.dtype.str()) {
-        dataType = DataType::UINT16;
+        dataType = PixelDataFormat::UINT16;
       } else if (get_dtype<float>().str() == header.dtype.str()) {
-        dataType = DataType::FLOAT;
+        dataType = PixelDataFormat::FLOAT;
       } else if (get_dtype<double>().str() == header.dtype.str()) {
-        dataType = DataType::DOUBLE;
+        dataType = PixelDataFormat::DOUBLE;
       } else {
         _error_msg = fmt::format(
             "numpy dtype {} is unsupported, only uint8, uint16 and float32 are supported",
@@ -249,7 +252,7 @@ class NpyFileRecording : public AbstractRecording {
         _nx      = header.shape[2];
         _is_flow = false;
       } else if (header.shape.size() == 4) {
-        if (header.shape[3] != 2 || dataType != DataType::FLOAT) {
+        if (header.shape[3] != 2 || dataType != PixelDataFormat::FLOAT) {
           _error_msg = "Flow fields have to be of shape [T, H, W, 2]";
           return;
         }
@@ -289,16 +292,16 @@ class NpyFileRecording : public AbstractRecording {
       _frame.setZero(_nx, _ny);
       if (!is_flow()) {
         switch (dataType) {
-          case DataType::UINT8:
+          case PixelDataFormat::UINT8:
             _bitrange = utils::detect_bitrange(get_data_ptr<uint8>(0), get_data_ptr<uint8>(1));
             break;
-          case DataType::UINT16:
+          case PixelDataFormat::UINT16:
             _bitrange = utils::detect_bitrange(get_data_ptr<uint16>(0), get_data_ptr<uint16>(1));
             break;
-          case DataType::FLOAT:
+          case PixelDataFormat::FLOAT:
             _bitrange = utils::detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
             break;
-          case DataType::DOUBLE:
+          case PixelDataFormat::DOUBLE:
             _bitrange = utils::detect_bitrange(get_data_ptr<double>(0), get_data_ptr<double>(1));
             break;
         }
@@ -328,16 +331,16 @@ class NpyFileRecording : public AbstractRecording {
 
   Eigen::MatrixXf read_frame(long t) final {
     switch (dataType) {
-      case DataType::FLOAT:
+      case PixelDataFormat::FLOAT:
         copy_frame<float>(t);
         break;
-      case DataType::DOUBLE:
+      case PixelDataFormat::DOUBLE:
         copy_frame<double>(t);
         break;
-      case DataType::UINT16:
+      case PixelDataFormat::UINT16:
         copy_frame<uint16>(t);
         break;
-      case DataType::UINT8:
+      case PixelDataFormat::UINT8:
         copy_frame<uint8>(t);
         break;
       default:
@@ -348,13 +351,13 @@ class NpyFileRecording : public AbstractRecording {
 
   float get_pixel(long t, long x, long y) final {
     switch (dataType) {
-      case DataType::FLOAT:
+      case PixelDataFormat::FLOAT:
         return get_data_ptr<float>(t)[y * Nx() + x];
-      case DataType::DOUBLE:
+      case PixelDataFormat::DOUBLE:
         return get_data_ptr<double>(t)[y * Nx() + x];
-      case DataType::UINT16:
+      case PixelDataFormat::UINT16:
         return get_data_ptr<uint16>(t)[y * Nx() + x];
-      case DataType::UINT8:
+      case PixelDataFormat::UINT8:
         return get_data_ptr<uint8>(t)[y * Nx() + x];
       default:
         throw std::logic_error("This line should never be reached");
