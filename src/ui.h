@@ -497,7 +497,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   if (!parent) {
     ImGui::End();
   }
-  return rec_nr++;
+  return rec_nr + 1;
 }
 
 void show_export_recording_ui(const SharedRecordingPtr &recording) {
