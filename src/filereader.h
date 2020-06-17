@@ -78,12 +78,13 @@ class InMemoryRecording : public AbstractRecording {
   }
 
   bool good() const final { return _good; };
+  std::string error_msg() final { return _error_msg; };
+
   int Nx() const final { return _data->meta.nx; };
   int Ny() const final { return _data->meta.ny; };
   int length() const final { return _data->meta.nt; };
-  std::string error_msg() final { return _error_msg; };
-  std::string date() const final { return ""; };
-  std::string comment() const final { return ""; };
+  std::string date() const final { return _data->meta.date; };
+  std::string comment() const final { return _data->meta.comment; };
   std::chrono::duration<float> duration() const final {
     return std::chrono::duration<float>(_data->meta.duration);
   };
