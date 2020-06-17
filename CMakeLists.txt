@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 
 project(quickViewer C CXX)
 
+option(QVV_FORCE_TCP_IPC "Force use of TCP for IPC" OFF)
 option(STATIC_GCC "Build with static libstdc++" OFF)
 
 # default to Release build
@@ -66,6 +67,9 @@ endif ()
 
 add_executable(quickVidViewer src/main.cpp src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h src/main_window.h src/globals.cpp src/globals.h src/ipc.h src/globals.cpp src/globals.h src/ipc.cpp src/recordingwindow.cpp src/utils.cpp src/transformations.cpp src/filereader_formats.h src/recording.cpp src/ui.h src/colormap.cpp src/colormap.h src/iterators.h)
 target_link_libraries(quickVidViewer CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy)
+if (QVV_FORCE_TCP_IPC)
+    target_compile_definitions(quickVidViewer PRIVATE "-DQVV_FORCE_TCP_IPC")
+endif ()
 if (CMAKE_COMPILER_IS_GNUCXX)
     if (STATIC_GCC)
         target_link_libraries(quickVidViewer -static-libgcc -static-libstdc++)

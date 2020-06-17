@@ -2,6 +2,7 @@ import flatbuffers
 import numpy as np
 from pathlib import Path
 import socket
+import sys
 from typing import List, Text, Union, Optional
 
 from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16
@@ -9,13 +10,19 @@ from .fbs.ArrayDataType import ArrayDataType
 from .fbs.ColorMap import ColorMap
 from .fbs.BitRange import BitRange
 
-TCP_IP = '127.0.0.1'
-TCP_PORT = 4864
+TCP_IP, TCP_PORT = '127.0.0.1', 4864
+# OSX doesn't support abstract UNIX domain sockets
+SOCK_PATH = '/tmp/quickVidViewer.s' if sys.platform == 'darwin' else '\0quickVidViewer'
+USE_TCP = sys.platform in ['win32', 'cygwin']
 
 
 def create_socket():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((TCP_IP, TCP_PORT))
+    if USE_TCP:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((TCP_IP, TCP_PORT))
+    else:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(SOCK_PATH)
     return s
 
 

@@ -6,6 +6,7 @@
 #include <asio/read.hpp>
 #include <asio/write.hpp>
 #include <asio/ts/internet.hpp>
+#include <asio/local/stream_protocol.hpp>
 
 // only use std filesystem on msvc for now, as gcc / clang sometimes require link options
 #if defined(__cplusplus) && _MSC_VER >= 1920
@@ -20,9 +21,35 @@ namespace fs = ghc::filesystem;
 
 #include "schema/message_generated.h"
 
-using asio::ip::tcp;
-
 namespace {
+#if defined(ASIO_HAS_LOCAL_SOCKETS) && !defined(QVV_FORCE_TCP_IPC)
+  using IpcProtocol = asio::local::stream_protocol;
+
+  IpcProtocol::endpoint ipc_client_endpoint() {
+#ifdef __APPLE__  // OSX doesn't support abstract UNIX domain sockets
+    std::string ep = std::string("/tmp/quickVidViewer.s");
+#else
+    std::string ep = std::string({'\0'}) + std::string("quickVidViewer");
+#endif
+    return IpcProtocol::endpoint(ep);
+  }
+
+  IpcProtocol::endpoint ipc_host_endpoint() { return ipc_client_endpoint(); }
+#else
+  using IpcProtocol = asio::ip::tcp;
+
+  IpcProtocol::endpoint ipc_client_endpoint() {
+    return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+  }
+
+  IpcProtocol::endpoint ipc_host_endpoint() {
+    // accept connections from all hosts
+    //return IpcProtocol::endpoint(IpcProtocol::v4(), global::tcp_port);
+
+    // accept connections from localhost
+    return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+  }
+#endif
 
   struct Array3Msg {
     std::size_t counter = 0;
@@ -36,13 +63,13 @@ namespace {
     bool complete() { return array ? counter == array->size() : false; }
   };
 
-  class TcpMessage {
+  class IpcMessage {
    public:
     static constexpr std::size_t HeaderSize = sizeof(flatbuffers::uoffset_t);
 
-    TcpMessage() = default;
+    IpcMessage() = default;
 
-    ~TcpMessage() {
+    ~IpcMessage() {
       if (!array_msg_.empty()) {
         fmt::print("ERROR: Client disconnected before full array was recieved!\n");
       }
@@ -68,12 +95,11 @@ namespace {
       }
     }
 
-    void verify_and_deliver(const tcp::endpoint& remote_ep) {
+    void verify_and_deliver() {
       auto verifier = flatbuffers::Verifier(body(), body_size());
       if (fbs::VerifyRootBuffer(verifier)) {
         auto root = fbs::GetRoot(body());
-        fmt::print("Rx {} message from {}:{}\n", fbs::EnumNameData(root->data_type()),
-                   remote_ep.address().to_string(), remote_ep.port());
+        fmt::print("Rx {} message\n", fbs::EnumNameData(root->data_type()));
         switch (root->data_type()) {
           case fbs::Data_Filepaths:
             handle_message(root->data_as_Filepaths());
@@ -203,16 +229,16 @@ namespace {
     Array3Msg array_msg_;
   };
 
-  class TcpSession : public std::enable_shared_from_this<TcpSession> {
+  class IpcSession : public std::enable_shared_from_this<IpcSession> {
    public:
-    TcpSession(tcp::socket socket) : socket_(std::move(socket)) {}
+    IpcSession(IpcProtocol::socket socket) : socket_(std::move(socket)) {}
 
     void start() { do_read_header(); }
 
    private:
     void do_read_header() {
-      auto self(shared_from_this());
-      asio::async_read(socket_, asio::buffer(msg_.header_data(), TcpMessage::HeaderSize),
+      auto self(this->shared_from_this());
+      asio::async_read(socket_, asio::buffer(msg_.header_data(), IpcMessage::HeaderSize),
                        [this, self](std::error_code ec, std::size_t length) {
                          if (!ec && msg_.decode_header()) {
                            do_read_body();
@@ -221,23 +247,23 @@ namespace {
     }
 
     void do_read_body() {
-      auto self(shared_from_this());
+      auto self(this->shared_from_this());
       asio::async_read(socket_, asio::buffer(msg_.body(), msg_.body_size()),
                        [this, self](std::error_code ec, std::size_t /*length*/) {
                          if (!ec) {
-                           msg_.verify_and_deliver(socket_.remote_endpoint());
+                           msg_.verify_and_deliver();
                            do_read_header();
                          }
                        });
     }
 
-    TcpMessage msg_;
-    tcp::socket socket_;
+    IpcMessage msg_;
+    IpcProtocol::socket socket_;
   };
 
-  class TcpServer {
+  class IpcServer {
    public:
-    TcpServer(const tcp::endpoint& endpoint)
+    IpcServer(const IpcProtocol::endpoint& endpoint)
         : acceptor_(io_context_, endpoint), socket_(io_context_) {
       do_accept();
     }
@@ -250,7 +276,7 @@ namespace {
     void do_accept() {
       acceptor_.async_accept(socket_, [this](std::error_code ec) {
         if (!ec) {
-          std::make_shared<TcpSession>(std::move(socket_))->start();
+          std::make_shared<IpcSession>(std::move(socket_))->start();
         } else {
           fmt::print("Error {}: {}\n", ec.value(), ec.message());
         }
@@ -260,37 +286,36 @@ namespace {
     }
 
     asio::io_context io_context_;
-    tcp::acceptor acceptor_;
-    tcp::socket socket_;
+    IpcProtocol::acceptor acceptor_;
+    IpcProtocol::socket socket_;
   };
 
 
-  std::unique_ptr<TcpServer> tcp_server;
+  std::unique_ptr<IpcServer> ipc_server;
 }  // namespace
 
 void ipc::start_server() {
-  assert(!tcp_server);
+  assert(!ipc_server);
 
   try {
-    // auto endpoint = tcp::endpoint(tcp::v4(), global::tcp_port); // accept connections from all hosts
-    auto endpoint = tcp::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
-    tcp_server    = std::make_unique<TcpServer>(endpoint);
-    std::thread([]() { tcp_server->run(); }).detach();
+    auto endpoint = ipc_host_endpoint();
+    ipc_server    = std::make_unique<IpcServer>(endpoint);
+    std::thread([]() { ipc_server->run(); }).detach();
   } catch (const asio::system_error& error) {
     fmt::print("Error starting tcp server {}: {}\n", error.code().value(), error.code().message());
   }
 }
 
 void ipc::stop_server() {
-  if (tcp_server) {
-    tcp_server->stop();
+  if (ipc_server) {
+    ipc_server->stop();
   }
 }
 
 bool ipc::is_another_instance_running() {
   asio::io_context io_context;
-  tcp::socket socket(io_context);
-  tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+  IpcProtocol::socket socket(io_context);
+  auto endpoint = ipc_client_endpoint();
   try {
     socket.connect(endpoint);
     return true;
@@ -301,8 +326,8 @@ bool ipc::is_another_instance_running() {
 
 void ipc::send_filepaths(const std::vector<std::string>& files) {
   asio::io_context io_context;
-  tcp::socket socket(io_context);
-  tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+  IpcProtocol::socket socket(io_context);
+  auto endpoint = ipc_client_endpoint();
   socket.connect(endpoint);
 
   flatbuffers::FlatBufferBuilder builder(256);
@@ -325,8 +350,8 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
   auto start_time = std::chrono::high_resolution_clock::now();
 
   asio::io_context io_context;
-  tcp::socket socket(io_context);
-  tcp::endpoint endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+  IpcProtocol::socket socket(io_context);
+  auto endpoint = ipc_client_endpoint();
   socket.connect(endpoint);
 
   // flatbuffers can only be 2GB - 1B large, so often not large enough to contain the complete array.
@@ -336,8 +361,8 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
   const std::size_t MAX_FLOAT_ELMS = (65536 - 128) / sizeof(float);
 
   /* Metadata Message */
-  auto fbs_start =
-      fbs::CreateArray3MetaDirect(builder, fbs::ArrayDataType_FLOAT, nx, ny, nt, name.c_str());
+  auto fbs_start  = fbs::CreateArray3MetaDirect(builder, fbs::ArrayDataType_FLOAT, nx, ny, nt,
+                                               name.c_str(), 0, 0, "", "");
   auto root_start = CreateRoot(builder, fbs::Data_Array3Meta, fbs_start.Union());
   builder.FinishSizePrefixed(root_start);
   asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
