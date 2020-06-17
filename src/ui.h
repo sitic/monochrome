@@ -447,9 +447,20 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       ImGui::ColorEdit4("", flow.color.data(),
                         ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
       ImGui::SameLine();
-      ImGui::Checkbox("Show", &flow.show);
+      if (flow.show)
+        flow.show = !ImGui::Button(ICON_FA_EYE_SLASH);
+      else
+        flow.show = ImGui::Button(ICON_FA_EYE);
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_TRASH_ALT)) {
+        flow.data = nullptr;
+      }
       ImGui::PopID();
     }
+    // Actually remove deleted flows
+    rec->flows.erase(
+        std::remove_if(rec->flows.begin(), rec->flows.end(), [](const auto &f) { return !f.data; }),
+        rec->flows.end());
     ImGui::Columns(2);
     ImGui::SliderInt("flow skip", &FlowData::skip, 1, 25);
     ImGui::NextColumn();
