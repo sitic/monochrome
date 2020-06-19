@@ -825,6 +825,7 @@ void RecordingWindow::start_recording(const std::string &filename, int fps) {
   for (auto &child : children) {
     child->playback.set_next(export_ctrl.video.tstart);
   }
+  prm::playbackCtrl.play();
   export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
   export_ctrl.video.recording = true;
   export_ctrl.video.progress  = 0;
@@ -875,7 +876,7 @@ void RecordingWindow::render() {
     if (export_ctrl.video.recording) {
       if (playback.current_t() < 0) {
         // do nothing, this is the frame before the first one
-      } else if (playback.is_last()) {
+      } else if (playback.is_last() || playback.current_t() > export_ctrl.video.tend) {
         stop_recording();
         global::new_ui_message("Exporting video finished!");
       } else {

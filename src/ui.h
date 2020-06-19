@@ -32,8 +32,9 @@ namespace prm {
   Transformations transformation = Transformations::None;
   Filters postfilter             = Filters::None;
 
-  const std::array<ColorMap, 4> cmaps = {ColorMap::GRAY, ColorMap::DIFF, ColorMap::HSV,
-                                         ColorMap::BLACKBODY};
+  const std::array<ColorMap, 6> cmaps = {ColorMap::GRAY,     ColorMap::DIFF,
+                                         ColorMap::HSV,      ColorMap::BLACKBODY,
+                                         ColorMap::DIFF_POS, ColorMap::DIFF_NEG};
   std::map<ColorMap, GLuint> cmap_texs;
 }  // namespace prm
 

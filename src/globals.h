@@ -140,6 +140,7 @@ namespace utils {
           break;
         }
       }
+      if (first == last) return {0, 0};  // everything is NaN
 
       while (++first != last) {
         if (std::isnan(*first)) {

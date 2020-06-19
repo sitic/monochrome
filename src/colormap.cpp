@@ -928,10 +928,12 @@ namespace {
     }
   }  // namespace PRGn
 
-  std::array<float, 3 * 256> diff_colormapdata() {
+  std::array<float, 3 * 256> diff_colormapdata(float start = 0, float end = 1) {
     std::array<float, 3 * 256> data = {};
     for (int i = 0; i < 256; i++) {
-      auto c          = PRGn::colormap(i / static_cast<float>(255));
+      float x = i / static_cast<float>(255);
+      Vec3f c = PRGn::colormap(0.5);
+      if (x >= start && x <= end) c = PRGn::colormap(x);
       data[i * 3 + 0] = c[0];
       data[i * 3 + 1] = c[1];
       data[i * 3 + 2] = c[2];
@@ -986,6 +988,10 @@ std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
       return hsv_colormapdata();
     case ColorMap::BLACKBODY:
       return black_body_data();
+    case ColorMap::DIFF_POS:
+      return diff_colormapdata(0.5, 1);
+    case ColorMap::DIFF_NEG:
+      return diff_colormapdata(0, 0.5);
     default:
       throw std::logic_error("Unkown colormap!");
   }

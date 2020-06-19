@@ -18,6 +18,14 @@ namespace prm {
 struct PlaybackCtrl {
   float val = 1;
 
+  void play() {
+    if (val == 0) toggle_play_pause();
+  }
+
+  void pause() {
+    if (val != 0) toggle_play_pause();
+  }
+
   void toggle_play_pause() {
     std::swap(old_val, val);
     if (old_val > 0) val = 0;
@@ -38,7 +46,7 @@ class RecordingPlaybackCtrl {
  public:
   RecordingPlaybackCtrl(int length) : length_(length) {}
   // Copies the current playback position
-  RecordingPlaybackCtrl &operator=(const RecordingPlaybackCtrl &other);;
+  RecordingPlaybackCtrl &operator=(const RecordingPlaybackCtrl &other);
 
   int step();
   [[nodiscard]] int current_t() const { return t_; }
@@ -99,8 +107,8 @@ struct ExportCtrl {
     float progress             = 0;
     std::vector<char> filename = {};
     VideoRecorder videoRecorder;
-    int tstart                 = 0;
-    int tend                   = -1;
+    int tstart = 0;
+    int tend   = -1;
 
     void assign_auto_filename(const fs::path &bmp_path) {
       videoRecorder.videotitle = bmp_path.filename().string();
