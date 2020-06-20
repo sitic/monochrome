@@ -816,17 +816,24 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
     auto fn  = rec->save_snapshot();
     global::new_ui_message("Saved screenshot to {}", fn.string());
   } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-    prm::playbackCtrl.toggle_play_pause();
+    auto rec = rec_from_window_ptr(window);
+    if (rec->active) {
+      prm::playbackCtrl.toggle_play_pause();
+    } else {
+      rec->active = true;
+    }
   }
 }
 
-void RecordingWindow::start_recording(const std::string &filename, int fps) {
+void RecordingWindow::start_recording(const std::string &filename,
+                                      int fps,
+                                      std::string description) {
   playback.set_next(export_ctrl.video.tstart);
   for (auto &child : children) {
     child->playback.set_next(export_ctrl.video.tstart);
   }
   prm::playbackCtrl.play();
-  export_ctrl.video.videoRecorder.start_recording(filename, window, fps);
+  export_ctrl.video.videoRecorder.start_recording(filename, window, fps, description);
   export_ctrl.video.recording = true;
   export_ctrl.video.progress  = 0;
   prm::lastframetime          = std::numeric_limits<float>::lowest();

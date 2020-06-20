@@ -66,8 +66,8 @@ struct ExportCtrl {
     Vec2i start;
     Vec2i size;
     Vec2i frames;
-    std::vector<char> filename = {};
-    ExportFileType type        = ExportFileType::Npy;
+    std::string filename;
+    ExportFileType type = ExportFileType::Npy;
 
     void assign_auto_filename(const fs::path &file_path) {
       auto fn = file_path.stem().string();
@@ -84,58 +84,36 @@ struct ExportCtrl {
 
       std::string extension;
       if (type == ExportFileType::Binary)
-        extension = ".dat";
+        filename = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1], frames[1] - frames[0]);
       else if (type == ExportFileType::Npy)
-        extension = ".npy";
+        filename = fn + ".npy";
       else
         throw std::logic_error("Unkown ExportFileType type");
-
-      fn = fmt::format("{}_{}x{}x{}f{}", fn, size[0], size[1], frames[1] - frames[0], extension);
-
-      filename.assign(fn.begin(), fn.end());
-
-      // Make sure there is enough space for the user input
-      if (filename.size() < 256) {
-        filename.resize(256);
-      }
     }
   } raw;
 
   struct {
-    bool export_window         = false;
-    bool recording             = false;
-    float progress             = 0;
-    std::vector<char> filename = {};
+    bool export_window = false;
+    bool recording     = false;
+    float progress     = 0;
+    std::string filename;
     VideoRecorder videoRecorder;
     int tstart = 0;
     int tend   = -1;
 
     void assign_auto_filename(const fs::path &bmp_path) {
       videoRecorder.videotitle = bmp_path.filename().string();
-
-      std::string fn = bmp_path.filename().stem().string() + ".mp4";
-      filename.assign(fn.begin(), fn.end());
-
-      // Make sure there is enough space for the user input
-      if (filename.size() < 256) {
-        filename.resize(256);
-      }
+      filename                 = bmp_path.filename().stem().string() + ".mp4";
     }
   } video;
 
   struct {
-    bool export_window         = false;
-    bool save_pngs             = false;
-    std::vector<char> filename = {};
+    bool export_window = false;
+    bool save_pngs     = false;
+    std::string filename;
 
     void assign_auto_filename(const fs::path &bmp_path) {
-      std::string fn = bmp_path.filename().stem().string() + "_{t}.png";
-      filename.assign(fn.begin(), fn.end());
-
-      // Make sure there is enough space for the user input
-      if (filename.size() < 256) {
-        filename.resize(256);
-      }
+      filename = bmp_path.filename().stem().string() + "_{t}.png";
     }
   } png;
 };
@@ -244,7 +222,7 @@ class RecordingWindow : public Recording {
 
   void resize_window();
   fs::path save_snapshot(std::string output_png_path_template = "");
-  void start_recording(const std::string &filename, int fps = 30);
+  void start_recording(const std::string &filename, int fps = 30, std::string description = "");
   void stop_recording();
 
   void add_flow(std::shared_ptr<Recording> flow);

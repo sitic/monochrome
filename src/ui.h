@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_stdlib.h"
 #include "globals.h"
 
 namespace global {
@@ -516,16 +517,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
   // Use the directory path of the recording as best guest for the
   // export directory, make it static so that it only has to be changed
   // by the user once
-  const auto gen_export_dir = [](const fs::path &dir) {
-    std::string s = dir.string();
-    std::vector<char> v(s.begin(), s.end());
-    // Maximum size for user input
-    if (v.size() < 512) {
-      v.resize(512);
-    }
-    return v;
-  };
-  static auto export_dir = gen_export_dir(recording->path().parent_path());
+  static auto export_dir = recording->path().parent_path().string();
 
   if (auto &ctrl = recording->export_ctrl.raw; ctrl.export_window) {
     ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
@@ -546,8 +538,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     }
 
     if (refresh) ctrl.assign_auto_filename(recording->path());
-    ImGui::InputText("Directory", export_dir.data(), export_dir.size());
-    ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
+    ImGui::InputText("Directory", &export_dir);
+    ImGui::InputText("Filename", &ctrl.filename);
 
     static bool norm  = false;
     auto checkbox_lbl = fmt::format("Normalize values to [0, 1] using min = {} and max = {}",
@@ -557,8 +549,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
 
     ImGui::Spacing();
     if (ImGui::Button("Start Export (freezes everything)", ImVec2(-1.0f, 0.0f))) {
-      fs::path path(export_dir.data());
-      path /= ctrl.filename.data();
+      fs::path path(export_dir); // TODO: validate that directory exists
+      path /= ctrl.filename;
       fmt::print("Exporting ROI to {}\n", path.string());
 
       Vec2f minmax = norm ? Vec2f(recording->get_min(Transformations::None),
@@ -587,17 +579,19 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
         "Restarts to the beginning of the file and ends automatically.");
 
     if (!ctrl.recording) {
-      ImGui::InputText("Directory", export_dir.data(), export_dir.size());
-      ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
+      ImGui::InputText("Directory", &export_dir);
+      ImGui::InputText("Filename", &ctrl.filename);
+      static std::string description = "";
+      ImGui::InputTextMultiline("Description", &description);
       static int fps = 30;
       ImGui::InputInt("FPS", &fps);
       ImGui::InputInt("t start", &ctrl.tstart);
       ImGui::InputInt("t end", &ctrl.tend);
 
       if (ImGui::Button("Start Export")) {
-        fs::path path(export_dir.data());
-        path /= ctrl.filename.data();
-        recording->start_recording(path.string(), fps);
+        fs::path path(export_dir); // TODO: validate that directory exists
+        path /= ctrl.filename;
+        recording->start_recording(path.string(), fps, description.data());
       }
     } else {
       int cur_frame    = recording->current_frame() / prm::playbackCtrl.val + 1;
@@ -616,13 +610,13 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
   if (auto &ctrl = recording->export_ctrl.png; ctrl.export_window) {
     ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
                                         ImVec2(prm::main_window_width, FLT_MAX));
-    ImGui::Begin("Export .png", &(ctrl.export_window));
-    ImGui::InputText("Directory", export_dir.data(), export_dir.size());
-    ImGui::InputText("Filename", ctrl.filename.data(), ctrl.filename.size());
+    ImGui::Begin("Export .png", &ctrl.export_window);
+    ImGui::InputText("Directory", &export_dir);
+    ImGui::InputText("Filename", &ctrl.filename);
 
     const auto make_snapshot = [&recording, &ctrl]() {
-      fs::path path(export_dir.data());
-      path /= ctrl.filename.data();
+      fs::path path(export_dir); // TODO: validate that directory exists
+      path /= ctrl.filename;
       return recording->save_snapshot(path.string());
     };
 

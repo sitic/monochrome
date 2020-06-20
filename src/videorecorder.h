@@ -53,7 +53,10 @@ class VideoRecorder {
 
   ~VideoRecorder() { stop_recording(); }
 
-  void start_recording(const std::string &filename, GLFWwindow *window = nullptr, int fps = 30) {
+  void start_recording(const std::string &filename,
+                       GLFWwindow *window = nullptr,
+                       int fps            = 30,
+                       std::string description = "") {
     if (ffmpeg) return;  // if already recording, silently return
 
     if (fps <= 0) {
@@ -76,10 +79,10 @@ class VideoRecorder {
         "-y -threads 0 {encoder_args} -pix_fmt yuv420p "
         // ensure height and width are divisible by 2
         "-vf \"[in]vflip,scale=trunc(iw/2)*2:trunc(ih/2)*2[out]\" "
-        "-metadata title=\"{title}\" \"{filename}\"",
+        "-metadata title=\"{title}\" -metadata description=\"{description}\" \"{filename}\"",
         fmt::arg("fps", fps), fmt::arg("width", width), fmt::arg("height", height),
         fmt::arg("encoder_args", ffmpeg_encoder_args()), fmt::arg("title", videotitle),
-        fmt::arg("filename", filename));
+        fmt::arg("description", description), fmt::arg("filename", filename));
 
     ffmpeg = popen(cmd.c_str(), "w");
     if (!ffmpeg) {
