@@ -96,7 +96,7 @@ osx Release:
   variables:
     CMAKE_GENERATOR: 'Xcode'
     CMAKE_OSX_DEPLOYMENT_TARGET: '10.13.6'
-    CMAKE_PARAMS: '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13.6'
+    CMAKE_PARAMS: '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13.6 -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk/'
   artifacts:
     paths:
       - build/Release/quickVidViewer
@@ -106,7 +106,7 @@ osx Release:
     - tar xf MacOSX10.13.sdk.tar.xz
     - sudo mv MacOSX10.13.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
   after_script:
-    - otool -l build/Release/quickVidViewer
+    - otool -l build/Release/quickVidViewer | grep -A 3 LC_VERSION_MIN_MACOSX
 
 windows Release:
   <<: [*windows, *build_config_generator]
