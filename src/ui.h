@@ -286,6 +286,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.3f + 0.2f) * prm::main_window_height),
                             ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::SetNextWindowCollapsed(!rec->active, ImGuiCond_Always);
     rec->active = ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
   } else {
     if (ImGui::CollapsingHeader(name.c_str(),
@@ -348,7 +349,8 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       auto &ctrl         = rec->export_ctrl.video;
       ctrl.export_window = true;
       ctrl.assign_auto_filename(rec->path());
-      ctrl.tend = rec->length();
+      ctrl.tend        = rec->length();
+      ctrl.description = rec->comment();
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
@@ -493,6 +495,10 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     if (ImGui::Button("Reset")) {
       trace.clear();
     }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_TRASH_ALT)) {
+      rec->remove_trace(pos);
+    }
     if (ImGui::Button("Export ROI")) {
       auto &ctrl                      = rec->export_ctrl.raw;
       ctrl.export_window              = true;
@@ -549,7 +555,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
 
     ImGui::Spacing();
     if (ImGui::Button("Start Export (freezes everything)", ImVec2(-1.0f, 0.0f))) {
-      fs::path path(export_dir); // TODO: validate that directory exists
+      fs::path path(export_dir);  // TODO: validate that directory exists
       path /= ctrl.filename;
       fmt::print("Exporting ROI to {}\n", path.string());
 
@@ -581,17 +587,16 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     if (!ctrl.recording) {
       ImGui::InputText("Directory", &export_dir);
       ImGui::InputText("Filename", &ctrl.filename);
-      static std::string description = "";
-      ImGui::InputTextMultiline("Description", &description);
+      ImGui::InputTextMultiline("Description", &ctrl.description);
       static int fps = 30;
       ImGui::InputInt("FPS", &fps);
       ImGui::InputInt("t start", &ctrl.tstart);
       ImGui::InputInt("t end", &ctrl.tend);
 
       if (ImGui::Button("Start Export")) {
-        fs::path path(export_dir); // TODO: validate that directory exists
+        fs::path path(export_dir);  // TODO: validate that directory exists
         path /= ctrl.filename;
-        recording->start_recording(path.string(), fps, description.data());
+        recording->start_recording(path.string(), fps, ctrl.description);
       }
     } else {
       int cur_frame    = recording->current_frame() / prm::playbackCtrl.val + 1;
@@ -615,7 +620,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::InputText("Filename", &ctrl.filename);
 
     const auto make_snapshot = [&recording, &ctrl]() {
-      fs::path path(export_dir); // TODO: validate that directory exists
+      fs::path path(export_dir);  // TODO: validate that directory exists
       path /= ctrl.filename;
       return recording->save_snapshot(path.string());
     };

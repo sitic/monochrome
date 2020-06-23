@@ -696,16 +696,16 @@ void RecordingWindow::reset_traces() {
     t.clear();
   }
 }
-void RecordingWindow::add_trace_pos(const Vec2i &npos) {
+void RecordingWindow::add_trace(const Vec2i &pos) {
   for (auto &t : traces) {
-    if (t.is_near_point(npos)) {
-      t.set_pos(npos);
+    if (t.is_near_point(pos)) {
+      t.set_pos(pos);
       return;
     }
   }
-  traces.push_back({{}, npos, Trace::next_color()});
+  traces.push_back({{}, pos, Trace::next_color()});
 }
-void RecordingWindow::remove_trace_pos(const Vec2i &pos) {
+void RecordingWindow::remove_trace(const Vec2i &pos) {
   const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
 
   traces.erase(std::remove_if(traces.begin(), traces.end(), pred), traces.end());
@@ -757,7 +757,7 @@ void RecordingWindow::cursor_position_callback(GLFWwindow *window, double xpos, 
     int x = rec->mousepos[0] * rec->Nx() / w;
     int y = rec->mousepos[1] * rec->Ny() / h;
 
-    rec->add_trace_pos({x, y});
+    rec->add_trace({x, y});
   }
 }
 
@@ -777,7 +777,7 @@ void RecordingWindow::mouse_button_callback(GLFWwindow *window, int button, int 
       int x = rec->mousepos[0] * rec->Nx() / w;
       int y = rec->mousepos[1] * rec->Ny() / h;
 
-      rec->remove_trace_pos({x, y});
+      rec->remove_trace({x, y});
     }
   }
 }

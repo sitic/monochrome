@@ -97,6 +97,7 @@ struct ExportCtrl {
     bool recording     = false;
     float progress     = 0;
     std::string filename;
+    std::string description;
     VideoRecorder videoRecorder;
     int tstart = 0;
     int tend   = -1;
@@ -209,8 +210,8 @@ class RecordingWindow : public Recording {
   float &get_max(Transformations type) { return transformationArena.create_if_needed(type)->max; }
 
   void reset_traces();
-  void add_trace_pos(const Vec2i &npos);
-  void remove_trace_pos(const Vec2i &pos);
+  void add_trace(const Vec2i &pos);
+  void remove_trace(const Vec2i &pos);
 
   static void fliplr() { rotations.flipud(); }
   static void flipud() { rotations.fliplr(); }
