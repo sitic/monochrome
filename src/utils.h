@@ -17,6 +17,7 @@ class Histogram {
 
   T min = {};
   T max = {};
+  bool symmetric = false;
 
   Histogram() = default;
   Histogram(T _min, T _max) : min(_min), max(_max){};

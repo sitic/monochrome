@@ -312,14 +312,9 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   }
   ImGui::PopStyleColor(1);
 
-  if (!rec->date().empty()) {
-    ImGui::Text("Date: %s", rec->date().c_str());
-  }
-
-  if (!rec->comment().empty()) {
-    ImGui::Text("Comment: %s", rec->comment().c_str());
-  }
-
+  // Show metadata
+  if (!rec->date().empty()) ImGui::Text("Date: %s", rec->date().c_str());
+  if (!rec->comment().empty()) ImGui::Text("Comment: %s", rec->comment().c_str());
   ImGui::Columns(3);
   if (rec->duration().count() > 0) {
     ImGui::Text("Duration  %.3fs", rec->duration().count());
@@ -379,6 +374,8 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   }
   ImGui::Columns(1);
 
+
+  // Histogram and other controls
   ImGui::PushItemWidth(prm::main_window_width * 0.7f);
   ImGui::PlotHistogram("##histogram", rec->histogram.data.data(), rec->histogram.data.size(), 0,
                        nullptr, 0, rec->histogram.max_value(), ImVec2(0, 100));
@@ -387,6 +384,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::BeginGroup();
     ImGui::Text("Histogram");
     ImGui::NewLine();
+    // Bitrange switcher
     {
       int item = static_cast<int>(rec->bitrange);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
@@ -398,6 +396,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
         std::tie(min, max) = utils::bitrange_to_float(br);
       }
     }
+    // Colormap switcher
     {
       ColorMap current_cmap = rec->colormap();
       auto itemwidth        = ImGui::GetContentRegionAvail().x * 0.5f;
@@ -430,10 +429,18 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     }
     ImGui::EndGroup();
   }
+
+  // Controls for min and max values
+  bool symmetrize_minmax = false;
   if (ImGui::SliderFloat("min", &rec->get_min(prm::transformation), rec->histogram.min,
                          rec->histogram.max)) {
-    if (prm::transformation == Transformations::FrameDiff) {
-      rec->get_max(prm::transformation) = -rec->get_min(prm::transformation);
+    symmetrize_minmax =
+        (rec->histogram.symmetric || prm::transformation == Transformations::FrameDiff);
+  }
+  if (rec->get_min(prm::transformation) < 0) {
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Symmetric", &rec->histogram.symmetric)) {
+      symmetrize_minmax = rec->histogram.symmetric;
     }
   }
   if (ImGui::SliderFloat("max", &rec->get_max(prm::transformation), rec->histogram.min,
@@ -442,7 +449,11 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       rec->get_min(prm::transformation) = -rec->get_max(prm::transformation);
     }
   }
+  if (symmetrize_minmax) {
+    rec->get_max(prm::transformation) = -rec->get_min(prm::transformation);
+  }
 
+  // Controls for flows
   if (!rec->flows.empty()) {
     for (auto &flow : rec->flows) {
       ImGui::PushID(flow.data.get());
@@ -472,6 +483,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::Columns(1);
   }
 
+  // Plot traces and show their controls
   for (auto &[trace, pos, color] : rec->traces) {
     auto label = pos.to_string();
     ImGui::PushID(label.c_str());
