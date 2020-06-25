@@ -69,12 +69,6 @@ struct ExportCtrl {
     void assign_auto_filename(const fs::path &file_path) {
       auto fn = file_path.stem().string();
 
-      // TODO: This removes some common, unnecessary parts. But this is propably to BMP filerecording specific and should be removed?
-      auto parts = split_string(fn, "_"s.c_str());
-      if (parts.size() > 4) {
-        fn = fmt::format("{}_{}", parts[1], parts[2]);
-      }
-
       if (frames[0] != 0) {
         fn += "_o"s + std::to_string(frames[0]);
       }
