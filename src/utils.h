@@ -56,7 +56,8 @@ class Histogram {
   }
 };
 
-std::vector<std::string_view> split_string(std::string_view input, std::string_view delims = " ");
+std::vector<std::string> split_string(std::string_view input, std::string_view delims = " ");
+std::string file_to_string(std::string filepath);
 
 void gl_save_snapshot(std::string out_png_path, GLFWwindow *window = nullptr);
 

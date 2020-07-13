@@ -15,6 +15,7 @@ namespace fs = ghc::filesystem;
 #endif
 
 #include "mio/mio.hpp"
+#include "pugixml.hpp"
 
 using namespace std::chrono_literals;
 
@@ -49,8 +50,12 @@ class BMPheader {
 
   PixelDataFormat dataType;
 
+  std::string mXML;
+
   bool _good             = false;
   std::string _error_msg = "";
+
+  std::vector<std::pair<std::string, std::string>> mMetadata;
 
   template <typename T>
   bool read(T &x) {
@@ -96,6 +101,70 @@ class BMPheader {
   void copy_frame(long t, D data) const {
     auto begin = get_data_ptr<T>(t);
     std::copy(begin, begin + (mFrameWidth * mFrameHeight), data);
+  }
+
+  void parse_xml(const fs::path &dat_path) {
+    if (auto parts = split_string(dat_path.stem().string(), "_"); parts.size() > 3) {
+      auto xml_path =
+          dat_path.parent_path() / fmt::format("{}_{}_{}.xml", parts[0], parts[1], parts[2]);
+      if (fs::is_regular_file(xml_path)) {
+        pugi::xml_document doc;
+        pugi::xml_parse_result result = doc.load_file(xml_path.c_str());
+        if (result) {
+          mXML = file_to_string(xml_path.string());
+
+          auto recordingMetaData = doc.child("recordingMetaData");
+          auto general_section   = recordingMetaData.child("general");
+          // sometimes the comment is not saved in the .dat file, only the .xml file
+          if (mComment.empty()) {
+            mComment = general_section.child("comment").child_value();
+          }
+
+          // recording duration is often more accurate in the xml file
+          auto recordingTime             = general_section.child("recordingTime");
+          std::string recordingTimeUnit  = recordingTime.attribute("unit").value();
+          std::string recordingTimeValue = recordingTime.child_value();
+          if (recordingTimeUnit == "ms" && !recordingTimeValue.empty()) {
+            mRecordingLength = std::chrono::milliseconds(std::stoul(recordingTimeValue));
+          }
+
+          // Concatenate `parts[3:]` with spaces to get camera model name
+          std::string camera_model =
+              std::accumulate(parts.begin() + 4, parts.end(), parts[3],
+                              [](std::string s0, std::string const &s1) { return s0 += " " + s1; });
+          auto camera = recordingMetaData.child("Cameras").find_child_by_attribute(
+              "Camera", "model", camera_model.c_str());
+          auto profile = camera.child("Profile");
+          auto get_val = [&](const char *name) -> std::string {
+            return profile.find_child_by_attribute("value", "name", name).attribute("value").value();
+          };
+          auto get_float = [](std::string str) -> std::optional<float> {
+            if (str.empty()) return std::nullopt;
+            try {
+              return std::stof(str);
+            } catch (const std::exception &e) {
+              return std::nullopt;
+            }
+          };
+
+          std::string vendor = camera.attribute("vendor").value();
+          if (vendor == "IDS") {
+            auto framerate = get_float(get_val("Framerate"));
+            if (framerate) mFPS = framerate.value();
+
+            auto gain = get_val("Gain");
+            if (!gain.empty()) mMetadata.emplace_back("Gain", gain);
+
+            auto exposure = get_float(get_val("Exposure"));
+            if (exposure) {
+              mMetadata.emplace_back("Exposure", fmt::format("{:.2f} ms", exposure.value()));
+            }
+          }
+        }
+      } else {
+        fmt::print("XML file {} not found!", xml_path.string());
+      }
+    }
   }
 
  public:
@@ -168,6 +237,8 @@ class BMPheader {
     mRecordingLength = std::chrono::milliseconds(mLastFrameTime - mFirstFrameTime);
     mFPS             = mNumFrames / mRecordingLength.count();
 
+    parse_xml(path);
+
     std::error_code error;
     _mmap.map(path.string(), HeaderLength, mio::map_entire_file, error);
     if (error) {
@@ -197,6 +268,8 @@ class BMPheader {
   std::string comment() const { return mComment; }
   std::chrono::duration<float> duration() const { return mRecordingLength; }
   float fps() const { return mFPS; }
+  std::string xml() const { return mXML; }
+  std::vector<std::pair<std::string, std::string>> metadata() const { return mMetadata; }
 
   template <typename T>
   void read_frame(long t, T data) const {

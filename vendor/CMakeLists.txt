@@ -60,4 +60,7 @@ target_include_directories(flatbuffers INTERFACE flatbuffers/include)
 
 add_subdirectory(CLI11)
 
-set_property(TARGET imgui_glfw_gl3 glad glfw fmt APPEND_STRING PROPERTY COMPILE_FLAGS " -w")
+add_library(pugixml pugixml/src/pugixml.cpp pugixml/src/pugixml.hpp pugixml/src/pugiconfig.hpp)
+target_include_directories(pugixml SYSTEM PUBLIC pugixml/src)
+
+set_property(TARGET imgui_glfw_gl3 glad glfw fmt pugixml APPEND_STRING PROPERTY COMPILE_FLAGS " -w")

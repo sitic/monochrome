@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include <lodepng/lodepng.h>
 
 #include "fonts/MultiRecorderVideo.h"
@@ -30,8 +32,8 @@ std::string config_file_path() {
 #endif
 }
 
-std::vector<std::string_view> split_string(std::string_view input, std::string_view delims) {
-  std::vector<std::string_view> output;
+std::vector<std::string> split_string(std::string_view input, std::string_view delims) {
+  std::vector<std::string> output;
   size_t first = 0;
 
   while (first < input.size()) {
@@ -45,6 +47,11 @@ std::vector<std::string_view> split_string(std::string_view input, std::string_v
   }
 
   return output;
+}
+std::string file_to_string(std::string filepath) {
+  std::ifstream t(filepath);
+  std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+  return str;
 }
 
 void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {

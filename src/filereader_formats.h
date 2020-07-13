@@ -29,6 +29,9 @@ class BmpFileRecording : public AbstractRecording {
   std::string comment() const final { return file.comment(); };
   std::chrono::duration<float> duration() const final { return file.duration(); };
   float fps() const final { return file.fps(); };
+  std::vector<std::pair<std::string, std::string>> metadata() const final {
+    return file.metadata();
+  };
   std::optional<BitRange> bitrange() const final {
     if (file.dataFormat() == PixelDataFormat::UINT8) {
       return BitRange::U8;
@@ -146,6 +149,7 @@ class RawFileRecording : public AbstractRecording {
   std::string comment() const final { return ""; };
   std::chrono::duration<float> duration() const final { return 0s; };
   float fps() const final { return 0; };
+  std::vector<std::pair<std::string, std::string>> metadata() const final { return {}; };
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
   bool is_flow() const final { return _is_flow; };
@@ -321,6 +325,7 @@ class NpyFileRecording : public AbstractRecording {
   std::string comment() const final { return ""; };
   std::chrono::duration<float> duration() const final { return 0s; };
   float fps() const final { return 0; };
+  std::vector<std::pair<std::string, std::string>> metadata() const final { return {}; };
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
   bool is_flow() const final { return _is_flow; };

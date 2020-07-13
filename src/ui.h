@@ -313,15 +313,19 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   ImGui::PopStyleColor(1);
 
   // Show metadata
-  if (!rec->date().empty()) ImGui::Text("Date: %s", rec->date().c_str());
-  if (!rec->comment().empty()) ImGui::Text("Comment: %s", rec->comment().c_str());
+  if (!rec->date().empty()) ImGui::TextWrapped("Date: %s", rec->date().c_str());
+  if (!rec->comment().empty()) ImGui::TextWrapped("Comment: %s", rec->comment().c_str());
   ImGui::Columns(3);
   if (rec->duration().count() > 0) {
-    ImGui::Text("Duration  %.3fs", rec->duration().count());
+    ImGui::TextWrapped("Duration  %.3fs", rec->duration().count());
     ImGui::NextColumn();
   }
   if (rec->fps() != 0) {
-    ImGui::Text("FPS  %.3f", rec->fps());
+    ImGui::TextWrapped("FPS  %.3f", rec->fps());
+    ImGui::NextColumn();
+  }
+  for (const auto &v : rec->get_file_ptr()->metadata()) {
+    ImGui::TextWrapped("%s %s", v.first.c_str(), v.second.c_str());
     ImGui::NextColumn();
   }
   ImGui::Text("Frames %d", rec->length());

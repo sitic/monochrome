@@ -29,19 +29,20 @@ class AbstractRecording {
   virtual ~AbstractRecording() = default;
   fs::path path() { return _path; };
 
-  virtual bool good() const                             = 0;
-  virtual int Nx() const                                = 0;
-  virtual int Ny() const                                = 0;
-  virtual int length() const                            = 0;
-  virtual std::string error_msg()                       = 0;
-  virtual std::string date() const                      = 0;
-  virtual std::string comment() const                   = 0;
-  virtual std::chrono::duration<float> duration() const = 0;
-  virtual float fps() const                             = 0;
-  virtual std::optional<BitRange> bitrange() const      = 0;
-  virtual std::optional<ColorMap> cmap() const          = 0;
-  virtual bool is_flow() const                          = 0;
-  virtual bool set_flow(bool _is_flow)                  = 0;
+  virtual bool good() const                                                 = 0;
+  virtual int Nx() const                                                    = 0;
+  virtual int Ny() const                                                    = 0;
+  virtual int length() const                                                = 0;
+  virtual std::string error_msg()                                           = 0;
+  virtual std::string date() const                                          = 0;
+  virtual std::string comment() const                                       = 0;
+  virtual std::chrono::duration<float> duration() const                     = 0;
+  virtual float fps() const                                                 = 0;
+  virtual std::vector<std::pair<std::string, std::string>> metadata() const = 0;
+  virtual std::optional<BitRange> bitrange() const                          = 0;
+  virtual std::optional<ColorMap> cmap() const                              = 0;
+  virtual bool is_flow() const                                              = 0;
+  virtual bool set_flow(bool _is_flow)                                      = 0;
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
@@ -89,6 +90,7 @@ class InMemoryRecording : public AbstractRecording {
     return std::chrono::duration<float>(_data->meta.duration);
   };
   float fps() const final { return _data->meta.fps; };
+  std::vector<std::pair<std::string, std::string>> metadata() const final { return {}; };
   std::optional<BitRange> bitrange() const final { return _data->meta.bitrange; }
   std::optional<ColorMap> cmap() const final { return _data->meta.cmap; }
   bool is_flow() const final { return _data->meta.is_flowfield; };
