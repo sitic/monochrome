@@ -11,9 +11,13 @@
 
 #include "colormap.h"
 
-enum class BitRange : int { U8, U10, U12, U16, FLOAT, DIFF, PHASE, PHASE_DIFF };
-inline const char *BitRangeNames[8] = {"uint8",  "uint10",  "uint12",  "uint16",
-                                       "[0, 1]", "[-1, 1]", "[0, 2π]", "[-π, π]"};
+enum class BitRange : int { U8, U10, U12, U16, FLOAT, DIFF, PHASE, PHASE_DIFF, I8 };
+inline const char *BitRangeNames[9] = {"uint8",   "uint10",  "uint12",  "uint16", "[0, 1]",
+                                       "[-1, 1]", "[0, 2π]", "[-π, π]", "int8"};
+
+enum class TransferFunction : int { LINEAR, DIFF, DIFF_POS, DIFF_NEG };
+inline const char *TransferFunctionNames[4] = {"Linear", "Difference", "Difference Positive",
+                                               "Difference Negative"};
 
 namespace global {
   class Message;
@@ -57,9 +61,10 @@ namespace global {
     float fps      = 0;
     std::string date;
     std::string comment;
-    std::optional<BitRange> bitrange      = std::nullopt;
-    std::optional<ColorMap> cmap          = std::nullopt;
-    std::optional<std::string> parentName = std::nullopt;
+    std::optional<BitRange> bitrange             = std::nullopt;
+    std::optional<ColorMap> cmap                 = std::nullopt;
+    std::optional<std::string> parentName        = std::nullopt;
+    std::optional<TransferFunction> transfer_fct = std::nullopt;
 
     bool is_flowfield = false;
   };
@@ -117,6 +122,9 @@ namespace utils {
         return {0, 2 * M_PI};
       case BitRange::PHASE_DIFF:
         return {-M_PI, M_PI};
+      case BitRange::I8:
+        return {-125, 125};
+        //throw std::logic_error("Don't call with function with auto");
     }
     throw std::logic_error("This line should not be reached");
   }

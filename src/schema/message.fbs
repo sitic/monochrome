@@ -3,6 +3,7 @@ namespace fbs;
 enum BitRange : int { AUTODETECT = 0, UINT8, UINT10, UINT12, UINT16, FLOAT, DIFF, PHASE, PHASE_DIFF }
 enum ColorMap : int { DEFAULT = 0, GRAY, DIFF, HSV, BLACKBODY }
 enum ArrayDataType : int { FLOAT = 0, UINT16 }
+enum TransferFunction : int { NONE = 0, LINEAR, DIFF, DIFF_POS, DIFF_NEG }
 
 table Array3Meta {
   type:ArrayDataType;
@@ -17,6 +18,7 @@ table Array3Meta {
   bitrange:BitRange;
   cmap:ColorMap;
   parentName:string;
+  alphaTransferFct:TransferFunction;
 }
 
 table Array3MetaFlow {

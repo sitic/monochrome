@@ -130,6 +130,8 @@ void show_main_ui() {
       if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) RecordingWindow::add_rotation(-90);
       ImGui::SameLine();
       if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) RecordingWindow::add_rotation(90);
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_REMOVE_FORMAT)) RecordingWindow::set_rotation(0);
     }
 
     ImGui::NextColumn();
@@ -430,6 +432,14 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       const ImVec2 i_size = {itemwidth - ImGui::GetFrameHeight() - 2.5f * style.FramePadding.x,
                              ImGui::GetTextLineHeight()};
       ImGui::Image((void *)(intptr_t)prm::cmap_texs[current_cmap], i_size);
+    }
+    if (parent) {
+      ImGui::Checkbox("Use transfer function", &rec->use_transfer_fct);
+      if (rec->use_transfer_fct) {
+        auto itemwidth = ImGui::GetContentRegionAvail().x * 0.5f;
+        ImGui::SetNextItemWidth(itemwidth);
+        ImGui::SliderInt("transfer function", &rec->transfer_fct_version, 0, 3);
+      }
     }
     ImGui::EndGroup();
   }

@@ -39,7 +39,28 @@ namespace {
       uniform sampler2D texture0;
       uniform sampler1D textureC;
       uniform vec2 minmax;
+      uniform bool use_transfer_fct;
+      uniform int transfer_fct_version;
 
+      float transfer_fct_linear(float x) {
+          return smoothstep(0., 1., x);
+      }
+      float transfer_fct_diff_pos(float x) {
+          if (x < 0.5) return 0;
+          return smoothstep(0.5, 1, abs(x));
+      }
+      float transfer_fct_diff_neg(float x) {
+          if (x > 0.5) return 0;
+          x = x - 0.5;
+          return smoothstep(0., 0.5, abs(x));
+      }
+      float transfer_fct_diff(float x) {
+          if (x < 0.5) {
+              return transfer_fct_diff_neg(x);
+          } else {
+              return transfer_fct_diff_pos(x);
+          }
+      }
       void main() {
           float val = texture(texture0, Texcoord).r;
           if (isnan(val)) {
@@ -47,7 +68,24 @@ namespace {
             FragColor = vec4(0.0, 0.0, 0.0, 0.0);
           } else {
             val = (val - minmax.x) / (minmax.y - minmax.x);
-            FragColor = texture(textureC, clamp(val, 0.0, 1.0));
+            val = clamp(val, 0.0, 1.0);
+            FragColor = texture(textureC, val);
+            if (use_transfer_fct) {
+              switch (transfer_fct_version) {
+              case 1:
+                  FragColor.a = transfer_fct_diff(val);
+                  break;
+              case 2:
+                  FragColor.a = transfer_fct_diff_pos(val);
+                  break;
+              case 3:
+                  FragColor.a = transfer_fct_diff_neg(val);
+                  break;
+              default:
+                  FragColor.a = transfer_fct_linear(val);
+                  break;
+              }
+            }
           }
       })glsl";
     return Shader::create(vertexSource, fragmentSource);
@@ -385,7 +423,12 @@ void RecordingWindow::display(Filters prefilter,
 
   switch (transformation) {
     case Transformations::None:
-      std::tie(histogram.min, histogram.max) = utils::bitrange_to_float(bitrange);
+      if (use_transfer_fct) {
+        histogram.min           = -100;
+        histogram.max           = 100;
+        get_max(transformation) = -get_min(transformation);
+      } else
+        std::tie(histogram.min, histogram.max) = utils::bitrange_to_float(bitrange);
       break;
     case Transformations::FrameDiff: {
       auto *frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
@@ -429,12 +472,18 @@ void RecordingWindow::display(Filters prefilter,
 
   frame_shader.use();
   frame_shader.setVec2("minmax", get_min(transformation), get_max(transformation));
+  frame_shader.setBool("use_transfer_fct", use_transfer_fct);
+  frame_shader.setInt("transfer_fct_version", transfer_fct_version);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, arr->data());
   glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_1D,
-                transformation == Transformations::FrameDiff ? ctexturediff : ctexture);
+  GLuint color_tex = ctexture;
+  if (transformation == Transformations::FrameDiff && (cmap_ != ColorMap::DIFF_POS) &&
+      (cmap_ != ColorMap::DIFF_NEG)) {
+    color_tex = ctexturediff;
+  }
+  glBindTexture(GL_TEXTURE_1D, color_tex);
 
   // Draw the frame
   glBindVertexArray(frame_vao);
@@ -612,6 +661,7 @@ void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
   glClearColor(1.f, 1.f, 1.f, 0.f);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glBlendEquation(GL_FUNC_ADD);
 
   glfwMakeContextCurrent(global::main_window);
 }

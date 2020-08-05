@@ -148,8 +148,11 @@ namespace {
             "Array3Meta message arrived before previous array was completely loaded");
       }
 
-      int cmap     = raw->cmap() - 1;
-      int bitrange = raw->bitrange() - 1;
+      int cmap         = raw->cmap() - 1;
+      int bitrange     = raw->bitrange() - 1;
+      int transfer_fct = flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_ALPHATRANSFERFCT)
+                             ? raw->alphaTransferFct() - 1
+                             : -1;
 
       global::RawArray3MetaData meta{
           raw->nx(),
@@ -164,7 +167,10 @@ namespace {
           cmap < 0 ? std::nullopt : std::optional<ColorMap>(static_cast<ColorMap>(cmap)),
           flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_PARENTNAME)
               ? std::optional<std::string>(raw->parentName()->str())
-              : std::nullopt};
+              : std::nullopt,
+          transfer_fct < 0
+              ? std::nullopt
+              : std::optional<TransferFunction>(static_cast<TransferFunction>(transfer_fct))};
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
       if (raw->type() == fbs::ArrayDataType::ArrayDataType_FLOAT) {

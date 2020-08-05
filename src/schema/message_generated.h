@@ -146,6 +146,45 @@ inline const char *EnumNameArrayDataType(ArrayDataType e) {
   return EnumNamesArrayDataType()[index];
 }
 
+enum TransferFunction {
+  TransferFunction_NONE = 0,
+  TransferFunction_LINEAR = 1,
+  TransferFunction_DIFF = 2,
+  TransferFunction_DIFF_POS = 3,
+  TransferFunction_DIFF_NEG = 4,
+  TransferFunction_MIN = TransferFunction_NONE,
+  TransferFunction_MAX = TransferFunction_DIFF_NEG
+};
+
+inline const TransferFunction (&EnumValuesTransferFunction())[5] {
+  static const TransferFunction values[] = {
+    TransferFunction_NONE,
+    TransferFunction_LINEAR,
+    TransferFunction_DIFF,
+    TransferFunction_DIFF_POS,
+    TransferFunction_DIFF_NEG
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesTransferFunction() {
+  static const char * const names[6] = {
+    "NONE",
+    "LINEAR",
+    "DIFF",
+    "DIFF_POS",
+    "DIFF_NEG",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameTransferFunction(TransferFunction e) {
+  if (flatbuffers::IsOutRange(e, TransferFunction_NONE, TransferFunction_DIFF_NEG)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesTransferFunction()[index];
+}
+
 enum Data {
   Data_NONE = 0,
   Data_Filepaths = 1,
@@ -229,7 +268,8 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_COMMENT = 20,
     VT_BITRANGE = 22,
     VT_CMAP = 24,
-    VT_PARENTNAME = 26
+    VT_PARENTNAME = 26,
+    VT_ALPHATRANSFERFCT = 28
   };
   fbs::ArrayDataType type() const {
     return static_cast<fbs::ArrayDataType>(GetField<int32_t>(VT_TYPE, 0));
@@ -267,6 +307,9 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *parentName() const {
     return GetPointer<const flatbuffers::String *>(VT_PARENTNAME);
   }
+  fbs::TransferFunction alphaTransferFct() const {
+    return static_cast<fbs::TransferFunction>(GetField<int32_t>(VT_ALPHATRANSFERFCT, 0));
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_TYPE) &&
@@ -285,6 +328,7 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<int32_t>(verifier, VT_CMAP) &&
            VerifyOffset(verifier, VT_PARENTNAME) &&
            verifier.VerifyString(parentName()) &&
+           VerifyField<int32_t>(verifier, VT_ALPHATRANSFERFCT) &&
            verifier.EndTable();
   }
 };
@@ -329,6 +373,9 @@ struct Array3MetaBuilder {
   void add_parentName(flatbuffers::Offset<flatbuffers::String> parentName) {
     fbb_.AddOffset(Array3Meta::VT_PARENTNAME, parentName);
   }
+  void add_alphaTransferFct(fbs::TransferFunction alphaTransferFct) {
+    fbb_.AddElement<int32_t>(Array3Meta::VT_ALPHATRANSFERFCT, static_cast<int32_t>(alphaTransferFct), 0);
+  }
   explicit Array3MetaBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -354,8 +401,10 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3Meta(
     flatbuffers::Offset<flatbuffers::String> comment = 0,
     fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
     fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
-    flatbuffers::Offset<flatbuffers::String> parentName = 0) {
+    flatbuffers::Offset<flatbuffers::String> parentName = 0,
+    fbs::TransferFunction alphaTransferFct = fbs::TransferFunction_NONE) {
   Array3MetaBuilder builder_(_fbb);
+  builder_.add_alphaTransferFct(alphaTransferFct);
   builder_.add_parentName(parentName);
   builder_.add_cmap(cmap);
   builder_.add_bitrange(bitrange);
@@ -384,7 +433,8 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
     const char *comment = nullptr,
     fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
     fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
-    const char *parentName = nullptr) {
+    const char *parentName = nullptr,
+    fbs::TransferFunction alphaTransferFct = fbs::TransferFunction_NONE) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto date__ = date ? _fbb.CreateString(date) : 0;
   auto comment__ = comment ? _fbb.CreateString(comment) : 0;
@@ -402,7 +452,8 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
       comment__,
       bitrange,
       cmap,
-      parentName__);
+      parentName__,
+      alphaTransferFct);
 }
 
 struct Array3MetaFlow FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
