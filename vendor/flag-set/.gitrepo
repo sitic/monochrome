@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/mrts/flag-set-cpp.git
+	branch = master
+	commit = af71fd019682ea6e296c3f008bd2f2ee8cbee94f
+	parent = 0912bd58ef86f76eb03296c6202767b286e29b7b
+	method = merge
+	cmdver = 0.4.1
