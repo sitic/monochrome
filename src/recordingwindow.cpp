@@ -257,8 +257,8 @@ RecordingWindow::RecordingWindow(std::shared_ptr<AbstractRecording> file_)
     Trace::width(std::max(val, 2));
   }
 
-  if (file->bitrange()) {
-    bitrange = file->bitrange().value();
+  if (_file->bitrange()) {
+    bitrange = _file->bitrange().value();
   }
   float &min = get_min(Transformations::None);
   float &max = get_max(Transformations::None);
@@ -266,8 +266,8 @@ RecordingWindow::RecordingWindow(std::shared_ptr<AbstractRecording> file_)
     std::tie(min, max) = utils::bitrange_to_float(bitrange);
   }
 
-  if (file->cmap()) {
-    cmap_ = file->cmap().value();
+  if (_file->cmap()) {
+    cmap_ = _file->cmap().value();
   } else if (bitrange == BitRange::PHASE || bitrange == BitRange::PHASE_DIFF) {
     // assume that's its a phase map and the user prefers HSV in this circumstances
     cmap_ = ColorMap::HSV;

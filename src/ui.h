@@ -318,26 +318,28 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   if (!rec->date().empty()) ImGui::TextWrapped("Date: %s", rec->date().c_str());
   if (!rec->comment().empty()) {
     ImGui::TextWrapped("Comment: %s", rec->comment().c_str());
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_EDIT)) {
-      rec->comment_edit_ui.comment = rec->comment();
-      rec->comment_edit_ui.show = true;
-    }
-
-    if (rec->comment_edit_ui.show) {
-      auto window_name = fmt::format("Edit Comment: {}", rec->name());
-      ImGui::Begin(window_name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-      ImGui::InputText("##comment", &rec->comment_edit_ui.comment);
-      if (ImGui::Button("Save")) {
-        rec->get_file_ptr()->set_comment(rec->comment_edit_ui.comment);
-        rec->comment_edit_ui.show = false;
-      }
+    if (rec->file()->capabilities()[RecordingCapabilities::SET_COMMENT]) {
       ImGui::SameLine();
-      if (ImGui::Button("Cancel")) {
-        rec->comment_edit_ui.show = false;
+      if (ImGui::SmallButton(ICON_FA_EDIT)) {
         rec->comment_edit_ui.comment = rec->comment();
+        rec->comment_edit_ui.show    = true;
       }
-      ImGui::End();
+
+      if (rec->comment_edit_ui.show) {
+        auto window_name = fmt::format("Edit Comment: {}", rec->name());
+        ImGui::Begin(window_name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::InputText("##comment", &rec->comment_edit_ui.comment);
+        if (ImGui::Button("Save")) {
+          rec->file()->set_comment(rec->comment_edit_ui.comment);
+          rec->comment_edit_ui.show = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+          rec->comment_edit_ui.show    = false;
+          rec->comment_edit_ui.comment = rec->comment();
+        }
+        ImGui::End();
+      }
     }
   }
   ImGui::Columns(3);
@@ -349,7 +351,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::TextWrapped("FPS  %.3f", rec->fps());
     ImGui::NextColumn();
   }
-  for (const auto &v : rec->get_file_ptr()->metadata()) {
+  for (const auto &v : rec->file()->metadata()) {
     ImGui::TextWrapped("%s %s", v.first.c_str(), v.second.c_str());
     ImGui::NextColumn();
   }
@@ -392,9 +394,11 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
           if (ImGui::Selectable(l.c_str())) {
             global::merge_queue.push({rec, r, false});
           }
-          auto l2 = l + " as flow"s;
-          if (ImGui::Selectable(l2.c_str())) {
-            global::merge_queue.push({rec, r, true});
+          if (rec->file()->capabilities()[RecordingCapabilities::SET_FLOW]) {
+            auto l2 = l + " as flow"s;
+            if (ImGui::Selectable(l2.c_str())) {
+              global::merge_queue.push({rec, r, true});
+            }
           }
         }
         ImGui::EndPopup();

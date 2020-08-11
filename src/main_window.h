@@ -99,7 +99,7 @@ void load_from_queue() {
       child->set_context(parent->window);
       child->playback = parent->playback;
     } else {
-      if (child->get_file_ptr()->set_flow(true)) {
+      if (child->file()->set_flow(true)) {
         child->set_context(parent->window);
         parent->add_flow(child);
       }

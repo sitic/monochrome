@@ -3,9 +3,10 @@
 #include <chrono>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include <Eigen/Dense>
-#include <utility>
+#include <flag_set.hpp>
 
 #include "globals.h"
 #include "iterators.h"
@@ -20,6 +21,8 @@ namespace fs = ghc::filesystem;
 
 using namespace std::chrono_literals;
 
+enum RecordingCapabilities : uint8_t { SET_FLOW, SET_COMMENT, _ };
+
 class AbstractRecording {
  private:
   fs::path _path;
@@ -28,8 +31,6 @@ class AbstractRecording {
   AbstractRecording(fs::path path) : _path(std::move(path)){};
   virtual ~AbstractRecording() = default;
   fs::path path() { return _path; };
-
-  enum Capabilities : int { SET_FLOW, SET_COMMENT };
 
   virtual bool good() const                                                 = 0;
   virtual int Nx() const                                                    = 0;
@@ -46,7 +47,7 @@ class AbstractRecording {
   virtual bool is_flow() const                                              = 0;
   virtual bool set_flow(bool _is_flow)                                      = 0;
   virtual void set_comment(const std::string& new_comment)                  = 0;
-  virtual Capabilities capabilities() const                                 = 0;
+  virtual flag_set<RecordingCapabilities> capabilities() const              = 0;
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
@@ -103,7 +104,9 @@ class InMemoryRecording : public AbstractRecording {
     return true;
   }
   void set_comment(const std::string& new_comment) final {}
-  Capabilities capabilities() const final { return Capabilities::SET_FLOW; }
+  flag_set<RecordingCapabilities> capabilities() const final {
+    return flag_set<RecordingCapabilities>(RecordingCapabilities::SET_FLOW);
+  }
   Eigen::MatrixXf read_frame(long t) final {
     std::visit(
         [this, t](const auto& data) {

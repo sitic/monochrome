@@ -32,7 +32,7 @@ struct RotationCtrl {
 
 class Recording {
  protected:
-  std::shared_ptr<AbstractRecording> file;
+  std::shared_ptr<AbstractRecording> _file;
   long t_frame = 0;
 
   static RotationCtrl rotations;
@@ -43,32 +43,32 @@ class Recording {
   Eigen::MatrixXf frame;
 
   Recording(const fs::path &path) : Recording(autoguess_filetype(path)){};
-  Recording(std::shared_ptr<AbstractRecording> _file) : file(std::move(_file)) {
-    if (!file || !file->good()) {
+  Recording(std::shared_ptr<AbstractRecording> _file) : _file(std::move(_file)) {
+    if (!_file || !_file->good()) {
       return;
     }
 
-    frame.setZero(file->Nx(), file->Ny());
+    frame.setZero(_file->Nx(), _file->Ny());
     apply_rotation();
   }
-  std::shared_ptr<Recording> copy() const { return std::make_shared<Recording>(file); }
+  std::shared_ptr<Recording> copy() const { return std::make_shared<Recording>(_file); }
 
   static std::shared_ptr<AbstractRecording> autoguess_filetype(const fs::path &path);
-  std::shared_ptr<AbstractRecording> get_file_ptr() const { return file; }
-  void set_file_ptr(std::shared_ptr<AbstractRecording> new_file) { file = new_file; }
+  std::shared_ptr<AbstractRecording> file() const { return _file; }
+  void file(std::shared_ptr<AbstractRecording> new_file) { _file = new_file; }
 
-  [[nodiscard]] bool good() const { return file && file->good(); }
+  [[nodiscard]] bool good() const { return _file && _file->good(); }
   int Nx() const { return frame.rows(); }
   int Ny() const { return frame.cols(); }
-  int length() const { return file->length(); }
-  fs::path path() const { return file->path(); }
-  std::string name() const { return file->path().filename().string(); }
-  std::string date() const { return file->date(); };
-  std::string comment() const { return file->comment(); };
-  std::chrono::duration<float> duration() const { return file->duration(); }
-  float fps() const { return file->fps(); }
-  std::optional<BitRange> bitrange() const { return file->bitrange(); }
-  std::optional<ColorMap> cmap() const { return file->cmap(); }
+  int length() const { return _file->length(); }
+  fs::path path() const { return _file->path(); }
+  std::string name() const { return _file->path().filename().string(); }
+  std::string date() const { return _file->date(); };
+  std::string comment() const { return _file->comment(); };
+  std::chrono::duration<float> duration() const { return _file->duration(); }
+  float fps() const { return _file->fps(); }
+  std::optional<BitRange> bitrange() const { return _file->bitrange(); }
+  std::optional<ColorMap> cmap() const { return _file->cmap(); }
 
   void load_frame(long t);
 

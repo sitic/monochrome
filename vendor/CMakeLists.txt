@@ -58,6 +58,9 @@ target_include_directories(readerwriterqueue INTERFACE readerwriterqueue/include
 add_library(flatbuffers INTERFACE)
 target_include_directories(flatbuffers INTERFACE flatbuffers/include)
 
+add_library(flagset INTERFACE)
+target_include_directories(flagset INTERFACE flag-set/include)
+
 add_subdirectory(CLI11)
 
 add_library(pugixml pugixml/src/pugixml.cpp pugixml/src/pugixml.hpp pugixml/src/pugiconfig.hpp)

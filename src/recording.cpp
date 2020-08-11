@@ -134,7 +134,7 @@ std::shared_ptr<AbstractRecording> Recording::autoguess_filetype(const fs::path 
 }
 
 void Recording::load_frame(long t) {
-  frame   = file->read_frame(t);
+  frame   = _file->read_frame(t);
   t_frame = t;
   apply_rotation();
 }

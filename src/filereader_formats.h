@@ -52,7 +52,9 @@ class BmpFileRecording : public AbstractRecording {
     return false;
   }
   void set_comment(const std::string &new_comment) final { file.set_comment(new_comment); }
-  Capabilities capabilities() const final { return Capabilities::SET_COMMENT; }
+  flag_set<RecordingCapabilities> capabilities() const final {
+    return flag_set<RecordingCapabilities>(RecordingCapabilities::SET_COMMENT);
+  }
 
   Eigen::MatrixXf read_frame(long t) final {
     file.read_frame(t, _frame.data());
@@ -160,7 +162,9 @@ class RawFileRecording : public AbstractRecording {
     return true;
   }
   void set_comment(const std::string &new_comment) final {}
-  Capabilities capabilities() const final { return Capabilities::SET_FLOW; }
+  flag_set<RecordingCapabilities> capabilities() const final {
+    return flag_set<RecordingCapabilities>(RecordingCapabilities::SET_FLOW);
+  }
 
   Eigen::MatrixXf read_frame(long t) final {
     if (!is_flow()) {
@@ -338,7 +342,9 @@ class NpyFileRecording : public AbstractRecording {
     return true;
   }
   void set_comment(const std::string &new_comment) final {}
-  Capabilities capabilities() const final { return Capabilities::SET_FLOW; }
+  flag_set<RecordingCapabilities> capabilities() const final {
+    return flag_set<RecordingCapabilities>(RecordingCapabilities::SET_FLOW);
+  }
 
   Eigen::MatrixXf read_frame(long t) final {
     switch (dataType) {
