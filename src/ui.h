@@ -316,7 +316,30 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
 
   // Show metadata
   if (!rec->date().empty()) ImGui::TextWrapped("Date: %s", rec->date().c_str());
-  if (!rec->comment().empty()) ImGui::TextWrapped("Comment: %s", rec->comment().c_str());
+  if (!rec->comment().empty()) {
+    ImGui::TextWrapped("Comment: %s", rec->comment().c_str());
+    ImGui::SameLine();
+    if (ImGui::SmallButton(ICON_FA_EDIT)) {
+      rec->comment_edit_ui.comment = rec->comment();
+      rec->comment_edit_ui.show = true;
+    }
+
+    if (rec->comment_edit_ui.show) {
+      auto window_name = fmt::format("Edit Comment: {}", rec->name());
+      ImGui::Begin(window_name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+      ImGui::InputText("##comment", &rec->comment_edit_ui.comment);
+      if (ImGui::Button("Save")) {
+        rec->get_file_ptr()->set_comment(rec->comment_edit_ui.comment);
+        rec->comment_edit_ui.show = false;
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Cancel")) {
+        rec->comment_edit_ui.show = false;
+        rec->comment_edit_ui.comment = rec->comment();
+      }
+      ImGui::End();
+    }
+  }
   ImGui::Columns(3);
   if (rec->duration().count() > 0) {
     ImGui::TextWrapped("Duration  %.3fs", rec->duration().count());

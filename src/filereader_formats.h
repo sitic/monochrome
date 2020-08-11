@@ -51,6 +51,8 @@ class BmpFileRecording : public AbstractRecording {
     global::new_ui_message("Unable to set BMP recording as flow");
     return false;
   }
+  void set_comment(const std::string &new_comment) final { file.set_comment(new_comment); }
+  Capabilities capabilities() const final { return Capabilities::SET_COMMENT; }
 
   Eigen::MatrixXf read_frame(long t) final {
     file.read_frame(t, _frame.data());
@@ -157,6 +159,8 @@ class RawFileRecording : public AbstractRecording {
     _is_flow = _flow;
     return true;
   }
+  void set_comment(const std::string &new_comment) final {}
+  Capabilities capabilities() const final { return Capabilities::SET_FLOW; }
 
   Eigen::MatrixXf read_frame(long t) final {
     if (!is_flow()) {
@@ -333,6 +337,8 @@ class NpyFileRecording : public AbstractRecording {
     _is_flow = _flow;
     return true;
   }
+  void set_comment(const std::string &new_comment) final {}
+  Capabilities capabilities() const final { return Capabilities::SET_FLOW; }
 
   Eigen::MatrixXf read_frame(long t) final {
     switch (dataType) {

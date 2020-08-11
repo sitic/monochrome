@@ -26,6 +26,10 @@ class RecordingWindow : public Recording {
   std::vector<FlowData> flows;  // use add_flow() to add members
   bool use_transfer_fct    = false;
   int transfer_fct_version = 0;
+  struct {
+    bool show = false;
+    std::string comment;
+  } comment_edit_ui;
 
   RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filetype(path)){};
   RecordingWindow(std::shared_ptr<AbstractRecording> file_);

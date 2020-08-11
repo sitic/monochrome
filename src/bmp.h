@@ -50,7 +50,11 @@ class BMPheader {
 
   PixelDataFormat dataType;
 
-  std::string mXML;
+  struct {
+    pugi::xml_document doc;
+    bool good = false;
+    fs::path path;
+  } mXML;
 
   bool _good             = false;
   std::string _error_msg = "";
@@ -105,15 +109,11 @@ class BMPheader {
 
   void parse_xml(const fs::path &dat_path) {
     if (auto parts = split_string(dat_path.stem().string(), "_"); parts.size() > 3) {
-      auto xml_path =
-          dat_path.parent_path() / fmt::format("{}_{}_{}.xml", parts[0], parts[1], parts[2]);
-      if (fs::is_regular_file(xml_path)) {
-        pugi::xml_document doc;
-        pugi::xml_parse_result result = doc.load_file(xml_path.c_str());
-        if (result) {
-          mXML = file_to_string(xml_path.string());
-
-          auto recordingMetaData = doc.child("recordingMetaData");
+      mXML.path = dat_path.parent_path() / fmt::format("{}_{}_{}.xml", parts[0], parts[1], parts[2]);
+      if (fs::is_regular_file(mXML.path)) {
+        mXML.good = mXML.doc.load_file(mXML.path.c_str(), pugi::parse_full);
+        if (mXML.good) {
+          auto recordingMetaData = mXML.doc.child("recordingMetaData");
           auto general_section   = recordingMetaData.child("general");
           // sometimes the comment is not saved in the .dat file, only the .xml file
           if (mComment.empty()) {
@@ -162,7 +162,7 @@ class BMPheader {
           }
         }
       } else {
-        fmt::print("XML file {} not found!", xml_path.string());
+        fmt::print("XML file {} not found!", mXML.path.string());
       }
     }
   }
@@ -266,9 +266,24 @@ class BMPheader {
 
   std::string date() const { return mDate; }
   std::string comment() const { return mComment; }
+  void set_comment(const std::string &new_comment) {
+    mComment = new_comment;
+    if (mXML.good) {
+      auto backup_path = mXML.path.parent_path() / (mXML.path.filename().string() + ".original");
+      if (!fs::is_regular_file(backup_path)) {
+        fs::rename(mXML.path, backup_path);
+      }
+
+      mXML.doc.child("recordingMetaData")
+          .child("general")
+          .child("comment")
+          .first_child()
+          .set_value(new_comment.c_str());
+      mXML.doc.save_file(mXML.path.c_str(), " ", pugi::format_indent | pugi::format_no_declaration);
+    }
+  }
   std::chrono::duration<float> duration() const { return mRecordingLength; }
   float fps() const { return mFPS; }
-  std::string xml() const { return mXML; }
   std::vector<std::pair<std::string, std::string>> metadata() const { return mMetadata; }
 
   template <typename T>

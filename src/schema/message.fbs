@@ -5,6 +5,11 @@ enum ColorMap : int { DEFAULT = 0, GRAY, DIFF, HSV, BLACKBODY }
 enum ArrayDataType : int { FLOAT = 0, UINT16 }
 enum TransferFunction : int { NONE = 0, LINEAR, DIFF, DIFF_POS, DIFF_NEG }
 
+table DictEntry {
+  key: string;
+  val: string;
+}
+
 table Array3Meta {
   type:ArrayDataType;
   nx:int;
@@ -19,6 +24,7 @@ table Array3Meta {
   cmap:ColorMap;
   parentName:string;
   alphaTransferFct:TransferFunction;
+  metaData:[DictEntry];
 }
 
 table Array3MetaFlow {

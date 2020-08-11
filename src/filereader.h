@@ -29,6 +29,8 @@ class AbstractRecording {
   virtual ~AbstractRecording() = default;
   fs::path path() { return _path; };
 
+  enum Capabilities : int { SET_FLOW, SET_COMMENT };
+
   virtual bool good() const                                                 = 0;
   virtual int Nx() const                                                    = 0;
   virtual int Ny() const                                                    = 0;
@@ -43,6 +45,8 @@ class AbstractRecording {
   virtual std::optional<ColorMap> cmap() const                              = 0;
   virtual bool is_flow() const                                              = 0;
   virtual bool set_flow(bool _is_flow)                                      = 0;
+  virtual void set_comment(const std::string& new_comment)                  = 0;
+  virtual Capabilities capabilities() const                                 = 0;
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
@@ -98,6 +102,8 @@ class InMemoryRecording : public AbstractRecording {
     _data->meta.is_flowfield = _is_flow;
     return true;
   }
+  void set_comment(const std::string& new_comment) final {}
+  Capabilities capabilities() const final { return Capabilities::SET_FLOW; }
   Eigen::MatrixXf read_frame(long t) final {
     std::visit(
         [this, t](const auto& data) {
