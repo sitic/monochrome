@@ -79,7 +79,6 @@ gcc Release:
     BUILD_APPIMAGE: "true"
   artifacts:
     paths:
-      - build/quickVidViewer
       - build/quickVidViewer.AppImage
     expire_in: 3 months
 
