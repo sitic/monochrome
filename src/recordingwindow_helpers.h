@@ -93,9 +93,9 @@ struct ExportCtrl {
     int tstart = 0;
     int tend   = -1;
 
-    void assign_auto_filename(const fs::path &bmp_path) {
-      videoRecorder.videotitle = bmp_path.filename().string();
-      filename                 = bmp_path.filename().stem().string() + ".mp4";
+    void assign_auto_filename(const fs::path &path) {
+      videoRecorder.videotitle = path.filename().string();
+      filename                 = path.filename().stem().string() + ".mp4";
     }
   } video;
 
@@ -104,10 +104,25 @@ struct ExportCtrl {
     bool save_pngs     = false;
     std::string filename;
 
-    void assign_auto_filename(const fs::path &bmp_path) {
-      filename = bmp_path.filename().stem().string() + "_{t}.png";
+    void assign_auto_filename(const fs::path &path) {
+      filename = path.filename().stem().string() + "_{t}.png";
     }
   } png;
+
+  struct {
+    bool export_window = false;
+    Vec2i pos;
+    std::string filename;
+    int tstart = 0;
+    int tend   = -1;
+
+    void assign_auto_filename(const fs::path &path, const Vec2i &pos_, int width) {
+      pos = pos_;
+      filename = path.filename().stem().string();
+      filename += fmt::format("_{}_{}_size{}.txt", pos_[0], pos_[1], width);
+    }
+
+  } trace;
 };
 
 struct Trace {

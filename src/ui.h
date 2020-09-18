@@ -552,6 +552,13 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     if (ImGui::Button(ICON_FA_TRASH_ALT)) {
       rec->remove_trace(pos);
     }
+    if (ImGui::Button("Export Trace")) {
+      auto &ctrl         = rec->export_ctrl.trace;
+      ctrl.export_window = true;
+      ctrl.assign_auto_filename(rec->path(), pos, Trace::width());
+      ctrl.tend = rec->length();
+    }
+    ImGui::SameLine();
     if (ImGui::Button("Export ROI")) {
       auto &ctrl                      = rec->export_ctrl.raw;
       ctrl.export_window              = true;
@@ -692,6 +699,21 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
         ctrl.export_window = false;
         global::new_ui_message("Stopped exporting .png series, last screenshot {}", fn.string());
       }
+    }
+    ImGui::End();
+  }
+
+  if (auto &ctrl = recording->export_ctrl.trace; ctrl.export_window) {
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
+                                        ImVec2(prm::main_window_width, FLT_MAX));
+    ImGui::Begin("Save Trace", &ctrl.export_window);
+    ImGui::InputText("Directory", &export_dir);
+    ImGui::InputText("Filename", &ctrl.filename);
+    ImGui::InputInt("t start", &ctrl.tstart);
+    ImGui::InputInt("t end", &ctrl.tend);
+    if (ImGui::Button("Export")) {
+      recording->save_trace(ctrl.pos, fs::path(export_dir) / ctrl.filename,
+                            {ctrl.tstart, ctrl.tend});
     }
     ImGui::End();
   }

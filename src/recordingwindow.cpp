@@ -1,3 +1,5 @@
+#include <fstream>
+#include <fmt/ostream.h>
 #include "recordingwindow.h"
 #include "globals.h"
 
@@ -574,6 +576,32 @@ void RecordingWindow::remove_trace(const Vec2i &pos) {
   const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
 
   traces.erase(std::remove_if(traces.begin(), traces.end(), pred), traces.end());
+}
+void RecordingWindow::save_trace(const Vec2i &pos, fs::path path, Vec2i t0tmax) {
+  if (t0tmax[0] == t0tmax[1]) {
+    t0tmax = {0, length()};
+  }
+  if (t0tmax[0] < 0 || t0tmax[1] > length() || t0tmax[0] > t0tmax[1]) {
+    global::new_ui_message("ERROR: start or end frame invalid, start frame {}, end frame {}",
+                           t0tmax[0], t0tmax[1]);
+  }
+  auto cur_frame = t_frame;
+
+  fs::remove(path);
+  std::ofstream file(path.string(), std::ios::out);
+  fmt::print(file, "Frame\tValue\n");
+
+  for (int t = t0tmax[0]; t < t0tmax[1]; t++) {
+    load_frame(t);
+    auto [start, size] = Trace::clamp(pos, {Nx(), Ny()});
+    if (size[0] > 0 && size[1] > 0) {
+      auto block = frame.block(start[0], start[1], size[0], size[1]);
+      fmt::print(file, "{}\t{}\n", t, block.mean());
+    }
+  }
+
+  fmt::print("Saved trace to {}\n", path.string());
+  load_frame(cur_frame);
 }
 
 void RecordingWindow::resize_window() {
