@@ -15,6 +15,10 @@ void Transformation::ContrastEnhancement::compute(const Eigen::MatrixXf &new_fra
     functions::contrast_enhancement<3>(new_frame, frame, maskVersion);
   } else if (kernel_size == 5) {
     functions::contrast_enhancement<5>(new_frame, frame, maskVersion);
+  } else if (kernel_size == 7) {
+    functions::contrast_enhancement<7>(new_frame, frame, maskVersion);
+  } else if (kernel_size == 9) {
+    functions::contrast_enhancement<9>(new_frame, frame, maskVersion);
   } else {
     functions::contrast_enhancement(new_frame, frame, kernel_size, maskVersion);
   }
@@ -142,7 +146,7 @@ namespace Transformation {
       }
 
       const bool is_odd = kernel_size % 2;
-      const long offset = is_odd ? (kernel_size - 1) / 2 - 1 : kernel_size / 2;
+      const long offset = is_odd ? (kernel_size - 1) / 2 : kernel_size / 2;
       for (long row = offset; row < in.rows() - offset; row++) {
         for (long col = offset; col < in.cols() - offset; col++) {
           const auto block      = in.block(row - offset, col - offset, kernel_size, kernel_size);
