@@ -182,13 +182,15 @@ class BMPheader {
 
     char mVersion;
     if (!read(mVersion) || mVersion != Version) {
-      _error_msg = fmt::format("Parsing '{}' failed, not a bmp recording?", path.string());
+      _error_msg = fmt::format("Loading '{}' failed, unsupported file version '{}'.", path.string(),
+                               mVersion);
       return;
     }
 
     uint32 mByteOrderMark;
     if (!read(mByteOrderMark) || mByteOrderMark != ByteOrderMark) {
-      _error_msg = fmt::format("Parsing '{}' failed, not a bmp recording?", path.string());
+      _error_msg = fmt::format("Parsing '{}' failed, unsupported byte order '{}'", path.string(),
+                               mByteOrderMark);
       return;
     }
 
@@ -202,9 +204,7 @@ class BMPheader {
       dataType = PixelDataFormat::UINT16;
     } else {
       _error_msg = fmt::format(
-          "ERROR: Unkown pixel format, file header says pixel format is '{}', expected '3' (for "
-          "uint16) or '1' (for uint8).",
-          mFormat);
+          "ERROR: Unkown pixel format '{}', expected '3' (for uint16) or '1' (for uint8).", mFormat);
       return;
     }
     mFrameBytes = (mFrameWidth * mFrameHeight) * static_cast<int>(dataType);
@@ -228,8 +228,8 @@ class BMPheader {
     auto num_frames = (file_size - HeaderLength) / (mFrameBytes + FrameTailLength);
     if (num_frames != mNumFrames) {
       _error_msg = fmt::format(
-          "WARNING: Header says there should be {} frames, but "
-          "only {} found in file! The file might be corrupted.",
+          "WARNING: Header says there should be {} frames, but only {} found in file! "
+          "The file might be corrupted.",
           mNumFrames, num_frames);
       mNumFrames = num_frames;
     }
