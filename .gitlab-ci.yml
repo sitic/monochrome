@@ -90,22 +90,24 @@ clang Release:
   variables:
     CXXFLAGS: "-DCLI11_HAS_FILESYSTEM=0 -stdlib=libc++ -Wno-error=unused-command-line-argument"
 
-osx Release:
-  <<: [*osx, *build_config_generator]
-  variables:
-    CMAKE_GENERATOR: 'Xcode'
-    CMAKE_OSX_DEPLOYMENT_TARGET: '10.13.6'
-    CMAKE_PARAMS: '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13.6 -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk/'
-  artifacts:
-    paths:
-      - build/Release/quickVidViewer
-    expire_in: 3 months
-  before_script:
-    - curl --insecure -o MacOSX10.13.sdk.tar.xz -L https://github.com/phracker/MacOSX-SDKs/releases/download/10.15/MacOSX10.13.sdk.tar.xz
-    - tar xf MacOSX10.13.sdk.tar.xz
-    - sudo mv MacOSX10.13.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
-  after_script:
-    - otool -l build/Release/quickVidViewer | grep -A 3 LC_VERSION_MIN_MACOSX
+#osx Release:
+#  <<: [*osx, *build_config_generator]
+#  variables:
+#    CMAKE_GENERATOR: 'Xcode'
+#    CMAKE_OSX_DEPLOYMENT_TARGET: '10.13.6'
+#    CMAKE_PARAMS: '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13.6 -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk/'
+#  artifacts:
+#    paths:
+#      - build/Release/quickVidViewer
+#    expire_in: 3 months
+#  before_script:
+#    - date
+#    - curl --insecure -o MacOSX10.13.sdk.tar.xz -L https://github.com/phracker/MacOSX-SDKs/releases/download/10.15/MacOSX10.13.sdk.tar.xz
+#    - tar xf MacOSX10.13.sdk.tar.xz
+#    - sudo mv MacOSX10.13.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
+#    - date
+#  after_script:
+#    - otool -l build/Release/quickVidViewer | grep -A 3 LC_VERSION_MIN_MACOSX
 
 windows Release:
   <<: [*windows, *build_config_generator]
