@@ -161,8 +161,15 @@ void display_loop() {
     ImGui::NewFrame();
 
     // Sleep until we need to wake up for desired framerate
-    prm::lastframetime += 1.0 / prm::max_display_fps;
+    double time_per_frame = 1.0 / prm::max_display_fps;
+    prm::lastframetime += time_per_frame;
     std::chrono::duration<double> sleep_duration(prm::lastframetime - glfwGetTime());
+    if (sleep_duration.count() < -100 * time_per_frame &&
+        sleep_duration.count() > -10000 * time_per_frame) {
+      // Avoid a big jump if the current framerate is much slower than the desired framerate,
+      // but not if the framerate is free running (during .mp4 export)
+      prm::lastframetime = glfwGetTime();
+    }
     std::this_thread::sleep_for(sleep_duration);
 
     // ImGui::ShowDemoWindow();
