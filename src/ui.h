@@ -608,6 +608,17 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   return rec_nr + 1;
 }
 
+/* Create directory, return false on error */
+bool create_directory(std::string path) {
+  std::error_code error;
+  fs::create_directory(path, error);
+  if (error) {
+    global::new_ui_message("Failed to create directory: {}", error.message());
+    return false;
+  }
+  return true;
+}
+
 void show_export_recording_ui(const SharedRecordingPtr &recording) {
   // Use the directory path of the recording as best guest for the
   // export directory, make it static so that it only has to be changed
@@ -646,8 +657,9 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::Checkbox(checkbox_lbl.c_str(), &norm);
 
     ImGui::Spacing();
-    if (ImGui::Button("Start Export (freezes everything)", ImVec2(-1.0f, 0.0f))) {
-      fs::path path(export_dir);  // TODO: validate that directory exists
+    if (ImGui::Button("Start Export (freezes everything)", ImVec2(-1.0f, 0.0f)) &&
+        create_directory(export_dir)) {
+      fs::path path(export_dir);
       path /= ctrl.filename;
       fmt::print("Exporting ROI to {}\n", path.string());
 
@@ -688,10 +700,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
       ImGui::InputInt("t start", &ctrl.tstart);
       ImGui::InputInt("t end", &ctrl.tend);
 
-      if (ImGui::Button("Start Export")) {
-        fs::path path(export_dir);  // TODO: validate that directory exists
-        path /= ctrl.filename;
-        recording->start_recording(path.string(), fps, ctrl.description);
+      if (ImGui::Button("Start Export") && create_directory(export_dir)) {
+        recording->start_recording(fs::path(export_dir) / ctrl.filename, fps, ctrl.description);
       }
     } else {
       int cur_frame    = recording->current_frame() / prm::playbackCtrl.val + 1;
@@ -718,18 +728,18 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::InputText("Filename", &ctrl.filename);
 
     const auto make_snapshot = [&recording, &ctrl]() {
-      fs::path path(export_dir);  // TODO: validate that directory exists
+      fs::path path(export_dir);
       path /= ctrl.filename;
       return recording->save_snapshot(path.string());
     };
 
     if (!ctrl.save_pngs) {
-      if (ImGui::Button("Single .png")) {
+      if (ImGui::Button("Single .png") && create_directory(export_dir)) {
         auto fn = make_snapshot();
         global::new_ui_message("Saved screenshot to {}", fn.string());
       }
 
-      ctrl.save_pngs = ImGui::Button("Start exporting .png series");
+      ctrl.save_pngs = ImGui::Button("Start exporting .png series") && create_directory(export_dir);
     } else {
       auto fn = make_snapshot();
       if (ImGui::Button("Stop exporting .png series")) {
@@ -752,7 +762,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::InputText("Filename", &ctrl.filename);
     ImGui::InputInt("t start", &ctrl.tstart);
     ImGui::InputInt("t end", &ctrl.tend);
-    if (ImGui::Button("Export")) {
+    if (ImGui::Button("Export") && create_directory(export_dir)) {
       recording->save_trace(ctrl.pos, fs::path(export_dir) / ctrl.filename,
                             {ctrl.tstart, ctrl.tend});
     }

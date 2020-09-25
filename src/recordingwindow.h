@@ -74,7 +74,7 @@ class RecordingWindow : public Recording {
 
   void resize_window();
   fs::path save_snapshot(std::string output_png_path_template = "");
-  void start_recording(const std::string &filename, int fps = 30, std::string description = "");
+  void start_recording(const fs::path &filename, int fps = 30, std::string description = "");
   void stop_recording();
 
   void add_flow(std::shared_ptr<Recording> flow);
