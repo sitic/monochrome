@@ -54,6 +54,11 @@ void load_new_file(std::shared_ptr<AbstractRecording> file,
       } else {
         global::merge_queue.push({rec, parent, false});
       }
+    } else if (global::recordings.size() / 3 + 1 != prm::main_window_multipier) {
+      prm::main_window_multipier = global::recordings.size() / 3 + 1;
+      prm::main_window_multipier = std::clamp(prm::main_window_multipier, 1, 3);
+      glfwSetWindowSize(global::main_window, prm::main_window_multipier * prm::main_window_width,
+                        prm::main_window_height);
     }
   } else {
     SharedRecordingPtr parent;
@@ -211,14 +216,15 @@ void open_main_window(float font_scale = 0) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  global::main_window = glfwCreateWindow(prm::main_window_width, prm::main_window_height,
-                                         "Quick Raw Video Viewer", nullptr, nullptr);
+  global::main_window =
+      glfwCreateWindow(prm::main_window_multipier * prm::main_window_width, prm::main_window_height,
+                       "Quick Raw Video Viewer", nullptr, nullptr);
   if (!global::main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
   glfwSetWindowSizeCallback(global::main_window, [](GLFWwindow *window, int w, int h) {
-    prm::main_window_width  = w;
+    prm::main_window_width  = w / prm::main_window_multipier;
     prm::main_window_height = h;
   });
   glfwSetKeyCallback(global::main_window,

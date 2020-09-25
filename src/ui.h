@@ -23,11 +23,12 @@ namespace global {
 }  // namespace global
 
 namespace prm {
-  int main_window_width  = 0;
-  int main_window_height = 0;
-  int max_trace_length   = 200;
-  int max_display_fps    = 60;
-  double lastframetime   = 0;
+  int main_window_width     = 0;
+  int main_window_multipier = 1;
+  int main_window_height    = 0;
+  int max_trace_length      = 200;
+  int max_display_fps       = 60;
+  double lastframetime      = 0;
 
   Filters prefilter              = Filters::None;
   Transformations transformation = Transformations::None;
@@ -301,8 +302,10 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   auto name = rec->name();
   if (name.empty()) name = fmt::format("##{}", static_cast<void *>(rec.get()));
   if (!parent) {
-    ImGui::SetNextWindowPos(ImVec2(0, (rec_nr * 0.3f + 0.2f) * prm::main_window_height),
-                            ImGuiCond_FirstUseEver);
+    int x           = std::clamp(rec_nr / 3, 0, prm::main_window_multipier - 1);
+    float y         = (rec_nr % 3) * 0.3f + 0.2f * (x == 0);
+    auto window_pos = ImVec2(x * prm::main_window_width, y * prm::main_window_height);
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::SetNextWindowCollapsed(!rec->active, ImGuiCond_Always);
     rec->active = ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
