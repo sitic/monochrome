@@ -95,7 +95,9 @@ class InMemoryRecording : public AbstractRecording {
     return std::chrono::duration<float>(_data->meta.duration);
   };
   float fps() const final { return _data->meta.fps; };
-  std::vector<std::pair<std::string, std::string>> metadata() const final { return {}; };
+  std::vector<std::pair<std::string, std::string>> metadata() const final {
+    return _data->meta.metaData;
+  };
   std::optional<BitRange> bitrange() const final { return _data->meta.bitrange; }
   std::optional<ColorMap> cmap() const final { return _data->meta.cmap; }
   bool is_flow() const final { return _data->meta.is_flowfield; };

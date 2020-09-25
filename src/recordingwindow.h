@@ -11,6 +11,9 @@
 class RecordingWindow;
 using SharedRecordingPtr = std::shared_ptr<RecordingWindow>;
 
+enum class OverlayMethod : int { Linear, Diff, Positive, Negative };
+inline const char *OverlayMethodNames[4] = {"Linear",  "Diff",  "Positive",  "Negative"};
+
 class RecordingWindow : public Recording {
  public:
   static float scale_fct;
@@ -27,8 +30,8 @@ class RecordingWindow : public Recording {
   std::vector<Trace> traces;
   TransformationList transformationArena;
   std::vector<FlowData> flows;  // use add_flow() to add members
-  bool use_transfer_fct    = false;
-  int transfer_fct_version = 3;
+  bool as_overlay    = false;
+  int overlay_method = 3;
   struct {
     bool show = false;
     std::string comment;

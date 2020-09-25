@@ -491,11 +491,12 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       ImGui::Image((void *)(intptr_t)prm::cmap_texs[current_cmap], i_size);
     }
     if (parent) {
-      ImGui::Checkbox("Use transfer function", &rec->use_transfer_fct);
-      if (rec->use_transfer_fct) {
+      ImGui::Checkbox("Overlay", &rec->as_overlay);
+      if (rec->as_overlay) {
         auto itemwidth = ImGui::GetContentRegionAvail().x * 0.5f;
         ImGui::SetNextItemWidth(itemwidth);
-        ImGui::SliderInt("transfer function", &rec->transfer_fct_version, 0, 3);
+        ImGui::Combo("Overlay Method", &rec->overlay_method, OverlayMethodNames,
+                     IM_ARRAYSIZE(OverlayMethodNames));
       }
     }
     ImGui::EndGroup();

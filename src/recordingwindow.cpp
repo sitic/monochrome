@@ -426,7 +426,7 @@ void RecordingWindow::display(Filters prefilter,
 
   switch (transformation) {
     case Transformations::None:
-      if (use_transfer_fct) {
+      if (as_overlay) {
         histogram.min           = -100;
         histogram.max           = 100;
         get_max(transformation) = -get_min(transformation);
@@ -475,8 +475,8 @@ void RecordingWindow::display(Filters prefilter,
 
   frame_shader.use();
   frame_shader.setVec2("minmax", get_min(transformation), get_max(transformation));
-  frame_shader.setBool("use_transfer_fct", use_transfer_fct);
-  frame_shader.setInt("transfer_fct_version", transfer_fct_version);
+  frame_shader.setBool("use_transfer_fct", as_overlay);
+  frame_shader.setInt("transfer_fct_version", overlay_method);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, arr->data());
@@ -808,7 +808,8 @@ FixedTransformRecordingWindow::FixedTransformRecordingWindow(SharedRecordingPtr 
   RecordingWindow::get_max(fixed_transformation_) = parent->get_max(fixed_transformation_);
 
   if (transformation == Transformations::FrameDiff) {
-    use_transfer_fct    = true;
+    as_overlay          = true;
     histogram.symmetric = true;
+    cmap_               = ColorMap::DIFF;
   }
 }

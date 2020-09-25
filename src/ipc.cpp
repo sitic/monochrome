@@ -154,6 +154,17 @@ namespace {
                              ? raw->alphaTransferFct() - 1
                              : -1;
 
+      std::vector<std::pair<std::string, std::string>> metaData = {};
+      if (flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_METADATA) && raw->metaData()) {
+        for (const auto& m : *(raw->metaData())) {
+          auto key = m->key();
+          auto val = m->val();
+          if (key && val) {
+            metaData.emplace_back(key->str(), val->str());
+          }
+        }
+      }
+
       global::RawArray3MetaData meta{
           raw->nx(),
           raw->ny(),
@@ -170,7 +181,8 @@ namespace {
               : std::nullopt,
           transfer_fct < 0
               ? std::nullopt
-              : std::optional<TransferFunction>(static_cast<TransferFunction>(transfer_fct))};
+              : std::optional<TransferFunction>(static_cast<TransferFunction>(transfer_fct)),
+          metaData};
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
       if (raw->type() == fbs::ArrayDataType::ArrayDataType_FLOAT) {
@@ -209,7 +221,8 @@ namespace {
         return;
       }
       if (array_msg_.empty()) {
-        throw std::runtime_error("Array3DataChunk message arrived before Array3Meta");
+        fmt::print("Error: Array3DataChunk message arrived before Array3Meta\n");
+        return;
       }
 
       auto idx  = raw->startidx();

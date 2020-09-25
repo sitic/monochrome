@@ -61,10 +61,11 @@ namespace global {
     float fps      = 0;
     std::string date;
     std::string comment;
-    std::optional<BitRange> bitrange             = std::nullopt;
-    std::optional<ColorMap> cmap                 = std::nullopt;
-    std::optional<std::string> parentName        = std::nullopt;
-    std::optional<TransferFunction> transfer_fct = std::nullopt;
+    std::optional<BitRange> bitrange                          = std::nullopt;
+    std::optional<ColorMap> cmap                              = std::nullopt;
+    std::optional<std::string> parentName                     = std::nullopt;
+    std::optional<TransferFunction> transfer_fct              = std::nullopt;
+    std::vector<std::pair<std::string, std::string>> metaData = {};
 
     bool is_flowfield = false;
   };

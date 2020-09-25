@@ -3,13 +3,14 @@ import numpy as np
 from pathlib import Path
 import socket
 import sys
-from typing import List, Text, Union, Optional
+from typing import List, Text, Union, Optional, Dict
 
 from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16
 from .fbs.ArrayDataType import ArrayDataType
 from .fbs.ColorMap import ColorMap
 from .fbs.BitRange import BitRange
 from .fbs.TransferFunction import TransferFunction
+from .fbs.DictEntry import DictEntryStart, DictEntryAddKey, DictEntryAddVal, DictEntryEnd
 
 TCP_IP, TCP_PORT = '127.0.0.1', 4864
 # OSX doesn't support abstract UNIX domain sockets
@@ -52,12 +53,25 @@ def create_filepaths_msg(paths):
 
 
 def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0., date="", comment="",
-                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parentName=None, transfer_fct=None):
+                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parentName=None, transfer_fct=None,
+                          metaData=None):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
     date_fb = builder.CreateString(date)
     comment_fb = builder.CreateString(comment)
     parent_fb = builder.CreateString(parentName) if parentName else None
+    if metaData:
+        metaData = [(builder.CreateString(key), builder.CreateString(val)) for key, val in metaData.items()]
+        metaData_fbs = []
+        for key, val in metaData:
+            DictEntryStart(builder)
+            DictEntryAddKey(builder, key)
+            DictEntryAddVal(builder, val)
+            metaData_fbs.append(DictEntryEnd(builder))
+        Array3Meta.Array3MetaStartMetaDataVector(builder, len(metaData))
+        for e in metaData_fbs:
+            builder.PrependUOffsetTRelative(e)
+        metaData = builder.EndVector(len(metaData))
     Array3Meta.Array3MetaStart(builder)
     Array3Meta.Array3MetaAddType(builder, type)
     Array3Meta.Array3MetaAddNx(builder, shape[2])
@@ -74,6 +88,8 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
         Array3Meta.Array3MetaAddParentName(builder, parent_fb)
     if transfer_fct:
         Array3Meta.Array3MetaAddAlphaTransferFct(builder, transfer_fct)
+    if metaData:
+        Array3Meta.Array3MetaAddMetaData(builder, metaData)
     d = Array3Meta.Array3MetaEnd(builder)
 
     root = build_root(builder, Data.Data.Array3Meta, d)
@@ -149,7 +165,8 @@ def open_files(paths: List[Union[Text, Path]]):
 
 def open_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
                comment: Text = "", bitrange: BitRange = BitRange.AUTODETECT, cmap: ColorMap = ColorMap.DEFAULT,
-               parentName: Optional[Text] = None, transfer_fct: Optional[TransferFunction] = None):
+               parentName: Optional[Text] = None, transfer_fct: Optional[TransferFunction] = None,
+               metaData: Optional[Dict] = None):
     array = np.squeeze(array)
     if array.ndim == 2:
         # assume that it is a 2D image
@@ -175,7 +192,7 @@ def open_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, 
         return
     buf = create_array3meta_msg(dtype, name, array.shape, duration=duration_seconds, fps=fps, date=date,
                                 comment=comment, bitrange=bitrange, cmap=cmap, parentName=parentName,
-                                transfer_fct=transfer_fct)
+                                transfer_fct=transfer_fct, metaData=metaData)
     s.sendall(buf)
 
     flat = array.flatten()

@@ -111,7 +111,32 @@ class Array3Meta(object):
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
-def Array3MetaStart(builder): builder.StartObject(13)
+    # Array3Meta
+    def MetaData(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        if o != 0:
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
+            x = self._tab.Indirect(x)
+            from fbs.DictEntry import DictEntry
+            obj = DictEntry()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Array3Meta
+    def MetaDataLength(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        if o != 0:
+            return self._tab.VectorLen(o)
+        return 0
+
+    # Array3Meta
+    def MetaDataIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        return o == 0
+
+def Array3MetaStart(builder): builder.StartObject(14)
 def Array3MetaAddType(builder, type): builder.PrependInt32Slot(0, type, 0)
 def Array3MetaAddNx(builder, nx): builder.PrependInt32Slot(1, nx, 0)
 def Array3MetaAddNy(builder, ny): builder.PrependInt32Slot(2, ny, 0)
@@ -125,4 +150,6 @@ def Array3MetaAddBitrange(builder, bitrange): builder.PrependInt32Slot(9, bitran
 def Array3MetaAddCmap(builder, cmap): builder.PrependInt32Slot(10, cmap, 0)
 def Array3MetaAddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
 def Array3MetaAddAlphaTransferFct(builder, alphaTransferFct): builder.PrependInt32Slot(12, alphaTransferFct, 0)
+def Array3MetaAddMetaData(builder, metaData): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(metaData), 0)
+def Array3MetaStartMetaDataVector(builder, numElems): return builder.StartVector(4, numElems, 4)
 def Array3MetaEnd(builder): return builder.EndObject()

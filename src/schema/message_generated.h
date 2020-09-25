@@ -8,6 +8,9 @@
 
 namespace fbs {
 
+struct DictEntry;
+struct DictEntryBuilder;
+
 struct Array3Meta;
 struct Array3MetaBuilder;
 
@@ -254,6 +257,72 @@ template<> struct DataTraits<fbs::Array3DataChunku16> {
 bool VerifyData(flatbuffers::Verifier &verifier, const void *obj, Data type);
 bool VerifyDataVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types);
 
+struct DictEntry FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef DictEntryBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_KEY = 4,
+    VT_VAL = 6
+  };
+  const flatbuffers::String *key() const {
+    return GetPointer<const flatbuffers::String *>(VT_KEY);
+  }
+  const flatbuffers::String *val() const {
+    return GetPointer<const flatbuffers::String *>(VT_VAL);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_KEY) &&
+           verifier.VerifyString(key()) &&
+           VerifyOffset(verifier, VT_VAL) &&
+           verifier.VerifyString(val()) &&
+           verifier.EndTable();
+  }
+};
+
+struct DictEntryBuilder {
+  typedef DictEntry Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_key(flatbuffers::Offset<flatbuffers::String> key) {
+    fbb_.AddOffset(DictEntry::VT_KEY, key);
+  }
+  void add_val(flatbuffers::Offset<flatbuffers::String> val) {
+    fbb_.AddOffset(DictEntry::VT_VAL, val);
+  }
+  explicit DictEntryBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  DictEntryBuilder &operator=(const DictEntryBuilder &);
+  flatbuffers::Offset<DictEntry> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<DictEntry>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<DictEntry> CreateDictEntry(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::String> key = 0,
+    flatbuffers::Offset<flatbuffers::String> val = 0) {
+  DictEntryBuilder builder_(_fbb);
+  builder_.add_val(val);
+  builder_.add_key(key);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<DictEntry> CreateDictEntryDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const char *key = nullptr,
+    const char *val = nullptr) {
+  auto key__ = key ? _fbb.CreateString(key) : 0;
+  auto val__ = val ? _fbb.CreateString(val) : 0;
+  return fbs::CreateDictEntry(
+      _fbb,
+      key__,
+      val__);
+}
+
 struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   typedef Array3MetaBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -269,7 +338,8 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_BITRANGE = 22,
     VT_CMAP = 24,
     VT_PARENTNAME = 26,
-    VT_ALPHATRANSFERFCT = 28
+    VT_ALPHATRANSFERFCT = 28,
+    VT_METADATA = 30
   };
   fbs::ArrayDataType type() const {
     return static_cast<fbs::ArrayDataType>(GetField<int32_t>(VT_TYPE, 0));
@@ -310,6 +380,9 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   fbs::TransferFunction alphaTransferFct() const {
     return static_cast<fbs::TransferFunction>(GetField<int32_t>(VT_ALPHATRANSFERFCT, 0));
   }
+  const flatbuffers::Vector<flatbuffers::Offset<fbs::DictEntry>> *metaData() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<fbs::DictEntry>> *>(VT_METADATA);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_TYPE) &&
@@ -329,6 +402,9 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_PARENTNAME) &&
            verifier.VerifyString(parentName()) &&
            VerifyField<int32_t>(verifier, VT_ALPHATRANSFERFCT) &&
+           VerifyOffset(verifier, VT_METADATA) &&
+           verifier.VerifyVector(metaData()) &&
+           verifier.VerifyVectorOfTables(metaData()) &&
            verifier.EndTable();
   }
 };
@@ -376,6 +452,9 @@ struct Array3MetaBuilder {
   void add_alphaTransferFct(fbs::TransferFunction alphaTransferFct) {
     fbb_.AddElement<int32_t>(Array3Meta::VT_ALPHATRANSFERFCT, static_cast<int32_t>(alphaTransferFct), 0);
   }
+  void add_metaData(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<fbs::DictEntry>>> metaData) {
+    fbb_.AddOffset(Array3Meta::VT_METADATA, metaData);
+  }
   explicit Array3MetaBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -402,8 +481,10 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3Meta(
     fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
     fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
     flatbuffers::Offset<flatbuffers::String> parentName = 0,
-    fbs::TransferFunction alphaTransferFct = fbs::TransferFunction_NONE) {
+    fbs::TransferFunction alphaTransferFct = fbs::TransferFunction_NONE,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<fbs::DictEntry>>> metaData = 0) {
   Array3MetaBuilder builder_(_fbb);
+  builder_.add_metaData(metaData);
   builder_.add_alphaTransferFct(alphaTransferFct);
   builder_.add_parentName(parentName);
   builder_.add_cmap(cmap);
@@ -434,11 +515,13 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
     fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
     fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
     const char *parentName = nullptr,
-    fbs::TransferFunction alphaTransferFct = fbs::TransferFunction_NONE) {
+    fbs::TransferFunction alphaTransferFct = fbs::TransferFunction_NONE,
+    const std::vector<flatbuffers::Offset<fbs::DictEntry>> *metaData = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto date__ = date ? _fbb.CreateString(date) : 0;
   auto comment__ = comment ? _fbb.CreateString(comment) : 0;
   auto parentName__ = parentName ? _fbb.CreateString(parentName) : 0;
+  auto metaData__ = metaData ? _fbb.CreateVector<flatbuffers::Offset<fbs::DictEntry>>(*metaData) : 0;
   return fbs::CreateArray3Meta(
       _fbb,
       type,
@@ -453,7 +536,8 @@ inline flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
       bitrange,
       cmap,
       parentName__,
-      alphaTransferFct);
+      alphaTransferFct,
+      metaData__);
 }
 
 struct Array3MetaFlow FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
