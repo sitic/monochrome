@@ -1,7 +1,10 @@
-#pragma once
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+#pragma once
 
 #include <algorithm>
 #include <cstdint>
@@ -17,14 +20,14 @@
 #include <vector>
 
 // CLI Library includes
-#include "CLI/ConfigFwd.hpp"
-#include "CLI/Error.hpp"
-#include "CLI/FormatterFwd.hpp"
-#include "CLI/Macros.hpp"
-#include "CLI/Option.hpp"
-#include "CLI/Split.hpp"
-#include "CLI/StringTools.hpp"
-#include "CLI/TypeTools.hpp"
+#include "ConfigFwd.hpp"
+#include "Error.hpp"
+#include "FormatterFwd.hpp"
+#include "Macros.hpp"
+#include "Option.hpp"
+#include "Split.hpp"
+#include "StringTools.hpp"
+#include "TypeTools.hpp"
 
 namespace CLI {
 
@@ -40,12 +43,12 @@ namespace CLI {
 namespace detail {
 enum class Classifier { NONE, POSITIONAL_MARK, SHORT, LONG, WINDOWS, SUBCOMMAND, SUBCOMMAND_TERMINATOR };
 struct AppFriend;
-} // namespace detail
+}  // namespace detail
 
 namespace FailureMessage {
 std::string simple(const App *app, const Error &e);
 std::string help(const App *app, const Error &e);
-} // namespace FailureMessage
+}  // namespace FailureMessage
 
 /// enumeration of modes of how to deal with extras in config files
 
@@ -461,7 +464,7 @@ class App {
             auto *p = (parent_ != nullptr) ? _get_fallthrough_parent() : this;
             auto &match = _compare_subcommand_names(*this, *p);
             if(!match.empty()) {
-                ignore_case_ = false; // we are throwing so need to be exception invariant
+                ignore_case_ = false;  // we are throwing so need to be exception invariant
                 throw OptionAlreadyAdded("ignore case would cause subcommand name conflicts: " + match);
             }
         }
@@ -583,7 +586,7 @@ class App {
             }
         }
         // this line should not be reached the above loop should trigger the throw
-        throw(OptionAlreadyAdded("added option matched existing option name")); // LCOV_EXCL_LINE
+        throw(OptionAlreadyAdded("added option matched existing option name"));  // LCOV_EXCL_LINE
     }
 
     /// Add option for assigning to a variable
@@ -591,11 +594,11 @@ class App {
               typename ConvertTo = AssignTo,
               enable_if_t<!std::is_const<ConvertTo>::value, detail::enabler> = detail::dummy>
     Option *add_option(std::string option_name,
-                       AssignTo &variable, ///< The variable to set
+                       AssignTo &variable,  ///< The variable to set
                        std::string option_description = "",
                        bool defaulted = false) {
 
-        auto fun = [&variable](const CLI::results_t &res) { // comment for spacing
+        auto fun = [&variable](const CLI::results_t &res) {  // comment for spacing
             return detail::lexical_conversion<AssignTo, ConvertTo>(res, variable);
         };
 
@@ -616,7 +619,7 @@ class App {
     /// Add option for a callback of a specific type
     template <typename T>
     Option *add_option_function(std::string option_name,
-                                const std::function<void(const T &)> &func, ///< the callback to execute
+                                const std::function<void(const T &)> &func,  ///< the callback to execute
                                 std::string option_description = "") {
 
         auto fun = [func](const CLI::results_t &res) {
@@ -728,7 +731,7 @@ class App {
     template <typename T,
               enable_if_t<std::is_integral<T>::value && !is_bool<T>::value, detail::enabler> = detail::dummy>
     Option *add_flag(std::string flag_name,
-                     T &flag_count, ///< A variable holding the count
+                     T &flag_count,  ///< A variable holding the count
                      std::string flag_description = "") {
         flag_count = 0;
         CLI::callback_t fun = [&flag_count](const CLI::results_t &res) {
@@ -751,7 +754,7 @@ class App {
                               !std::is_constructible<std::function<void(int)>, T>::value,
                           detail::enabler> = detail::dummy>
     Option *add_flag(std::string flag_name,
-                     T &flag_result, ///< A variable holding true if passed
+                     T &flag_result,  ///< A variable holding true if passed
                      std::string flag_description = "") {
 
         CLI::callback_t fun = [&flag_result](const CLI::results_t &res) {
@@ -765,7 +768,7 @@ class App {
         typename T,
         enable_if_t<!std::is_assignable<std::function<void(std::int64_t)>, T>::value, detail::enabler> = detail::dummy>
     Option *add_flag(std::string flag_name,
-                     std::vector<T> &flag_results, ///< A vector of values with the flag results
+                     std::vector<T> &flag_results,  ///< A vector of values with the flag results
                      std::string flag_description = "") {
         CLI::callback_t fun = [&flag_results](const CLI::results_t &res) {
             bool retval = true;
@@ -782,7 +785,7 @@ class App {
 
     /// Add option for callback that is triggered with a true flag and takes no arguments
     Option *add_flag_callback(std::string flag_name,
-                              std::function<void(void)> function, ///< A function to call, void(void)
+                              std::function<void(void)> function,  ///< A function to call, void(void)
                               std::string flag_description = "") {
 
         CLI::callback_t fun = [function](const CLI::results_t &res) {
@@ -798,7 +801,7 @@ class App {
 
     /// Add option for callback with an integer value
     Option *add_flag_function(std::string flag_name,
-                              std::function<void(std::int64_t)> function, ///< A function to call, void(int)
+                              std::function<void(std::int64_t)> function,  ///< A function to call, void(int)
                               std::string flag_description = "") {
 
         CLI::callback_t fun = [function](const CLI::results_t &res) {
@@ -814,7 +817,7 @@ class App {
 #ifdef CLI11_CPP14
     /// Add option for callback (C++14 or better only)
     Option *add_flag(std::string flag_name,
-                     std::function<void(std::int64_t)> function, ///< A function to call, void(std::int64_t)
+                     std::function<void(std::int64_t)> function,  ///< A function to call, void(std::int64_t)
                      std::string flag_description = "") {
         return add_flag_function(std::move(flag_name), std::move(function), std::move(flag_description));
     }
@@ -823,8 +826,8 @@ class App {
     /// Add set of options (No default, temp reference, such as an inline set) DEPRECATED
     template <typename T>
     Option *add_set(std::string option_name,
-                    T &member,           ///< The selected member of the set
-                    std::set<T> options, ///< The set of possibilities
+                    T &member,            ///< The selected member of the set
+                    std::set<T> options,  ///< The set of possibilities
                     std::string option_description = "") {
 
         Option *opt = add_option(option_name, member, std::move(option_description));
@@ -835,8 +838,8 @@ class App {
     /// Add set of options (No default, set can be changed afterwards - do not destroy the set) DEPRECATED
     template <typename T>
     Option *add_mutable_set(std::string option_name,
-                            T &member,                  ///< The selected member of the set
-                            const std::set<T> &options, ///< The set of possibilities
+                            T &member,                   ///< The selected member of the set
+                            const std::set<T> &options,  ///< The set of possibilities
                             std::string option_description = "") {
 
         Option *opt = add_option(option_name, member, std::move(option_description));
@@ -847,8 +850,8 @@ class App {
     /// Add set of options (with default, static set, such as an inline set) DEPRECATED
     template <typename T>
     Option *add_set(std::string option_name,
-                    T &member,           ///< The selected member of the set
-                    std::set<T> options, ///< The set of possibilities
+                    T &member,            ///< The selected member of the set
+                    std::set<T> options,  ///< The set of possibilities
                     std::string option_description,
                     bool defaulted) {
 
@@ -860,8 +863,8 @@ class App {
     /// Add set of options (with default, set can be changed afterwards - do not destroy the set) DEPRECATED
     template <typename T>
     Option *add_mutable_set(std::string option_name,
-                            T &member,                  ///< The selected member of the set
-                            const std::set<T> &options, ///< The set of possibilities
+                            T &member,                   ///< The selected member of the set
+                            const std::set<T> &options,  ///< The set of possibilities
                             std::string option_description,
                             bool defaulted) {
 
@@ -929,7 +932,7 @@ class App {
         // Remove existing config if present
         if(config_ptr_ != nullptr) {
             remove_option(config_ptr_);
-            config_ptr_ = nullptr; // need to remove the config_ptr completely
+            config_ptr_ = nullptr;  // need to remove the config_ptr completely
         }
 
         // Only add config if option passed
@@ -972,7 +975,7 @@ class App {
     /// creates an option group as part of the given app
     template <typename T = Option_group>
     T *add_option_group(std::string group_name, std::string group_description = "") {
-        auto option_group = std::make_shared<T>(std::move(group_description), group_name, nullptr);
+        auto option_group = std::make_shared<T>(std::move(group_description), group_name, this);
         auto ptr = option_group.get();
         // move to App_p for overload resolution on older gcc versions
         App_p app_ptr = std::dynamic_pointer_cast<App>(option_group);
@@ -981,7 +984,7 @@ class App {
     }
 
     ///@}
-    /// @name Subcommmands
+    /// @name Subcommands
     ///@{
 
     /// Add a subcommand. Inherits INHERITABLE and OptionDefaults, and help flag
@@ -1104,7 +1107,7 @@ class App {
         for(auto &sub : subcommands_) {
             cnt += sub->count_all();
         }
-        if(!get_name().empty()) { // for named subcommands add the number of times the subcommand was called
+        if(!get_name().empty()) {  // for named subcommands add the number of times the subcommand was called
             cnt += parsed_;
         }
         return cnt;
@@ -1243,8 +1246,9 @@ class App {
                 name_ = nstr.first;
             }
             commandline = std::move(nstr.second);
-        } else
+        } else {
             detail::trim(commandline);
+        }
         // the next section of code is to deal with quoted arguments after an '=' or ':' for windows like operations
         if(!commandline.empty()) {
             commandline = detail::find_and_modify(commandline, "=", detail::escape_detect);
@@ -1310,15 +1314,15 @@ class App {
     int exit(const Error &e, std::ostream &out = std::cout, std::ostream &err = std::cerr) const {
 
         /// Avoid printing anything if this is a CLI::RuntimeError
-        if(dynamic_cast<const CLI::RuntimeError *>(&e) != nullptr)
+        if(e.get_name() == "RuntimeError")
             return e.get_exit_code();
 
-        if(dynamic_cast<const CLI::CallForHelp *>(&e) != nullptr) {
+        if(e.get_name() == "CallForHelp") {
             out << help();
             return e.get_exit_code();
         }
 
-        if(dynamic_cast<const CLI::CallForAllHelp *>(&e) != nullptr) {
+        if(e.get_name() == "CallForAllHelp") {
             out << help("", AppFormatMode::All);
             return e.get_exit_code();
         }
@@ -1520,7 +1524,12 @@ class App {
 
     /// Access the config formatter as a configBase pointer
     std::shared_ptr<ConfigBase> get_config_formatter_base() const {
+        // This is safer as a dynamic_cast if we have RTTI, as Config -> ConfigBase
+#if defined(__cpp_rtti) || (defined(__GXX_RTTI) && __GXX_RTTI) || (defined(_HAS_STATIC_RTTI) && (_HAS_STATIC_RTTI == 0))
         return std::dynamic_pointer_cast<ConfigBase>(config_formatter_);
+#else
+        return std::static_pointer_cast<ConfigBase>(config_formatter_);
+#endif
     }
 
     /// Get the app or subcommand description
@@ -1877,7 +1886,7 @@ class App {
                 app->name_.clear();
             }
             if(app->name_.empty()) {
-                app->fallthrough_ = false; // make sure fallthrough_ is false to prevent infinite loop
+                app->fallthrough_ = false;  // make sure fallthrough_ is false to prevent infinite loop
                 app->prefix_command_ = false;
             }
             // make sure the parent is set to be this object in preparation for parse
@@ -2653,14 +2662,14 @@ class App {
         int max_num = op->get_items_expected_max();
 
         // Make sure we always eat the minimum for unlimited vectors
-        int collected = 0;    // total number of arguments collected
-        int result_count = 0; // local variable for number of results in a single arg string
+        int collected = 0;     // total number of arguments collected
+        int result_count = 0;  // local variable for number of results in a single arg string
         // deal with purely flag like things
         if(max_num == 0) {
             auto res = op->get_flag_value(arg_name, value);
             op->add_result(res);
             parse_order_.push_back(op.get());
-        } else if(!value.empty()) { // --this=value
+        } else if(!value.empty()) {  // --this=value
             op->add_result(value, result_count);
             parse_order_.push_back(op.get());
             collected += result_count;
@@ -2681,11 +2690,11 @@ class App {
             collected += result_count;
         }
 
-        if(min_num > collected) { // if we have run out of arguments and the minimum was not met
+        if(min_num > collected) {  // if we have run out of arguments and the minimum was not met
             throw ArgumentMismatch::TypedAtLeast(op->get_name(), min_num, op->get_type_name());
         }
 
-        if(max_num > collected || op->get_allow_extra_args()) { // we allow optional arguments
+        if(max_num > collected || op->get_allow_extra_args()) {  // we allow optional arguments
             auto remreqpos = _count_remaining_positionals(true);
             // we have met the minimum now optionally check up to the maximum
             while((collected < max_num || op->get_allow_extra_args()) && !args.empty() &&
@@ -2862,7 +2871,7 @@ class App {
             throw OptionNotFound("could not locate the given Option");
         }
     }
-}; // namespace CLI
+};  // namespace CLI
 
 /// Extension of App to better manage groups of options
 class Option_group : public App {
@@ -3046,12 +3055,23 @@ inline std::string help(const App *app, const Error &e) {
     return header;
 }
 
-} // namespace FailureMessage
+}  // namespace FailureMessage
 
 namespace detail {
 /// This class is simply to allow tests access to App's protected functions
 struct AppFriend {
+#ifdef CLI11_CPP14
 
+    /// Wrap _parse_short, perfectly forward arguments and return
+    template <typename... Args> static decltype(auto) parse_arg(App *app, Args &&... args) {
+        return app->_parse_arg(std::forward<Args>(args)...);
+    }
+
+    /// Wrap _parse_subcommand, perfectly forward arguments and return
+    template <typename... Args> static decltype(auto) parse_subcommand(App *app, Args &&... args) {
+        return app->_parse_subcommand(std::forward<Args>(args)...);
+    }
+#else
     /// Wrap _parse_short, perfectly forward arguments and return
     template <typename... Args>
     static auto parse_arg(App *app, Args &&... args) ->
@@ -3065,9 +3085,10 @@ struct AppFriend {
         typename std::result_of<decltype (&App::_parse_subcommand)(App, Args...)>::type {
         return app->_parse_subcommand(std::forward<Args>(args)...);
     }
+#endif
     /// Wrap the fallthrough parent function to make sure that is working correctly
     static App *get_fallthrough_parent(App *app) { return app->_get_fallthrough_parent(); }
 };
-} // namespace detail
+}  // namespace detail
 
-} // namespace CLI
+}  // namespace CLI

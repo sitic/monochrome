@@ -1,7 +1,10 @@
-#pragma once
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+#pragma once
 
 // On GCC < 4.8, the following define is often missing. Due to the
 // fact that this library only uses sleep_for, this should be safe
@@ -10,7 +13,7 @@
 #endif
 
 #include <array>
-#include <chrono> // NOLINT(build/c++11)
+#include <chrono>  // NOLINT(build/c++11)
 #include <functional>
 #include <iostream>
 #include <string>
@@ -125,7 +128,7 @@ class AutoTimer : public Timer {
     ~AutoTimer() { std::cout << to_string() << std::endl; }
 };
 
-} // namespace CLI
+}  // namespace CLI
 
 /// This prints out the time if shifted into a std::cout like stream.
 inline std::ostream &operator<<(std::ostream &in, const CLI::Timer &timer) { return in << timer.to_string(); }

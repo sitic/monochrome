@@ -151,6 +151,21 @@ make
 GTEST_COLOR=1 CTEST_OUTPUT_ON_FAILURE=1 make test
 ```
 
+<details><summary>Note: Special instructions for GCC 8</summary><p>
+
+If you are using GCC 8 and using it in C++17 mode with CLI11.  CLI11 makes use of the `<filesystem>` header if available, but specifically for this compiler, the `filesystem` library is separate from the standard library and needs to be linked separately. So it is available but CLI11 doesn't use it by default.
+
+Specifically `libstdc++fs` needs to be added to the linking list and `CLI11_HAS_FILESYSTEM=1` has to be defined.  Then the filesystem variant of the Validators could be used on GCC 8.  GCC 9+ does not have this issue so the `<filesystem>` is used by default.
+
+There may also be other cases where a specific library needs to be linked.
+
+Defining `CLI11_HAS_FILESYSTEM=0`  which will remove the usage and hence any linking issue.
+
+In some cases certain clang compilations may require linking against `libc++fs`.  These situations have not been encountered so the specific situations requiring them are unknown yet.
+
+</p></details>
+</br>
+
 ## Usage
 
 ### Adding options
@@ -907,6 +922,12 @@ This project was created by [Henry Schreiner](https://github.com/henryiii) and m
     <td align="center"><a href="https://github.com/KOLANICH"><img src="https://avatars1.githubusercontent.com/u/240344?v=4" width="100px;" alt=""/><br /><sub><b>KOLANICH</b></sub></a><br /><a href="#platform-KOLANICH" title="Packaging/porting to new platform">📦</a></td>
     <td align="center"><a href="https://github.com/jgerityneurala"><img src="https://avatars2.githubusercontent.com/u/57360646?v=4" width="100px;" alt=""/><br /><sub><b>James Gerity</b></sub></a><br /><a href="https://github.com/CLIUtils/CLI11/commits?author=jgerityneurala" title="Documentation">📖</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/jsoref"><img src="https://avatars0.githubusercontent.com/u/2119212?v=4" width="100px;" alt=""/><br /><sub><b>Josh Soref</b></sub></a><br /><a href="#tool-jsoref" title="Tools">🔧</a></td>
+    <td align="center"><a href="https://github.com/geir-t"><img src="https://avatars3.githubusercontent.com/u/35292136?v=4" width="100px;" alt=""/><br /><sub><b>geir-t</b></sub></a><br /><a href="#platform-geir-t" title="Packaging/porting to new platform">📦</a></td>
+    <td align="center"><a href="https://ondrejcertik.com/"><img src="https://avatars3.githubusercontent.com/u/20568?v=4" width="100px;" alt=""/><br /><sub><b>Ondřej Čertík</b></sub></a><br /><a href="https://github.com/CLIUtils/CLI11/issues?q=author%3Acertik" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="http://sam.hocevar.net/"><img src="https://avatars2.githubusercontent.com/u/245089?v=4" width="100px;" alt=""/><br /><sub><b>Sam Hocevar</b></sub></a><br /><a href="https://github.com/CLIUtils/CLI11/commits?author=samhocevar" title="Code">💻</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-enable -->
@@ -925,7 +946,7 @@ CLI11 was developed at the [University of Cincinnati][] to support of the [GooFi
 [doi-badge]: https://zenodo.org/badge/80064252.svg
 [doi-link]: https://zenodo.org/badge/latestdoi/80064252
 [azure-badge]: https://dev.azure.com/CLIUtils/CLI11/_apis/build/status/CLIUtils.CLI11?branchName=master
-[azure]: https://dev.azure.com/CLIUtils/CLI11/_build/latest?definitionId=1&branchName=master
+[azure]: https://dev.azure.com/CLIUtils/CLI11
 [travis-badge]: https://img.shields.io/travis/CLIUtils/CLI11/master.svg?label=Linux/macOS
 [travis]: https://travis-ci.org/CLIUtils/CLI11
 [appveyor-badge]: https://img.shields.io/appveyor/ci/HenrySchreiner/cli11/master.svg?label=AppVeyor

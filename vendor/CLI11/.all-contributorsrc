@@ -341,6 +341,42 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "jsoref",
+      "name": "Josh Soref",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/2119212?v=4",
+      "profile": "https://github.com/jsoref",
+      "contributions": [
+        "tool"
+      ]
+    },
+    {
+      "login": "geir-t",
+      "name": "geir-t",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/35292136?v=4",
+      "profile": "https://github.com/geir-t",
+      "contributions": [
+        "platform"
+      ]
+    },
+    {
+      "login": "certik",
+      "name": "Ondřej Čertík",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/20568?v=4",
+      "profile": "https://ondrejcertik.com/",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "samhocevar",
+      "name": "Sam Hocevar",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/245089?v=4",
+      "profile": "http://sam.hocevar.net/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

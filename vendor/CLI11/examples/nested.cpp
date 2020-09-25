@@ -1,3 +1,9 @@
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <CLI/CLI.hpp>
 #include <string>
 
@@ -8,7 +14,7 @@ int main(int argc, char **argv) {
     app.add_flag("--version", "Get version");
 
     CLI::App *cameraApp = app.add_subcommand("camera", "Configure the app camera");
-    cameraApp->require_subcommand(0, 1); // 0 (default) or 1 camera
+    cameraApp->require_subcommand(0, 1);  // 0 (default) or 1 camera
 
     std::string mvcamera_config_file = "mvcamera_config.json";
     CLI::App *mvcameraApp = cameraApp->add_subcommand("mvcamera", "MatrixVision Camera Configuration");

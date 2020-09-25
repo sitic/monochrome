@@ -5,6 +5,11 @@
 
 trigger:
 - master
+- 'v*'
+
+pr:
+- master
+- 'v*'
 
 variables:
   cli11.single: ON
@@ -57,6 +62,14 @@ jobs:
       Windows11:
         vmImage: 'vs2017-win2016'
         cli11.std: 11
+      Windowslatest:
+        vmImage: 'windows-2019'
+        cli11.std: 20
+        cli11.options: -DCMAKE_CXX_FLAGS="/std:c++latest /EHsc"
+      Linux17nortti:
+        vmImage: 'ubuntu-latest'
+        cli11.std: 17
+        cli11.options: -DCMAKE_CXX_FLAGS="-fno-rtti"
   pool:
     vmImage: $(vmImage)
   steps:
@@ -89,6 +102,9 @@ jobs:
       gcc9:
         containerImage: gcc:9
         cli11.std: 17
+      gcc8:
+        containerImage: gcc:8
+        cli11.std: 17
       gcc4.8:
         containerImage: gcc:4.8
         cli11.std: 11
@@ -100,6 +116,14 @@ jobs:
         containerImage: silkeh/clang:8
         cli11.std: 14
         cli11.options: -DCLI11_FORCE_LIBCXX=ON
+      clang8_17:
+        containerImage: silkeh/clang:8
+        cli11.std: 17
+        cli11.options: -DCLI11_FORCE_LIBCXX=ON
+      clang10_20:
+        containerImage: helics/buildenv:clang10-builder
+        cli11.std: 20
+        cli11.options: -DCLI11_FORCE_LIBCXX=ON -DCMAKE_CXX_FLAGS=-std=c++20
   container: $[ variables['containerImage'] ]
   steps:
     - template: .ci/azure-cmake.yml

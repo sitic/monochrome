@@ -1,14 +1,17 @@
-#pragma once
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+#pragma once
 
 #include <algorithm>
 #include <string>
 #include <vector>
 
-#include "CLI/App.hpp"
-#include "CLI/FormatterFwd.hpp"
+#include "App.hpp"
+#include "FormatterFwd.hpp"
 
 namespace CLI {
 
@@ -41,11 +44,11 @@ inline std::string Formatter::make_groups(const App *app, AppFormatMode mode) co
     // Options
     for(const std::string &group : groups) {
         std::vector<const Option *> opts = app->get_options([app, mode, &group](const Option *opt) {
-            return opt->get_group() == group                    // Must be in the right group
-                   && opt->nonpositional()                      // Must not be a positional
-                   && (mode != AppFormatMode::Sub               // If mode is Sub, then
-                       || (app->get_help_ptr() != opt           // Ignore help pointer
-                           && app->get_help_all_ptr() != opt)); // Ignore help all pointer
+            return opt->get_group() == group                     // Must be in the right group
+                   && opt->nonpositional()                       // Must not be a positional
+                   && (mode != AppFormatMode::Sub                // If mode is Sub, then
+                       || (app->get_help_ptr() != opt            // Ignore help pointer
+                           && app->get_help_all_ptr() != opt));  // Ignore help all pointer
         });
         if(!group.empty() && !opts.empty()) {
             out << make_group(group, false, opts);
@@ -217,7 +220,7 @@ inline std::string Formatter::make_expanded(const App *sub) const {
 
     // Drop blank spaces
     std::string tmp = detail::find_and_replace(out.str(), "\n\n", "\n");
-    tmp = tmp.substr(0, tmp.size() - 1); // Remove the final '\n'
+    tmp = tmp.substr(0, tmp.size() - 1);  // Remove the final '\n'
 
     // Indent all but the first line (the name)
     return detail::find_and_replace(tmp, "\n", "\n  ") + "\n";
@@ -275,4 +278,4 @@ inline std::string Formatter::make_option_usage(const Option *opt) const {
     return opt->get_required() ? out.str() : "[" + out.str() + "]";
 }
 
-} // namespace CLI
+}  // namespace CLI

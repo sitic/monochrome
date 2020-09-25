@@ -1,7 +1,10 @@
-#pragma once
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+#pragma once
 
 #include "StringTools.hpp"
 #include <cstdint>
@@ -24,7 +27,7 @@ enum class enabler {};
 
 /// An instance to use in EnableIf
 constexpr enabler dummy = {};
-} // namespace detail
+}  // namespace detail
 
 /// A copy of enable_if_t from C++14, compatible with C++11.
 ///
@@ -621,7 +624,7 @@ template <typename T,
           enable_if_t<classify_object<T>::value == object_category::unsigned_integral, detail::enabler> = detail::dummy>
 bool lexical_cast(const std::string &input, T &output) {
     if(!input.empty() && input.front() == '-')
-        return false; // std::stoull happily converts negative values to junk without any errors.
+        return false;  // std::stoull happily converts negative values to junk without any errors.
 
     try {
         std::size_t n = 0;
@@ -801,7 +804,7 @@ bool lexical_assign(const std::string &input, T &output) {
     XC val{};
     bool parse_result = input.empty() ? true : lexical_cast<XC>(input, val);
     if(parse_result) {
-        output = T(val); // use () form of constructor to allow some implicit conversions
+        output = T(val);  // use () form of constructor to allow some implicit conversions
     }
     return parse_result;
 }
@@ -1004,5 +1007,5 @@ void sum_flag_vector(const std::vector<std::string> &flags, T &output) {
     output = static_cast<T>(count);
 }
 
-} // namespace detail
-} // namespace CLI
+}  // namespace detail
+}  // namespace CLI

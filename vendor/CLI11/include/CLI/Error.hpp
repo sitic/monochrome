@@ -1,7 +1,10 @@
-#pragma once
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+#pragma once
 
 #include <exception>
 #include <stdexcept>
@@ -10,7 +13,7 @@
 #include <vector>
 
 // CLI library includes
-#include "CLI/StringTools.hpp"
+#include "StringTools.hpp"
 
 namespace CLI {
 
@@ -243,11 +246,11 @@ class RequiredError : public ParseError {
 class ArgumentMismatch : public ParseError {
     CLI11_ERROR_DEF(ParseError, ArgumentMismatch)
     CLI11_ERROR_SIMPLE(ArgumentMismatch)
-    ArgumentMismatch(std::string name, int expected, std::size_t recieved)
+    ArgumentMismatch(std::string name, int expected, std::size_t received)
         : ArgumentMismatch(expected > 0 ? ("Expected exactly " + std::to_string(expected) + " arguments to " + name +
-                                           ", got " + std::to_string(recieved))
+                                           ", got " + std::to_string(received))
                                         : ("Expected at least " + std::to_string(-expected) + " arguments to " + name +
-                                           ", got " + std::to_string(recieved)),
+                                           ", got " + std::to_string(received)),
                            ExitCodes::ArgumentMismatch) {}
 
     static ArgumentMismatch AtLeast(std::string name, int num, std::size_t received) {
@@ -334,4 +337,4 @@ class OptionNotFound : public Error {
 
 /// @}
 
-} // namespace CLI
+}  // namespace CLI

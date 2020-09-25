@@ -1,3 +1,9 @@
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <CLI/CLI.hpp>
 #include <iostream>
 #include <string>
@@ -15,7 +21,7 @@ int main(int argc, char **argv) {
     int v{0};
     CLI::Option *flag = app.add_flag("--flag", v, "Some flag that can be passed multiple times");
 
-    double value{0.0}; // = 3.14;
+    double value{0.0};  // = 3.14;
     app.add_option("-d,--double", value, "Some Value");
 
     CLI11_PARSE(app, argc, argv);

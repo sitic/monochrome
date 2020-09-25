@@ -1,3 +1,37 @@
+## Version 2.0: In progress
+
+* Built-in config format is TOML compliant now [#435]
+* Config updates [#442]
+* More powerful containers, `%%` separator [#423]
+* Add a version flag easily [#452]
+
+[#435]: https://github.com/CLIUtils/CLI11/pull/435
+[#443]: https://github.com/CLIUtils/CLI11/pull/443
+[#423]: https://github.com/CLIUtils/CLI11/pull/423
+[#452]: https://github.com/CLIUtils/CLI11/pull/452
+
+
+### Version 1.9.1: Backporting fixes
+
+This is a patch version that backports fixes from the development of 2.0.
+
+* Support relative inclusion [#475][]
+* Fix cases where spaces in paths could break CMake support [#471][]
+* Fix an issue with string conversion [#421][]
+* Cross-compiling improvement for Conan.io [#430][]
+* Fix option group default propagation [#450][]
+* Fix for C++20 [#459][]
+* Support compiling with RTTI off [#461][]
+
+[#421]: https://github.com/CLIUtils/CLI11/pull/421
+[#430]: https://github.com/CLIUtils/CLI11/pull/430
+[#450]: https://github.com/CLIUtils/CLI11/pull/450
+[#459]: https://github.com/CLIUtils/CLI11/pull/459
+[#461]: https://github.com/CLIUtils/CLI11/pull/461
+[#471]: https://github.com/CLIUtils/CLI11/pull/471
+[#475]: https://github.com/CLIUtils/CLI11/pull/475
+
+
 ## Version 1.9: Config files and cleanup
 
 Config file handling was revamped to fix common issues, and now supports reading [TOML](https://github.com/toml-lang/toml).
@@ -333,7 +367,7 @@ This is a quick patch release that makes LICENSE part of the single header file,
 
 ### Version 1.5.1: Access
 
-This patch release adds better access to the App progromatically, to assist with writing custom converters to other formats. It also improves the help output, and uses a new feature in CLI11 1.5 to fix an old "quirk" in the way unlimited options and positionals interact.
+This patch release adds better access to the App programmatically, to assist with writing custom converters to other formats. It also improves the help output, and uses a new feature in CLI11 1.5 to fix an old "quirk" in the way unlimited options and positionals interact.
 
 * Make mixing unlimited positionals and options more intuitive [#102]
 * Add missing getters `get_options` and `get_description` to App [#105]
@@ -360,7 +394,7 @@ Note: This is the final release with `requires`, please switch to `needs`.
 * Support for `std::optional`, `std::experimental::optional`, and `boost::optional` added if `__has_include` is supported [#95]
 * All macros/CMake variables now start with `CLI11_` instead of just `CLI_` [#95]
 * The internal stream was not being cleared before use in some cases. Fixed. [#95]
-* Using an emum now requires explicit conversion overload [#97]
+* Using an enum now requires explicit conversion overload [#97]
 * The separator `--` now is removed when it ends unlimited arguments [#100]
 
 Other, non-user facing changes:
@@ -551,7 +585,7 @@ Lots of cleanup and docs additions made it into this release. Parsing is simpler
 ## Version 0.3: Plumbum compatibility
 
 * Added `->requires`, `->excludes`, and `->envname` from [Plumbum](http://plumbum.readthedocs.io/en/latest/)
-* Supports `->mandatory` from Plubmum
+* Supports `->mandatory` from Plumbum
 * More tests for help strings, improvements in formatting
 * Support type and set syntax in positionals help strings
 * Added help groups, with `->group("name")` syntax

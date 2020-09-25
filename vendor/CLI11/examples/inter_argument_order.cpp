@@ -1,3 +1,9 @@
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <CLI/CLI.hpp>
 #include <algorithm>
 #include <iostream>
@@ -11,7 +17,7 @@ int main(int argc, char **argv) {
     auto foo = app.add_option("--foo,-f", foos, "Some unlimited argument");
 
     std::vector<int> bars;
-    auto bar = app.add_option("--bar", bars, "Some unlimited arggument");
+    auto bar = app.add_option("--bar", bars, "Some unlimited argument");
 
     app.add_flag("--z,--x", "Random other flags");
 

@@ -1,7 +1,10 @@
-#pragma once
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+#pragma once
 
 #include <algorithm>
 #include <iomanip>
@@ -25,7 +28,7 @@ std::ostream &operator<<(std::ostream &in, const T &item) {
     return in << static_cast<typename std::underlying_type<T>::type>(item);
 }
 
-} // namespace enums
+}  // namespace enums
 
 /// Export to CLI namespace
 using enums::operator<<;
@@ -39,9 +42,9 @@ constexpr int expected_max_vector_size{1 << 29};
 inline std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     // Check to see if empty string, give consistent result
-    if(s.empty())
+    if(s.empty()) {
         elems.emplace_back();
-    else {
+    } else {
         std::stringstream ss;
         ss.str(s);
         std::string item;
@@ -261,8 +264,9 @@ inline std::ptrdiff_t find_member(std::string name,
         it = std::find_if(std::begin(names), std::end(names), [&name](std::string local_name) {
             return detail::remove_underscore(local_name) == name;
         });
-    } else
+    } else {
         it = std::find(std::begin(names), std::end(names), name);
+    }
 
     return (it != std::end(names)) ? (it - std::begin(names)) : (-1);
 }
@@ -294,7 +298,7 @@ inline std::vector<std::string> split_up(std::string str, char delimiter = '\0')
         if(delims.find_first_of(str[0]) != std::string::npos) {
             keyChar = str[0];
             auto end = str.find_first_of(keyChar, 1);
-            while((end != std::string::npos) && (str[end - 1] == '\\')) { // deal with escaped quotes
+            while((end != std::string::npos) && (str[end - 1] == '\\')) {  // deal with escaped quotes
                 end = str.find_first_of(keyChar, end + 1);
                 embeddedQuote = true;
             }
@@ -352,7 +356,7 @@ inline std::size_t escape_detect(std::string &str, std::size_t offset) {
         auto astart = str.find_last_of("-/ \"\'`", offset - 1);
         if(astart != std::string::npos) {
             if(str[astart] == ((str[offset] == '=') ? '-' : '/'))
-                str[offset] = ' '; // interpret this as a space so the split_up works properly
+                str[offset] = ' ';  // interpret this as a space so the split_up works properly
         }
     }
     return offset + 1;
@@ -370,6 +374,6 @@ inline std::string &add_quotes_if_needed(std::string &str) {
     return str;
 }
 
-} // namespace detail
+}  // namespace detail
 
-} // namespace CLI
+}  // namespace CLI

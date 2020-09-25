@@ -1,7 +1,10 @@
-#pragma once
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+#pragma once
 
 #include <algorithm>
 #include <fstream>
@@ -9,8 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "CLI/Error.hpp"
-#include "CLI/StringTools.hpp"
+#include "Error.hpp"
+#include "StringTools.hpp"
 
 namespace CLI {
 
@@ -125,4 +128,4 @@ class ConfigTOML : public ConfigINI {
         valueDelimiter = '=';
     }
 };
-} // namespace CLI
+}  // namespace CLI

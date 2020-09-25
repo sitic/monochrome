@@ -715,7 +715,7 @@ TEST(Exit, ExitCodes) {
     EXPECT_EQ(0, app.exit(CLI::CallForHelp()));
     EXPECT_EQ(i, app.exit(CLI::ExtrasError({"Thing"})));
     EXPECT_EQ(42, app.exit(CLI::RuntimeError(42)));
-    EXPECT_EQ(1, app.exit(CLI::RuntimeError())); // Not sure if a default here is a good thing
+    EXPECT_EQ(1, app.exit(CLI::RuntimeError()));  // Not sure if a default here is a good thing
 }
 
 struct CapturedHelp : public ::testing::Test {
@@ -731,7 +731,7 @@ struct CapturedHelp : public ::testing::Test {
     }
 };
 
-TEST_F(CapturedHelp, Sucessful) {
+TEST_F(CapturedHelp, Successful) {
     EXPECT_EQ(run(CLI::Success()), 0);
     EXPECT_EQ(out.str(), "");
     EXPECT_EQ(err.str(), "");
@@ -825,7 +825,7 @@ TEST_F(CapturedHelp, AllOnlyError) {
     EXPECT_THAT(err.str(), Not(HasSubstr("Usage")));
 }
 
-TEST_F(CapturedHelp, RepacedError) {
+TEST_F(CapturedHelp, ReplacedError) {
     app.failure_message(CLI::FailureMessage::help);
 
     EXPECT_EQ(run(CLI::ExtrasError({"Thing"})), static_cast<int>(CLI::ExitCodes::ExtrasError));
@@ -945,7 +945,7 @@ TEST(THelp, ValidatorsText) {
     std::string help = app.help();
     EXPECT_THAT(help, HasSubstr("TEXT:FILE"));
     EXPECT_THAT(help, HasSubstr("INT in [1 - 4]"));
-    EXPECT_THAT(help, HasSubstr("UINT:INT in [0 - 12]")); // Loses UINT
+    EXPECT_THAT(help, HasSubstr("UINT:INT in [0 - 12]"));  // Loses UINT
 }
 
 TEST(THelp, ValidatorsTextCustom) {
@@ -995,7 +995,7 @@ TEST(THelp, CombinedValidatorsText) {
     app.add_option("--f1", filename)->check(CLI::ExistingFile | CLI::ExistingDirectory);
 
     // This would be nice if it put something other than string, but would it be path or file?
-    // Can't programatically tell!
+    // Can't programmatically tell!
     // (Users can use ExistingPath, by the way)
     std::string help = app.help();
     EXPECT_THAT(help, HasSubstr("TEXT:(FILE) OR (DIR)"));

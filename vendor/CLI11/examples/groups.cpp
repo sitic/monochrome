@@ -1,3 +1,9 @@
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <CLI/CLI.hpp>
 #include <CLI/Timer.hpp>
 #include <iostream>
@@ -14,7 +20,7 @@ int main(int argc, char **argv) {
     int count{0};
     CLI::Option *copt = app.add_flag("-c,--count", count, "Counter")->required()->group("Important");
 
-    double value{0.0}; // = 3.14;
+    double value{0.0};  // = 3.14;
     app.add_option("-d,--double", value, "Some Value")->group("Other");
 
     try {

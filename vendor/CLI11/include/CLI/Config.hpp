@@ -1,7 +1,10 @@
-#pragma once
+// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+#pragma once
 
 #include <algorithm>
 #include <fstream>
@@ -10,9 +13,9 @@
 #include <utility>
 #include <vector>
 
-#include "CLI/App.hpp"
-#include "CLI/ConfigFwd.hpp"
-#include "CLI/StringTools.hpp"
+#include "App.hpp"
+#include "ConfigFwd.hpp"
+#include "StringTools.hpp"
 
 namespace CLI {
 
@@ -157,7 +160,7 @@ inline void checkParentSegments(std::vector<ConfigItem> &output, const std::stri
     output.back().parents = std::move(parents);
     output.back().name = "++";
 }
-} // namespace detail
+}  // namespace detail
 
 inline std::vector<ConfigItem> ConfigBase::from_config(std::istream &input) const {
     std::string line;
@@ -340,4 +343,4 @@ ConfigBase::to_config(const App *app, bool default_also, bool write_description,
     return out.str();
 }
 
-} // namespace CLI
+}  // namespace CLI
