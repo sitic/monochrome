@@ -321,6 +321,7 @@ void RecordingWindow::open_window() {
 
 void RecordingWindow::set_context(GLFWwindow *new_context) {
   auto *prev_window = glfwGetCurrentContext();
+  if (new_context == nullptr) new_context = window;
   if (window != new_context) glfwHideWindow(window);
   if (glcontext && frame_shader) clear_gl_memory();
 
@@ -587,17 +588,20 @@ void RecordingWindow::save_trace(const Vec2i &pos, fs::path path, Vec2i t0tmax) 
   }
   auto cur_frame = t_frame;
 
+  auto [start, size] = Trace::clamp(pos, {Nx(), Ny()});
+  if (size[0] <= 0 && size[1] <= 0) {
+    global::new_ui_message("Failed to save trace, trace size is invalid ({}, {})", size[0], size[1]);
+    return;
+  }
+
   fs::remove(path);
   std::ofstream file(path.string(), std::ios::out);
   fmt::print(file, "Frame\tValue\n");
 
   for (int t = t0tmax[0]; t < t0tmax[1]; t++) {
     load_frame(t);
-    auto [start, size] = Trace::clamp(pos, {Nx(), Ny()});
-    if (size[0] > 0 && size[1] > 0) {
-      auto block = frame.block(start[0], start[1], size[0], size[1]);
-      fmt::print(file, "{}\t{}\n", t, block.mean());
-    }
+    auto block = frame.block(start[0], start[1], size[0], size[1]);
+    fmt::print(file, "{}\t{}\n", t, block.mean());
   }
 
   fmt::print("Saved trace to {}\n", path.string());
@@ -789,5 +793,24 @@ void RecordingWindow::render() {
     glfwSwapBuffers(window);
 
     glfwMakeContextCurrent(global::main_window);
+  }
+}
+
+FixedTransformRecordingWindow::FixedTransformRecordingWindow(SharedRecordingPtr parent,
+                                                             Filters prefilter,
+                                                             Transformations transformation,
+                                                             Filters postfilter,
+                                                             std::string name)
+    : RecordingWindow(parent->file()),
+      fixed_prefilter_(prefilter),
+      fixed_transformation_(transformation),
+      fixed_postfilter_(postfilter),
+      name_(name) {
+  RecordingWindow::get_min(fixed_transformation_) = parent->get_min(fixed_transformation_);
+  RecordingWindow::get_max(fixed_transformation_) = parent->get_max(fixed_transformation_);
+
+  if (transformation == Transformations::FrameDiff) {
+    use_transfer_fct    = true;
+    histogram.symmetric = true;
   }
 }

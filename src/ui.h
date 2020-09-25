@@ -220,6 +220,22 @@ void show_main_ui() {
       ImGui::Indent(10);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
       ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 20);
+      if (ImGui::Button("Add As Overlays")) {
+        std::vector<std::pair<SharedRecordingPtr, SharedRecordingPtr>> new_recordings;
+        for (auto rec : global::recordings) {
+          auto r = std::make_shared<FixedTransformRecordingWindow>(
+              rec, prm::prefilter, prm::transformation, prm::postfilter, "Frame Difference");
+          new_recordings.push_back({r, rec});
+        }
+        for (auto [r, rec] : new_recordings) {
+          global::recordings.push_back(r);
+          r->open_window();
+          global::merge_queue.push({r, rec, false});
+        }
+        prm::transformation = Transformations::None;
+        prm::prefilter      = Filters::None;
+        prm::postfilter     = Filters::None;
+      }
       ImGui::Unindent(10);
     }
     if (selectable("Contrast Enhancement", Transformations::ContrastEnhancement)) {
@@ -343,6 +359,12 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     }
   }
   ImGui::Columns(3);
+  ImGui::Text("Frames %d", rec->length());
+  ImGui::NextColumn();
+  ImGui::Text("Width  %d", rec->Nx());
+  ImGui::NextColumn();
+  ImGui::Text("Height %d", rec->Ny());
+  ImGui::NextColumn();
   if (rec->duration().count() > 0) {
     ImGui::TextWrapped("Duration  %.3fs", rec->duration().count());
     ImGui::NextColumn();
@@ -355,13 +377,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::TextWrapped("%s %s", v.first.c_str(), v.second.c_str());
     ImGui::NextColumn();
   }
-  ImGui::Text("Frames %d", rec->length());
-  ImGui::NextColumn();
-  ImGui::Text("Width  %d", rec->Nx());
-  ImGui::NextColumn();
-  ImGui::Text("Height %d", rec->Ny());
   if (!parent) {
-    ImGui::NextColumn();
     if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
       auto &ctrl         = rec->export_ctrl.raw;
       ctrl.export_window = true;
@@ -403,6 +419,17 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
         }
         ImGui::EndPopup();
       }
+    }
+  } else {
+    if (ImGui::Button(ICON_FA_TRASH_ALT)) {
+      rec->set_context(nullptr);
+      parent->children.erase(
+          std::remove_if(parent->children.begin(), parent->children.end(),
+                         [child = rec.get()](const auto &r) { return r.get() == child; }),
+          parent->children.end());
+      ImGui::Columns(1);
+      ImGui::PopID();
+      return rec_nr;
     }
   }
   ImGui::Columns(1);
@@ -535,6 +562,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       size = prm::max_trace_length;
     }
 
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.85f);
     ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(color[0], color[1], color[2], 1));
     ImGui::PlotLines("", data, size, 0, NULL, FLT_MAX, FLT_MAX, ImVec2(0, 100));
     ImGui::PopStyleColor(1);
@@ -544,7 +572,6 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::SameLine();
     ImGui::ColorEdit3(label.c_str(), color.data(),
                       ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-    ImGui::SameLine();
     if (ImGui::Button("Reset")) {
       trace.clear();
     }
@@ -558,7 +585,6 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       ctrl.assign_auto_filename(rec->path(), pos, Trace::width());
       ctrl.tend = rec->length();
     }
-    ImGui::SameLine();
     if (ImGui::Button("Export ROI")) {
       auto &ctrl                      = rec->export_ctrl.raw;
       ctrl.export_window              = true;
@@ -585,6 +611,9 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
   // by the user once
   static auto export_dir = recording->path().parent_path().string();
 
+  /*
+   * Export array to .npy or .dat file
+   */
   if (auto &ctrl = recording->export_ctrl.raw; ctrl.export_window) {
     ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
                                         ImVec2(prm::main_window_width, FLT_MAX));
@@ -634,6 +663,9 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::End();
   }
 
+  /*
+   * Export frames as video
+   */
   if (auto &ctrl = recording->export_ctrl.video; ctrl.export_window) {
     ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
                                         ImVec2(prm::main_window_width, FLT_MAX));
@@ -672,6 +704,9 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::End();
   }
 
+  /*
+   * Export frame(s) as png(s)
+   */
   if (auto &ctrl = recording->export_ctrl.png; ctrl.export_window) {
     ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
                                         ImVec2(prm::main_window_width, FLT_MAX));
@@ -703,6 +738,9 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::End();
   }
 
+  /*
+   * Export trace as txt file
+   */
   if (auto &ctrl = recording->export_ctrl.trace; ctrl.export_window) {
     ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
                                         ImVec2(prm::main_window_width, FLT_MAX));

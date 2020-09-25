@@ -8,6 +8,9 @@
 #include "recordingwindow_helpers.h"
 #include "colormap.h"
 
+class RecordingWindow;
+using SharedRecordingPtr = std::shared_ptr<RecordingWindow>;
+
 class RecordingWindow : public Recording {
  public:
   static float scale_fct;
@@ -25,7 +28,7 @@ class RecordingWindow : public Recording {
   TransformationList transformationArena;
   std::vector<FlowData> flows;  // use add_flow() to add members
   bool use_transfer_fct    = false;
-  int transfer_fct_version = 0;
+  int transfer_fct_version = 3;
   struct {
     bool show = false;
     std::string comment;
@@ -49,8 +52,12 @@ class RecordingWindow : public Recording {
 
   virtual void load_next_frame() { load_frame(playback.step()); }
 
-  float &get_min(Transformations type) { return transformationArena.create_if_needed(type)->min; }
-  float &get_max(Transformations type) { return transformationArena.create_if_needed(type)->max; }
+  virtual float &get_min(Transformations type) {
+    return transformationArena.create_if_needed(type)->min;
+  }
+  virtual float &get_max(Transformations type) {
+    return transformationArena.create_if_needed(type)->max;
+  }
 
   void reset_traces();
   void add_trace(const Vec2i &pos);
@@ -104,4 +111,26 @@ class RecordingWindow : public Recording {
   std::vector<float> flow_vert;
 };
 
-using SharedRecordingPtr = std::shared_ptr<RecordingWindow>;
+class FixedTransformRecordingWindow : public RecordingWindow {
+  Filters fixed_prefilter_;
+  Transformations fixed_transformation_;
+  Filters fixed_postfilter_;
+  const std::string name_;
+
+ public:
+  FixedTransformRecordingWindow(SharedRecordingPtr parent,
+                                Filters prefilter,
+                                Transformations transformation,
+                                Filters postfilter,
+                                std::string name);
+  void display(Filters prefilter, Transformations transformation, Filters postfilter) override {
+    RecordingWindow::display(fixed_prefilter_, fixed_transformation_, fixed_postfilter_);
+  };
+  float &get_min(Transformations type) override {
+    return RecordingWindow::get_min(fixed_transformation_);
+  }
+  float &get_max(Transformations type) override {
+    return RecordingWindow::get_max(fixed_transformation_);
+  }
+  std::string name() const override { return name_; }
+};

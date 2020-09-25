@@ -23,6 +23,7 @@ namespace global {
   GLFWwindow *main_window = nullptr;
 
   std::vector<SharedRecordingPtr> recordings = {};
+  // Queue Element: [child, parent, as_flow]
   std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
 }  // namespace global
 
@@ -61,7 +62,9 @@ void load_new_file(std::shared_ptr<AbstractRecording> file,
     }
     if (!parent) {
       if (parentName) {
-        global::new_ui_message("no such recording \"{}\" exists!", parentName.value());
+        global::new_ui_message(
+            "Failed to add flow to recording, no recording with name \"{}\" exists!",
+            parentName.value());
         return;
       } else if (global::recordings.empty()) {
         global::new_ui_message(

@@ -62,7 +62,7 @@ class Recording {
   int Ny() const { return frame.cols(); }
   int length() const { return _file->length(); }
   fs::path path() const { return _file->path(); }
-  std::string name() const { return _file->path().filename().string(); }
+  virtual std::string name() const { return _file->path().filename().string(); }
   std::string date() const { return _file->date(); };
   std::string comment() const { return _file->comment(); };
   std::chrono::duration<float> duration() const { return _file->duration(); }
