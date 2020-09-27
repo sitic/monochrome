@@ -48,11 +48,11 @@ namespace {
           return smoothstep(0., 1., x);
       }
       float transfer_fct_diff_pos(float x) {
-          if (x < 0.5) return 0;
-          return smoothstep(0.5, 1, abs(x));
+          if (x < 0.5) return 0.;
+          return smoothstep(0.5, 1., abs(x));
       }
       float transfer_fct_diff_neg(float x) {
-          if (x > 0.5) return 0;
+          if (x > 0.5) return 0.;
           x = x - 0.5;
           return smoothstep(0., 0.5, abs(x));
       }
