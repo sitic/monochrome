@@ -1,7 +1,10 @@
 #include <fstream>
 #include <fmt/ostream.h>
+#include <cmrc/cmrc.hpp>
 #include "recordingwindow.h"
 #include "globals.h"
+
+CMRC_DECLARE(rc);
 
 namespace prm {
   extern double lastframetime;
@@ -22,75 +25,14 @@ namespace {
                          [_window](const auto &r) { return r->window == _window; });
   }
 
+  std::string get_shader_file(std::string filename) { // copy shader source from embeded files
+    auto fs   = cmrc::rc::get_filesystem();
+    auto data = fs.open("src/shaders/" + filename);
+    return std::string(data.begin(), data.end());
+  }
+
   Shader create_frame_shader() {
-    // Shader sources
-    std::string vertexSource   = R"glsl(
-      #version 330 core
-      layout (location = 0) in vec2 position;
-      layout (location = 1) in vec2 texcoord;
-      out vec2 Texcoord;
-
-      void main() {
-          Texcoord = texcoord;
-          gl_Position = vec4(position, 0.0, 1.0);
-      })glsl";
-    std::string fragmentSource = R"glsl(
-      #version 330 core
-      out vec4 FragColor;
-      in vec2 Texcoord;
-      uniform sampler2D texture0;
-      uniform sampler1D textureC;
-      uniform vec2 minmax;
-      uniform bool use_transfer_fct;
-      uniform int transfer_fct_version;
-
-      float transfer_fct_linear(float x) {
-          return smoothstep(0., 1., x);
-      }
-      float transfer_fct_diff_pos(float x) {
-          if (x < 0.5) return 0.;
-          return smoothstep(0.5, 1., abs(x));
-      }
-      float transfer_fct_diff_neg(float x) {
-          if (x > 0.5) return 0.;
-          x = x - 0.5;
-          return smoothstep(0., 0.5, abs(x));
-      }
-      float transfer_fct_diff(float x) {
-          if (x < 0.5) {
-              return transfer_fct_diff_neg(x);
-          } else {
-              return transfer_fct_diff_pos(x);
-          }
-      }
-      void main() {
-          float val = texture(texture0, Texcoord).r;
-          if (isnan(val)) {
-            //discard;
-            FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-          } else {
-            val = (val - minmax.x) / (minmax.y - minmax.x);
-            val = clamp(val, 0.0, 1.0);
-            FragColor = texture(textureC, val);
-            if (use_transfer_fct) {
-              switch (transfer_fct_version) {
-              case 1:
-                  FragColor.a = transfer_fct_diff(val);
-                  break;
-              case 2:
-                  FragColor.a = transfer_fct_diff_pos(val);
-                  break;
-              case 3:
-                  FragColor.a = transfer_fct_diff_neg(val);
-                  break;
-              default:
-                  FragColor.a = transfer_fct_linear(val);
-                  break;
-              }
-            }
-          }
-      })glsl";
-    return Shader::create(vertexSource, fragmentSource);
+    return Shader::create(get_shader_file("frame.vert.glsl"), get_shader_file("frame.frag.glsl"));
   }
 
   std::tuple<GLuint, GLuint, GLuint> create_frame_vaovboebo() {
@@ -131,67 +73,8 @@ namespace {
   }
 
   Shader create_trace_shader() {
-    std::string vertexSource   = R"glsl(
-      #version 330 core
-      layout (location = 0) in vec2 position;
-      layout (location = 1) in vec3 aColor;
-
-      out VS_OUT {
-          vec3 color;
-      } vs_out;
-
-      void main()
-      {
-          vs_out.color = aColor;
-          gl_Position = vec4(position, 0.0, 1.0);
-      })glsl";
-    std::string fragmentSource = R"glsl(
-      #version 330 core
-      out vec4 FragColor;
-
-      in vec3 fColor;
-
-      void main()
-      {
-          FragColor = vec4(fColor, 1.0);
-      })glsl";
-    std::string geometrySource = R"glsl(
-      #version 330 core
-      layout (points) in;
-      layout (line_strip, max_vertices = 5) out;
-      uniform vec2 halfwidth;
-
-      in VS_OUT {
-          vec3 color;
-      } gs_in[];
-
-      out vec3 fColor;
-
-      void build_rect(vec4 position)
-      {
-          fColor = gs_in[0].color; // gs_in[0] since there's only one input vertex
-          vec4 vert = position + vec4(-halfwidth.x, -halfwidth.y, 0.0, 0.0); // bottom-left
-          gl_Position = clamp(vert, -1, 1);
-          EmitVertex();
-          vert = position + vec4(halfwidth.x, -halfwidth.y, 0.0, 0.0); // bottom-right
-          gl_Position = clamp(vert, -1, 1);
-          EmitVertex();
-          vert = position + vec4(halfwidth.x, halfwidth.y, 0.0, 0.0); // top-right
-          gl_Position = clamp(vert, -1, 1);
-          EmitVertex();
-          vert = position + vec4(-halfwidth.x, halfwidth.y, 0.0, 0.0); // top-left
-          gl_Position = clamp(vert, -1, 1);
-          EmitVertex();
-          vert = position + vec4(-halfwidth.x, -halfwidth.y, 0.0, 0.0); // bottom-left
-          gl_Position = clamp(vert, -1, 1);
-          EmitVertex();
-          EndPrimitive();
-      }
-
-      void main() {
-          build_rect(gl_in[0].gl_Position);
-      })glsl";
-    return Shader::create(vertexSource, fragmentSource, geometrySource);
+    return Shader::create(get_shader_file("trace.vert.glsl"), get_shader_file("trace.frag.glsl"),
+                          get_shader_file("trace.geom.glsl"));
   }
 
   std::pair<GLuint, GLuint> create_trace_vaovbo() {
@@ -209,29 +92,7 @@ namespace {
   }
 
   Shader create_flow_shader() {
-    std::string vertexSource = R"glsl(
-      #version 330 core
-      layout (location = 0) in vec2 position;
-
-      void main()
-      {
-          gl_Position = vec4(position, 0.0, 1.0);
-      })glsl";
-    // https://rubendv.be/posts/fwidth/
-    std::string fragmentSource = R"glsl(
-      #version 330 core
-      out vec4 FragColor;
-      uniform vec4 color;
-
-      void main()
-      {
-          vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
-          float dist_squared = dot(circCoord, circCoord);
-          float alpha = smoothstep(0.9, 1.1, dist_squared);
-          FragColor = color;
-          FragColor.a -= alpha;
-      })glsl";
-    return Shader::create(vertexSource, fragmentSource);
+    return Shader::create(get_shader_file("flow.vert.glsl"), get_shader_file("flow.frag.glsl"));
   }
 
   std::pair<GLuint, GLuint> create_flow_vaovbo() {

@@ -1,9 +1,9 @@
 .linux: &linux
-  image: docker.gitlab.gwdg.de/jlebert/emsim
+  image: docker.gitlab.gwdg.de/jlebert/quickmultrecviewer
 
 .gcc: &gcc
   <<: [*linux]
-  image: docker.gitlab.gwdg.de/jlebert/emsim/gcc
+  image: docker.gitlab.gwdg.de/jlebert/quickmultrecviewer/gcc
   cache:
     key: docker-gcc
     paths:
@@ -11,7 +11,7 @@
 
 .clang: &clang
   <<: [*linux]
-  image: docker.gitlab.gwdg.de/jlebert/emsim/clang
+  image: docker.gitlab.gwdg.de/jlebert/quickmultrecviewer/clang
   cache:
     key: docker-clang
     paths:
@@ -117,3 +117,11 @@ windows Release:
     paths:
       - build/Release/quickVidViewer.exe
     expire_in: 3 months
+
+glsl:
+  <<: [*linux]
+  only:
+    changes:
+      - src/shaders/*
+  script:
+    - glslangValidator -C src/shaders/*

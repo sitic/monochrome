@@ -1,0 +1,4 @@
+FROM docker.gitlab.gwdg.de/jlebert/quickmultrecviewer:latest
+
+RUN update-alternatives --set c++ $(which g++)
+RUN update-alternatives --set cc  $(which gcc)

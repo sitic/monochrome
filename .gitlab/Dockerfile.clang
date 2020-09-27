@@ -1,0 +1,8 @@
+FROM docker.gitlab.gwdg.de/jlebert/quickmultrecviewer:latest
+
+RUN update-alternatives --set c++ $(which clang++)
+RUN update-alternatives --set cc  $(which clang)
+
+ENV   CFLAGS="-stdlib=libc++ -Wno-error=unused-command-line-argument" \
+    CXXFLAGS="-stdlib=libc++ -Wno-error=unused-command-line-argument" \
+     LDFLAGS="-stdlib=libc++ -lc++abi"
