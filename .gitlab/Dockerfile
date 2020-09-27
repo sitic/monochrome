@@ -7,7 +7,7 @@ RUN apt-get update && \
 	    libc-dev \
 	    cmake make \
 	    ccache \
-	    git ca-certificates \
+	    git ca-certificates curl file \
 	    mesa-utils \
 	    libxrandr-dev \
 	    libxcursor-dev \
