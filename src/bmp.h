@@ -176,21 +176,19 @@ class BMPheader {
   BMPheader(fs::path path) : _in(path.string(), std::ios::in | std::ios::binary) {
 
     if (!_in.good() || get_filesize() <= HeaderLength) {
-      _error_msg = fmt::format("ERROR: {} does not seem to be a file!", path.string());
+      _error_msg = fmt::format("ERROR: Path does not seem to be a file!");
       return;
     }
 
     char mVersion;
     if (!read(mVersion) || mVersion != Version) {
-      _error_msg = fmt::format("Loading '{}' failed, unsupported file version '{}'.", path.string(),
-                               mVersion);
+      _error_msg = fmt::format("Unsupported file version '{}'.", mVersion);
       return;
     }
 
     uint32 mByteOrderMark;
     if (!read(mByteOrderMark) || mByteOrderMark != ByteOrderMark) {
-      _error_msg = fmt::format("Parsing '{}' failed, unsupported byte order '{}'", path.string(),
-                               mByteOrderMark);
+      _error_msg = fmt::format("Insupported byte order '{}'", mByteOrderMark);
       return;
     }
 
