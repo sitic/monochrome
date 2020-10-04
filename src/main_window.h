@@ -223,6 +223,7 @@ void open_main_window(float font_scale = 0) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
   global::main_window =
       glfwCreateWindow(prm::main_window_multipier * prm::main_window_width, prm::main_window_height,
                        "Quick Raw Video Viewer", nullptr, nullptr);
@@ -230,6 +231,7 @@ void open_main_window(float font_scale = 0) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
+  glfwGetWindowSize(global::main_window, &prm::main_window_width, &prm::main_window_height);
   glfwSetWindowSizeCallback(global::main_window, [](GLFWwindow *window, int w, int h) {
     prm::main_window_width  = w / prm::main_window_multipier;
     prm::main_window_height = h;
@@ -305,30 +307,24 @@ void open_main_window(float font_scale = 0) {
   font_config.OversampleV = 2;
   //font_config.PixelSnapH = true;
   io.Fonts->AddFontFromMemoryCompressedTTF(fonts::DroidSans_compressed_data,
-                                           fonts::DroidSans_compressed_size, 14, &font_config,
-                                           ranges.Data);
+                                           fonts::DroidSans_compressed_size,
+                                           std::ceil(14.f * font_scale), &font_config, ranges.Data);
   ImFontConfig icons_config;
   icons_config.MergeMode  = true;
   icons_config.PixelSnapH = true;
 
   static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-  io.Fonts->AddFontFromMemoryCompressedTTF(fonts::fontawesome5_solid_compressed_data,
-                                           fonts::fontawesome5_solid_compressed_size, 11,
-                                           &icons_config, fontawesome_icons_ranges);
+  io.Fonts->AddFontFromMemoryCompressedTTF(
+      fonts::fontawesome5_solid_compressed_data, fonts::fontawesome5_solid_compressed_size,
+      std::ceil(11.f * font_scale), &icons_config, fontawesome_icons_ranges);
   static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI, ICON_MAX_MDI, 0};
-  io.Fonts->AddFontFromMemoryCompressedTTF(fonts::materialdesignicons_compressed_data,
-                                           fonts::materialdesignicons_compressed_size, 11,
-                                           &icons_config, materialdesignicons_icons_ranges);
-  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-  // ImFont* font =
-  // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f,
-  // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
+  io.Fonts->AddFontFromMemoryCompressedTTF(
+      fonts::materialdesignicons_compressed_data, fonts::materialdesignicons_compressed_size,
+      std::ceil(11.f * font_scale), &icons_config, materialdesignicons_icons_ranges);
 
   add_window_icon(global::main_window);
 
+  // Initialize colormap textures
   for (auto cmap : prm::cmaps) {
     GLuint tex = GL_FALSE;
     glGenTextures(1, &tex);
