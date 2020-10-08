@@ -231,7 +231,7 @@ void open_main_window(float font_scale = 0) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
-  glfwGetWindowSize(global::main_window, &prm::main_window_width, &prm::main_window_height);
+  glfwGetFramebufferSize(global::main_window, &prm::main_window_width, &prm::main_window_height);
   glfwSetWindowSizeCallback(global::main_window, [](GLFWwindow *window, int w, int h) {
     prm::main_window_width  = w / prm::main_window_multipier;
     prm::main_window_height = h;

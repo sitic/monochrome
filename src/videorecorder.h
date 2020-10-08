@@ -69,7 +69,7 @@ class VideoRecorder {
     if (!window) {
       window = glfwGetCurrentContext();
     }
-    glfwGetWindowSize(window, &width, &height);
+    glfwGetFramebufferSize(window, &width, &height);
 
     buffer = std::vector<GLubyte>(width * height * 4ul);
 

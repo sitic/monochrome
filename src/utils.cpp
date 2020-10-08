@@ -59,7 +59,7 @@ void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {
   if (window) glfwMakeContextCurrent(window);
 
   int width, height;
-  glfwGetWindowSize(window, &width, &height);
+  glfwGetFramebufferSize(window, &width, &height);
 
   const unsigned channels = 4;
   std::vector<GLubyte> image(width * height * channels);
