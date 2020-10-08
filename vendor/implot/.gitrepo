@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/epezent/implot.git
+	branch = master
+	commit = da5b4ab8d36d97c0845fa4b0c2b5f62268582bf8
+	parent = e79cb4ac1429a88a417614f44594d9a5a9a2b8a3
+	method = merge
+	cmdver = 0.4.1
