@@ -257,6 +257,7 @@ void open_main_window(float font_scale = 0) {
   }
 
   ImGui::CreateContext();
+  ImPlot::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
   // Enable Keyboard Controls

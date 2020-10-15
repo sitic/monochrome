@@ -117,7 +117,7 @@ struct ExportCtrl {
     int tend   = -1;
 
     void assign_auto_filename(const fs::path &path, const Vec2i &pos_, int width) {
-      pos = pos_;
+      pos      = pos_;
       filename = path.filename().stem().string();
       filename += fmt::format("_{}_{}_size{}.txt", pos_[0], pos_[1], width);
     }
@@ -125,10 +125,68 @@ struct ExportCtrl {
   } trace;
 };
 
+class SmoothScaler {
+  void smooth_scale(const float &min_value, const float &max_value) {
+    // prepare a smooth transition, do not smooth if diff is small.
+    double smooth       = (upper - lower) / 20;
+    double smooth_lower = lower + smooth / 4;
+    double smooth_upper = upper - smooth / 4;
+
+    if (double diff = min_value - smooth_lower; diff > smooth || diff < 0) {
+      lower += diff / autoScaleFrequency;
+    }
+    if (double diff = smooth_upper - max_value; diff > smooth || diff < 0) {
+      upper -= diff / autoScaleFrequency;
+    }
+  }
+
+ public:
+  double lower = 0;
+  double upper = 0;
+  double left  = 0;
+  double right = 0;
+  //static float autoScaleFrequency;
+  float autoScaleFrequency = 20;
+
+  SmoothScaler() = default;
+
+  void scale(Vec2f *first, Vec2f *last) {
+    float min = first->operator[](1);
+    float max = min;
+
+    for (auto it = first + 1; it < last; it++) {
+      const float val = it->operator[](1);
+      if (val > max) {
+        max = val;
+      } else if (val < min) {
+        min = val;
+      }
+    }
+    //auto first_y = RawIterator(first->data() + 1);
+    //auto last_y  = RawIterator(last->data() + 1);
+    //auto [minItr, maxItr] =
+    //    std::minmax_element(StrideIterator(first_y, 2), StrideIterator(last_y, 2));
+    //float minValue = *minItr;
+    //float maxValue = *maxItr;
+
+    smooth_scale(min, max);
+  }
+
+  template <typename It>
+  void scale(It begin, It end) {
+    auto [minItr, maxItr] = std::minmax_element(begin, end);
+    float minValue        = *minItr;
+    float maxValue        = *maxItr;
+
+    smooth_scale(minValue, maxValue);
+  }
+};
+
 struct Trace {
   std::vector<float> data;
   Vec2i pos;
   Vec4f color;
+  SmoothScaler scale;
 
   void set_pos(const Vec2i &npos);
   void clear() { data.clear(); }

@@ -18,10 +18,11 @@ add_library(imgui_glfw_gl3
         imgui/examples/imgui_impl_glfw.cpp
         imgui/examples/imgui_impl_opengl3.cpp
         imgui/misc/cpp/imgui_stdlib.cpp
+        implot/implot.cpp implot/implot_items.cpp
         fonts/IconsFontAwesome5.cpp
         fonts/IconsMaterialDesignIcons.cpp
         fonts/DroidSans.cpp)
-target_include_directories(imgui_glfw_gl3 SYSTEM PUBLIC imgui imgui/examples imgui/misc/cpp)
+target_include_directories(imgui_glfw_gl3 SYSTEM PUBLIC imgui imgui/examples imgui/misc/cpp implot)
 target_link_libraries(imgui_glfw_gl3 PUBLIC glad glfw OpenGL::GL)
 set_target_properties(imgui_glfw_gl3 PROPERTIES FOLDER libs)
 target_compile_definitions(imgui_glfw_gl3 PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")

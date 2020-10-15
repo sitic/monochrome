@@ -315,7 +315,7 @@ void RecordingWindow::display(Filters prefilter,
 
   // update traces
   if (playback.next_t() != playback.current_t()) {
-    for (auto &[trace, pos, color] : traces) {
+    for (auto &[trace, pos, color, scale] : traces) {
       auto [start, size] = Trace::clamp(pos, {Nx(), Ny()});
       if (size[0] > 0 && size[1] > 0) {
         auto block = arr->block(start[0], start[1], size[0], size[1]);
@@ -359,11 +359,11 @@ void RecordingWindow::display(Filters prefilter,
       trace_vert.push_back(x);
       trace_vert.push_back(y);
     };
-    for (auto &[trace, pos, color] : traces) {
-      coordtrans(pos);
-      trace_vert.push_back(color[0]);
-      trace_vert.push_back(color[1]);
-      trace_vert.push_back(color[2]);
+    for (auto &trace : traces) {
+      coordtrans(trace.pos);
+      trace_vert.push_back(trace.color[0]);
+      trace_vert.push_back(trace.color[1]);
+      trace_vert.push_back(trace.color[2]);
     }
 
     trace_shader.use();

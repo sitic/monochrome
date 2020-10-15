@@ -4,6 +4,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_stdlib.h"
+#include "implot.h"
 #include "globals.h"
 
 namespace global {
@@ -557,7 +558,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   }
 
   // Plot traces and show their controls
-  for (auto &[trace, pos, color] : rec->traces) {
+  for (auto &[trace, pos, color, scale] : rec->traces) {
     auto label = pos.to_string();
     ImGui::PushID(label.c_str());
     int size  = trace.size();
@@ -567,10 +568,24 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
       size = prm::trace_length;
     }
 
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.85f);
-    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(color[0], color[1], color[2], 1));
-    ImGui::PlotLines("", data, size, 0, NULL, FLT_MAX, FLT_MAX, ImVec2(0, 100));
-    ImGui::PopStyleColor(1);
+    scale.left  = trace.size() - prm::max_trace_length;
+    scale.right = trace.size();
+    scale.scale(data, data + size);
+    ImPlot::LinkNextPlotLimits(&scale.left, &scale.right, &scale.lower, &scale.upper);
+    //
+    //auto [min, max] = std::minmax_element(data, data + size);
+    //ImPlot::SetNextPlotLimitsY(*min, *max, ImGuiCond_Always);
+    ImPlot::SetNextLineStyle({color[0], color[1], color[2], color[3]});
+    ImPlot::BeginPlot("##trace", nullptr, nullptr,
+                      ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180), ImPlotFlags_AntiAliased,
+                      ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_NoTickLabels);
+    ImPlot::PlotLine("##ttrace", trace.data(), trace.size());
+    //ImPlot::PlotLine("##ttrace", &trace[0][0], &trace[0][1], trace.size(), 0, sizeof(Vec2f));
+    ImPlot::EndPlot();
+    //ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(color[0], color[1], color[2], 1));
+    //ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.85f);
+    //ImGui::PlotLines("", data, size, 0, NULL, FLT_MAX, FLT_MAX, ImVec2(0, 100));
+    //ImGui::PopStyleColor(1);
     ImGui::SameLine();
     ImGui::BeginGroup();
     ImGui::Text("%s", label.c_str());
