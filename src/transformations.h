@@ -79,7 +79,7 @@ namespace Transformation {
     float m_max_init = 0;
 
    public:
-    static int n_frame_diff;
+    static inline int n_frame_diff = 2;
 
     using Base::Base;
     FrameDiff(Recording &rec) : Base() { allocate(rec); }
@@ -125,8 +125,8 @@ namespace Transformation {
     using Base::Base;
     ContrastEnhancement(Recording &rec) : Base() { allocate(rec); }
 
-    static unsigned kernel_size;
-    static int maskVersion;
+    static inline unsigned kernel_size = 3;
+    static inline int maskVersion      = 0;
 
     void allocate(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
 
@@ -137,8 +137,8 @@ namespace Transformation {
 
   class GaussFilter : public Base {
    private:
-    static deriche_coeffs c;
-    static float sigma;
+    static inline deriche_coeffs c;
+    static inline float sigma = 1;
     Eigen::MatrixXf buffer;
 
    public:
@@ -166,7 +166,7 @@ namespace Transformation {
 
   class MeanFilter : public Base {
    public:
-    static unsigned kernel_size;
+    static inline unsigned kernel_size = 3;
 
     using Base::Base;
     MeanFilter(Recording &rec) : Base() { allocate(rec); }
@@ -182,7 +182,7 @@ namespace Transformation {
 
   class MedianFilter : public Base {
    public:
-    static unsigned kernel_size;
+    static inline unsigned kernel_size = 3;
 
     using Base::Base;
     MedianFilter(Recording &rec) : Base() { allocate(rec); }

@@ -2,8 +2,6 @@
 
 #include "filereader_formats.h"
 
-RotationCtrl Recording::rotations = {};
-
 void RotationCtrl::set_rotation(short rotation) {
   const std::array<short, 4> valid_rotations = {{0, 90, 180, 270}};
   if (std::none_of(valid_rotations.begin(), valid_rotations.end(),
@@ -130,6 +128,11 @@ std::shared_ptr<AbstractRecording> Recording::autoguess_filetype(const fs::path 
     global::new_ui_message(msg);
   }
 
+  return file;
+}
+
+std::shared_ptr<AbstractRecording> Recording::autoguess_filetype(const std::vector<fs::path> &paths) {
+  std::shared_ptr<AbstractRecording> file;
   return file;
 }
 

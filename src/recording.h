@@ -35,7 +35,7 @@ class Recording {
   std::shared_ptr<AbstractRecording> _file;
   long t_frame = 0;
 
-  static RotationCtrl rotations;
+  static inline RotationCtrl rotations = {};
 
   void apply_rotation() { rotations.apply(frame); }
 
@@ -54,6 +54,7 @@ class Recording {
   std::shared_ptr<Recording> copy() const { return std::make_shared<Recording>(_file); }
 
   static std::shared_ptr<AbstractRecording> autoguess_filetype(const fs::path &path);
+  static std::shared_ptr<AbstractRecording> autoguess_filetype(const std::vector<fs::path> &paths);
   std::shared_ptr<AbstractRecording> file() const { return _file; }
   void file(std::shared_ptr<AbstractRecording> new_file) { _file = new_file; }
 

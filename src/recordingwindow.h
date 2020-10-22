@@ -16,7 +16,7 @@ inline const char *OverlayMethodNames[4] = {"Linear",  "Diff",  "Positive",  "Ne
 
 class RecordingWindow : public Recording {
  public:
-  static float scale_fct;
+  static inline float scale_fct = 1;
 
   GLFWwindow *window    = nullptr;
   GLFWwindow *glcontext = nullptr;

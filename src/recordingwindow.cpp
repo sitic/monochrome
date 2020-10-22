@@ -15,10 +15,6 @@ namespace global {
   extern std::vector<SharedRecordingPtr> recordings;
 }  // namespace global
 
-float RecordingWindow::scale_fct = 1;
-int FlowData::skip               = 4;
-float FlowData::pointsize        = 1.5;
-
 namespace {
   SharedRecordingPtr rec_from_window_ptr(GLFWwindow *_window) {
     return *std::find_if(global::recordings.begin(), global::recordings.end(),

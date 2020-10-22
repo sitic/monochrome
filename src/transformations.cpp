@@ -1,13 +1,5 @@
 #include "transformations.h"
 
-float Transformation::GaussFilter::sigma = 1;
-deriche_coeffs Transformation::GaussFilter::c;
-unsigned Transformation::ContrastEnhancement::kernel_size = 3;
-unsigned Transformation::MeanFilter::kernel_size          = 3;
-unsigned Transformation::MedianFilter::kernel_size        = 3;
-int Transformation::ContrastEnhancement::maskVersion      = 0;
-int Transformation::FrameDiff::n_frame_diff               = 2;
-
 void Transformation::ContrastEnhancement::compute(const Eigen::MatrixXf &new_frame,
                                                   long new_frame_counter) {
   // Used fixed size versions for common variants
