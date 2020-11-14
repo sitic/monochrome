@@ -1,4 +1,4 @@
-from quickVidViewer import open_file, open_files, open
+from quickVidViewer import show_file, show_files, show
 import tempfile
 import numpy as np
 from pathlib import Path
@@ -13,7 +13,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
     tmpfile = str(tmpfile)
 
     paths = [tmpfile]
-    open_file(paths[0])
-    open_files(paths)
+    show_file(paths[0])
+    show_files(paths)
 
     sleep(2)

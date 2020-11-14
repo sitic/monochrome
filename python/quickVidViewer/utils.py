@@ -145,11 +145,11 @@ def create_array3datau16_msg(array, idx=0):
     return buf
 
 
-def open_file(filepath: Union[Text, Path]):
-    open_files([filepath])
+def show_file(filepath: Union[Text, Path]):
+    show_files([filepath])
 
 
-def open_files(paths: List[Union[Text, Path]]):
+def show_files(paths: List[Union[Text, Path]]):
     paths = [Path(path) for path in paths]
     if not all([path.exists() for path in paths]):
         raise FileNotFoundError(f"One of more files of {paths} do not exist")
@@ -163,7 +163,7 @@ def open_files(paths: List[Union[Text, Path]]):
     s.sendall(buf)
 
 
-def open_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
+def show_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
                comment: Text = "", bitrange: BitRange = BitRange.AUTODETECT, cmap: ColorMap = ColorMap.DEFAULT,
                parentName: Optional[Text] = None, transfer_fct: Optional[TransferFunction] = None,
                metaData: Optional[Dict] = None):
@@ -207,11 +207,11 @@ def open_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, 
         s.sendall(buf)
 
 
-def open_layer(array: np.ndarray, parentName: Text, name: Text = "", **kwargs):
-    open_array(array, parentName=parentName, name=name, **kwargs)
+def show_layer(array: np.ndarray, parentName: Text, name: Text = "", **kwargs):
+    show_array(array, parentName=parentName, name=name, **kwargs)
 
 
-def open_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text = ""):
+def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text = ""):
     if flow_uv.ndim != 4:
         raise ValueError("array is not four-dimensional")
     if flow_uv.dtype != np.float32:
@@ -238,10 +238,10 @@ def open_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
         s.sendall(buf)
 
 
-def open(array_or_path: Union[str, np.ndarray], *args, **kwargs):
+def show(array_or_path: Union[str, np.ndarray], *args, **kwargs):
     if isinstance(array_or_path, np.ndarray):
-        return open_array(array_or_path, *args, **kwargs)
+        return show_array(array_or_path, *args, **kwargs)
     elif isinstance(array_or_path, str):
-        return open_file(array_or_path)
+        return show_file(array_or_path)
     else:
         raise ValueError("array_or_path has to be numpy array or string")

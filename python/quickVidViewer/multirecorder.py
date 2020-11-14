@@ -6,7 +6,8 @@ from datetime import datetime
 import locale
 from pathlib import Path
 
-from .utils import open_array
+from .utils import show_array, show_layer
+
 
 class MultRecDatImport():
     def __init__(self, filename, use8BitMode=False, readNFrames=0, skipNFrames=0, cropTop=0, cropLeft=0, cropWidth=0,
@@ -72,10 +73,10 @@ class MultRecDatImport():
         self.import_file()
 
     def show(self):
-        open_array(self.data, str(self.filename), fps=self.framerate, comment=self.comment, date=str(self.starttime))
+        show_array(self.data, str(self.filename), fps=self.framerate, comment=self.comment, date=str(self.starttime))
 
-    def show_layer(self, arr, name=""):
-        open_array(arr, parentName=self.filename.name, name=name)
+    def show_layer(self, arr, name="", **kwargs):
+        show_layer(arr, self.filename.name, name=name, **kwargs)
 
     def bin_array(self, arr, bin_sizes):
         arr = np.asarray(arr)
