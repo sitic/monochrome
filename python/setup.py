@@ -9,5 +9,5 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     packages=setuptools.find_packages(),
-    install_requires=['numpy', 'flatbuffers'],
+    install_requires=['numpy', 'flatbuffers>=1.12'],
 )
