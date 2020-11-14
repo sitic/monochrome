@@ -236,3 +236,12 @@ def open_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
         end = length if idx + max_size > length else idx + max_size
         buf = create_array3dataf_msg(flat[idx:end], idx)
         s.sendall(buf)
+
+
+def open(array_or_path: Union[str, np.ndarray], *args, **kwargs):
+    if isinstance(array_or_path, np.ndarray):
+        return open_array(array_or_path, *args, **kwargs)
+    elif isinstance(array_or_path, str):
+        return open_file(array_or_path)
+    else:
+        raise ValueError("array_or_path has to be numpy array or string")
