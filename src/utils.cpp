@@ -1,11 +1,12 @@
 #include <fstream>
 
 #include <lodepng/lodepng.h>
-
-#include "fonts/MultiRecorderVideo.h"
+#include <cmrc/cmrc.hpp>
 
 #include "utils.h"
 #include "globals.h"
+
+CMRC_DECLARE(rc);
 
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__)
 #include <unistd.h>
@@ -84,12 +85,16 @@ void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {
 }
 
 void add_window_icon(GLFWwindow* window) {
+  auto fs       = cmrc::rc::get_filesystem();
+  auto icondata = fs.open("vendor/MultiRecorderVideo.png");
   unsigned icon_width, icon_height;
   std::vector<unsigned char> icon_image;
   auto error = lodepng::decode(icon_image, icon_width, icon_height,
-                               reinterpret_cast<const unsigned char*>(icons::multirecvideopng_data),
-                               icons::multirecvideopng_size);
-  if (error) fmt::print("lodepng error {}: {}\n", error, lodepng_error_text(error));
+                               std::vector<unsigned char>(icondata.begin(), icondata.end()));
+  if (error) {
+    fmt::print("lodepng error {}: {}\n", error, lodepng_error_text(error));
+    return;
+  }
   GLFWimage glfwicon = {static_cast<int>(icon_width), static_cast<int>(icon_height),
                         icon_image.data()};
   glfwSetWindowIcon(window, 1, &glfwicon);
