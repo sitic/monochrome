@@ -161,7 +161,7 @@ void display_loop() {
     ImGui::NewFrame();
 
     // Sleep until we need to wake up for desired framerate
-    double time_per_frame = 1.0 / prm::max_display_fps;
+    double time_per_frame = 1.0 / prm::display_fps;
     prm::lastframetime += time_per_frame;
     std::chrono::duration<double> sleep_duration(prm::lastframetime - glfwGetTime());
     if (sleep_duration.count() < -100 * time_per_frame &&

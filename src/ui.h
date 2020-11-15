@@ -26,8 +26,9 @@ namespace prm {
   int main_window_width     = 0;
   int main_window_multipier = 1;
   int main_window_height    = 0;
-  int max_trace_length      = 200;
-  int max_display_fps       = 60;
+  int trace_length          = 200;
+  int max_trace_length      = 2000;
+  int display_fps           = 60;
   double lastframetime      = 0;
 
   Filters prefilter              = Filters::None;
@@ -136,17 +137,17 @@ void show_main_ui() {
     }
 
     ImGui::NextColumn();
-    { ImGui::SliderInt("Trace Length", &prm::max_trace_length, 10, 1000); }
+    { ImGui::SliderInt("Trace Length", &prm::trace_length, 10, prm::max_trace_length); }
 
     ImGui::NextColumn();
     {
-      int max_display_fps = prm::max_display_fps;
+      int max_display_fps = prm::display_fps;
       auto label = fmt::format("Max FPS (current avg. {:.0f}fps)###dfps", ImGui::GetIO().Framerate);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
       if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
         if (ImGui::IsItemDeactivated() && max_display_fps > 0) {
-          prm::max_display_fps = max_display_fps;
-          prm::lastframetime   = glfwGetTime();
+          prm::display_fps   = max_display_fps;
+          prm::lastframetime = glfwGetTime();
         }
       }
     }
@@ -561,9 +562,9 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::PushID(label.c_str());
     int size  = trace.size();
     auto data = trace.data();
-    if (size > prm::max_trace_length) {
-      data += (size - prm::max_trace_length);
-      size = prm::max_trace_length;
+    if (size > prm::trace_length) {
+      data += (size - prm::trace_length);
+      size = prm::trace_length;
     }
 
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.85f);

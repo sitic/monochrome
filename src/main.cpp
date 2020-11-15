@@ -31,9 +31,10 @@ int main(int argc, char **argv) {
   app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
   app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
   app.add_option("--font-scale", font_scale, "Fonts scaling factor");
+  app.add_option("--trace_length", prm::trace_length, "Default length (in frames) for traces");
   app.add_option("--max_trace_length", prm::max_trace_length,
-                 "Default length (in frames) for traces");
-  app.add_option("--max_display_fps", prm::max_display_fps, "Default display framerate");
+                 "Maximum length (in frames) for traces");
+  app.add_option("--display_fps", prm::display_fps, "Default display framerate");
   app.add_flag(
       "--disable-ipc", disable_ipc,
       "Disable the TCP server which is used for interprocess-communication with python clients");
