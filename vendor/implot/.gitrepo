@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/epezent/implot.git
 	branch = master
-	commit = da5b4ab8d36d97c0845fa4b0c2b5f62268582bf8
-	parent = e79cb4ac1429a88a417614f44594d9a5a9a2b8a3
+	commit = 95eb2ea78dff93197c233f95ee394b9ba32b34c1
+	parent = d8e7867d791be3e4d0e0ef94ac4225500d8f4db3
 	method = merge
 	cmdver = 0.4.1
