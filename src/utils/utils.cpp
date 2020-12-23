@@ -33,22 +33,6 @@ std::string config_file_path() {
 #endif
 }
 
-std::vector<std::string> split_string(std::string_view input, std::string_view delims) {
-  std::vector<std::string> output;
-  size_t first = 0;
-
-  while (first < input.size()) {
-    const auto second = input.find_first_of(delims, first);
-
-    if (first != second) output.emplace_back(input.substr(first, second - first));
-
-    if (second == std::string_view::npos) break;
-
-    first = second + 1;
-  }
-
-  return output;
-}
 std::string file_to_string(std::string filepath) {
   std::ifstream t(filepath);
   std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());

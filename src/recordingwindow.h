@@ -6,7 +6,7 @@
 #include <variant>
 
 #include "recordingwindow_helpers.h"
-#include "colormap.h"
+#include "utils/colormap.h"
 
 class RecordingWindow;
 using SharedRecordingPtr = std::shared_ptr<RecordingWindow>;
@@ -37,8 +37,8 @@ class RecordingWindow : public Recording {
     std::string comment;
   } comment_edit_ui;
 
-  RecordingWindow(const fs::path &path) : RecordingWindow(autoguess_filetype(path)){};
-  RecordingWindow(std::shared_ptr<AbstractRecording> file_);
+  RecordingWindow(const fs::path &path) : RecordingWindow(file_factory(path)){};
+  RecordingWindow(std::shared_ptr<AbstractFile> file_);
 
   virtual ~RecordingWindow() {
     if (window != nullptr) {

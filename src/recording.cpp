@@ -1,6 +1,5 @@
+#include <fstream>
 #include "recording.h"
-
-#include "filereader_formats.h"
 
 void RotationCtrl::set_rotation(short rotation) {
   const std::array<short, 4> valid_rotations = {{0, 90, 180, 270}};
@@ -102,40 +101,6 @@ std::pair<float, float> RotationCtrl::flow_signs() {
   return {signx, signy};
 }
 
-std::shared_ptr<AbstractRecording> Recording::autoguess_filetype(const fs::path &path) {
-  std::shared_ptr<AbstractRecording> file;
-  if (!fs::is_regular_file(path)) {
-    global::new_ui_message("ERROR: {} does not appear to be a file", path.string());
-    return file;
-  }
-
-  if (path.extension() == ".npy") {
-    file = std::make_shared<NpyFileRecording>(path);
-  } else if (path.extension() == ".dat") {
-    file = std::make_shared<RawFileRecording>(path);
-    if (!file->good()) {
-      file = std::make_shared<BmpFileRecording>(path);
-    }
-  } else {
-    global::new_ui_message("ERROR: {} does has unknown extension. Only .dat and .npy are supported",
-                           path.string());
-    return file;
-  }
-
-  if (file && !file->error_msg().empty()) {
-    auto msg = fmt::format("ERROR: loading file {} has failed with error message: {}", path.string(),
-                           file->error_msg());
-    global::new_ui_message(msg);
-  }
-
-  return file;
-}
-
-std::shared_ptr<AbstractRecording> Recording::autoguess_filetype(const std::vector<fs::path> &paths) {
-  std::shared_ptr<AbstractRecording> file;
-  return file;
-}
-
 void Recording::load_frame(long t) {
   frame   = _file->read_frame(t);
   t_frame = t;
@@ -160,12 +125,11 @@ bool Recording::export_ROI(
   std::ofstream out(path.string(), std::ios::out | std::ios::binary);
   // write file header if necessary
   if (exportType == ExportFileType::Npy) {
-    bool fortran_order    = npy::big_endian;  // compile-time test for byte order
-    npy::dtype_t dtype    = npy::has_typestring<float>::dtype;
-    npy::ndarray_len_t nt = (t0tmax[1] - t0tmax[0]);
-    npy::ndarray_len_t nx = size[0], ny = size[1];
-    npy::header_t header{dtype, fortran_order, {nt, ny, nx}};
-    npy::write_header(out, header);
+    unsigned long nt = t0tmax[1] - t0tmax[0];  // t0tmax[1] > t0tmax[0] guaranteed
+    unsigned long ny = size[1];
+    unsigned long nx = size[0];
+    auto header = create_npy_fileheader_float({nt, ny, nx});
+    out << header;
   }
 
   auto cur_frame = t_frame;

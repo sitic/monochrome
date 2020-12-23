@@ -5,6 +5,7 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_stdlib.h"
 #include "implot.h"
+#include "utils/plot_utils.h"
 #include "globals.h"
 
 namespace global {
@@ -222,7 +223,7 @@ void show_main_ui() {
     if (selectable("Frame Difference", Transformations::FrameDiff)) {
       ImGui::Indent(10);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
-      ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 20);
+      ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 100);
       if (ImGui::Button("Add As Overlays")) {
         std::vector<std::pair<SharedRecordingPtr, SharedRecordingPtr>> new_recordings;
         for (auto rec : global::recordings) {
@@ -339,7 +340,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   if (!rec->date().empty()) ImGui::TextWrapped("Date: %s", rec->date().c_str());
   if (!rec->comment().empty()) {
     ImGui::TextWrapped("Comment: %s", rec->comment().c_str());
-    if (rec->file()->capabilities()[RecordingCapabilities::SET_COMMENT]) {
+    if (rec->file()->capabilities()[FileCapabilities::SET_COMMENT]) {
       ImGui::SameLine();
       if (ImGui::SmallButton(ICON_FA_EDIT)) {
         rec->comment_edit_ui.comment = rec->comment();
@@ -415,7 +416,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
           if (ImGui::Selectable(l.c_str())) {
             global::merge_queue.push({rec, r, false});
           }
-          if (rec->file()->capabilities()[RecordingCapabilities::SET_FLOW]) {
+          if (rec->file()->capabilities()[FileCapabilities::AS_FLOW]) {
             auto l2 = l + " as flow"s;
             if (ImGui::Selectable(l2.c_str())) {
               global::merge_queue.push({rec, r, true});
@@ -428,10 +429,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   } else {
     if (ImGui::Button(ICON_FA_TRASH_ALT)) {
       rec->set_context(nullptr);
-      parent->children.erase(
-          std::remove_if(parent->children.begin(), parent->children.end(),
-                         [child = rec.get()](const auto &r) { return r.get() == child; }),
-          parent->children.end());
+      // Child will be deleted later, after we have left the loop over all children.
       ImGui::Columns(1);
       ImGui::PopID();
       return rec_nr;
@@ -561,37 +559,38 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   for (auto &[trace, pos, color, scale] : rec->traces) {
     auto label = pos.to_string();
     ImGui::PushID(label.c_str());
-    int size  = trace.size();
-    auto data = trace.data();
-    if (size > prm::trace_length) {
-      data += (size - prm::trace_length);
-      size = prm::trace_length;
-    }
+    int size = trace.size();
+    if (size > 2) {
+      auto data = trace.data();
+      if (size > prm::trace_length) {
+        data += (size - prm::trace_length);
+        size = prm::trace_length;
+      }
 
-    scale.left  = trace.size() - prm::max_trace_length;
-    scale.right = trace.size();
-    scale.scale(data, data + size);
-    ImPlot::LinkNextPlotLimits(&scale.left, &scale.right, &scale.lower, &scale.upper);
-    //
-    //auto [min, max] = std::minmax_element(data, data + size);
-    //ImPlot::SetNextPlotLimitsY(*min, *max, ImGuiCond_Always);
-    ImPlot::SetNextLineStyle({color[0], color[1], color[2], color[3]});
-    ImPlot::BeginPlot("##trace", nullptr, nullptr,
-                      ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180), ImPlotFlags_AntiAliased,
-                      ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_NoTickLabels);
-    ImPlot::PlotLine("##ttrace", trace.data(), trace.size());
-    //ImPlot::PlotLine("##ttrace", &trace[0][0], &trace[0][1], trace.size(), 0, sizeof(Vec2f));
-    ImPlot::EndPlot();
-    //ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(color[0], color[1], color[2], 1));
-    //ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.85f);
-    //ImGui::PlotLines("", data, size, 0, NULL, FLT_MAX, FLT_MAX, ImVec2(0, 100));
-    //ImGui::PopStyleColor(1);
-    ImGui::SameLine();
+      scale.left  = data - trace.data();
+      scale.right = trace.size();
+      scale.scale(data, data + size);
+      ImPlot::LinkNextPlotLimits(
+          scale.scaleX ? &scale.left : nullptr, scale.scaleX ? &scale.right : nullptr,
+          scale.scaleY ? &scale.lower : nullptr, scale.scaleY ? &scale.upper : nullptr);
+      auto ptitle = "###trace" + label;
+      ImPlot::BeginPlot(
+          ptitle.c_str(), nullptr, nullptr, ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
+          ImPlotFlags_AntiAliased, ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_NoTickLabels);
+      ImPlot::SetNextLineStyle({color[0], color[1], color[2], color[3]});
+      auto title = "###ttrace" + label;
+      ImPlot::PlotLine(title.c_str(), trace.data(), trace.size());
+      ImPlotUtils::draw_liney(scale.restarts);
+      ImPlot::EndPlot();
+      ImGui::SameLine();
+    }
     ImGui::BeginGroup();
     ImGui::Text("%s", label.c_str());
     ImGui::SameLine();
     ImGui::ColorEdit3(label.c_str(), color.data(),
                       ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+    ImGui::Checkbox("Scale X", &scale.scaleX);
+    ImGui::Checkbox("Scale Y", &scale.scaleY);
     if (ImGui::Button("Reset")) {
       trace.clear();
     }
@@ -619,6 +618,11 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   for (const auto &crec : rec->children) {
     rec_nr = show_recording_ui(crec, rec_nr, rec.get());
   }
+  // Actually delete children which have been selected for deletionq
+  rec->children.erase(
+      std::remove_if(rec->children.begin(), rec->children.end(),
+                     [](const auto &r) { return r->glcontext == r->window; }),
+      rec->children.end());
   if (!parent) {
     ImGui::End();
   }

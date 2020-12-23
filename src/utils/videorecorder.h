@@ -16,7 +16,7 @@ inline void pclose(FILE *file) {
 #include <string>
 #include <vector>
 
-#include "utils.h"
+#include "utils/utils.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

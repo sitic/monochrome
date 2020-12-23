@@ -71,10 +71,16 @@ endif ()
 file(GLOB SHADERS "src/shaders/*.glsl")
 cmrc_add_resource_library(quickVidViewer-resources ALIAS qvv::rc NAMESPACE rc ${SHADERS} "vendor/MultiRecorderVideo.png")
 
-add_executable(quickVidViewer src/main.cpp src/utils.h src/bmp.h src/recording.h src/vectors.h src/filereader.h src/videorecorder.h src/recordingwindow.h src/transformations.h src/main_window.h src/globals.cpp src/globals.h src/ipc.h src/globals.cpp src/globals.h src/ipc.cpp src/recordingwindow.cpp src/utils.cpp src/transformations.cpp src/filereader_formats.h src/recording.cpp src/ui.h src/colormap.cpp src/colormap.h src/iterators.h src/recordingwindow_helpers.cpp src/recordingwindow_helpers.h)
+add_executable(quickVidViewer src/main.cpp src/utils/utils.h src/fileformats/BmpFileParser.h src/recording.h src/utils/vectors.h
+        src/utils/videorecorder.h src/recordingwindow.h src/transformations.h src/main_window.h src/globals.cpp src/globals.h
+        src/ipc.h src/globals.cpp src/globals.h src/ipc.cpp src/recordingwindow.cpp src/utils/utils.cpp src/transformations.cpp
+        src/recording.cpp src/ui.h src/utils/colormap.cpp src/utils/colormap.h src/utils/iterators.h src/recordingwindow_helpers.cpp
+        src/recordingwindow_helpers.h src/fileformats/AbstractFile.h src/fileformats/all_formats.h
+        src/fileformats/all_formats.cpp src/utils/definitions.h src/utils/plot_utils.h)
 target_link_libraries(quickVidViewer PRIVATE
         CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy
         pugixml flagset qvv::rc)
+target_include_directories(quickVidViewer PRIVATE src)
 if (QVV_FORCE_TCP_IPC)
     target_compile_definitions(quickVidViewer PRIVATE "-DQVV_FORCE_TCP_IPC")
 endif ()

@@ -4,6 +4,7 @@
 #include "readerwriterqueue.h"
 
 #include "globals.h"
+//#include "fileformats/InMemoryFile.h"
 
 namespace {
   moodycamel::ReaderWriterQueue<std::string> files_to_load(3);
@@ -37,5 +38,15 @@ namespace global {
     std::shared_ptr<global::RawArray3> tmp;
     return array3_to_load.try_dequeue(tmp) ? std::optional<std::shared_ptr<global::RawArray3>>(tmp)
                                            : std::nullopt;
+  }
+
+  void close_window(const std::string& recording_name) {
+
+  }
+  void close_all_windows() {
+
+  }
+  std::vector<std::pair<std::string, std::vector<Vec2i>>> get_trace_pos() {
+    return {};
   }
 }  // namespace global

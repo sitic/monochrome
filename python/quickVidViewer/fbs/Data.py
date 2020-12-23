@@ -9,4 +9,5 @@ class Data(object):
     Array3MetaFlow = 3
     Array3DataChunkf = 4
     Array3DataChunku16 = 5
+    Request = 6
 

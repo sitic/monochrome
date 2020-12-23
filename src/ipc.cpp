@@ -1,6 +1,7 @@
 #include <thread>
 #include <utility>
 
+#include <GLFW/glfw3.h>
 #include <fmt/format.h>
 
 #include <asio/read.hpp>
@@ -115,6 +116,9 @@ namespace {
             break;
           case fbs::Data_Array3DataChunku16:
             handle_datachunk_message(root->data_as_Array3DataChunku16());
+            break;
+          case fbs::Data_Request:
+            handle_datachunk_message(root->data_as_Request());
             break;
           default:
             throw std::runtime_error("Unknown message body type");
@@ -239,6 +243,21 @@ namespace {
         fmt::print("Loading of {} complete!\n", array_msg_.array->meta.name);
         global::add_RawArray3_to_load(array_msg_.array);
         array_msg_.clear();
+      }
+    }
+
+    void handle_datachunk_message(const fbs::Request* raw) {
+      if (!raw) {
+        fmt::print("Error parsing flatbuffer\n");
+        return;
+      }
+      auto type = raw->type();
+      if (type == fbs::RequestType::RequestType_CLOSE) {
+        auto recording_name = raw->arg()->str();
+      } else if (type == fbs::RequestType::RequestType_CLOSE_ALL) {
+
+      } else if (type == fbs::RequestType_TRACE_POS) {
+        auto recording_name = raw->arg()->str();
       }
     }
 

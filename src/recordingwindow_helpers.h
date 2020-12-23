@@ -5,7 +5,7 @@
 
 #include "recording.h"
 #include "transformations.h"
-#include "videorecorder.h"
+#include "utils/videorecorder.h"
 
 struct PlaybackCtrl;
 namespace prm {
@@ -126,6 +126,8 @@ struct ExportCtrl {
 };
 
 class SmoothScaler {
+  inline static const float autoScaleFrequency = 20;
+
   void smooth_scale(const float &min_value, const float &max_value) {
     // prepare a smooth transition, do not smooth if diff is small.
     double smooth       = (upper - lower) / 20;
@@ -141,12 +143,13 @@ class SmoothScaler {
   }
 
  public:
+  std::vector<int> restarts = {};
+  bool scaleX  = true;
+  bool scaleY  = true;
   double lower = 0;
   double upper = 0;
   double left  = 0;
   double right = 0;
-  //static float autoScaleFrequency;
-  float autoScaleFrequency = 20;
 
   SmoothScaler() = default;
 
@@ -201,8 +204,8 @@ class FlowData {
  public:
   std::shared_ptr<Recording> data;
   Vec4f color;
-  bool show = true;
-  static inline int skip = 2;
+  bool show                     = true;
+  static inline int skip        = 2;
   static inline float pointsize = 1.5;
 
   FlowData(std::shared_ptr<Recording> data_, unsigned color_count)

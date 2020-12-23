@@ -2,9 +2,9 @@
 
 #include <utility>
 
-#include "filereader.h"
-#include "utils.h"
-#include "vectors.h"
+#include "utils/utils.h"
+#include "utils/vectors.h"
+#include "fileformats/all_formats.h"
 
 using namespace std::string_literals;
 
@@ -32,7 +32,7 @@ struct RotationCtrl {
 
 class Recording {
  protected:
-  std::shared_ptr<AbstractRecording> _file;
+  std::shared_ptr<AbstractFile> _file;
   long t_frame = 0;
 
   static inline RotationCtrl rotations = {};
@@ -42,8 +42,8 @@ class Recording {
  public:
   Eigen::MatrixXf frame;
 
-  Recording(const fs::path &path) : Recording(autoguess_filetype(path)){};
-  Recording(std::shared_ptr<AbstractRecording> _file) : _file(std::move(_file)) {
+  Recording(const fs::path &path) : Recording(file_factory(path)){};
+  Recording(std::shared_ptr<AbstractFile> _file) : _file(std::move(_file)) {
     if (!_file || !_file->good()) {
       return;
     }
@@ -53,10 +53,8 @@ class Recording {
   }
   std::shared_ptr<Recording> copy() const { return std::make_shared<Recording>(_file); }
 
-  static std::shared_ptr<AbstractRecording> autoguess_filetype(const fs::path &path);
-  static std::shared_ptr<AbstractRecording> autoguess_filetype(const std::vector<fs::path> &paths);
-  std::shared_ptr<AbstractRecording> file() const { return _file; }
-  void file(std::shared_ptr<AbstractRecording> new_file) { _file = new_file; }
+  std::shared_ptr<AbstractFile> file() const { return _file; }
+  void file(std::shared_ptr<AbstractFile> new_file) { _file = new_file; }
 
   [[nodiscard]] bool good() const { return _file && _file->good(); }
   int Nx() const { return frame.rows(); }

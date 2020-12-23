@@ -27,7 +27,7 @@ namespace global {
   std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
 }  // namespace global
 
-void load_new_file(std::shared_ptr<AbstractRecording> file,
+void load_new_file(std::shared_ptr<AbstractFile> file,
                    std::optional<std::string> parentName = std::nullopt) {
   if (!file || !file->good()) return;
   auto findParent = [](const std::string &parent_name) {
@@ -87,8 +87,7 @@ void load_new_file(std::shared_ptr<AbstractRecording> file,
 
 void load_new_file(const fs::path &path) {
   fmt::print("Loading {} ...\n", path.string());
-  auto file = Recording::autoguess_filetype(path);
-  load_new_file(file);
+  load_new_file(file_factory(path));
 }
 
 void load_from_queue() {
@@ -96,7 +95,7 @@ void load_from_queue() {
     load_new_file(filepath.value());
   }
   if (auto arr = global::get_rawarray3_to_load()) {
-    auto file = std::make_shared<InMemoryRecording>(arr.value());
+    auto file = std::make_shared<InMemoryFile>(arr.value());
     load_new_file(file, arr.value()->meta.parentName);
   }
   if (!global::merge_queue.empty()) {

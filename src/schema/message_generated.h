@@ -26,6 +26,15 @@ struct Array3DataChunku16Builder;
 struct Filepaths;
 struct FilepathsBuilder;
 
+struct Request;
+struct RequestBuilder;
+
+struct RecordingTracePos;
+struct RecordingTracePosBuilder;
+
+struct ResponseTracePos;
+struct ResponseTracePosBuilder;
+
 struct Root;
 struct RootBuilder;
 
@@ -188,6 +197,39 @@ inline const char *EnumNameTransferFunction(TransferFunction e) {
   return EnumNamesTransferFunction()[index];
 }
 
+enum RequestType {
+  RequestType_CLOSE = 0,
+  RequestType_CLOSE_ALL = 1,
+  RequestType_TRACE_POS = 2,
+  RequestType_MIN = RequestType_CLOSE,
+  RequestType_MAX = RequestType_TRACE_POS
+};
+
+inline const RequestType (&EnumValuesRequestType())[3] {
+  static const RequestType values[] = {
+    RequestType_CLOSE,
+    RequestType_CLOSE_ALL,
+    RequestType_TRACE_POS
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesRequestType() {
+  static const char * const names[4] = {
+    "CLOSE",
+    "CLOSE_ALL",
+    "TRACE_POS",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameRequestType(RequestType e) {
+  if (flatbuffers::IsOutRange(e, RequestType_CLOSE, RequestType_TRACE_POS)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesRequestType()[index];
+}
+
 enum Data {
   Data_NONE = 0,
   Data_Filepaths = 1,
@@ -195,37 +237,40 @@ enum Data {
   Data_Array3MetaFlow = 3,
   Data_Array3DataChunkf = 4,
   Data_Array3DataChunku16 = 5,
+  Data_Request = 6,
   Data_MIN = Data_NONE,
-  Data_MAX = Data_Array3DataChunku16
+  Data_MAX = Data_Request
 };
 
-inline const Data (&EnumValuesData())[6] {
+inline const Data (&EnumValuesData())[7] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
     Data_Array3Meta,
     Data_Array3MetaFlow,
     Data_Array3DataChunkf,
-    Data_Array3DataChunku16
+    Data_Array3DataChunku16,
+    Data_Request
   };
   return values;
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[7] = {
+  static const char * const names[8] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
     "Array3MetaFlow",
     "Array3DataChunkf",
     "Array3DataChunku16",
+    "Request",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameData(Data e) {
-  if (flatbuffers::IsOutRange(e, Data_NONE, Data_Array3DataChunku16)) return "";
+  if (flatbuffers::IsOutRange(e, Data_NONE, Data_Request)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesData()[index];
 }
@@ -252,6 +297,10 @@ template<> struct DataTraits<fbs::Array3DataChunkf> {
 
 template<> struct DataTraits<fbs::Array3DataChunku16> {
   static const Data enum_value = Data_Array3DataChunku16;
+};
+
+template<> struct DataTraits<fbs::Request> {
+  static const Data enum_value = Data_Request;
 };
 
 bool VerifyData(flatbuffers::Verifier &verifier, const void *obj, Data type);
@@ -823,6 +872,203 @@ inline flatbuffers::Offset<Filepaths> CreateFilepathsDirect(
       file__);
 }
 
+struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef RequestBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_TYPE = 4,
+    VT_ARG = 6
+  };
+  fbs::RequestType type() const {
+    return static_cast<fbs::RequestType>(GetField<int32_t>(VT_TYPE, 0));
+  }
+  const flatbuffers::String *arg() const {
+    return GetPointer<const flatbuffers::String *>(VT_ARG);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_TYPE) &&
+           VerifyOffset(verifier, VT_ARG) &&
+           verifier.VerifyString(arg()) &&
+           verifier.EndTable();
+  }
+};
+
+struct RequestBuilder {
+  typedef Request Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_type(fbs::RequestType type) {
+    fbb_.AddElement<int32_t>(Request::VT_TYPE, static_cast<int32_t>(type), 0);
+  }
+  void add_arg(flatbuffers::Offset<flatbuffers::String> arg) {
+    fbb_.AddOffset(Request::VT_ARG, arg);
+  }
+  explicit RequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  RequestBuilder &operator=(const RequestBuilder &);
+  flatbuffers::Offset<Request> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Request>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Request> CreateRequest(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    fbs::RequestType type = fbs::RequestType_CLOSE,
+    flatbuffers::Offset<flatbuffers::String> arg = 0) {
+  RequestBuilder builder_(_fbb);
+  builder_.add_arg(arg);
+  builder_.add_type(type);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Request> CreateRequestDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    fbs::RequestType type = fbs::RequestType_CLOSE,
+    const char *arg = nullptr) {
+  auto arg__ = arg ? _fbb.CreateString(arg) : 0;
+  return fbs::CreateRequest(
+      _fbb,
+      type,
+      arg__);
+}
+
+struct RecordingTracePos FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef RecordingTracePosBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NAME = 4,
+    VT_POSX = 6,
+    VT_POSY = 8
+  };
+  const flatbuffers::String *name() const {
+    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  }
+  const flatbuffers::Vector<uint32_t> *posx() const {
+    return GetPointer<const flatbuffers::Vector<uint32_t> *>(VT_POSX);
+  }
+  const flatbuffers::Vector<uint32_t> *posy() const {
+    return GetPointer<const flatbuffers::Vector<uint32_t> *>(VT_POSY);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffset(verifier, VT_POSX) &&
+           verifier.VerifyVector(posx()) &&
+           VerifyOffset(verifier, VT_POSY) &&
+           verifier.VerifyVector(posy()) &&
+           verifier.EndTable();
+  }
+};
+
+struct RecordingTracePosBuilder {
+  typedef RecordingTracePos Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+    fbb_.AddOffset(RecordingTracePos::VT_NAME, name);
+  }
+  void add_posx(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> posx) {
+    fbb_.AddOffset(RecordingTracePos::VT_POSX, posx);
+  }
+  void add_posy(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> posy) {
+    fbb_.AddOffset(RecordingTracePos::VT_POSY, posy);
+  }
+  explicit RecordingTracePosBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  RecordingTracePosBuilder &operator=(const RecordingTracePosBuilder &);
+  flatbuffers::Offset<RecordingTracePos> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<RecordingTracePos>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<RecordingTracePos> CreateRecordingTracePos(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::String> name = 0,
+    flatbuffers::Offset<flatbuffers::Vector<uint32_t>> posx = 0,
+    flatbuffers::Offset<flatbuffers::Vector<uint32_t>> posy = 0) {
+  RecordingTracePosBuilder builder_(_fbb);
+  builder_.add_posy(posy);
+  builder_.add_posx(posx);
+  builder_.add_name(name);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<RecordingTracePos> CreateRecordingTracePosDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const char *name = nullptr,
+    const std::vector<uint32_t> *posx = nullptr,
+    const std::vector<uint32_t> *posy = nullptr) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto posx__ = posx ? _fbb.CreateVector<uint32_t>(*posx) : 0;
+  auto posy__ = posy ? _fbb.CreateVector<uint32_t>(*posy) : 0;
+  return fbs::CreateRecordingTracePos(
+      _fbb,
+      name__,
+      posx__,
+      posy__);
+}
+
+struct ResponseTracePos FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef ResponseTracePosBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_RECORDINGS = 4
+  };
+  const flatbuffers::Vector<flatbuffers::Offset<fbs::RecordingTracePos>> *recordings() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<fbs::RecordingTracePos>> *>(VT_RECORDINGS);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_RECORDINGS) &&
+           verifier.VerifyVector(recordings()) &&
+           verifier.VerifyVectorOfTables(recordings()) &&
+           verifier.EndTable();
+  }
+};
+
+struct ResponseTracePosBuilder {
+  typedef ResponseTracePos Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_recordings(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<fbs::RecordingTracePos>>> recordings) {
+    fbb_.AddOffset(ResponseTracePos::VT_RECORDINGS, recordings);
+  }
+  explicit ResponseTracePosBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ResponseTracePosBuilder &operator=(const ResponseTracePosBuilder &);
+  flatbuffers::Offset<ResponseTracePos> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<ResponseTracePos>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<ResponseTracePos> CreateResponseTracePos(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<fbs::RecordingTracePos>>> recordings = 0) {
+  ResponseTracePosBuilder builder_(_fbb);
+  builder_.add_recordings(recordings);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<ResponseTracePos> CreateResponseTracePosDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<flatbuffers::Offset<fbs::RecordingTracePos>> *recordings = nullptr) {
+  auto recordings__ = recordings ? _fbb.CreateVector<flatbuffers::Offset<fbs::RecordingTracePos>>(*recordings) : 0;
+  return fbs::CreateResponseTracePos(
+      _fbb,
+      recordings__);
+}
+
 struct Root FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   typedef RootBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -851,6 +1097,9 @@ struct Root FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const fbs::Array3DataChunku16 *data_as_Array3DataChunku16() const {
     return data_type() == fbs::Data_Array3DataChunku16 ? static_cast<const fbs::Array3DataChunku16 *>(data()) : nullptr;
   }
+  const fbs::Request *data_as_Request() const {
+    return data_type() == fbs::Data_Request ? static_cast<const fbs::Request *>(data()) : nullptr;
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_DATA_TYPE) &&
@@ -878,6 +1127,10 @@ template<> inline const fbs::Array3DataChunkf *Root::data_as<fbs::Array3DataChun
 
 template<> inline const fbs::Array3DataChunku16 *Root::data_as<fbs::Array3DataChunku16>() const {
   return data_as_Array3DataChunku16();
+}
+
+template<> inline const fbs::Request *Root::data_as<fbs::Request>() const {
+  return data_as_Request();
 }
 
 struct RootBuilder {
@@ -935,6 +1188,10 @@ inline bool VerifyData(flatbuffers::Verifier &verifier, const void *obj, Data ty
     }
     case Data_Array3DataChunku16: {
       auto ptr = reinterpret_cast<const fbs::Array3DataChunku16 *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_Request: {
+      auto ptr = reinterpret_cast<const fbs::Request *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;

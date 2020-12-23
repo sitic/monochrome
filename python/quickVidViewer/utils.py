@@ -241,7 +241,7 @@ def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
 def show(array_or_path: Union[str, np.ndarray], *args, **kwargs):
     if isinstance(array_or_path, np.ndarray):
         return show_array(array_or_path, *args, **kwargs)
-    elif isinstance(array_or_path, str):
+    elif isinstance(array_or_path, str) or isinstance(array_or_path, Path):
         return show_file(array_or_path)
     else:
         raise ValueError("array_or_path has to be numpy array or string")

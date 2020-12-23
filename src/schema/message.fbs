@@ -4,6 +4,7 @@ enum BitRange : int { AUTODETECT = 0, UINT8, UINT10, UINT12, UINT16, FLOAT, DIFF
 enum ColorMap : int { DEFAULT = 0, GRAY, DIFF, HSV, BLACKBODY }
 enum ArrayDataType : int { FLOAT = 0, UINT16 }
 enum TransferFunction : int { NONE = 0, LINEAR, DIFF, DIFF_POS, DIFF_NEG }
+enum RequestType : int { CLOSE = 0, CLOSE_ALL, TRACE_POS }
 
 table DictEntry {
   key: string;
@@ -50,7 +51,22 @@ table Filepaths {
   file:[string];
 }
 
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16 }
+table Request {
+  type:RequestType;
+  arg:string;
+}
+
+table RecordingTracePos {
+  name:string;
+  posx:[uint];
+  posy:[uint];
+}
+
+table ResponseTracePos {
+  recordings:[RecordingTracePos];
+}
+
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, Request }
 
 table Root {
     data:Data;

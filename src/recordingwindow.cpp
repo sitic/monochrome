@@ -104,7 +104,7 @@ namespace {
   }
 }  // namespace
 
-RecordingWindow::RecordingWindow(std::shared_ptr<AbstractRecording> file_)
+RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_)
     : Recording(std::move(file_)), playback(good() ? length() : 0), transformationArena(*this) {
   if (!good()) {
     return;
