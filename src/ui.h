@@ -559,31 +559,31 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   for (auto &[trace, pos, color, scale] : rec->traces) {
     auto label = pos.to_string();
     ImGui::PushID(label.c_str());
-    int size = trace.size();
-    if (size > 2) {
-      auto data = trace.data();
-      if (size > prm::trace_length) {
-        data += (size - prm::trace_length);
-        size = prm::trace_length;
-      }
+    int size  = trace.size();
+    auto data = trace.data();
+    if (size > prm::trace_length) {
+      data += (size - prm::trace_length);
+      size = prm::trace_length;
+    }
 
-      scale.left  = data - trace.data();
-      scale.right = trace.size();
-      scale.scale(data, data + size);
-      ImPlot::LinkNextPlotLimits(
-          scale.scaleX ? &scale.left : nullptr, scale.scaleX ? &scale.right : nullptr,
-          scale.scaleY ? &scale.lower : nullptr, scale.scaleY ? &scale.upper : nullptr);
-      auto ptitle = "###trace" + label;
-      ImPlot::BeginPlot(
-          ptitle.c_str(), nullptr, nullptr, ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
-          ImPlotFlags_AntiAliased, ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_NoTickLabels);
+    scale.left  = data - trace.data();
+    scale.right = trace.size();
+    scale.scale(data, data + size);
+    ImPlot::LinkNextPlotLimits(
+        scale.scaleX ? &scale.left : nullptr, scale.scaleX ? &scale.right : nullptr,
+        scale.scaleY ? &scale.lower : nullptr, scale.scaleY ? &scale.upper : nullptr);
+    auto ptitle = "###trace" + label;
+    if (ImPlot::BeginPlot(
+            ptitle.c_str(), nullptr, nullptr, ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
+            ImPlotFlags_AntiAliased, ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_NoTickLabels)) {
       ImPlot::SetNextLineStyle({color[0], color[1], color[2], color[3]});
       auto title = "###ttrace" + label;
       ImPlot::PlotLine(title.c_str(), trace.data(), trace.size());
       ImPlotUtils::draw_liney(scale.restarts);
       ImPlot::EndPlot();
-      ImGui::SameLine();
     }
+
+    ImGui::SameLine();
     ImGui::BeginGroup();
     ImGui::Text("%s", label.c_str());
     ImGui::SameLine();
@@ -619,10 +619,9 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     rec_nr = show_recording_ui(crec, rec_nr, rec.get());
   }
   // Actually delete children which have been selected for deletionq
-  rec->children.erase(
-      std::remove_if(rec->children.begin(), rec->children.end(),
-                     [](const auto &r) { return r->glcontext == r->window; }),
-      rec->children.end());
+  rec->children.erase(std::remove_if(rec->children.begin(), rec->children.end(),
+                                     [](const auto &r) { return r->glcontext == r->window; }),
+                      rec->children.end());
   if (!parent) {
     ImGui::End();
   }
