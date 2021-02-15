@@ -1,9 +1,9 @@
 import setuptools
 
 setuptools.setup(
-    name='quickVidViewer',
+    name='monochrome',
     version='0.1.0',
-    url='https://gitlab.gwdg.de/jlebert/quickmultrecviewer',
+    url='https://gitlab.gwdg.de/lebert/Monochrome',
     classifiers=[
         "Private :: Do not Upload"
     ],

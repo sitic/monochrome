@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=quickVidViewer
+Name=Monochrome
 Comment=MultiRecorder and raw video viewer
-Exec=quickVidViewer
+Exec=Monochrome
 Icon=MultiRecorderVideo
 Type=Application
 Terminal=false

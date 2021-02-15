@@ -1,5 +1,5 @@
 import numpy as np
-from quickVidViewer import show_array, show_flow
+from monochrome import show_array, show_flow
 
 vid = np.zeros((100, 128, 128), dtype=np.float32)
 vid[:, :64:2, :64:2] = 1

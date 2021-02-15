@@ -1,12 +1,12 @@
-# Quick Viewer for MultiRecorder and Binary Files
+# Monochrome — Video viewer for scientific fluorescence recordings
 
 This is a simple viewer to play MultiRecorder and binary files. Drag & drop the file into the window or pass the paths as arguments.
 
 ## Prebuild Binaries
 
-* [Linux](https://gitlab.gwdg.de/jlebert/quickmultrecviewer/builds/artifacts/master/file/build/quickVidViewer.AppImage?job=gcc%20Release) (mark as executable and run it)
-* [Windows](https://gitlab.gwdg.de/jlebert/quickmultrecviewer/builds/artifacts/master/file/build/Release/quickVidViewer.exe?job=windows%20Release) (you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe))
-* [MacOS](https://gitlab.gwdg.de/jlebert/quickmultrecviewer/builds/artifacts/master/file/build/Release/quickVidViewer?job=osx%20Release)
+* [Linux](https://gitlab.gwdg.de/lebert/monochrome/builds/artifacts/master/file/build/Monochrome.AppImage?job=gcc%20Release) (mark as executable and run it)
+* [Windows](https://gitlab.gwdg.de/lebert/monochrome/builds/artifacts/master/file/build/Release/Monochrome.exe?job=windows%20Release) (you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe))
+* [MacOS](https://gitlab.gwdg.de/lebert/monochrome/builds/artifacts/master/file/build/Release/Monochrome?job=osx%20Release)
 
 
 ## Build Requirements

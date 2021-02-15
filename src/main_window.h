@@ -225,7 +225,7 @@ void open_main_window(float font_scale = 0) {
   glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
   global::main_window =
       glfwCreateWindow(prm::main_window_multipier * prm::main_window_width, prm::main_window_height,
-                       "Quick Raw Video Viewer", nullptr, nullptr);
+                       "Monochrome", nullptr, nullptr);
   if (!global::main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);

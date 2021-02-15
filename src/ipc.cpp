@@ -23,14 +23,14 @@ namespace fs = ghc::filesystem;
 #include "schema/message_generated.h"
 
 namespace {
-#if defined(ASIO_HAS_LOCAL_SOCKETS) && !defined(QVV_FORCE_TCP_IPC)
+#if defined(ASIO_HAS_LOCAL_SOCKETS) && !defined(MC_FORCE_TCP_IPC)
   using IpcProtocol = asio::local::stream_protocol;
 
   IpcProtocol::endpoint ipc_client_endpoint() {
 #ifdef __APPLE__  // OSX doesn't support abstract UNIX domain sockets
-    std::string ep = std::string("/tmp/quickVidViewer.s");
+    std::string ep = std::string("/tmp/Monochrome.s");
 #else
-    std::string ep = std::string({'\0'}) + std::string("quickVidViewer");
+    std::string ep = std::string({'\0'}) + std::string("Monochrome");
 #endif
     return IpcProtocol::endpoint(ep);
   }

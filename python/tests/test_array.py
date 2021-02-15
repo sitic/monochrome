@@ -1,4 +1,4 @@
-from quickVidViewer import show_array, show, ColorMap, BitRange
+from monochrome import show_array, show, ColorMap, BitRange
 import numpy as np
 
 shape = (100, 128, 256)

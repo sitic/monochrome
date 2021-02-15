@@ -25,9 +25,9 @@ namespace {
 
 std::string config_file_path() {
 #ifdef _WIN32
-  return "%APPDATA%\\quickVidViewer\\quickVidViewer.ini";
+  return "%APPDATA%\\Monochrome\\Monochrome.ini";
 #elif defined(__unix__) || defined(__unix) || defined(__APPLE__)
-  return fmt::format("{}/.config/quickVidViewer.ini", get_user_homedir());
+  return fmt::format("{}/.config/Monochrome.ini", get_user_homedir());
 #else
   return "";
 #endif

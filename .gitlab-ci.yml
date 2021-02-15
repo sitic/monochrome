@@ -1,9 +1,9 @@
 .linux: &linux
-  image: docker.gitlab.gwdg.de/jlebert/quickmultrecviewer
+  image: docker.gitlab.gwdg.de/lebert/monochrome
 
 .gcc: &gcc
   <<: [*linux]
-  image: docker.gitlab.gwdg.de/jlebert/quickmultrecviewer/gcc
+  image: docker.gitlab.gwdg.de/lebert/monochrome/gcc
   cache:
     key: docker-gcc
     paths:
@@ -11,7 +11,7 @@
 
 .clang: &clang
   <<: [*linux]
-  image: docker.gitlab.gwdg.de/jlebert/quickmultrecviewer/clang
+  image: docker.gitlab.gwdg.de/lebert/monochrome/clang
   cache:
     key: docker-clang
     paths:
@@ -47,7 +47,7 @@
       then
         curl -L -o linuxdeploy-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
         chmod +x linuxdeploy-x86_64.AppImage
-        OUTPUT="quickVidViewer.AppImage" ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e quickVidViewer -d ../vendor/quickVidViewer.desktop -i ../vendor/MultiRecorderVideo.png --appdir AppDir --output appimage
+        OUTPUT="Monochrome.AppImage" ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e Monochrome -d ../vendor/Monochrome.desktop -i ../vendor/MultiRecorderVideo.png --appdir AppDir --output appimage
       fi
 
   dependencies: []
@@ -79,7 +79,7 @@ gcc Release:
     BUILD_APPIMAGE: "true"
   artifacts:
     paths:
-      - build/quickVidViewer.AppImage
+      - build/Monochrome.AppImage
     expire_in: 3 months
 
 gcc Debug:
@@ -98,7 +98,7 @@ clang Release:
 #    CMAKE_PARAMS: '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13.6 -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk/'
 #  artifacts:
 #    paths:
-#      - build/Release/quickVidViewer
+#      - build/Release/monochrome
 #    expire_in: 3 months
 #  before_script:
 #    - date
@@ -107,7 +107,7 @@ clang Release:
 #    - sudo mv MacOSX10.13.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
 #    - date
 #  after_script:
-#    - otool -l build/Release/quickVidViewer | grep -A 3 LC_VERSION_MIN_MACOSX
+#    - otool -l build/Release/monochrome | grep -A 3 LC_VERSION_MIN_MACOSX
 
 windows Release:
   <<: [*windows, *build_config_generator]
@@ -115,7 +115,7 @@ windows Release:
     <<: *vs_generator
   artifacts:
     paths:
-      - build/Release/quickVidViewer.exe
+      - build/Release/Monochrome.exe
     expire_in: 3 months
 
 glsl:

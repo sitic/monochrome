@@ -14,7 +14,7 @@ from .fbs.DictEntry import DictEntryStart, DictEntryAddKey, DictEntryAddVal, Dic
 
 TCP_IP, TCP_PORT = '127.0.0.1', 4864
 # OSX doesn't support abstract UNIX domain sockets
-SOCK_PATH = '/tmp/quickVidViewer.s' if sys.platform == 'darwin' else '\0quickVidViewer'
+SOCK_PATH = '/tmp/Monochrome.s' if sys.platform == 'darwin' else '\0Monochrome'
 USE_TCP = sys.platform in ['win32', 'cygwin']
 
 

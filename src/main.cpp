@@ -9,7 +9,7 @@
 #include "main_window.h"
 
 int main(int argc, char **argv) {
-  CLI::App app{"Quick Raw Video Viewer"};
+  CLI::App app{"Monochrome"};
   std::vector<std::string> files;
   bool send_files_over_wire = false;
   bool disable_ipc          = false;

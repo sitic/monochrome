@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(quickViewer C CXX)
+project(Monochrome C CXX)
 
-option(QVV_FORCE_TCP_IPC "Force use of TCP for IPC" OFF)
+option(MC_FORCE_TCP_IPC "Force use of TCP for IPC" OFF)
 option(STATIC_GCC "Build with static libstdc++" OFF)
 
 # default to Release build
@@ -69,36 +69,36 @@ if (APPLE)
 endif ()
 
 file(GLOB SHADERS "src/shaders/*.glsl")
-cmrc_add_resource_library(quickVidViewer-resources ALIAS qvv::rc NAMESPACE rc ${SHADERS} "vendor/MultiRecorderVideo.png")
+cmrc_add_resource_library(monochrome-resources ALIAS qvv::rc NAMESPACE rc ${SHADERS} "vendor/MultiRecorderVideo.png")
 
-add_executable(quickVidViewer src/main.cpp src/utils/utils.h src/fileformats/BmpFileParser.h src/recording.h src/utils/vectors.h
+add_executable(Monochrome src/main.cpp src/utils/utils.h src/fileformats/BmpFileParser.h src/recording.h src/utils/vectors.h
         src/utils/videorecorder.h src/recordingwindow.h src/transformations.h src/main_window.h src/globals.cpp src/globals.h
         src/ipc.h src/globals.cpp src/globals.h src/ipc.cpp src/recordingwindow.cpp src/utils/utils.cpp src/transformations.cpp
         src/recording.cpp src/ui.h src/utils/colormap.cpp src/utils/colormap.h src/utils/iterators.h src/recordingwindow_helpers.cpp
         src/recordingwindow_helpers.h src/fileformats/AbstractFile.h src/fileformats/all_formats.h
         src/fileformats/all_formats.cpp src/utils/definitions.h src/utils/plot_utils.h)
-target_link_libraries(quickVidViewer PRIVATE
+target_link_libraries(Monochrome PRIVATE
         CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy
         pugixml flagset qvv::rc)
-target_include_directories(quickVidViewer PRIVATE src)
-if (QVV_FORCE_TCP_IPC)
-    target_compile_definitions(quickVidViewer PRIVATE "-DQVV_FORCE_TCP_IPC")
+target_include_directories(Monochrome PRIVATE src)
+if (MC_FORCE_TCP_IPC)
+    target_compile_definitions(Monochrome PRIVATE "-DMC_FORCE_TCP_IPC")
 endif ()
 if (CMAKE_COMPILER_IS_GNUCXX)
     if (STATIC_GCC)
-        target_link_libraries(quickVidViewer PRIVATE -static-libgcc -static-libstdc++)
+        target_link_libraries(Monochrome PRIVATE -static-libgcc -static-libstdc++)
     else ()
         # Hotfix so that is shows up in the file explorer as executable, see https://stackoverflow.com/questions/41398444/
-        target_link_options(quickVidViewer PRIVATE "-no-pie")
+        target_link_options(Monochrome PRIVATE "-no-pie")
     endif ()
 endif ()
 
-install(TARGETS quickVidViewer
+install(TARGETS Monochrome
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Do platform specific post target stuff
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # Install desktop entry and icon
-    install(FILES vendor/quickVidViewer.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+    install(FILES vendor/Monochrome.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
     install(FILES vendor/MultiRecorderVideo.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")

@@ -1,4 +1,4 @@
-from quickVidViewer import show_file, show_files, show
+from monochrome import show_file, show_files, show
 import tempfile
 import numpy as np
 from pathlib import Path
