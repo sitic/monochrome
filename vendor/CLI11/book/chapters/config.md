@@ -41,7 +41,26 @@ If it is needed to get the configuration file name used this can be obtained via
 
 ## Configure file format
 
-Here is an example configuration file, in INI format:
+Here is an example configuration file, in [TOML](https://github.com/toml-lang/toml) format:
+
+```ini
+# Comments are supported, using a #
+# The default section is [default], case insensitive
+
+value = 1
+str = "A string"
+vector = [1,2,3]
+
+# Section map to subcommands
+[subcommand]
+in_subcommand = Wow
+[subcommand.sub]
+subcommand = true # could also be give as sub.subcommand=true
+```
+
+Spaces before and after the name and argument are ignored. Multiple arguments are separated by spaces. One set of quotes will be removed, preserving spaces (the same way the command line works). Boolean options can be `true`, `on`, `1`, `y`, `t`, `+`, `yes`, `enable`; or `false`, `off`, `0`, `no`, `n`, `f`, `-`, `disable`, (case insensitive). Sections (and `.` separated names) are treated as subcommands (note: this does not necessarily mean that subcommand was passed, it just sets the "defaults". If a subcommand is set to `configurable` then passing the subcommand using `[sub]` in a configuration file will trigger the subcommand.)
+
+CLI11 also supports configuration file in INI format.
 
 ```ini
 ; Comments are supported, using a ;
@@ -57,42 +76,53 @@ in_subcommand = Wow
 sub.subcommand = true
 ```
 
-Spaces before and after the name and argument are ignored. Multiple arguments are separated by spaces. One set of quotes will be removed, preserving spaces (the same way the command line works). Boolean options can be `true`, `on`, `1`, `y`, `t`, `+`, `yes`, `enable`; or `false`, `off`, `0`, `no`, `n`, `f`, `-`, `disable`, (case insensitive). Sections (and `.` separated names) are treated as subcommands (note: this does not necessarily mean that subcommand was passed, it just sets the "defaults". If a subcommand is set to `configurable` then passing the subcommand using `[sub]` in a configuration file will trigger the subcommand.)
+The main differences are in vector notation and comment character.  Note: CLI11 is not a full TOML parser as it just reads values as strings.  It is possible (but not recommended) to mix notation.
 
-CLI11 also supports configuration file in [TOML](https://github.com/toml-lang/toml) format.
+## Multiple configuration files
 
-```toml
-# Comments are supported, using a #
-# The default section is [default], case insensitive
+If it is desired that multiple configuration be allowed.  Use
 
-value = 1
-str = "A string"
-vector = [1,2,3]
-
-# Section map to subcommands
-[subcommand]
-in_subcommand = Wow
-[subcommand.sub]
-subcommand = true # could also be give as sub.subcommand=true
+```cpp
+app.set_config("--config")->expected(1, X);
 ```
 
-The main differences are in vector notation and comment character.  Note: CLI11 is not a full TOML parser as it just reads values as strings.  It is possible (but not recommended) to mix notation.
+Where X is some positive integer and will allow up to `X` configuration files to be specified by separate `--config` arguments.
 
 ## Writing out a configure file
 
-To print a configuration file from the passed arguments, use `.config_to_str(default_also=false, prefix="", write_description=false)`, where `default_also` will also show any defaulted arguments, `prefix` will add a prefix, and `write_description` will include option descriptions.
+To print a configuration file from the passed arguments, use `.config_to_str(default_also=false, write_description=false)`, where `default_also` will also show any defaulted arguments, and `write_description` will include option descriptions and the App description
+
+```cpp
+
+ CLI::App app;
+ app.add_option(...);
+    // several other options
+ CLI11_PARSE(app, argc, argv);
+ //the config printout should be after the parse to capture the given arguments
+ std::cout<<app.config_to_str(true,true);
+```
+
+if a prefix is needed to print before the options, for example to print a config for just a subcommand, the config formatter can be obtained directly.
+
+```cpp
+
+  auto fmtr=app.get_config_formatter();
+  //std::string to_config(const App *app, bool default_also, bool write_description, std::string prefix)
+  fmtr->to_config(&app,true,true,"sub.");
+  //prefix can be used to set a prefix before each argument,  like "sub."
+```
 
 ### Customization of configure file output
-The default config parser/generator has some customization points that allow variations on the INI format.  The default formatter has a base configuration that matches the INI format.  It defines 5 characters that define how different aspects of the configuration are handled
+The default config parser/generator has some customization points that allow variations on the TOML format.  The default formatter has a base configuration that matches the TOML format.  It defines 5 characters that define how different aspects of the configuration are handled
 ```cpp
 /// the character used for comments
-char commentChar = ';';
+char commentChar = '#';
 /// the character used to start an array '\0' is a default to not use
-char arrayStart = '\0';
+char arrayStart = '[';
 /// the character used to end an array '\0' is a default to not use
-char arrayEnd = '\0';
+char arrayEnd = ']';
 /// the character used to separate elements in an array
-char arraySeparator = ' ';
+char arraySeparator = ',';
 /// the character used separate the name from the value
 char valueDelimiter = '=';
 ```
@@ -111,18 +141,13 @@ auto config_base=app.get_config_formatter_base();
 config_base->valueSeparator(':');
 ```
 
-The default configuration file will read TOML files, but will write out files in the INI format.  To specify outputting TOML formatted files use
+The default configuration file will read INI files, but will write out files in the TOML format.  To specify outputting INI formatted files use
 ```cpp
-app.config_formatter(std::make_shared<CLI::ConfigTOML>());
+app.config_formatter(std::make_shared<CLI::ConfigINI>());
 ```
-
-which makes use of a predefined modification of the ConfigBase class which INI also uses. If a custom formatter is used that is not inheriting from the from ConfigBase class `get_config_formatter_base() will return a nullptr if RTTI is on (usually the default), or garbage if RTTI is off, so some care must be exercised in its use with custom configurations.
+which makes use of a predefined modification of the ConfigBase class which TOML also uses. If a custom formatter is used that is not inheriting from the from ConfigBase class `get_config_formatter_base() will return a nullptr if RTTI is on (usually the default), or garbage if RTTI is off, so some care must be exercised in its use with custom configurations.
 
 ## Custom formats
-
-{% hint style='info' %}
-New in CLI11 1.6
-{% endhint %}
 
 You can invent a custom format and set that instead of the default INI formatter. You need to inherit from `CLI::Config` and implement the following two functions:
 
@@ -146,3 +171,11 @@ See [`examples/json.cpp`](https://github.com/CLIUtils/CLI11/blob/master/examples
 Configuration files can be used to trigger subcommands if a subcommand is set to configure.  By default configuration file just set the default values of a subcommand.  But if the `configure()` option is set on a subcommand then the if the subcommand is utilized via a `[subname]` block in the configuration file it will act as if it were called from the command line.  Subsubcommands can be triggered via [subname.subsubname].  Using the `[[subname]]` will be as if the subcommand were triggered multiple times from the command line.  This functionality can allow the configuration file to act as a scripting file.
 
 For custom configuration files this behavior can be triggered by specifying the parent subcommands in the structure and `++` as the name to open a new subcommand scope and `--` to close it.  These names trigger the different callbacks of configurable subcommands.
+
+## Implementation Notes
+The config file input works with any form of the option given:  Long, short, positional, or the environment variable name.  When generating a config file it will create a name in following priority.
+
+1.   First long name
+1.   Positional name
+1.   First short name
+1.   Environment name

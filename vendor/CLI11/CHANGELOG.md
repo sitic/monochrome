@@ -1,14 +1,66 @@
-## Version 2.0: In progress
+## Version 2.0: Cleanup & TOML
 
-* Built-in config format is TOML compliant now [#435]
-* Config updates [#442]
-* More powerful containers, `%%` separator [#423]
-* Add a version flag easily [#452]
+This version focuses on cleaning up deprecated functionality, and some minor
+default changes. The config processing is TOML compliant now. Atomics and
+complex numbers are directly supported, along with other container
+improvements. A new version flag option has finally been added. Subcommands are
+significantly improved with new features and bugfixes for corner cases.  This
+release contains a lot of backend cleanup, including a complete overhaul of the
+testing system and single file generation system.
 
+* Built-in config format is TOML compliant now [#435][]
+    * Support multiline TOML [#528][]
+    * Support for configurable quotes [#599][]
+    * Support short/positional options in config mode [#443][]
+* More powerful containers, support for `%%` separator [#423][]
+* Support atomic types [#520][] and complex types natively [#423][]
+* Add a type validator `CLI::TypeValidator<TYPE>` [#526][]
+* Add a version flag easily [#452][], with help message [#601][]
+* Support `->silent()` on subcommands. [#529][]
+* Add alias section to help for subcommands [#545][]
+* Allow quotes to specify a program name [#605][]
+* Backend: redesigned MakeSingleFiles to have a higher level of manual control, to support future features. [#546][]
+* Backend: moved testing from GTest to Catch2 [#574][]
+* Bugfix: avoid duplicated and missed calls to the final callback [#584][]
+* Bugfix: support embedded newlines in more places [#592][]
+* Bugfix: avoid listing helpall as a required flag [#530][]
+* Bugfix: avoid a clash with WINDOWS define [#563][]
+* Bugfix: the help flag didn't get processed when a config file was required [#606][]
+* Bugfix: fix description of non-configurable subcommands in config [#604][]
+* Build: support pkg-config [#523][]
+
+#### Converting from CLI11 1.9:
+
+* Removed deprecated set commands, use validators instead. [#565][]
+* The final "defaulted" bool has been removed, use `->capture_default_str()`
+  instead. Use `app.option_defaults()->always_capture_default()` to set this for
+  all future options. [#597][]
+* Use `add_option` on a complex number instead of `add_complex`, which has been removed.
+
+
+[#423]: https://github.com/CLIUtils/CLI11/pull/423
 [#435]: https://github.com/CLIUtils/CLI11/pull/435
 [#443]: https://github.com/CLIUtils/CLI11/pull/443
-[#423]: https://github.com/CLIUtils/CLI11/pull/423
 [#452]: https://github.com/CLIUtils/CLI11/pull/452
+[#520]: https://github.com/CLIUtils/CLI11/pull/520
+[#523]: https://github.com/CLIUtils/CLI11/pull/523
+[#526]: https://github.com/CLIUtils/CLI11/pull/526
+[#528]: https://github.com/CLIUtils/CLI11/pull/528
+[#529]: https://github.com/CLIUtils/CLI11/pull/529
+[#530]: https://github.com/CLIUtils/CLI11/pull/530
+[#545]: https://github.com/CLIUtils/CLI11/pull/545
+[#546]: https://github.com/CLIUtils/CLI11/pull/546
+[#563]: https://github.com/CLIUtils/CLI11/pull/563
+[#565]: https://github.com/CLIUtils/CLI11/pull/565
+[#574]: https://github.com/CLIUtils/CLI11/pull/574
+[#584]: https://github.com/CLIUtils/CLI11/pull/584
+[#592]: https://github.com/CLIUtils/CLI11/pull/592
+[#597]: https://github.com/CLIUtils/CLI11/pull/597
+[#599]: https://github.com/CLIUtils/CLI11/pull/599
+[#601]: https://github.com/CLIUtils/CLI11/pull/601
+[#604]: https://github.com/CLIUtils/CLI11/pull/604
+[#605]: https://github.com/CLIUtils/CLI11/pull/605
+[#606]: https://github.com/CLIUtils/CLI11/pull/606
 
 
 ### Version 1.9.1: Backporting fixes
@@ -108,6 +160,7 @@ configuration options were added to facilitate a wider variety of apps.  GCC
 [#360]: https://github.com/CLIUtils/CLI11/pull/360
 [#362]: https://github.com/CLIUtils/CLI11/pull/362
 [#365]: https://github.com/CLIUtils/CLI11/pull/365
+[#370]: https://github.com/CLIUtils/CLI11/pull/370
 [#373]: https://github.com/CLIUtils/CLI11/pull/373
 [#374]: https://github.com/CLIUtils/CLI11/pull/374
 [#382]: https://github.com/CLIUtils/CLI11/pull/382

@@ -39,7 +39,7 @@ gitbook:examples $ c++ -std=c++11 intro.cpp
 Much more complicated options are handled elegantly:
 
 ```cpp
-std::string req_real_file;
+std::string file;
 app.add_option("-f,--file", file, "Require an existing file")
   ->required()
   ->check(CLI::ExistingFile);
@@ -64,6 +64,3 @@ CLI11 was developed at the [University of Cincinnati] in support of the [GooFit]
 [University of Cincinnati]: http://www.uc.edu
 [Plumbum]: http://plumbum.readthedocs.io/en/latest/
 [Click]: https://click.palletsprojects.com/
-
-
-
