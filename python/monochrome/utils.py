@@ -157,7 +157,7 @@ def show_files(paths: List[Union[Text, Path]]):
     try:
         s = create_socket()
     except ConnectionRefusedError:
-        print("Unable to connect to quickViewer")
+        print("Error: unable to connect to Monochrome")
         return
     buf = create_filepaths_msg(paths)
     s.sendall(buf)
@@ -188,7 +188,7 @@ def show_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, 
     try:
         s = create_socket()
     except ConnectionRefusedError:
-        print("Unable to connect to quickViewer")
+        print("Error: unable to connect to Monochrome")
         return
     buf = create_array3meta_msg(dtype, name, array.shape, duration=duration_seconds, fps=fps, date=date,
                                 comment=comment, bitrange=bitrange, cmap=cmap, parentName=parentName,
@@ -222,7 +222,7 @@ def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
     try:
         s = create_socket()
     except ConnectionRefusedError:
-        print("Unable to connect to quickViewer")
+        print("Error: unable to connect to Monochrome")
         return
 
     shape = (flow_uv.shape[0] * 2, flow_uv.shape[1], flow_uv.shape[2])
