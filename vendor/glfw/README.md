@@ -1,6 +1,6 @@
 # GLFW
 
-[![Build status](https://travis-ci.org/glfw/glfw.svg?branch=master)](https://travis-ci.org/glfw/glfw)
+[![Build status](https://github.com/glfw/glfw/actions/workflows/build.yml/badge.svg)](https://github.com/glfw/glfw/actions)
 [![Build status](https://ci.appveyor.com/api/projects/status/0kf0ct9831i5l6sp/branch/master?svg=true)](https://ci.appveyor.com/project/elmindreda/glfw)
 [![Coverity Scan](https://scan.coverity.com/projects/4884/badge.svg)](https://scan.coverity.com/projects/glfw-glfw)
 
@@ -14,18 +14,18 @@ GLFW natively supports Windows, macOS and Linux and other Unix-like systems.  On
 Linux both X11 and Wayland are supported.
 
 GLFW is licensed under the [zlib/libpng
-license](http://www.glfw.org/license.html).
+license](https://www.glfw.org/license.html).
 
-You can [download](http://www.glfw.org/download.html) the latest stable release
+You can [download](https://www.glfw.org/download.html) the latest stable release
 as source or Windows binaries, or fetch the `latest` branch from GitHub.  Each
 release starting with 3.0 also has a corresponding [annotated
 tag](https://github.com/glfw/glfw/releases) with source and binary archives.
 
-The [documentation](http://www.glfw.org/docs/latest/) is available online and is
+The [documentation](https://www.glfw.org/docs/latest/) is available online and is
 included in all source and binary archives.  See the [release
 notes](https://www.glfw.org/docs/latest/news.html) for new features, caveats and
 deprecations in the latest release.  For more details see the [version
-history](http://www.glfw.org/changelog.html).
+history](https://www.glfw.org/changelog.html).
 
 The `master` branch is the stable integration branch and _should_ always compile
 and run on all supported platforms, although details of newly added features may
@@ -34,9 +34,9 @@ fixes live in [other branches](https://github.com/glfw/glfw/branches/all) until
 they are stable enough to merge.
 
 If you are new to GLFW, you may find the
-[tutorial](http://www.glfw.org/docs/latest/quick.html) for GLFW 3 useful.  If
+[tutorial](https://www.glfw.org/docs/latest/quick.html) for GLFW 3 useful.  If
 you have used GLFW 2 in the past, there is a [transition
-guide](http://www.glfw.org/docs/latest/moving.html) for moving to the GLFW
+guide](https://www.glfw.org/docs/latest/moving.html) for moving to the GLFW
 3 API.
 
 
@@ -52,16 +52,16 @@ MinGW-w64, on macOS with Clang and on Linux and other Unix-like systems with GCC
 and Clang.  It will likely compile in other environments as well, but this is
 not regularly tested.
 
-There are [pre-compiled Windows binaries](http://www.glfw.org/download.html)
+There are [pre-compiled Windows binaries](https://www.glfw.org/download.html)
 available for all supported compilers.
 
-See the [compilation guide](http://www.glfw.org/docs/latest/compile.html) for
+See the [compilation guide](https://www.glfw.org/docs/latest/compile.html) for
 more information about how to compile GLFW yourself.
 
 
 ## Using GLFW
 
-See the [documentation](http://www.glfw.org/docs/latest/) for tutorials, guides
+See the [documentation](https://www.glfw.org/docs/latest/) for tutorials, guides
 and the API reference.
 
 
@@ -79,7 +79,7 @@ Unix-like systems running the X Window System are supported even without
 a desktop environment or modern extensions, although some features require
 a running window or clipboard manager.  The OSMesa backend requires Mesa 6.3.
 
-See the [compatibility guide](http://www.glfw.org/docs/latest/compat.html)
+See the [compatibility guide](https://www.glfw.org/docs/latest/compat.html)
 in the documentation for more information.
 
 
@@ -87,9 +87,6 @@ in the documentation for more information.
 
 GLFW itself needs only CMake 3.1 or later and the headers and libraries for your
 OS and window system.
-
-The (experimental) Wayland backend also depends on the `extra-cmake-modules`
-package, which is used to generate Wayland protocol headers.
 
 The examples and test programs depend on a number of tiny libraries.  These are
 located in the `deps/` directory.
@@ -102,10 +99,10 @@ located in the `deps/` directory.
    functions
  - [linmath.h](https://github.com/datenwolf/linmath.h) for linear algebra in
    examples
- - [Nuklear](https://github.com/vurtun/nuklear) for test and example UI
+ - [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) for test and example UI
  - [stb\_image\_write](https://github.com/nothings/stb) for writing images to disk
 
-The documentation is generated with [Doxygen](http://doxygen.org/) if CMake can
+The documentation is generated with [Doxygen](https://doxygen.org/) if CMake can
 find that tool.
 
 
@@ -130,7 +127,10 @@ information on what to include when reporting a bug.
  - Added `GLFW_FEATURE_UNIMPLEMENTED` error for incomplete backends (#1692)
  - Added `GLFW_ANGLE_PLATFORM_TYPE` init hint and `GLFW_ANGLE_PLATFORM_TYPE_*`
    values to select ANGLE backend (#1380)
+ - Added `GLFW_X11_XCB_VULKAN_SURFACE` init hint for selecting X11 Vulkan
+   surface extension (#1793)
  - Made joystick subsystem initialize at first use (#1284,#1646)
+ - Made `GLFW_DOUBLEBUFFER` a read-only window attribute
  - Updated the minimum required CMake version to 3.1
  - Disabled tests and examples by default when built as a CMake subdirectory
  - Bugfix: The CMake config-file package used an absolute path and was not
@@ -140,6 +140,9 @@ information on what to include when reporting a bug.
  - Bugfix: Built-in mappings failed because some OEMs re-used VID/PID (#1583)
  - Bugfix: Some extension loader headers did not prevent default OpenGL header
    inclusion (#1695)
+ - Bugfix: Buffers were swapped at creation on single-buffered windows (#1873)
+ - Bugfix: Gamepad mapping updates could spam `GLFW_INVALID_VALUE` due to
+   incompatible controllers sharing hardware ID (#1763)
  - [Win32] Added the `GLFW_WIN32_KEYBOARD_MENU` window hint for enabling access
            to the window menu
  - [Win32] Added a version info resource to the GLFW DLL
@@ -158,10 +161,23 @@ information on what to include when reporting a bug.
  - [Win32] Bugfix: Some synthetic key events were reported as `GLFW_KEY_UNKNOWN`
    (#1623)
  - [Win32] Bugfix: Non-BMP Unicode codepoint input was reported as UTF-16
+ - [Win32] Bugfix: Monitor functions could return invalid values after
+   configuration change (#1761)
+ - [Win32] Bugfix: Initialization would segfault on Windows 8 (not 8.1) (#1775)
+ - [Win32] Bugfix: Duplicate size events were not filtered (#1610)
+ - [Win32] Bugfix: Full screen windows were incorrectly resized by DPI changes
+   (#1582)
+ - [Win32] Bugfix: `GLFW_SCALE_TO_MONITOR` had no effect on systems older than
+   Windows 10 version 1703 (#1511)
+ - [Win32] Bugfix: `USE_MSVC_RUNTIME_LIBRARY_DLL` had no effect on CMake 3.15 or
+   later (#1783,#1796)
+ - [Win32] Bugfix: Compilation with LLVM for Windows failed (#1807,#1824,#1874)
  - [Cocoa] Added support for `VK_EXT_metal_surface` (#1619)
  - [Cocoa] Added locating the Vulkan loader at runtime in an application bundle
  - [Cocoa] Moved main menu creation to GLFW initialization time (#1649)
  - [Cocoa] Changed `EGLNativeWindowType` from `NSView` to `CALayer` (#1169)
+ - [Cocoa] Changed F13 key to report Print Screen for cross-platform consistency
+   (#1786)
  - [Cocoa] Removed dependency on the CoreVideo framework
  - [Cocoa] Bugfix: `glfwSetWindowSize` used a bottom-left anchor point (#1553)
  - [Cocoa] Bugfix: Window remained on screen after destruction until event poll
@@ -174,6 +190,14 @@ information on what to include when reporting a bug.
    (#1635)
  - [Cocoa] Bugfix: Failing to retrieve the refresh rate of built-in displays
    could leak memory
+ - [Cocoa] Bugfix: Objective-C files were compiled as C with CMake 3.19 (#1787)
+ - [Cocoa] Bugfix: Duplicate video modes were not filtered out (#1830)
+ - [Cocoa] Bugfix: Menubar was not clickable on macOS 10.15+ until it lost and
+   regained focus (#1648,#1802)
+ - [Cocoa] Bugfix: Monitor name query could segfault on macOS 11 (#1809,#1833)
+ - [Cocoa] Bugfix: The install name of the installed dylib was relative (#1504)
+ - [Cocoa] Bugfix: The MoltenVK layer contents scale was updated only after
+   related events were emitted
  - [X11] Bugfix: The CMake files did not check for the XInput headers (#1480)
  - [X11] Bugfix: Key names were not updated when the keyboard layout changed
    (#1462,#1528)
@@ -199,6 +223,8 @@ information on what to include when reporting a bug.
    combinaitons (#1598)
  - [X11] Bugfix: Keys pressed simultaneously with others were not always
    reported (#1112,#1415,#1472,#1616)
+ - [X11] Bugfix: Some window attributes were not applied on leaving fullscreen
+   (#1863)
  - [Wayland] Removed support for `wl_shell` (#1443)
  - [Wayland] Bugfix: The `GLFW_HAND_CURSOR` shape used the wrong image (#1432)
  - [Wayland] Bugfix: `CLOCK_MONOTONIC` was not correctly enabled
@@ -206,6 +232,9 @@ information on what to include when reporting a bug.
  - [Wayland] Bugfix: Retrieving partial framebuffer size would segfault
  - [Wayland] Bugfix: Scrolling offsets were inverted compared to other platforms
    (#1463)
+ - [Wayland] Bugfix: Client-Side Decorations were destroyed in the wrong worder
+   (#1798)
+ - [Wayland] Bugfix: Monitors physical size could report zero (#1784,#1792)
  - [POSIX] Bugfix: `CLOCK_MONOTONIC` was not correctly tested for or enabled
  - [NSGL] Removed enforcement of forward-compatible flag for core contexts
  - [NSGL] Bugfix: `GLFW_COCOA_RETINA_FRAMEBUFFER` had no effect on newer
@@ -215,16 +244,17 @@ information on what to include when reporting a bug.
    (#442)
  - [EGL] Added ANGLE backend selection via `EGL_ANGLE_platform_angle` extension
    (#1380)
+ - [EGL] Bugfix: The `GLFW_DOUBLEBUFFER` context attribute was ignored (#1843)
 
 
 ## Contact
 
-On [glfw.org](http://www.glfw.org/) you can find the latest version of GLFW, as
+On [glfw.org](https://www.glfw.org/) you can find the latest version of GLFW, as
 well as news, documentation and other information about the project.
 
 If you have questions related to the use of GLFW, we have a
 [forum](https://discourse.glfw.org/), and the `#glfw` IRC channel on
-[Freenode](http://freenode.net/).
+[Libera.Chat](https://libera.chat/).
 
 If you have a bug to report, a patch to submit or a feature you'd like to
 request, please file it in the
@@ -240,13 +270,16 @@ GLFW exists because people around the world donated their time and lent their
 skills.
 
  - Bobyshev Alexander
+ - Laurent Aphecetche
  - Matt Arsenault
+ - ashishgamedev
  - David Avedissian
  - Keith Bauer
  - John Bartholomew
  - Coşku Baş
  - Niklas Behrens
  - Andrew Belt
+ - Nevyn Bengtsson
  - Niklas Bergström
  - Denis Bernard
  - Doug Binks
@@ -255,6 +288,7 @@ skills.
  - Rok Breulj
  - Kai Burjack
  - Martin Capitanio
+ - Nicolas Caramelli
  - David Carlier
  - Arturo Castro
  - Chi-kwan Chan
@@ -267,6 +301,7 @@ skills.
  - Andrew Corrigan
  - Bailey Cosier
  - Noel Cower
+ - CuriouserThing
  - Jason Daly
  - Jarrod Davis
  - Olivier Delannoy
@@ -293,6 +328,7 @@ skills.
  - Eloi Marín Gratacós
  - Stefan Gustavson
  - Jonathan Hale
+ - hdf89shfdfs
  - Sylvain Hellegouarch
  - Matthew Henry
  - heromyth
@@ -317,11 +353,13 @@ skills.
  - Konstantin Käfer
  - Eric Larson
  - Francis Lecavalier
+ - Jong Won Lee
  - Robin Leffmann
  - Glenn Lewis
  - Shane Liesegang
  - Anders Lindqvist
  - Leon Linhart
+ - Marco Lizza
  - Eyal Lotem
  - Aaron Loucks
  - Luflosi
@@ -333,6 +371,7 @@ skills.
  - Adam Marcus
  - Célestin Marot
  - Kyle McDonald
+ - David V. McKay
  - David Medlock
  - Bryce Mehring
  - Jonathan Mercier
@@ -361,6 +400,7 @@ skills.
  - Braden Pellett
  - Christopher Pelloux
  - Arturo J. Pérez
+ - Vladimir Perminov
  - Anthony Pesch
  - Orson Peters
  - Emmanuel Gil Peyrot
@@ -426,6 +466,9 @@ skills.
  - Waris
  - Jay Weisskopf
  - Frank Wille
+ - Andy Williams
+ - Joel Winarske
+ - Richard A. Wilkes
  - Tatsuya Yatagawa
  - Ryogo Yoshimura
  - Lukas Zanner
@@ -434,6 +477,7 @@ skills.
  - Santi Zupancic
  - Jonas Ådahl
  - Lasse Öörni
+ - Leonard König
  - All the unmentioned and anonymous contributors in the GLFW community, for bug
    reports, patches, feedback, testing and encouragement
 

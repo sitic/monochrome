@@ -243,7 +243,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 - (void)windowDidResize:(NSNotification *)notification
 {
-    if (window->context.client != GLFW_NO_API)
+    if (window->context.source == GLFW_NATIVE_CONTEXT_API)
         [window->context.nsgl.object update];
 
     if (_glfw.ns.disabledCursorWindow == window)
@@ -278,7 +278,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 - (void)windowDidMove:(NSNotification *)notification
 {
-    if (window->context.client != GLFW_NO_API)
+    if (window->context.source == GLFW_NATIVE_CONTEXT_API)
         [window->context.nsgl.object update];
 
     if (_glfw.ns.disabledCursorWindow == window)
@@ -397,7 +397,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 - (void)updateLayer
 {
-    if (window->context.client != GLFW_NO_API)
+    if (window->context.source == GLFW_NATIVE_CONTEXT_API)
         [window->context.nsgl.object update];
 
     _glfwInputWindowDamage(window);
@@ -520,6 +520,18 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 {
     const NSRect contentRect = [window->ns.view frame];
     const NSRect fbRect = [window->ns.view convertRectToBacking:contentRect];
+    const float xscale = fbRect.size.width / contentRect.size.width;
+    const float yscale = fbRect.size.height / contentRect.size.height;
+
+    if (xscale != window->ns.xscale || yscale != window->ns.yscale)
+    {
+        if (window->ns.retina && window->ns.layer)
+            [window->ns.layer setContentsScale:[window->ns.object backingScaleFactor]];
+
+        window->ns.xscale = xscale;
+        window->ns.yscale = yscale;
+        _glfwInputWindowContentScale(window, xscale, yscale);
+    }
 
     if (fbRect.size.width != window->ns.fbWidth ||
         fbRect.size.height != window->ns.fbHeight)
@@ -527,19 +539,6 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
         window->ns.fbWidth  = fbRect.size.width;
         window->ns.fbHeight = fbRect.size.height;
         _glfwInputFramebufferSize(window, fbRect.size.width, fbRect.size.height);
-    }
-
-    const float xscale = fbRect.size.width / contentRect.size.width;
-    const float yscale = fbRect.size.height / contentRect.size.height;
-
-    if (xscale != window->ns.xscale || yscale != window->ns.yscale)
-    {
-        window->ns.xscale = xscale;
-        window->ns.yscale = yscale;
-        _glfwInputWindowContentScale(window, xscale, yscale);
-
-        if (window->ns.retina && window->ns.layer)
-            [window->ns.layer setContentsScale:[window->ns.object backingScaleFactor]];
     }
 }
 
@@ -1635,14 +1634,21 @@ int _glfwPlatformCreateStandardCursor(_GLFWcursor* cursor, int shape)
     SEL cursorSelector = NULL;
 
     // HACK: Try to use a private message
-    if (shape == GLFW_RESIZE_EW_CURSOR)
-        cursorSelector = NSSelectorFromString(@"_windowResizeEastWestCursor");
-    else if (shape == GLFW_RESIZE_NS_CURSOR)
-        cursorSelector = NSSelectorFromString(@"_windowResizeNorthSouthCursor");
-    else if (shape == GLFW_RESIZE_NWSE_CURSOR)
-        cursorSelector = NSSelectorFromString(@"_windowResizeNorthWestSouthEastCursor");
-    else if (shape == GLFW_RESIZE_NESW_CURSOR)
-        cursorSelector = NSSelectorFromString(@"_windowResizeNorthEastSouthWestCursor");
+    switch (shape)
+    {
+        case GLFW_RESIZE_EW_CURSOR:
+            cursorSelector = NSSelectorFromString(@"_windowResizeEastWestCursor");
+            break;
+        case GLFW_RESIZE_NS_CURSOR:
+            cursorSelector = NSSelectorFromString(@"_windowResizeNorthSouthCursor");
+            break;
+        case GLFW_RESIZE_NWSE_CURSOR:
+            cursorSelector = NSSelectorFromString(@"_windowResizeNorthWestSouthEastCursor");
+            break;
+        case GLFW_RESIZE_NESW_CURSOR:
+            cursorSelector = NSSelectorFromString(@"_windowResizeNorthEastSouthWestCursor");
+            break;
+    }
 
     if (cursorSelector && [NSCursor respondsToSelector:cursorSelector])
     {
@@ -1653,22 +1659,33 @@ int _glfwPlatformCreateStandardCursor(_GLFWcursor* cursor, int shape)
 
     if (!cursor->ns.object)
     {
-        if (shape == GLFW_ARROW_CURSOR)
-            cursor->ns.object = [NSCursor arrowCursor];
-        else if (shape == GLFW_IBEAM_CURSOR)
-            cursor->ns.object = [NSCursor IBeamCursor];
-        else if (shape == GLFW_CROSSHAIR_CURSOR)
-            cursor->ns.object = [NSCursor crosshairCursor];
-        else if (shape == GLFW_POINTING_HAND_CURSOR)
-            cursor->ns.object = [NSCursor pointingHandCursor];
-        else if (shape == GLFW_RESIZE_EW_CURSOR)
-            cursor->ns.object = [NSCursor resizeLeftRightCursor];
-        else if (shape == GLFW_RESIZE_NS_CURSOR)
-            cursor->ns.object = [NSCursor resizeUpDownCursor];
-        else if (shape == GLFW_RESIZE_ALL_CURSOR)
-            cursor->ns.object = [NSCursor closedHandCursor];
-        else if (shape == GLFW_NOT_ALLOWED_CURSOR)
-            cursor->ns.object = [NSCursor operationNotAllowedCursor];
+        switch (shape)
+        {
+            case GLFW_ARROW_CURSOR:
+                cursor->ns.object = [NSCursor arrowCursor];
+                break;
+            case GLFW_IBEAM_CURSOR:
+                cursor->ns.object = [NSCursor IBeamCursor];
+                break;
+            case GLFW_CROSSHAIR_CURSOR:
+                cursor->ns.object = [NSCursor crosshairCursor];
+                break;
+            case GLFW_POINTING_HAND_CURSOR:
+                cursor->ns.object = [NSCursor pointingHandCursor];
+                break;
+            case GLFW_RESIZE_EW_CURSOR:
+                cursor->ns.object = [NSCursor resizeLeftRightCursor];
+                break;
+            case GLFW_RESIZE_NS_CURSOR:
+                cursor->ns.object = [NSCursor resizeUpDownCursor];
+                break;
+            case GLFW_RESIZE_ALL_CURSOR:
+                cursor->ns.object = [NSCursor closedHandCursor];
+                break;
+            case GLFW_NOT_ALLOWED_CURSOR:
+                cursor->ns.object = [NSCursor operationNotAllowedCursor];
+                break;
+        }
     }
 
     if (!cursor->ns.object)
