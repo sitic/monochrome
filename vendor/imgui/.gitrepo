@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = https://github.com/ocornut/imgui.git
-	branch = v1.79
-	commit = e5cb04b132cba94f902beb6186cb58b864777012
-	parent = bc699be6f9131c0597296f354d9c308892e455dd
+	branch = v1.83
+	commit = ad5d1a8429ea219d3d34e6a36a48918650402697
+	parent = f7d5354a7eb1cc0fcc9ab46044eb93d2310f1548
 	method = merge
-	cmdver = 0.4.1
+	cmdver = 0.4.3
