@@ -297,7 +297,7 @@ void open_main_window(float font_scale = 0) {
   // - Remember that in C/C++ if you want to include a backslash \ in a string
   // literal you need to write a double backslash \\ !
   //io.Fonts->AddFontDefault();
-  ImFontAtlas::GlyphRangesBuilder builder;
+  ImFontGlyphRangesBuilder builder;
   builder.AddText(u8"σπ");
   builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
   static ImVector<ImWchar> ranges;
