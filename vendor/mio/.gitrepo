@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/mandreyel/mio.git
 	branch = master
-	commit = 8c0d3c7c23c595803d07c44a6088fc3ac920fa3d
-	parent = e93a3df72a85e0b82c659652c5dc32b29946e4f1
+	commit = 3f86a95c0784d73ce6815237ec33ed25f233b643
+	parent = be64c1c299741aa8e70b0cde47a10053bb3e0c12
 	method = merge
-	cmdver = 0.4.1
+	cmdver = 0.4.3
