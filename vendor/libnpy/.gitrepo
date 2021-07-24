@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/llohse/libnpy.git
 	branch = master
-	commit = 641f2a581357a51c0973889f031ad88db28de31a
-	parent = a4f7007ee6ecbf3635a2fc9702f593a5df1c8410
+	commit = b4567fcc64d621531cd21d77484f17b16225544e
+	parent = 2166e9615ae928c86d7ee30db86499dcc16bd135
 	method = merge
-	cmdver = 0.4.1
+	cmdver = 0.4.3
