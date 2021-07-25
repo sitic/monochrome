@@ -1,9 +1,9 @@
 .linux: &linux
-  image: docker.gitlab.gwdg.de/lebert/monochrome
+  image: registry.gitlab.com/cardiac-vision/monochrome
 
 .gcc: &gcc
   <<: [*linux]
-  image: docker.gitlab.gwdg.de/lebert/monochrome/gcc
+  image: registry.gitlab.com/cardiac-vision/monochrome/gcc
   cache:
     key: docker-gcc
     paths:
@@ -11,7 +11,7 @@
 
 .clang: &clang
   <<: [*linux]
-  image: docker.gitlab.gwdg.de/lebert/monochrome/clang
+  image: registry.gitlab.com/cardiac-vision/monochrome/clang
   cache:
     key: docker-clang
     paths:
@@ -108,15 +108,15 @@ clang Release:
 #    - date
 #  after_script:
 #    - otool -l build/Release/monochrome | grep -A 3 LC_VERSION_MIN_MACOSX
-
-windows Release:
-  <<: [*windows, *build_config_generator]
-  variables:
-    <<: *vs_generator
-  artifacts:
-    paths:
-      - build/Release/Monochrome.exe
-    expire_in: 3 months
+#
+#windows Release:
+#  <<: [*windows, *build_config_generator]
+#  variables:
+#    <<: *vs_generator
+#  artifacts:
+#    paths:
+#      - build/Release/Monochrome.exe
+#    expire_in: 3 months
 
 glsl:
   <<: [*linux]
