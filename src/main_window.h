@@ -223,9 +223,8 @@ void open_main_window(float font_scale = 0) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
-  global::main_window =
-      glfwCreateWindow(prm::main_window_multipier * prm::main_window_width, prm::main_window_height,
-                       "Monochrome", nullptr, nullptr);
+  global::main_window = glfwCreateWindow(prm::main_window_multipier * prm::main_window_width,
+                                         prm::main_window_height, "Monochrome", nullptr, nullptr);
   if (!global::main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);
@@ -267,11 +266,18 @@ void open_main_window(float font_scale = 0) {
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
 
-  // TODO: Better HIDIP handling
+#ifdef __APPLE__
+  // to prevent 1200x800 from becoming 2400x1600
+  glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+#endif
   if (font_scale == 0) {
+#ifdef __APPLE__
+    font_scale = 1;
+#else
     float xscale, yscale;
     glfwGetMonitorContentScale(primary_monitor, &xscale, &yscale);
     font_scale = std::max(xscale, yscale);
+#endif
   }
   ImGui::GetStyle().ScaleAllSizes(font_scale);
   ImGui::GetStyle().FrameRounding = 3;
