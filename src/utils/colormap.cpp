@@ -2,6 +2,144 @@
 #include "vectors.h"
 
 namespace {
+  std::array<float, 3 * 256> black_body_data();
+  std::array<float, 3 * 256> gray_colormapdata();
+  std::array<float, 3 * 256> cmocean_phasemapdata();
+  std::array<float, 3 * 256> diff_colormapdata(float start = 0, float end = 1);
+  std::array<float, 3 * 256> hsv_colormapdata();
+}  // namespace
+
+std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
+  switch (cmap) {
+    case ColorMap::GRAY:
+      return gray_colormapdata();
+    case ColorMap::DIFF:
+      return diff_colormapdata();
+    case ColorMap::HSV:
+      return hsv_colormapdata();
+    case ColorMap::BLACKBODY:
+      return black_body_data();
+    case ColorMap::DIFF_POS:
+      return diff_colormapdata(0.5, 1);
+    case ColorMap::DIFF_NEG:
+      return diff_colormapdata(0, 0.5);
+    default:
+      throw std::logic_error("Unkown colormap!");
+  }
+}
+
+namespace {
+  namespace PRGn {
+    float colormap_red(float x) {
+      if (x < 0.09963276982307434) {
+        return 5.56064615384614E+02 * x + 6.34200000000000E+01;
+      } else if (x < 0.4070911109447479) {
+        return ((-1.64134573262743E+03 * x + 1.26126075878571E+03) * x + 8.30228593437549E+01) * x +
+               9.96536529647110E+01;
+      } else if (x < 0.5013306438922882) {
+        return 1.64123076923114E+02 * x + 1.64926153846145E+02;
+      } else if (x < 0.9049346148967743) {
+        return ((((-4.17783076764345E+04 * x + 1.55735420068591E+05) * x - 2.27018068370619E+05) *
+                     x +
+                 1.61149115838926E+05) *
+                    x -
+                5.60588504546212E+04) *
+                   x +
+               7.93919652573346E+03;
+      } else {
+        return -2.67676923076906E+02 * x + 2.68590769230752E+02;
+      }
+    }
+    float colormap_green(float x) {
+      if (x < 0.1011035144329071) {
+        return 4.30627692307691E+02 * x - 1.56923076923038E-01;
+      } else if (x < 0.5013851821422577) {
+        return ((2.21240993583109E+02 * x - 7.23499016773187E+02) * x + 8.74292145995924E+02) * x -
+               3.78460594811949E+01;
+      } else {
+        return ((((-8.82260255008935E+03 * x + 3.69735516719018E+04) * x - 5.94940784200438E+04) *
+                     x +
+                 4.54236515662453E+04) *
+                    x -
+                1.66043372157228E+04) *
+                   x +
+               2.59449114260420E+03;
+      }
+    }
+    float colormap_blue(float x) {
+      if (x < 0.50031378865242) {
+        return ((((1.32543265346288E+04 * x - 1.82876583834065E+04) * x + 9.17087085537958E+03) * x -
+                 2.45909850441496E+03) *
+                    x +
+                7.42893247681885E+02) *
+                   x +
+               7.26668497072812E+01;
+      } else if (x < 0.609173446893692) {
+        return -3.50141636141726E+02 * x + 4.22147741147797E+02;
+      } else {
+        return ((1.79776073728688E+03 * x - 3.80142452792079E+03) * x + 2.10214624189039E+03) * x -
+               6.74426111651015E+01;
+      }
+    }
+
+    Vec3f colormap(float x) {
+      auto r = colormap_red(x) / 255.f;
+      auto g = colormap_green(x) / 255.f;
+      auto b = colormap_blue(x) / 255.f;
+      return {r, g, b};
+    }
+  }  // namespace PRGn
+
+  std::array<float, 3 * 256> diff_colormapdata(float start, float end) {
+    std::array<float, 3 * 256> data = {};
+    for (int i = 0; i < 256; i++) {
+      float x = static_cast<float>(i) / 255.f;
+      Vec3f c = PRGn::colormap(0.5);
+      if (x >= start && x <= end) c = PRGn::colormap(x);
+      data[i * 3 + 0] = c[0];
+      data[i * 3 + 1] = c[1];
+      data[i * 3 + 2] = c[2];
+    }
+    return data;
+  }
+
+  namespace HSV {
+    float colormap_red(float x) {
+      if (x < 0.5) {
+        return -6.0 * x + 67.0 / 32.0;
+      } else {
+        return 6.0 * x - 79.0 / 16.0;
+      }
+    }
+    float colormap_green(float x) {
+      if (x < 0.4) {
+        return 6.0 * x - 3.0 / 32.0;
+      } else {
+        return -6.0 * x + 79.0 / 16.0;
+      }
+    }
+    float colormap_blue(float x) {
+      if (x < 0.7) {
+        return 6.0 * x - 67.0 / 32.0;
+      } else {
+        return -6.0 * x + 195.0 / 32.0;
+      }
+    }
+    Vec3f colormap(float x) { return {colormap_red(x), colormap_green(x), colormap_blue(x)}; }
+  }  // namespace HSV
+
+  std::array<float, 3 * 256> hsv_colormapdata() {
+    std::array<float, 3 * 256> data = {};
+    for (int i = 0; i < 256; i++) {
+      float x         = static_cast<float>(i) / 255.f;
+      auto c          = HSV::colormap(x);
+      data[i * 3 + 0] = c[0];
+      data[i * 3 + 1] = c[1];
+      data[i * 3 + 2] = c[2];
+    }
+    return data;
+  }
+
   std::array<float, 3 * 256> black_body_data() {
     return {0,
             0,
@@ -980,132 +1118,4 @@ namespace {
             0.63688935, 0.48210362, 0.05173155, 0.64407572, 0.4781157,  0.0511996,  0.65121289,
             0.47406244, 0.05044367, 0.65830839, 0.46993917, 0.04941288};
   }
-  namespace PRGn {
-    float colormap_red(float x) {
-      if (x < 0.09963276982307434) {
-        return 5.56064615384614E+02 * x + 6.34200000000000E+01;
-      } else if (x < 0.4070911109447479) {
-        return ((-1.64134573262743E+03 * x + 1.26126075878571E+03) * x + 8.30228593437549E+01) * x +
-               9.96536529647110E+01;
-      } else if (x < 0.5013306438922882) {
-        return 1.64123076923114E+02 * x + 1.64926153846145E+02;
-      } else if (x < 0.9049346148967743) {
-        return ((((-4.17783076764345E+04 * x + 1.55735420068591E+05) * x - 2.27018068370619E+05) *
-                     x +
-                 1.61149115838926E+05) *
-                    x -
-                5.60588504546212E+04) *
-                   x +
-               7.93919652573346E+03;
-      } else {
-        return -2.67676923076906E+02 * x + 2.68590769230752E+02;
-      }
-    }
-    float colormap_green(float x) {
-      if (x < 0.1011035144329071) {
-        return 4.30627692307691E+02 * x - 1.56923076923038E-01;
-      } else if (x < 0.5013851821422577) {
-        return ((2.21240993583109E+02 * x - 7.23499016773187E+02) * x + 8.74292145995924E+02) * x -
-               3.78460594811949E+01;
-      } else {
-        return ((((-8.82260255008935E+03 * x + 3.69735516719018E+04) * x - 5.94940784200438E+04) *
-                     x +
-                 4.54236515662453E+04) *
-                    x -
-                1.66043372157228E+04) *
-                   x +
-               2.59449114260420E+03;
-      }
-    }
-    float colormap_blue(float x) {
-      if (x < 0.50031378865242) {
-        return ((((1.32543265346288E+04 * x - 1.82876583834065E+04) * x + 9.17087085537958E+03) * x -
-                 2.45909850441496E+03) *
-                    x +
-                7.42893247681885E+02) *
-                   x +
-               7.26668497072812E+01;
-      } else if (x < 0.609173446893692) {
-        return -3.50141636141726E+02 * x + 4.22147741147797E+02;
-      } else {
-        return ((1.79776073728688E+03 * x - 3.80142452792079E+03) * x + 2.10214624189039E+03) * x -
-               6.74426111651015E+01;
-      }
-    }
-
-    Vec3f colormap(float x) {
-      auto r = colormap_red(x) / 255.f;
-      auto g = colormap_green(x) / 255.f;
-      auto b = colormap_blue(x) / 255.f;
-      return {r, g, b};
-    }
-  }  // namespace PRGn
-
-  std::array<float, 3 * 256> diff_colormapdata(float start = 0, float end = 1) {
-    std::array<float, 3 * 256> data = {};
-    for (int i = 0; i < 256; i++) {
-      float x = i / static_cast<float>(255);
-      Vec3f c = PRGn::colormap(0.5);
-      if (x >= start && x <= end) c = PRGn::colormap(x);
-      data[i * 3 + 0] = c[0];
-      data[i * 3 + 1] = c[1];
-      data[i * 3 + 2] = c[2];
-    }
-    return data;
-  }
-
-  namespace HSV {
-    float colormap_red(float x) {
-      if (x < 0.5) {
-        return -6.0 * x + 67.0 / 32.0;
-      } else {
-        return 6.0 * x - 79.0 / 16.0;
-      }
-    }
-    float colormap_green(float x) {
-      if (x < 0.4) {
-        return 6.0 * x - 3.0 / 32.0;
-      } else {
-        return -6.0 * x + 79.0 / 16.0;
-      }
-    }
-    float colormap_blue(float x) {
-      if (x < 0.7) {
-        return 6.0 * x - 67.0 / 32.0;
-      } else {
-        return -6.0 * x + 195.0 / 32.0;
-      }
-    }
-    Vec3f colormap(float x) { return {colormap_red(x), colormap_green(x), colormap_blue(x)}; }
-  }  // namespace HSV
-
-  std::array<float, 3 * 256> hsv_colormapdata() {
-    std::array<float, 3 * 256> data = {};
-    for (int i = 0; i < 256; i++) {
-      auto c          = HSV::colormap(i / static_cast<float>(255));
-      data[i * 3 + 0] = c[0];
-      data[i * 3 + 1] = c[1];
-      data[i * 3 + 2] = c[2];
-    }
-    return data;
-  }
 }  // namespace
-
-std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
-  switch (cmap) {
-    case ColorMap::GRAY:
-      return gray_colormapdata();
-    case ColorMap::DIFF:
-      return diff_colormapdata();
-    case ColorMap::HSV:
-      return hsv_colormapdata();
-    case ColorMap::BLACKBODY:
-      return black_body_data();
-    case ColorMap::DIFF_POS:
-      return diff_colormapdata(0.5, 1);
-    case ColorMap::DIFF_NEG:
-      return diff_colormapdata(0, 0.5);
-    default:
-      throw std::logic_error("Unkown colormap!");
-  }
-}
