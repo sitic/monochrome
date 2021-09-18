@@ -58,6 +58,14 @@ class BmpFileParser {
     read(mFormat);
     if (mFormat == 1) {
       dataType = PixelDataFormat::UINT8;
+
+      // Unfortunately, some old MultiRecoder versions use '1' here for uint16.
+      // Try to identify and fix those cases:
+      size_t frame_bytes = (mFrameWidth * mFrameHeight) * static_cast<int>(PixelDataFormat::UINT16);
+      auto num_frames    = (get_filesize() - HeaderLength) / (frame_bytes + FrameTailLength);
+      if (num_frames == mNumFrames) {
+        dataType = PixelDataFormat::UINT16;
+      }
     } else if (mFormat == 3) {
       dataType = PixelDataFormat::UINT16;
     } else {
@@ -86,7 +94,7 @@ class BmpFileParser {
     auto num_frames = (file_size - HeaderLength) / (mFrameBytes + FrameTailLength);
     if (num_frames != mNumFrames) {
       _error_msg = fmt::format(
-          "WARNING: Header says there should be {} frames, but only {} found in file! "
+          "WARNING: Header says there should be {} frames, but found {} in file! "
           "The file might be corrupted.",
           mNumFrames, num_frames);
       mNumFrames = num_frames;

@@ -37,6 +37,10 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
     return nullptr;
   }
 
+  if (!file->error_msg().empty()) {
+    global::new_ui_message("{}", file->error_msg());
+  }
+
   return file;
 }
 
