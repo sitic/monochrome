@@ -27,6 +27,152 @@ namespace global {
   std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
 }  // namespace global
 
+namespace ImGuiConnector {
+  ImGuiIO *io                   = nullptr;
+  GLFWkeyfun user_key_fun       = nullptr;
+  GLFWscrollfun user_scroll_fun = nullptr;
+
+  void Init(GLFWwindow *window,
+            GLFWmonitor *primary_monitor,
+            float font_scale,
+            GLFWkeyfun key_fun       = nullptr,
+            GLFWscrollfun scroll_fun = nullptr) {
+    user_key_fun    = key_fun;
+    user_scroll_fun = scroll_fun;
+
+    ImGui::CreateContext();
+    ImPlot::CreateContext();
+    io = &(ImGui::GetIO());
+    (void)io;
+    // Enable Keyboard Controls
+    io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // Disable .ini generation/loading for now
+    io->IniFilename = nullptr;
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+
+#ifdef __APPLE__
+    // to prevent 1200x800 from becoming 2400x1600
+    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+#endif
+    if (font_scale == 0) {
+#ifdef __APPLE__
+      font_scale = 1;
+#else
+      float xscale, yscale;
+      glfwGetMonitorContentScale(primary_monitor, &xscale, &yscale);
+      font_scale = std::max(xscale, yscale);
+#endif
+    }
+    ImGui::GetStyle().ScaleAllSizes(font_scale);
+    ImGui::GetStyle().FrameRounding = 3;
+
+    // Setup Platform/Renderer bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, false);
+    glfwSetMouseButtonCallback(window, ImGui_ImplGlfw_MouseButtonCallback);
+    if (user_scroll_fun) {
+      GLFWscrollfun callback = [](GLFWwindow *window, double xoffset, double yoffset) {
+        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+
+        // if imgui wants the input, don't dispatch it to our app
+        if (io && !io->WantCaptureKeyboard && user_scroll_fun) {
+          user_scroll_fun(window, xoffset, yoffset);
+        }
+      };
+      glfwSetScrollCallback(window, callback);
+    } else {
+      glfwSetScrollCallback(window, ImGui_ImplGlfw_ScrollCallback);
+    }
+    if (user_key_fun) {
+      GLFWkeyfun callback = [](GLFWwindow *window, int key, int scancode, int action, int mods) {
+        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+
+        // if imgui wants the input, don't dispatch it to our app
+        if (io && !io->WantCaptureKeyboard && user_key_fun) {
+          user_key_fun(window, key, scancode, action, mods);
+        }
+      };
+      glfwSetKeyCallback(window, callback);
+    } else {
+      glfwSetKeyCallback(window, ImGui_ImplGlfw_KeyCallback);
+    }
+    glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
+    ImGui_ImplOpenGL3_Init();
+
+    // Load Fonts
+    // - If no fonts are loaded, dear imgui will use the default font. You can
+    // also load multiple fonts and use ImGui::PushFont()/PopFont() to select
+    // them.
+    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you
+    // need to select the font among multiple.
+    // - If the file cannot be loaded, the function will return NULL. Please
+    // handle those errors in your application (e.g. use an assertion, or
+    // display an error and quit).
+    // - The fonts will be rasterized at a given size (w/ oversampling) and
+    // stored into a texture when calling
+    // ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame
+    // below will call.
+    // - Read 'docs/FONTS.txt' for more instructions and details.
+    // - Remember that in C/C++ if you want to include a backslash \ in a string
+    // literal you need to write a double backslash \\ !
+    //io.Fonts->AddFontDefault();
+    ImFontGlyphRangesBuilder builder;
+    builder.AddText(u8"σπ");
+    builder.AddRanges(io->Fonts->GetGlyphRangesDefault());
+    static ImVector<ImWchar> ranges;
+    builder.BuildRanges(&ranges);
+    ImFontConfig font_config;
+    font_config.OversampleH = 3;
+    font_config.OversampleV = 2;
+    //font_config.PixelSnapH = true;
+    io->Fonts->AddFontFromMemoryCompressedTTF(
+        fonts::DroidSans_compressed_data, fonts::DroidSans_compressed_size,
+        std::ceil(14.f * font_scale), &font_config, ranges.Data);
+    ImFontConfig icons_config;
+    icons_config.MergeMode  = true;
+    icons_config.PixelSnapH = true;
+
+    static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    io->Fonts->AddFontFromMemoryCompressedTTF(
+        fonts::fontawesome5_solid_compressed_data, fonts::fontawesome5_solid_compressed_size,
+        std::ceil(11.f * font_scale), &icons_config, fontawesome_icons_ranges);
+    static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI, ICON_MAX_MDI, 0};
+    io->Fonts->AddFontFromMemoryCompressedTTF(
+        fonts::materialdesignicons_compressed_data, fonts::materialdesignicons_compressed_size,
+        std::ceil(11.f * font_scale), &icons_config, materialdesignicons_icons_ranges);
+  }
+
+  void NewFrame() {
+    if (!io) return;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+  }
+
+  void Render(GLFWwindow *window, const ImVec4 &clear_color) {
+    if (!io) return;
+
+    ImGui::Render();
+    int display_w, display_h;
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+    glViewport(0, 0, display_w, display_h);
+    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  }
+
+  void Shutdown() {
+    if (!io) return;
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImPlot::DestroyContext();
+    ImGui::DestroyContext();
+  }
+}  // namespace ImGuiConnector
+
 void load_new_file(std::shared_ptr<AbstractFile> file,
                    std::optional<std::string> parentName = std::nullopt) {
   if (!file || !file->good()) return;
@@ -155,9 +301,7 @@ void display_loop() {
     load_from_queue();
 
     // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    ImGuiConnector::NewFrame();
 
     // Sleep until we need to wake up for desired framerate
     double time_per_frame = 1.0 / prm::display_fps;
@@ -197,17 +341,36 @@ void display_loop() {
     for (const auto &recording : global::recordings) {
       recording->render();
     }
-    ImGui::Render();
-    int display_w, display_h;
-    glfwGetFramebufferSize(global::main_window, &display_w, &display_h);
-    glViewport(0, 0, display_w, display_h);
-    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGuiConnector::Render(global::main_window, clear_color);
     glfwSwapBuffers(global::main_window);
     checkGlError("frame");
   }
 }
+
+void main_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_Q && action == GLFW_PRESS) {
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+  } else if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE) {
+    int steps = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
+    for (const auto &rec : global::recordings) {
+      int t = rec->current_frame();
+      rec->playback.set_next(t + steps);
+    }
+  } else if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE) {
+    int steps = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
+    for (const auto &rec : global::recordings) {
+      int t = rec->current_frame();
+      rec->playback.set_next(t - steps);
+    }
+  } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+    prm::playbackCtrl.toggle_play_pause();
+  } else if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+    for (const auto &rec : global::recordings) {
+      rec->playback.set_next(0);
+    }
+  }
+}
+
 
 void open_main_window(float font_scale = 0) {
   glfwSetErrorCallback(glfw_error_callback);
@@ -234,12 +397,6 @@ void open_main_window(float font_scale = 0) {
     prm::main_window_width  = w / prm::main_window_multipier;
     prm::main_window_height = h;
   });
-  glfwSetKeyCallback(global::main_window,
-                     [](GLFWwindow *window, int key, int scancode, int action, int mods) {
-                       if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_Q && action == GLFW_PRESS) {
-                         glfwSetWindowShouldClose(window, GLFW_TRUE);
-                       }
-                     });
   glfwSetDropCallback(global::main_window, [](GLFWwindow *window, int count, const char **paths) {
     for (int i = 0; i < count; i++) {
       load_new_file(paths[i]);
@@ -254,79 +411,7 @@ void open_main_window(float font_scale = 0) {
     exit(EXIT_FAILURE);
   }
 
-  ImGui::CreateContext();
-  ImPlot::CreateContext();
-  ImGuiIO &io = ImGui::GetIO();
-  (void)io;
-  // Enable Keyboard Controls
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-  // Disable .ini generation/loading for now
-  io.IniFilename = nullptr;
-
-  // Setup Dear ImGui style
-  ImGui::StyleColorsDark();
-
-#ifdef __APPLE__
-  // to prevent 1200x800 from becoming 2400x1600
-  glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
-#endif
-  if (font_scale == 0) {
-#ifdef __APPLE__
-    font_scale = 1;
-#else
-    float xscale, yscale;
-    glfwGetMonitorContentScale(primary_monitor, &xscale, &yscale);
-    font_scale = std::max(xscale, yscale);
-#endif
-  }
-  ImGui::GetStyle().ScaleAllSizes(font_scale);
-  ImGui::GetStyle().FrameRounding = 3;
-
-  // Setup Platform/Renderer bindings
-  ImGui_ImplGlfw_InitForOpenGL(global::main_window, true);
-  ImGui_ImplOpenGL3_Init();
-
-  // Load Fonts
-  // - If no fonts are loaded, dear imgui will use the default font. You can
-  // also load multiple fonts and use ImGui::PushFont()/PopFont() to select
-  // them.
-  // - AddFontFromFileTTF() will return the ImFont* so you can store it if you
-  // need to select the font among multiple.
-  // - If the file cannot be loaded, the function will return NULL. Please
-  // handle those errors in your application (e.g. use an assertion, or
-  // display an error and quit).
-  // - The fonts will be rasterized at a given size (w/ oversampling) and
-  // stored into a texture when calling
-  // ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame
-  // below will call.
-  // - Read 'docs/FONTS.txt' for more instructions and details.
-  // - Remember that in C/C++ if you want to include a backslash \ in a string
-  // literal you need to write a double backslash \\ !
-  //io.Fonts->AddFontDefault();
-  ImFontGlyphRangesBuilder builder;
-  builder.AddText(u8"σπ");
-  builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
-  static ImVector<ImWchar> ranges;
-  builder.BuildRanges(&ranges);
-  ImFontConfig font_config;
-  font_config.OversampleH = 3;
-  font_config.OversampleV = 2;
-  //font_config.PixelSnapH = true;
-  io.Fonts->AddFontFromMemoryCompressedTTF(fonts::DroidSans_compressed_data,
-                                           fonts::DroidSans_compressed_size,
-                                           std::ceil(14.f * font_scale), &font_config, ranges.Data);
-  ImFontConfig icons_config;
-  icons_config.MergeMode  = true;
-  icons_config.PixelSnapH = true;
-
-  static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-  io.Fonts->AddFontFromMemoryCompressedTTF(
-      fonts::fontawesome5_solid_compressed_data, fonts::fontawesome5_solid_compressed_size,
-      std::ceil(11.f * font_scale), &icons_config, fontawesome_icons_ranges);
-  static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI, ICON_MAX_MDI, 0};
-  io.Fonts->AddFontFromMemoryCompressedTTF(
-      fonts::materialdesignicons_compressed_data, fonts::materialdesignicons_compressed_size,
-      std::ceil(11.f * font_scale), &icons_config, materialdesignicons_icons_ranges);
+  ImGuiConnector::Init(global::main_window, primary_monitor, font_scale, main_key_callback);
 
   add_window_icon(global::main_window);
 

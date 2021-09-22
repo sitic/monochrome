@@ -557,9 +557,11 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
 
   // Plot traces and show their controls
   for (auto &[trace, pos, color, scale] : rec->traces) {
+    int size  = trace.size();
+    if (size == 0) continue;
+    
     auto label = pos.to_string();
     ImGui::PushID(label.c_str());
-    int size  = trace.size();
     auto data = trace.data();
     if (size > prm::trace_length) {
       data += (size - prm::trace_length);

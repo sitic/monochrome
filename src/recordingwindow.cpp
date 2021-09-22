@@ -21,7 +21,7 @@ namespace {
                          [_window](const auto &r) { return r->window == _window; });
   }
 
-  std::string get_shader_file(std::string filename) { // copy shader source from embeded files
+  std::string get_shader_file(std::string filename) {  // copy shader source from embeded files
     auto fs   = cmrc::rc::get_filesystem();
     auto data = fs.open("src/shaders/" + filename);
     return std::string(data.begin(), data.end());
@@ -566,10 +566,16 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
     // Don't call RecordingWindow::close_callback() directly here,
     // causes a segfault in glfw
     glfwSetWindowShouldClose(window, GLFW_TRUE);
-  } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-    auto rec = rec_from_window_ptr(window);
-    auto fn  = rec->save_snapshot();
-    global::new_ui_message("Saved screenshot to {}", fn.string());
+  } else if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE) {
+    int steps = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
+    auto rec  = rec_from_window_ptr(window);
+    int t     = rec->current_frame();
+    rec->playback.set_next(t + steps);
+  } else if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE) {
+    int steps = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
+    auto rec  = rec_from_window_ptr(window);
+    int t     = rec->current_frame();
+    rec->playback.set_next(t - steps);
   } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
     auto rec = rec_from_window_ptr(window);
     if (rec->active) {
@@ -577,6 +583,10 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
     } else {
       rec->active = true;
     }
+  } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+    auto rec = rec_from_window_ptr(window);
+    auto fn  = rec->save_snapshot();
+    global::new_ui_message("Saved screenshot to {}", fn.string());
   }
 }
 
