@@ -10,12 +10,16 @@ class RecordingTracePos(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsRecordingTracePos(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = RecordingTracePos()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsRecordingTracePos(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # RecordingTracePos
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -81,10 +85,31 @@ class RecordingTracePos(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
-def RecordingTracePosStart(builder): builder.StartObject(3)
-def RecordingTracePosAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-def RecordingTracePosAddPosx(builder, posx): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(posx), 0)
-def RecordingTracePosStartPosxVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def RecordingTracePosAddPosy(builder, posy): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(posy), 0)
-def RecordingTracePosStartPosyVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def RecordingTracePosEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(3)
+def RecordingTracePosStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+def RecordingTracePosAddName(builder, name):
+    """This method is deprecated. Please switch to AddName."""
+    return AddName(builder, name)
+def AddPosx(builder, posx): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(posx), 0)
+def RecordingTracePosAddPosx(builder, posx):
+    """This method is deprecated. Please switch to AddPosx."""
+    return AddPosx(builder, posx)
+def StartPosxVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def RecordingTracePosStartPosxVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartPosxVector(builder, numElems)
+def AddPosy(builder, posy): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(posy), 0)
+def RecordingTracePosAddPosy(builder, posy):
+    """This method is deprecated. Please switch to AddPosy."""
+    return AddPosy(builder, posy)
+def StartPosyVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def RecordingTracePosStartPosyVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartPosyVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def RecordingTracePosEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

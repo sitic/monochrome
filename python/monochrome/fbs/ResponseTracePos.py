@@ -10,12 +10,16 @@ class ResponseTracePos(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsResponseTracePos(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = ResponseTracePos()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsResponseTracePos(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # ResponseTracePos
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -45,7 +49,19 @@ class ResponseTracePos(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
-def ResponseTracePosStart(builder): builder.StartObject(1)
-def ResponseTracePosAddRecordings(builder, recordings): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(recordings), 0)
-def ResponseTracePosStartRecordingsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ResponseTracePosEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(1)
+def ResponseTracePosStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRecordings(builder, recordings): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(recordings), 0)
+def ResponseTracePosAddRecordings(builder, recordings):
+    """This method is deprecated. Please switch to AddRecordings."""
+    return AddRecordings(builder, recordings)
+def StartRecordingsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def ResponseTracePosStartRecordingsVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartRecordingsVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def ResponseTracePosEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

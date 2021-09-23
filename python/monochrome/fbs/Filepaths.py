@@ -10,12 +10,16 @@ class Filepaths(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsFilepaths(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Filepaths()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsFilepaths(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Filepaths
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -40,7 +44,19 @@ class Filepaths(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
-def FilepathsStart(builder): builder.StartObject(1)
-def FilepathsAddFile(builder, file): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(file), 0)
-def FilepathsStartFileVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def FilepathsEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(1)
+def FilepathsStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddFile(builder, file): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(file), 0)
+def FilepathsAddFile(builder, file):
+    """This method is deprecated. Please switch to AddFile."""
+    return AddFile(builder, file)
+def StartFileVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def FilepathsStartFileVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartFileVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def FilepathsEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

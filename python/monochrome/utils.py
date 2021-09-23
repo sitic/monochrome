@@ -42,7 +42,7 @@ def create_filepaths_msg(paths):
     Filepaths.FilepathsStartFileVector(builder, len(paths_fb))
     for p in paths_fb:
         builder.PrependSOffsetTRelative(p)
-    vec = builder.EndVector(len(paths_fb))
+    vec = builder.EndVector()
     Filepaths.FilepathsStart(builder)
     Filepaths.FilepathsAddFile(builder, vec)
     fp = Filepaths.FilepathsEnd(builder)
@@ -71,7 +71,7 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
         Array3Meta.Array3MetaStartMetaDataVector(builder, len(metaData))
         for e in metaData_fbs:
             builder.PrependUOffsetTRelative(e)
-        metaData = builder.EndVector(len(metaData))
+        metaData = builder.EndVector()
     Array3Meta.Array3MetaStart(builder)
     Array3Meta.Array3MetaAddType(builder, type)
     Array3Meta.Array3MetaAddNx(builder, shape[2])

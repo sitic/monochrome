@@ -10,12 +10,16 @@ class DictEntry(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsDictEntry(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = DictEntry()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsDictEntry(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # DictEntry
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -34,7 +38,19 @@ class DictEntry(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def DictEntryStart(builder): builder.StartObject(2)
-def DictEntryAddKey(builder, key): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0)
-def DictEntryAddVal(builder, val): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(val), 0)
-def DictEntryEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def DictEntryStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddKey(builder, key): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0)
+def DictEntryAddKey(builder, key):
+    """This method is deprecated. Please switch to AddKey."""
+    return AddKey(builder, key)
+def AddVal(builder, val): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(val), 0)
+def DictEntryAddVal(builder, val):
+    """This method is deprecated. Please switch to AddVal."""
+    return AddVal(builder, val)
+def End(builder): return builder.EndObject()
+def DictEntryEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

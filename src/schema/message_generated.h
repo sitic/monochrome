@@ -38,7 +38,7 @@ struct ResponseTracePosBuilder;
 struct Root;
 struct RootBuilder;
 
-enum BitRange {
+enum BitRange : int32_t {
   BitRange_AUTODETECT = 0,
   BitRange_UINT8 = 1,
   BitRange_UINT10 = 2,
@@ -89,46 +89,49 @@ inline const char *EnumNameBitRange(BitRange e) {
   return EnumNamesBitRange()[index];
 }
 
-enum ColorMap {
+enum ColorMap : int32_t {
   ColorMap_DEFAULT = 0,
   ColorMap_GRAY = 1,
   ColorMap_DIFF = 2,
   ColorMap_HSV = 3,
   ColorMap_BLACKBODY = 4,
+  ColorMap_VIRIDIS = 5,
   ColorMap_MIN = ColorMap_DEFAULT,
-  ColorMap_MAX = ColorMap_BLACKBODY
+  ColorMap_MAX = ColorMap_VIRIDIS
 };
 
-inline const ColorMap (&EnumValuesColorMap())[5] {
+inline const ColorMap (&EnumValuesColorMap())[6] {
   static const ColorMap values[] = {
     ColorMap_DEFAULT,
     ColorMap_GRAY,
     ColorMap_DIFF,
     ColorMap_HSV,
-    ColorMap_BLACKBODY
+    ColorMap_BLACKBODY,
+    ColorMap_VIRIDIS
   };
   return values;
 }
 
 inline const char * const *EnumNamesColorMap() {
-  static const char * const names[6] = {
+  static const char * const names[7] = {
     "DEFAULT",
     "GRAY",
     "DIFF",
     "HSV",
     "BLACKBODY",
+    "VIRIDIS",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameColorMap(ColorMap e) {
-  if (flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_BLACKBODY)) return "";
+  if (flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_VIRIDIS)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesColorMap()[index];
 }
 
-enum ArrayDataType {
+enum ArrayDataType : int32_t {
   ArrayDataType_FLOAT = 0,
   ArrayDataType_UINT16 = 1,
   ArrayDataType_MIN = ArrayDataType_FLOAT,
@@ -158,7 +161,7 @@ inline const char *EnumNameArrayDataType(ArrayDataType e) {
   return EnumNamesArrayDataType()[index];
 }
 
-enum TransferFunction {
+enum TransferFunction : int32_t {
   TransferFunction_NONE = 0,
   TransferFunction_LINEAR = 1,
   TransferFunction_DIFF = 2,
@@ -197,7 +200,7 @@ inline const char *EnumNameTransferFunction(TransferFunction e) {
   return EnumNamesTransferFunction()[index];
 }
 
-enum RequestType {
+enum RequestType : int32_t {
   RequestType_CLOSE = 0,
   RequestType_CLOSE_ALL = 1,
   RequestType_TRACE_POS = 2,
@@ -230,7 +233,7 @@ inline const char *EnumNameRequestType(RequestType e) {
   return EnumNamesRequestType()[index];
 }
 
-enum Data {
+enum Data : uint8_t {
   Data_NONE = 0,
   Data_Filepaths = 1,
   Data_Array3Meta = 2,
@@ -342,7 +345,6 @@ struct DictEntryBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  DictEntryBuilder &operator=(const DictEntryBuilder &);
   flatbuffers::Offset<DictEntry> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<DictEntry>(end);
@@ -508,7 +510,6 @@ struct Array3MetaBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  Array3MetaBuilder &operator=(const Array3MetaBuilder &);
   flatbuffers::Offset<Array3Meta> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Array3Meta>(end);
@@ -649,7 +650,6 @@ struct Array3MetaFlowBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  Array3MetaFlowBuilder &operator=(const Array3MetaFlowBuilder &);
   flatbuffers::Offset<Array3MetaFlow> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Array3MetaFlow>(end);
@@ -726,7 +726,6 @@ struct Array3DataChunkfBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  Array3DataChunkfBuilder &operator=(const Array3DataChunkfBuilder &);
   flatbuffers::Offset<Array3DataChunkf> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Array3DataChunkf>(end);
@@ -790,7 +789,6 @@ struct Array3DataChunku16Builder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  Array3DataChunku16Builder &operator=(const Array3DataChunku16Builder &);
   flatbuffers::Offset<Array3DataChunku16> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Array3DataChunku16>(end);
@@ -847,7 +845,6 @@ struct FilepathsBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  FilepathsBuilder &operator=(const FilepathsBuilder &);
   flatbuffers::Offset<Filepaths> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Filepaths>(end);
@@ -907,7 +904,6 @@ struct RequestBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  RequestBuilder &operator=(const RequestBuilder &);
   flatbuffers::Offset<Request> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Request>(end);
@@ -981,7 +977,6 @@ struct RecordingTracePosBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  RecordingTracePosBuilder &operator=(const RecordingTracePosBuilder &);
   flatbuffers::Offset<RecordingTracePos> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<RecordingTracePos>(end);
@@ -1044,7 +1039,6 @@ struct ResponseTracePosBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ResponseTracePosBuilder &operator=(const ResponseTracePosBuilder &);
   flatbuffers::Offset<ResponseTracePos> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<ResponseTracePos>(end);
@@ -1147,7 +1141,6 @@ struct RootBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  RootBuilder &operator=(const RootBuilder &);
   flatbuffers::Offset<Root> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<Root>(end);

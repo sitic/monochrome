@@ -10,12 +10,16 @@ class Array3MetaFlow(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsArray3MetaFlow(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Array3MetaFlow()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsArray3MetaFlow(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Array3MetaFlow
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -55,10 +59,31 @@ class Array3MetaFlow(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Array3MetaFlowStart(builder): builder.StartObject(5)
-def Array3MetaFlowAddNx(builder, nx): builder.PrependInt32Slot(0, nx, 0)
-def Array3MetaFlowAddNy(builder, ny): builder.PrependInt32Slot(1, ny, 0)
-def Array3MetaFlowAddNt(builder, nt): builder.PrependInt32Slot(2, nt, 0)
-def Array3MetaFlowAddName(builder, name): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-def Array3MetaFlowAddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
-def Array3MetaFlowEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(5)
+def Array3MetaFlowStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddNx(builder, nx): builder.PrependInt32Slot(0, nx, 0)
+def Array3MetaFlowAddNx(builder, nx):
+    """This method is deprecated. Please switch to AddNx."""
+    return AddNx(builder, nx)
+def AddNy(builder, ny): builder.PrependInt32Slot(1, ny, 0)
+def Array3MetaFlowAddNy(builder, ny):
+    """This method is deprecated. Please switch to AddNy."""
+    return AddNy(builder, ny)
+def AddNt(builder, nt): builder.PrependInt32Slot(2, nt, 0)
+def Array3MetaFlowAddNt(builder, nt):
+    """This method is deprecated. Please switch to AddNt."""
+    return AddNt(builder, nt)
+def AddName(builder, name): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+def Array3MetaFlowAddName(builder, name):
+    """This method is deprecated. Please switch to AddName."""
+    return AddName(builder, name)
+def AddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
+def Array3MetaFlowAddParentName(builder, parentName):
+    """This method is deprecated. Please switch to AddParentName."""
+    return AddParentName(builder, parentName)
+def End(builder): return builder.EndObject()
+def Array3MetaFlowEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

@@ -8,4 +8,5 @@ class ColorMap(object):
     DIFF = 2
     HSV = 3
     BLACKBODY = 4
+    VIRIDIS = 5
 

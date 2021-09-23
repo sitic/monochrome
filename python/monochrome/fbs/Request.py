@@ -10,12 +10,16 @@ class Request(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsRequest(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Request()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsRequest(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Request
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -34,7 +38,19 @@ class Request(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def RequestStart(builder): builder.StartObject(2)
-def RequestAddType(builder, type): builder.PrependInt32Slot(0, type, 0)
-def RequestAddArg(builder, arg): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(arg), 0)
-def RequestEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def RequestStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddType(builder, type): builder.PrependInt32Slot(0, type, 0)
+def RequestAddType(builder, type):
+    """This method is deprecated. Please switch to AddType."""
+    return AddType(builder, type)
+def AddArg(builder, arg): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(arg), 0)
+def RequestAddArg(builder, arg):
+    """This method is deprecated. Please switch to AddArg."""
+    return AddArg(builder, arg)
+def End(builder): return builder.EndObject()
+def RequestEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

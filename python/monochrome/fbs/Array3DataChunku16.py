@@ -10,12 +10,16 @@ class Array3DataChunku16(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsArray3DataChunku16(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Array3DataChunku16()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsArray3DataChunku16(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Array3DataChunku16
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -54,8 +58,23 @@ class Array3DataChunku16(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         return o == 0
 
-def Array3DataChunku16Start(builder): builder.StartObject(2)
-def Array3DataChunku16AddStartidx(builder, startidx): builder.PrependUint64Slot(0, startidx, 0)
-def Array3DataChunku16AddData(builder, data): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
-def Array3DataChunku16StartDataVector(builder, numElems): return builder.StartVector(2, numElems, 2)
-def Array3DataChunku16End(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def Array3DataChunku16Start(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddStartidx(builder, startidx): builder.PrependUint64Slot(0, startidx, 0)
+def Array3DataChunku16AddStartidx(builder, startidx):
+    """This method is deprecated. Please switch to AddStartidx."""
+    return AddStartidx(builder, startidx)
+def AddData(builder, data): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
+def Array3DataChunku16AddData(builder, data):
+    """This method is deprecated. Please switch to AddData."""
+    return AddData(builder, data)
+def StartDataVector(builder, numElems): return builder.StartVector(2, numElems, 2)
+def Array3DataChunku16StartDataVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartDataVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def Array3DataChunku16End(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

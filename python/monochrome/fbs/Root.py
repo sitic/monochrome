@@ -10,12 +10,16 @@ class Root(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsRoot(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Root()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsRoot(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Root
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -37,7 +41,19 @@ class Root(object):
             return obj
         return None
 
-def RootStart(builder): builder.StartObject(2)
-def RootAddDataType(builder, dataType): builder.PrependUint8Slot(0, dataType, 0)
-def RootAddData(builder, data): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
-def RootEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def RootStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddDataType(builder, dataType): builder.PrependUint8Slot(0, dataType, 0)
+def RootAddDataType(builder, dataType):
+    """This method is deprecated. Please switch to AddDataType."""
+    return AddDataType(builder, dataType)
+def AddData(builder, data): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
+def RootAddData(builder, data):
+    """This method is deprecated. Please switch to AddData."""
+    return AddData(builder, data)
+def End(builder): return builder.EndObject()
+def RootEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)
