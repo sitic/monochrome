@@ -2,8 +2,8 @@ import setuptools
 
 setuptools.setup(
     name='monochrome',
-    version='0.1.0',
-    url='https://gitlab.gwdg.de/lebert/Monochrome',
+    version='0.2.0',
+    url='https://gitlab.com/cardiac-vision/monochrome',
     classifiers=[
         "Private :: Do not Upload"
     ],
