@@ -1,5 +1,6 @@
 #include "colormap.h"
 #include "vectors.h"
+#include "cppcolormap.h"
 
 namespace {
   std::array<float, 3 * 256> black_body_data();
@@ -7,6 +8,13 @@ namespace {
   std::array<float, 3 * 256> cmocean_phasemapdata();
   std::array<float, 3 * 256> diff_colormapdata(float start = 0, float end = 1);
   std::array<float, 3 * 256> hsv_colormapdata();
+
+  std::array<float, 3 * 256> cppcolormap_to_std(const std::string& name) {
+    std::array<float, 3 * 256> out{};
+    auto data = cppcolormap::colormap(name);
+    std::copy(data.begin(), data.end(), out.begin());
+    return out;
+  }
 }  // namespace
 
 std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
@@ -23,6 +31,8 @@ std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
       return diff_colormapdata(0.5, 1);
     case ColorMap::DIFF_NEG:
       return diff_colormapdata(0, 0.5);
+    case ColorMap::VIRIDIS:
+      return cppcolormap_to_std("viridis");
     default:
       throw std::logic_error("Unkown colormap!");
   }

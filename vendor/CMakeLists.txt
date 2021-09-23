@@ -64,6 +64,13 @@ target_include_directories(flatbuffers INTERFACE flatbuffers/include)
 add_library(flagset INTERFACE)
 target_include_directories(flagset INTERFACE flag-set/include)
 
+add_library(xtensor INTERFACE)
+target_include_directories(xtensor INTERFACE xtensor)
+
+add_library(cppcolormap INTERFACE)
+target_include_directories(cppcolormap INTERFACE cppcolormap/include)
+target_link_libraries(cppcolormap INTERFACE xtensor)
+
 add_subdirectory(CLI11)
 
 add_library(pugixml pugixml/src/pugixml.cpp pugixml/src/pugixml.hpp pugixml/src/pugiconfig.hpp)

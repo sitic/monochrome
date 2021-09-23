@@ -79,7 +79,7 @@ add_executable(Monochrome src/main.cpp src/utils/utils.h src/fileformats/BmpFile
         src/fileformats/all_formats.cpp src/utils/definitions.h src/utils/plot_utils.h)
 target_link_libraries(Monochrome PRIVATE
         CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy
-        pugixml flagset qvv::rc)
+        pugixml flagset cppcolormap qvv::rc)
 target_include_directories(Monochrome PRIVATE src)
 if (MC_FORCE_TCP_IPC)
     target_compile_definitions(Monochrome PRIVATE "-DMC_FORCE_TCP_IPC")
