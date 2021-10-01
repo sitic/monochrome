@@ -301,10 +301,6 @@ void RecordingWindow::display(Filters prefilter,
       histogram.min = -0.1f;
       histogram.max = 1.1f;
       break;
-    case Transformations::FlickerSegmentation:
-      histogram.min = 0;
-      histogram.max = (*arr).maxCoeff();
-      break;
   }
 
   auto *posttransform = transformationArena.create_if_needed(postfilter, 1);

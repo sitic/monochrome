@@ -138,9 +138,6 @@ TransformationList::TransformationCtrl::TransformationCtrl(
       case Transformations::ContrastEnhancement:
         m_transform = std::make_unique<Transformation::ContrastEnhancement>(rec);
         break;
-      case Transformations::FlickerSegmentation:
-        m_transform = std::make_unique<Transformation::FlickerSegmentation>(rec);
-        break;
     }
   } else if (auto *t = std::get_if<Filters>(&type)) {
     switch (*t) {

@@ -260,7 +260,6 @@ void show_main_ui() {
       ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
       ImGui::Unindent(10);
     }
-    selectable("Flicker Segmentation", Transformations::FlickerSegmentation);
     ImGui::TreePop();
   }
 
