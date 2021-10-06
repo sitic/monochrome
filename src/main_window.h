@@ -244,6 +244,11 @@ void load_from_queue() {
     auto file = std::make_shared<InMemoryFile>(arr.value());
     load_new_file(file, arr.value()->meta.parentName);
   }
+  if (auto pointsvideo = global::get_pointsvideo_to_load()) {
+    auto rec         = global::recordings.back();
+    auto parent_name = pointsvideo.value()->parent_name;
+    rec->add_points_video(pointsvideo.value());
+  }
   if (!global::merge_queue.empty()) {
     auto [child, parent, as_flow] = global::merge_queue.front();
     global::merge_queue.pop();

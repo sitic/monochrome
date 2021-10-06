@@ -409,6 +409,33 @@ void RecordingWindow::display(Filters prefilter,
     glDrawArrays(GL_POINTS, 0, flow_vert.size() / 2);
   }
 
+  for (const auto &positions : points_videos) {
+    auto data  = positions->data.at(t_frame);
+    auto color = positions->color;
+
+    flow_vert.clear();
+    float nx = Nx(), ny = Ny();
+    for (size_t i = 0; i < data.size(); i += 2) {
+      float y = data[i];
+      float x = data[i + 1];
+
+      float xx = (2.f * x + 1) / static_cast<float>(nx) - 1;
+      float yy = 1 - (2.f * y + 1) / static_cast<float>(ny);
+      flow_vert.push_back(xx);
+      flow_vert.push_back(yy);
+    }
+
+    flow_shader.use();
+    flow_shader.setVec4("color", color);
+    glBindVertexArray(flow_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, flow_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * flow_vert.size(), flow_vert.data(),
+                 GL_STREAM_DRAW);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    glPointSize(FlowData::pointsize * scale_fct);
+    glDrawArrays(GL_POINTS, 0, flow_vert.size() / 2);
+  }
+
   glfwMakeContextCurrent(global::main_window);
 }
 
@@ -633,6 +660,20 @@ void RecordingWindow::add_flow(std::shared_ptr<Recording> flow) {
   else
     global::new_ui_message("Failed to add '{}' as flow to '{}' because length does not match",
                            flow->name(), name());
+}
+
+void RecordingWindow::add_points_video(std::shared_ptr<global::PointsVideo> pv) {
+  if (!pv) return;
+  if (pv->data.size() != length()) {
+    global::new_ui_message(
+        "Failed to add points to recording, number of frames do not match (recording {}, points {}",
+        length(), pv->data.size());
+    return;
+  }
+  if (pv->color[3] == 0) {
+    pv->assign_next_color(points_videos.size());
+  }
+  points_videos.push_back(pv);
 }
 
 void RecordingWindow::render() {

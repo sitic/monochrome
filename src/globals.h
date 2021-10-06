@@ -29,14 +29,14 @@ namespace global {
   };
 
   template <typename... Args>
-  inline void new_ui_message(const char *fmt, Args &&... args) {
+  inline void new_ui_message(const char *fmt, Args &&...args) {
     const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
     messages.emplace_back(msg);
     fmt::print(msg + "\n");
   }
 
   template <typename... Args>
-  inline void new_ui_message(const std::string &fmt, Args &&... args) {
+  inline void new_ui_message(const std::string &fmt, Args &&...args) {
     return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
   }
 
@@ -96,8 +96,35 @@ namespace global {
 
   std::optional<std::shared_ptr<RawArray3>> get_rawarray3_to_load();
 
-  void close_window(const std::string& recording_name);
+  void close_window(const std::string &recording_name);
   void close_all_windows();
 
   std::vector<std::pair<std::string, std::vector<Vec2i>>> get_trace_pos();
+
+  struct PointsVideo {
+    std::string name;
+    std::string parent_name;
+    std::vector<std::vector<float>> data;
+    Vec4f color = {0, 0, 0, 0};
+
+    void assign_next_color(unsigned color_count) {
+      // List of colors to cycle through
+      const std::array<Vec4f, 6> cycle_list = {{
+          {0, 0, 0, 1},
+          {1, 1, 1, 1},
+          {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
+          {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
+          {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
+          {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
+      }};
+
+      if (color_count >= cycle_list.size()) {
+        color_count %= cycle_list.size();
+      }
+      color = cycle_list.at(color_count);
+    }
+  };
+
+  void add_PointsVideo_to_load(std::shared_ptr<PointsVideo> obj);
+  std::optional<std::shared_ptr<PointsVideo>> get_pointsvideo_to_load();
 }  // namespace global

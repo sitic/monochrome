@@ -66,7 +66,39 @@ table ResponseTracePos {
   recordings:[RecordingTracePos];
 }
 
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, Request }
+//table Point {
+//   x:float;
+//   y:float;
+//}
+
+//table Points {
+//  points:[Point];
+//}
+
+//table PointsVideo {
+//  name:string;
+//  parent_name:string;
+//  points_video:[Points];
+//}
+
+struct Color {
+  values:[float:4];
+}
+
+table PointsVideo {
+  name:string;
+  parent_name:string;
+  points_data:[float];
+  time_idxs:[uint];
+  color:Color;
+}
+
+table VideoID {
+  id:string;
+  error:string;
+}
+
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, Request, PointsVideo, VideoID}
 
 table Root {
     data:Data;

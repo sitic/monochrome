@@ -12,7 +12,7 @@ class RecordingWindow;
 using SharedRecordingPtr = std::shared_ptr<RecordingWindow>;
 
 enum class OverlayMethod : int { Linear, Diff, Positive, Negative };
-inline const char *OverlayMethodNames[4] = {"Linear",  "Diff",  "Positive",  "Negative"};
+inline const char *OverlayMethodNames[4] = {"Linear", "Diff", "Positive", "Negative"};
 
 class RecordingWindow : public Recording {
  public:
@@ -29,7 +29,8 @@ class RecordingWindow : public Recording {
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
   TransformationList transformationArena;
-  std::vector<FlowData> flows;  // use add_flow() to add members
+  std::vector<FlowData> flows;                                      // use add_flow() to add members
+  std::vector<std::shared_ptr<global::PointsVideo>> points_videos;  // use add_points_video() to add
   bool as_overlay    = false;
   int overlay_method = 3;
   struct {
@@ -81,6 +82,7 @@ class RecordingWindow : public Recording {
   void stop_recording();
 
   void add_flow(std::shared_ptr<Recording> flow);
+  void add_points_video(std::shared_ptr<global::PointsVideo> pv);
 
   static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
   static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos);

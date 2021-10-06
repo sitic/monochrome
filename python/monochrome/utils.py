@@ -5,7 +5,9 @@ import socket
 import sys
 from typing import List, Text, Union, Optional, Dict
 
-from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16
+# from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, PointsVideo, \
+#     Points, Point
+from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, PointsVideo
 from .fbs.ArrayDataType import ArrayDataType
 from .fbs.ColorMap import ColorMap
 from .fbs.BitRange import BitRange
@@ -29,24 +31,89 @@ def create_socket():
 
 
 def build_root(builder, data_type, data):
-    Root.RootStart(builder)
-    Root.RootAddDataType(builder, data_type)
-    Root.RootAddData(builder, data)
-    root = Root.RootEnd(builder)
+    Root.Start(builder)
+    Root.AddDataType(builder, data_type)
+    Root.AddData(builder, data)
+    root = Root.End(builder)
     return root
 
 
 def create_filepaths_msg(paths):
     builder = flatbuffers.Builder(512)
     paths_fb = [builder.CreateString(s) for s in paths]
-    Filepaths.FilepathsStartFileVector(builder, len(paths_fb))
+    Filepaths.StartFileVector(builder, len(paths_fb))
     for p in paths_fb:
         builder.PrependSOffsetTRelative(p)
     vec = builder.EndVector()
-    Filepaths.FilepathsStart(builder)
-    Filepaths.FilepathsAddFile(builder, vec)
-    fp = Filepaths.FilepathsEnd(builder)
+    Filepaths.Start(builder)
+    Filepaths.AddFile(builder, vec)
+    fp = Filepaths.End(builder)
     root = build_root(builder, Data.Data.Filepaths, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    return buf
+
+
+# def create_pointsvideo_msg(points_py, name, parent_name):
+#     builder = flatbuffers.Builder(1024)
+#     name_fb = builder.CreateString(name)
+#     parent_fb = builder.CreateString(parent_name) if parent_name else None
+#
+#     points_video = []
+#     for frame in points_py:
+#         points_frame = []
+#         for point in frame:
+#             Point.Start(builder)
+#             Point.AddX(builder, float(point[0]))
+#             Point.AddY(builder, float(point[1]))
+#             point_fb = Point.End(builder)
+#             points_frame.append(point_fb)
+#         Points.StartPointsVector(builder, len(points_frame))
+#         for point in points_frame:
+#             builder.PrependUOffsetTRelative(point)
+#         points_video.append(builder.EndVector())
+#
+#     PointsVideo.StartPointsVideoVector(builder, len(points_video))
+#     for p in points_video:
+#         builder.PrependSOffsetTRelative(p)
+#     video_vec = builder.EndVector()
+#
+#     PointsVideo.Start(builder)
+#     PointsVideo.AddName(builder, name_fb)
+#     if parent_fb:
+#         PointsVideo.AddParentName(builder, parent_fb)
+#     PointsVideo.AddPointsVideo(builder, video_vec)
+#     fp = PointsVideo.End(builder)
+#     root = build_root(builder, Data.Data.PointsVideo, fp)
+#     builder.FinishSizePrefixed(root)
+#     buf = builder.Output()
+#     return buf
+
+def create_pointsvideo_msg(points_py, name, parent_name):
+    builder = flatbuffers.Builder(1024)
+    name_fb = builder.CreateString(name)
+    parent_fb = builder.CreateString(parent_name) if parent_name else None
+
+    flat = []
+    indexes = []
+    for frame in points_py:
+        for point in frame:
+            flat.append(point[0])
+            flat.append(point[1])
+        indexes.append(len(flat))
+    flat = np.array(flat, dtype=np.float32)
+    indexs = np.array(indexes, dtype=np.uint32)
+    flat_fb = builder.CreateNumpyVector(flat)
+    indexes_fb = builder.CreateNumpyVector(indexs)
+
+    PointsVideo.Start(builder)
+    PointsVideo.AddName(builder, name_fb)
+    if parent_fb:
+        PointsVideo.AddParentName(builder, parent_fb)
+    PointsVideo.AddPointsData(builder, flat_fb)
+    PointsVideo.AddTimeIdxs(builder, indexes_fb)
+    fp = PointsVideo.End(builder)
+    root = build_root(builder, Data.Data.PointsVideo, fp)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -72,25 +139,25 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
         for e in metaData_fbs:
             builder.PrependUOffsetTRelative(e)
         metaData = builder.EndVector()
-    Array3Meta.Array3MetaStart(builder)
-    Array3Meta.Array3MetaAddType(builder, type)
-    Array3Meta.Array3MetaAddNx(builder, shape[2])
-    Array3Meta.Array3MetaAddNy(builder, shape[1])
-    Array3Meta.Array3MetaAddNt(builder, shape[0])
-    Array3Meta.Array3MetaAddName(builder, name_fb)
-    Array3Meta.Array3MetaAddDuration(builder, duration)
-    Array3Meta.Array3MetaAddFps(builder, fps)
-    Array3Meta.Array3MetaAddDate(builder, date_fb)
-    Array3Meta.Array3MetaAddComment(builder, comment_fb)
-    Array3Meta.Array3MetaAddBitrange(builder, bitrange)
-    Array3Meta.Array3MetaAddCmap(builder, cmap)
+    Array3Meta.Start(builder)
+    Array3Meta.AddType(builder, type)
+    Array3Meta.AddNx(builder, shape[2])
+    Array3Meta.AddNy(builder, shape[1])
+    Array3Meta.AddNt(builder, shape[0])
+    Array3Meta.AddName(builder, name_fb)
+    Array3Meta.AddDuration(builder, duration)
+    Array3Meta.AddFps(builder, fps)
+    Array3Meta.AddDate(builder, date_fb)
+    Array3Meta.AddComment(builder, comment_fb)
+    Array3Meta.AddBitrange(builder, bitrange)
+    Array3Meta.AddCmap(builder, cmap)
     if parent_fb:
-        Array3Meta.Array3MetaAddParentName(builder, parent_fb)
+        Array3Meta.AddParentName(builder, parent_fb)
     if transfer_fct:
-        Array3Meta.Array3MetaAddAlphaTransferFct(builder, transfer_fct)
+        Array3Meta.AddAlphaTransferFct(builder, transfer_fct)
     if metaData:
-        Array3Meta.Array3MetaAddMetaData(builder, metaData)
-    d = Array3Meta.Array3MetaEnd(builder)
+        Array3Meta.AddMetaData(builder, metaData)
+    d = Array3Meta.End(builder)
 
     root = build_root(builder, Data.Data.Array3Meta, d)
     builder.FinishSizePrefixed(root)
@@ -102,14 +169,14 @@ def create_array3metaflow_msg(shape, parentName=None, name=""):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
     parent_fb = builder.CreateString(parentName) if parentName else None
-    Array3MetaFlow.Array3MetaFlowStart(builder)
-    Array3MetaFlow.Array3MetaFlowAddNx(builder, shape[2])
-    Array3MetaFlow.Array3MetaFlowAddNy(builder, shape[1])
-    Array3MetaFlow.Array3MetaFlowAddNt(builder, shape[0])
-    Array3MetaFlow.Array3MetaFlowAddName(builder, name_fb)
+    Array3MetaFlow.Start(builder)
+    Array3MetaFlow.AddNx(builder, shape[2])
+    Array3MetaFlow.AddNy(builder, shape[1])
+    Array3MetaFlow.AddNt(builder, shape[0])
+    Array3MetaFlow.AddName(builder, name_fb)
     if parent_fb:
-        Array3MetaFlow.Array3MetaFlowAddParentName(builder, parent_fb)
-    d = Array3MetaFlow.Array3MetaFlowEnd(builder)
+        Array3MetaFlow.AddParentName(builder, parent_fb)
+    d = Array3MetaFlow.End(builder)
 
     root = build_root(builder, Data.Data.Array3MetaFlow, d)
     builder.FinishSizePrefixed(root)
@@ -120,10 +187,10 @@ def create_array3metaflow_msg(shape, parentName=None, name=""):
 def create_array3dataf_msg(array, idx=0):
     builder = flatbuffers.Builder(65536)
     data = builder.CreateNumpyVector(array)
-    Array3DataChunkf.Array3DataChunkfStart(builder)
-    Array3DataChunkf.Array3DataChunkfAddStartidx(builder, idx)
-    Array3DataChunkf.Array3DataChunkfAddData(builder, data)
-    d = Array3DataChunkf.Array3DataChunkfEnd(builder)
+    Array3DataChunkf.Start(builder)
+    Array3DataChunkf.AddStartidx(builder, idx)
+    Array3DataChunkf.AddData(builder, data)
+    d = Array3DataChunkf.End(builder)
 
     root = build_root(builder, Data.Data.Array3DataChunkf, d)
     builder.FinishSizePrefixed(root)
@@ -134,10 +201,10 @@ def create_array3dataf_msg(array, idx=0):
 def create_array3datau16_msg(array, idx=0):
     builder = flatbuffers.Builder(65536)
     data = builder.CreateNumpyVector(array)
-    Array3DataChunku16.Array3DataChunku16Start(builder)
-    Array3DataChunku16.Array3DataChunku16AddStartidx(builder, idx)
-    Array3DataChunku16.Array3DataChunku16AddData(builder, data)
-    d = Array3DataChunku16.Array3DataChunku16End(builder)
+    Array3DataChunku16.Start(builder)
+    Array3DataChunku16.AddStartidx(builder, idx)
+    Array3DataChunku16.AddData(builder, data)
+    d = Array3DataChunku16.End(builder)
 
     root = build_root(builder, Data.Data.Array3DataChunku16, d)
     builder.FinishSizePrefixed(root)
@@ -160,6 +227,16 @@ def show_files(paths: List[Union[Text, Path]]):
         print("Error: unable to connect to Monochrome")
         return
     buf = create_filepaths_msg(paths)
+    s.sendall(buf)
+
+
+def show_points(points, name="", parent_name=None):
+    try:
+        s = create_socket()
+    except ConnectionRefusedError:
+        print("Error: unable to connect to Monochrome")
+        return
+    buf = create_pointsvideo_msg(points, name, parent_name)
     s.sendall(buf)
 
 

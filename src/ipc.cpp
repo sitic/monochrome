@@ -120,6 +120,9 @@ namespace {
           case fbs::Data_Request:
             handle_datachunk_message(root->data_as_Request());
             break;
+          case fbs::Data_PointsVideo:
+            handle_datachunk_message(root->data_as_PointsVideo());
+            break;
           default:
             throw std::runtime_error("Unknown message body type");
         }
@@ -139,6 +142,56 @@ namespace {
         auto file = filepaths->Get(i)->str();
         global::add_file_to_load(file);
       }
+    }
+
+
+    //    void handle_datachunk_message(const fbs::PointsVideo* raw) {
+    //      if (!raw) {
+    //        fmt::print("Error parsing flatbuffer\n");
+    //        return;
+    //      }
+    //
+    //      auto pv         = std::make_shared<global::PointsVideo>();
+    //      pv->name        = raw->name()->str();
+    //      if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_PARENT_NAME))
+    //        pv->parent_name = raw->parent_name()->str();
+    //
+    //      auto data = raw->points_video();
+    //      for (auto it : *data) {
+    //        auto points = it->points();
+    //        std::vector<std::pair<float, float>> positions;
+    //        for (auto i : *points) {
+    //          positions.emplace_back(i->x(), i->y());
+    //        }
+    //        pv->data.push_back(positions);
+    //      }
+    //      global::add_PointsVideo_to_load(pv);
+    //    }
+
+    void handle_datachunk_message(const fbs::PointsVideo* raw) {
+      if (!raw) {
+        fmt::print("Error parsing flatbuffer\n");
+        return;
+      }
+
+      auto pv  = std::make_shared<global::PointsVideo>();
+      pv->name = raw->name()->str();
+      if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_PARENT_NAME))
+        pv->parent_name = raw->parent_name()->str();
+
+      auto idx_data = raw->time_idxs();
+      std::vector<std::size_t> idxs(idx_data->begin(), idx_data->end());
+
+      if (!raw->points_data()) return;
+      auto data_fb         = raw->points_data()->data();
+      std::size_t last_idx = 0;
+      for (auto t : idxs) {
+        std::vector<float> frame(data_fb + last_idx, data_fb + t);
+        pv->data.push_back(frame);
+
+        last_idx = t;
+      }
+      global::add_PointsVideo_to_load(pv);
     }
 
     void handle_message(const fbs::Array3Meta* raw) {
@@ -400,7 +453,7 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
 
   /* Metadata Message */
   auto fbs_start  = fbs::CreateArray3MetaDirect(builder, fbs::ArrayDataType_FLOAT, nx, ny, nt,
-                                               name.c_str(), 0, 0, "", "");
+                                                name.c_str(), 0, 0, "", "");
   auto root_start = CreateRoot(builder, fbs::Data_Array3Meta, fbs_start.Union());
   builder.FinishSizePrefixed(root_start);
   asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));

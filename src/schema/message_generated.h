@@ -35,6 +35,14 @@ struct RecordingTracePosBuilder;
 struct ResponseTracePos;
 struct ResponseTracePosBuilder;
 
+struct Color;
+
+struct PointsVideo;
+struct PointsVideoBuilder;
+
+struct VideoID;
+struct VideoIDBuilder;
+
 struct Root;
 struct RootBuilder;
 
@@ -241,11 +249,13 @@ enum Data : uint8_t {
   Data_Array3DataChunkf = 4,
   Data_Array3DataChunku16 = 5,
   Data_Request = 6,
+  Data_PointsVideo = 7,
+  Data_VideoID = 8,
   Data_MIN = Data_NONE,
-  Data_MAX = Data_Request
+  Data_MAX = Data_VideoID
 };
 
-inline const Data (&EnumValuesData())[7] {
+inline const Data (&EnumValuesData())[9] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
@@ -253,13 +263,15 @@ inline const Data (&EnumValuesData())[7] {
     Data_Array3MetaFlow,
     Data_Array3DataChunkf,
     Data_Array3DataChunku16,
-    Data_Request
+    Data_Request,
+    Data_PointsVideo,
+    Data_VideoID
   };
   return values;
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[8] = {
+  static const char * const names[10] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
@@ -267,13 +279,15 @@ inline const char * const *EnumNamesData() {
     "Array3DataChunkf",
     "Array3DataChunku16",
     "Request",
+    "PointsVideo",
+    "VideoID",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameData(Data e) {
-  if (flatbuffers::IsOutRange(e, Data_NONE, Data_Request)) return "";
+  if (flatbuffers::IsOutRange(e, Data_NONE, Data_VideoID)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesData()[index];
 }
@@ -306,8 +320,33 @@ template<> struct DataTraits<fbs::Request> {
   static const Data enum_value = Data_Request;
 };
 
+template<> struct DataTraits<fbs::PointsVideo> {
+  static const Data enum_value = Data_PointsVideo;
+};
+
+template<> struct DataTraits<fbs::VideoID> {
+  static const Data enum_value = Data_VideoID;
+};
+
 bool VerifyData(flatbuffers::Verifier &verifier, const void *obj, Data type);
 bool VerifyDataVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types);
+
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Color FLATBUFFERS_FINAL_CLASS {
+ private:
+  float values_[4];
+
+ public:
+  Color()
+      : values_() {
+  }
+  Color(flatbuffers::span<const float, 4> _values) {
+    flatbuffers::CastToArray(values_).CopyFromSpan(_values);
+  }
+  const flatbuffers::Array<float, 4> *values() const {
+    return &flatbuffers::CastToArray(values_);
+  }
+};
+FLATBUFFERS_STRUCT_END(Color, 16);
 
 struct DictEntry FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   typedef DictEntryBuilder Builder;
@@ -1063,6 +1102,176 @@ inline flatbuffers::Offset<ResponseTracePos> CreateResponseTracePosDirect(
       recordings__);
 }
 
+struct PointsVideo FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef PointsVideoBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NAME = 4,
+    VT_PARENT_NAME = 6,
+    VT_POINTS_DATA = 8,
+    VT_TIME_IDXS = 10,
+    VT_COLOR = 12
+  };
+  const flatbuffers::String *name() const {
+    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  }
+  const flatbuffers::String *parent_name() const {
+    return GetPointer<const flatbuffers::String *>(VT_PARENT_NAME);
+  }
+  const flatbuffers::Vector<float> *points_data() const {
+    return GetPointer<const flatbuffers::Vector<float> *>(VT_POINTS_DATA);
+  }
+  const flatbuffers::Vector<uint32_t> *time_idxs() const {
+    return GetPointer<const flatbuffers::Vector<uint32_t> *>(VT_TIME_IDXS);
+  }
+  const fbs::Color *color() const {
+    return GetStruct<const fbs::Color *>(VT_COLOR);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffset(verifier, VT_PARENT_NAME) &&
+           verifier.VerifyString(parent_name()) &&
+           VerifyOffset(verifier, VT_POINTS_DATA) &&
+           verifier.VerifyVector(points_data()) &&
+           VerifyOffset(verifier, VT_TIME_IDXS) &&
+           verifier.VerifyVector(time_idxs()) &&
+           VerifyField<fbs::Color>(verifier, VT_COLOR) &&
+           verifier.EndTable();
+  }
+};
+
+struct PointsVideoBuilder {
+  typedef PointsVideo Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
+    fbb_.AddOffset(PointsVideo::VT_NAME, name);
+  }
+  void add_parent_name(flatbuffers::Offset<flatbuffers::String> parent_name) {
+    fbb_.AddOffset(PointsVideo::VT_PARENT_NAME, parent_name);
+  }
+  void add_points_data(flatbuffers::Offset<flatbuffers::Vector<float>> points_data) {
+    fbb_.AddOffset(PointsVideo::VT_POINTS_DATA, points_data);
+  }
+  void add_time_idxs(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> time_idxs) {
+    fbb_.AddOffset(PointsVideo::VT_TIME_IDXS, time_idxs);
+  }
+  void add_color(const fbs::Color *color) {
+    fbb_.AddStruct(PointsVideo::VT_COLOR, color);
+  }
+  explicit PointsVideoBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  flatbuffers::Offset<PointsVideo> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<PointsVideo>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<PointsVideo> CreatePointsVideo(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::String> name = 0,
+    flatbuffers::Offset<flatbuffers::String> parent_name = 0,
+    flatbuffers::Offset<flatbuffers::Vector<float>> points_data = 0,
+    flatbuffers::Offset<flatbuffers::Vector<uint32_t>> time_idxs = 0,
+    const fbs::Color *color = 0) {
+  PointsVideoBuilder builder_(_fbb);
+  builder_.add_color(color);
+  builder_.add_time_idxs(time_idxs);
+  builder_.add_points_data(points_data);
+  builder_.add_parent_name(parent_name);
+  builder_.add_name(name);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PointsVideo> CreatePointsVideoDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const char *name = nullptr,
+    const char *parent_name = nullptr,
+    const std::vector<float> *points_data = nullptr,
+    const std::vector<uint32_t> *time_idxs = nullptr,
+    const fbs::Color *color = 0) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto parent_name__ = parent_name ? _fbb.CreateString(parent_name) : 0;
+  auto points_data__ = points_data ? _fbb.CreateVector<float>(*points_data) : 0;
+  auto time_idxs__ = time_idxs ? _fbb.CreateVector<uint32_t>(*time_idxs) : 0;
+  return fbs::CreatePointsVideo(
+      _fbb,
+      name__,
+      parent_name__,
+      points_data__,
+      time_idxs__,
+      color);
+}
+
+struct VideoID FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef VideoIDBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_ID = 4,
+    VT_ERROR = 6
+  };
+  const flatbuffers::String *id() const {
+    return GetPointer<const flatbuffers::String *>(VT_ID);
+  }
+  const flatbuffers::String *error() const {
+    return GetPointer<const flatbuffers::String *>(VT_ERROR);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_ID) &&
+           verifier.VerifyString(id()) &&
+           VerifyOffset(verifier, VT_ERROR) &&
+           verifier.VerifyString(error()) &&
+           verifier.EndTable();
+  }
+};
+
+struct VideoIDBuilder {
+  typedef VideoID Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_id(flatbuffers::Offset<flatbuffers::String> id) {
+    fbb_.AddOffset(VideoID::VT_ID, id);
+  }
+  void add_error(flatbuffers::Offset<flatbuffers::String> error) {
+    fbb_.AddOffset(VideoID::VT_ERROR, error);
+  }
+  explicit VideoIDBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  flatbuffers::Offset<VideoID> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<VideoID>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<VideoID> CreateVideoID(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::String> id = 0,
+    flatbuffers::Offset<flatbuffers::String> error = 0) {
+  VideoIDBuilder builder_(_fbb);
+  builder_.add_error(error);
+  builder_.add_id(id);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<VideoID> CreateVideoIDDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const char *id = nullptr,
+    const char *error = nullptr) {
+  auto id__ = id ? _fbb.CreateString(id) : 0;
+  auto error__ = error ? _fbb.CreateString(error) : 0;
+  return fbs::CreateVideoID(
+      _fbb,
+      id__,
+      error__);
+}
+
 struct Root FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   typedef RootBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -1093,6 +1302,12 @@ struct Root FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   const fbs::Request *data_as_Request() const {
     return data_type() == fbs::Data_Request ? static_cast<const fbs::Request *>(data()) : nullptr;
+  }
+  const fbs::PointsVideo *data_as_PointsVideo() const {
+    return data_type() == fbs::Data_PointsVideo ? static_cast<const fbs::PointsVideo *>(data()) : nullptr;
+  }
+  const fbs::VideoID *data_as_VideoID() const {
+    return data_type() == fbs::Data_VideoID ? static_cast<const fbs::VideoID *>(data()) : nullptr;
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1125,6 +1340,14 @@ template<> inline const fbs::Array3DataChunku16 *Root::data_as<fbs::Array3DataCh
 
 template<> inline const fbs::Request *Root::data_as<fbs::Request>() const {
   return data_as_Request();
+}
+
+template<> inline const fbs::PointsVideo *Root::data_as<fbs::PointsVideo>() const {
+  return data_as_PointsVideo();
+}
+
+template<> inline const fbs::VideoID *Root::data_as<fbs::VideoID>() const {
+  return data_as_VideoID();
 }
 
 struct RootBuilder {
@@ -1185,6 +1408,14 @@ inline bool VerifyData(flatbuffers::Verifier &verifier, const void *obj, Data ty
     }
     case Data_Request: {
       auto ptr = reinterpret_cast<const fbs::Request *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_PointsVideo: {
+      auto ptr = reinterpret_cast<const fbs::PointsVideo *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_VideoID: {
+      auto ptr = reinterpret_cast<const fbs::VideoID *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;

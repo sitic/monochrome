@@ -10,4 +10,6 @@ class Data(object):
     Array3DataChunkf = 4
     Array3DataChunku16 = 5
     Request = 6
+    PointsVideo = 7
+    VideoID = 8
 

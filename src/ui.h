@@ -554,6 +554,10 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::Columns(1);
   }
 
+  if (!rec->points_videos.empty()) {
+    ImGui::SliderFloat("point size", &FlowData::pointsize, 0, 10);
+  }
+
   // Plot traces and show their controls
   for (auto &[trace, pos, color, scale] : rec->traces) {
     int size  = trace.size();
@@ -576,7 +580,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     auto ptitle = "###trace" + label;
     if (ImPlot::BeginPlot(
             ptitle.c_str(), nullptr, nullptr, ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
-            ImPlotFlags_AntiAliased, ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_NoTickLabels)) {
+            ImPlotFlags_AntiAliased, ImPlotAxisFlags_NoTickLabels)) {
       ImPlot::SetNextLineStyle({color[0], color[1], color[2], color[3]});
       auto title = "###ttrace" + label;
       ImPlot::PlotLine(title.c_str(), trace.data(), trace.size());
