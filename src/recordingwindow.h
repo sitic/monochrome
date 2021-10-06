@@ -111,9 +111,9 @@ class RecordingWindow : public Recording {
   Shader trace_shader;
   GLuint trace_vao, trace_vbo;
   std::vector<float> trace_vert;
-  Shader flow_shader;
-  GLuint flow_vao, flow_vbo;
-  std::vector<float> flow_vert;
+  Shader points_shader;
+  GLuint points_vao, points_vbo;
+  std::vector<float> points_vert;
 };
 
 class FixedTransformRecordingWindow : public RecordingWindow {

@@ -87,11 +87,11 @@ namespace {
     return {vao, vbo};
   }
 
-  Shader create_flow_shader() {
-    return Shader::create(get_shader_file("flow.vert.glsl"), get_shader_file("flow.frag.glsl"));
+  Shader create_points_shader() {
+    return Shader::create(get_shader_file("points.vert.glsl"), get_shader_file("points.frag.glsl"));
   }
 
-  std::pair<GLuint, GLuint> create_flow_vaovbo() {
+  std::pair<GLuint, GLuint> create_points_vaovbo() {
     GLuint vao, vbo;
     glGenBuffers(1, &vbo);
     glGenVertexArrays(1, &vao);
@@ -188,8 +188,8 @@ void RecordingWindow::set_context(GLFWwindow *new_context) {
   std::tie(frame_vao, frame_vbo, frame_ebo) = create_frame_vaovboebo();
   trace_shader                              = create_trace_shader();
   std::tie(trace_vao, trace_vbo)            = create_trace_vaovbo();
-  flow_shader                               = create_flow_shader();
-  std::tie(flow_vao, flow_vbo)              = create_flow_vaovbo();
+  points_shader                             = create_points_shader();
+  std::tie(points_vao, points_vbo)          = create_points_vaovbo();
 
   update_gl_texture();
   ColorMap cmap_tmp = cmap_;
@@ -375,7 +375,7 @@ void RecordingWindow::display(Filters prefilter,
 
   for (const auto &flow : flows) {
     if (!flow.show) continue;
-    flow_vert.clear();
+    points_vert.clear();
 
     flow.data->load_frame(2 * t_frame);
     Eigen::MatrixXf u = flow.data->frame;  // force a copy
@@ -393,27 +393,27 @@ void RecordingWindow::display(Filters prefilter,
         xx += signx * 2.f * u(x, y) / static_cast<float>(nx);
         yy -= signy * 2.f * v(x, y) / static_cast<float>(ny);
 
-        flow_vert.push_back(xx);
-        flow_vert.push_back(yy);
+        points_vert.push_back(xx);
+        points_vert.push_back(yy);
       }
     }
 
-    flow_shader.use();
-    flow_shader.setVec4("color", flow.color);
-    glBindVertexArray(flow_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, flow_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * flow_vert.size(), flow_vert.data(),
+    points_shader.use();
+    points_shader.setVec4("color", flow.color);
+    glBindVertexArray(points_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points_vert.size(), points_vert.data(),
                  GL_STREAM_DRAW);
     glEnable(GL_PROGRAM_POINT_SIZE);
     glPointSize(FlowData::pointsize * scale_fct);
-    glDrawArrays(GL_POINTS, 0, flow_vert.size() / 2);
+    glDrawArrays(GL_POINTS, 0, points_vert.size() / 2);
   }
 
   for (const auto &positions : points_videos) {
     auto data  = positions->data.at(t_frame);
     auto color = positions->color;
 
-    flow_vert.clear();
+    points_vert.clear();
     float nx = Nx(), ny = Ny();
     for (size_t i = 0; i < data.size(); i += 2) {
       float y = data[i];
@@ -421,19 +421,19 @@ void RecordingWindow::display(Filters prefilter,
 
       float xx = (2.f * x + 1) / static_cast<float>(nx) - 1;
       float yy = 1 - (2.f * y + 1) / static_cast<float>(ny);
-      flow_vert.push_back(xx);
-      flow_vert.push_back(yy);
+      points_vert.push_back(xx);
+      points_vert.push_back(yy);
     }
 
-    flow_shader.use();
-    flow_shader.setVec4("color", color);
-    glBindVertexArray(flow_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, flow_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * flow_vert.size(), flow_vert.data(),
+    points_shader.use();
+    points_shader.setVec4("color", color);
+    glBindVertexArray(points_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points_vert.size(), points_vert.data(),
                  GL_STREAM_DRAW);
     glEnable(GL_PROGRAM_POINT_SIZE);
     glPointSize(FlowData::pointsize * scale_fct);
-    glDrawArrays(GL_POINTS, 0, flow_vert.size() / 2);
+    glDrawArrays(GL_POINTS, 0, points_vert.size() / 2);
   }
 
   glfwMakeContextCurrent(global::main_window);
