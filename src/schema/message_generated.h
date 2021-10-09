@@ -11,6 +11,8 @@ namespace fbs {
 struct DictEntry;
 struct DictEntryBuilder;
 
+struct Color;
+
 struct Array3Meta;
 struct Array3MetaBuilder;
 
@@ -34,8 +36,6 @@ struct RecordingTracePosBuilder;
 
 struct ResponseTracePos;
 struct ResponseTracePosBuilder;
-
-struct Color;
 
 struct PointsVideo;
 struct PointsVideoBuilder;
@@ -636,7 +636,8 @@ struct Array3MetaFlow FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_NY = 6,
     VT_NT = 8,
     VT_NAME = 10,
-    VT_PARENTNAME = 12
+    VT_PARENTNAME = 12,
+    VT_COLOR = 14
   };
   int32_t nx() const {
     return GetField<int32_t>(VT_NX, 0);
@@ -653,6 +654,9 @@ struct Array3MetaFlow FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *parentName() const {
     return GetPointer<const flatbuffers::String *>(VT_PARENTNAME);
   }
+  const fbs::Color *color() const {
+    return GetStruct<const fbs::Color *>(VT_COLOR);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_NX) &&
@@ -662,6 +666,7 @@ struct Array3MetaFlow FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyString(name()) &&
            VerifyOffset(verifier, VT_PARENTNAME) &&
            verifier.VerifyString(parentName()) &&
+           VerifyField<fbs::Color>(verifier, VT_COLOR) &&
            verifier.EndTable();
   }
 };
@@ -685,6 +690,9 @@ struct Array3MetaFlowBuilder {
   void add_parentName(flatbuffers::Offset<flatbuffers::String> parentName) {
     fbb_.AddOffset(Array3MetaFlow::VT_PARENTNAME, parentName);
   }
+  void add_color(const fbs::Color *color) {
+    fbb_.AddStruct(Array3MetaFlow::VT_COLOR, color);
+  }
   explicit Array3MetaFlowBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -702,8 +710,10 @@ inline flatbuffers::Offset<Array3MetaFlow> CreateArray3MetaFlow(
     int32_t ny = 0,
     int32_t nt = 0,
     flatbuffers::Offset<flatbuffers::String> name = 0,
-    flatbuffers::Offset<flatbuffers::String> parentName = 0) {
+    flatbuffers::Offset<flatbuffers::String> parentName = 0,
+    const fbs::Color *color = 0) {
   Array3MetaFlowBuilder builder_(_fbb);
+  builder_.add_color(color);
   builder_.add_parentName(parentName);
   builder_.add_name(name);
   builder_.add_nt(nt);
@@ -718,7 +728,8 @@ inline flatbuffers::Offset<Array3MetaFlow> CreateArray3MetaFlowDirect(
     int32_t ny = 0,
     int32_t nt = 0,
     const char *name = nullptr,
-    const char *parentName = nullptr) {
+    const char *parentName = nullptr,
+    const fbs::Color *color = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parentName__ = parentName ? _fbb.CreateString(parentName) : 0;
   return fbs::CreateArray3MetaFlow(
@@ -727,7 +738,8 @@ inline flatbuffers::Offset<Array3MetaFlow> CreateArray3MetaFlowDirect(
       ny,
       nt,
       name__,
-      parentName__);
+      parentName__,
+      color);
 }
 
 struct Array3DataChunkf FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

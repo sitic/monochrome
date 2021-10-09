@@ -174,15 +174,21 @@ namespace {
         return;
       }
 
-      auto pv  = std::make_shared<global::PointsVideo>();
-      pv->name = raw->name()->str();
-      if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_PARENT_NAME))
+      auto pv = std::make_shared<global::PointsVideo>();
+      if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_NAME)) {
+        pv->name = raw->name()->str();
+      }
+      if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_PARENT_NAME)) {
         pv->parent_name = raw->parent_name()->str();
+      }
+      if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_COLOR)) {
+        for (int i = 0; i < 4; i++) pv->color[i] = raw->color()->values()->Get(i);
+      }
+      if (!raw->points_data() || !raw->time_idxs()) {
+        fmt::print("EROOR: parsing PointsVideo IPC packet failed!\n");
+      };
 
-      auto idx_data = raw->time_idxs();
-      std::vector<std::size_t> idxs(idx_data->begin(), idx_data->end());
-
-      if (!raw->points_data()) return;
+      std::vector<std::size_t> idxs(raw->time_idxs()->begin(), raw->time_idxs()->end());
       auto data_fb         = raw->points_data()->data();
       std::size_t last_idx = 0;
       for (auto t : idxs) {

@@ -11,6 +11,10 @@ table DictEntry {
   val: string;
 }
 
+struct Color {
+  values:[float:4];
+}
+
 table Array3Meta {
   type:ArrayDataType;
   nx:int;
@@ -80,10 +84,6 @@ table ResponseTracePos {
 //  parent_name:string;
 //  points_video:[Points];
 //}
-
-struct Color {
-  values:[float:4];
-}
 
 table PointsVideo {
   name:string;

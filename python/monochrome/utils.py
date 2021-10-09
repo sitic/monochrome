@@ -8,6 +8,7 @@ from typing import List, Text, Union, Optional, Dict
 # from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, PointsVideo, \
 #     Points, Point
 from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, PointsVideo
+from .fbs.Color import CreateColor
 from .fbs.ArrayDataType import ArrayDataType
 from .fbs.ColorMap import ColorMap
 from .fbs.BitRange import BitRange
@@ -28,6 +29,20 @@ def create_socket():
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.connect(SOCK_PATH)
     return s
+
+
+def get_color(builder, color):
+    if color is None:
+        return None
+
+    try:
+        import matplotlib.colors as mcolors
+        color = mcolors.to_rgba(color)
+    except ImportError:
+        if isinstance(color, str):
+            print("ERROR: unable to import matplotlib, please install it")
+            color = (0.0, 0.0, 0.0, 1.0)
+    return CreateColor(builder, color)
 
 
 def build_root(builder, data_type, data):
@@ -89,7 +104,7 @@ def create_filepaths_msg(paths):
 #     buf = builder.Output()
 #     return buf
 
-def create_pointsvideo_msg(points_py, name, parent_name):
+def create_pointsvideo_msg(points_py, name, parent_name=None, color=None):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
     parent_fb = builder.CreateString(parent_name) if parent_name else None
@@ -110,6 +125,8 @@ def create_pointsvideo_msg(points_py, name, parent_name):
     PointsVideo.AddName(builder, name_fb)
     if parent_fb:
         PointsVideo.AddParentName(builder, parent_fb)
+    if color:
+        PointsVideo.AddColor(builder, get_color(builder, color))
     PointsVideo.AddPointsData(builder, flat_fb)
     PointsVideo.AddTimeIdxs(builder, indexes_fb)
     fp = PointsVideo.End(builder)
@@ -165,7 +182,7 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     return buf
 
 
-def create_array3metaflow_msg(shape, parentName=None, name=""):
+def create_array3metaflow_msg(shape, parentName=None, name="", color=None):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
     parent_fb = builder.CreateString(parentName) if parentName else None
@@ -230,20 +247,50 @@ def show_files(paths: List[Union[Text, Path]]):
     s.sendall(buf)
 
 
-def show_points(points, name="", parent_name=None):
+def show_points(points, name="", parent_name=None, color=None):
+    """
+
+    :param points:
+    :param name:
+    :param parent_name:
+    :param color: Matplotlib color (either string like 'black' or rgb tuple)
+    :return:
+    """
     try:
         s = create_socket()
     except ConnectionRefusedError:
         print("Error: unable to connect to Monochrome")
         return
-    buf = create_pointsvideo_msg(points, name, parent_name)
+    buf = create_pointsvideo_msg(points, name, parent_name, color)
     s.sendall(buf)
 
 
-def show_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, fps: float = 0, date: Text = "",
-               comment: Text = "", bitrange: BitRange = BitRange.AUTODETECT, cmap: ColorMap = ColorMap.DEFAULT,
-               parentName: Optional[Text] = None, transfer_fct: Optional[TransferFunction] = None,
+def show_array(array: np.ndarray,
+               name: Text = "",
+               cmap: Union[ColorMap, Text] = ColorMap.DEFAULT,
+               bitrange: Union[BitRange, Text] = BitRange.AUTODETECT,
+               comment: Text = "",
+               fps: float = 0,
+               date: Text = "",
+               duration_seconds: float = 0,
+               parentName: Optional[Text] = None,
+               transfer_fct: Optional[TransferFunction] = None,
                metaData: Optional[Dict] = None):
+    """
+
+    :param array: {t, x, y} ndarray
+    :param name: name of the array
+    :param cmap: 'default' (autodetect), 'gray', 'viridis', 'diff', 'hsv', or 'blackbody'
+    :param bitrange: 'autodetect', 'uint8', 'uint10', 'uint12', 'uint16', 'float' (for [0,1]), 'diff', 'phase', or 'phase_diff'
+    :param comment:
+    :param fps: framerate in Hz
+    :param date:
+    :param duration_seconds:
+    :param parentName:
+    :param transfer_fct:
+    :param metaData:
+    :return:
+    """
     array = np.squeeze(array)
     if array.ndim == 2:
         # assume that it is a 2D image
@@ -261,6 +308,11 @@ def show_array(array: np.ndarray, name: Text = "", duration_seconds: float = 0, 
         else:
             array = array.astype(np.float32)
             dtype = ArrayDataType.FLOAT
+
+    if isinstance(cmap, str):
+        cmap = getattr(ColorMap, cmap.upper())
+    if isinstance(bitrange, str):
+        bitrange = getattr(BitRange, bitrange.upper())
 
     try:
         s = create_socket()

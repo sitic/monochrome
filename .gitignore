@@ -2,6 +2,8 @@
 build
 Debug
 Release
+_skbuild
+*.whl
 
 imgui.ini
 *.dat
