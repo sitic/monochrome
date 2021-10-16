@@ -6,7 +6,7 @@ from datetime import datetime
 import locale
 from pathlib import Path
 
-from .utils import show_array, show_layer
+from .ipc import show_array, show_layer
 
 
 class MultRecDatImport():

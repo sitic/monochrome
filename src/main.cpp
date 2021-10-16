@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
     if (!ipc::is_another_instance_running()) {
       ipc::start_server();
     } else {
-      fmt::print("Unable to start IPC server, another instance is running!\n");
+      fmt::print(stderr, "ERROR: Unable to start IPC server, another instance is running!\n");
     }
   }
 

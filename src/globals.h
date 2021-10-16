@@ -32,7 +32,12 @@ namespace global {
   inline void new_ui_message(const char *fmt, Args &&...args) {
     const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
     messages.emplace_back(msg);
-    fmt::print(msg + "\n");
+    std::string prefix("ERROR");
+    if (msg.compare(0, prefix.size(), prefix)) {
+      fmt::print(stderr, msg + "\n");
+    } else {
+      fmt::print(msg + "\n");
+    }
   }
 
   template <typename... Args>

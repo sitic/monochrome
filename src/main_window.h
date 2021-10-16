@@ -37,8 +37,8 @@ namespace ImGuiConnector {
             float font_scale,
             GLFWkeyfun key_fun       = nullptr,
             GLFWscrollfun scroll_fun = nullptr) {
-    user_key_fun    = key_fun;
-    user_scroll_fun = scroll_fun;
+    if (key_fun) user_key_fun = key_fun;
+    if (scroll_fun) user_scroll_fun = scroll_fun;
 
     ImGui::CreateContext();
     ImPlot::CreateContext();
