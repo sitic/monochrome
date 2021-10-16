@@ -294,8 +294,14 @@ void RecordingWindow::display(Filters prefilter,
       auto *frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
       assert(frameDiff);
 
-      histogram.min = frameDiff->min_init() * 1.5f;
-      histogram.max = frameDiff->max_init() * 1.5f;
+      histogram.min = frameDiff->hist_min;
+      histogram.max = frameDiff->hist_max;
+
+      // TODO
+      //      if ((get_max(transformation) == histogram.max) || (get_min(transformation) == histogram.min)) {
+      //        frameDiff->hist_min *= 1.1f;
+      //        frameDiff->hist_max *= 1.1f;
+      //      }
     } break;
     case Transformations::ContrastEnhancement:
       histogram.min = -0.1f;

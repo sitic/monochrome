@@ -74,12 +74,11 @@ namespace Transformation {
     };
     std::queue<QueueEntry> prev_frames;
 
-    // initial values from allocate() for min and max
-    float m_min_init = 0;
-    float m_max_init = 0;
-
    public:
     static inline int n_frame_diff = 2;
+    // initial values from allocate() for min and max
+    float hist_min = 0;
+    float hist_max = 0;
 
     using Base::Base;
     FrameDiff(Recording &rec) : Base() { allocate(rec); }
@@ -93,8 +92,8 @@ namespace Transformation {
       max = std::max(std::abs(frame.minCoeff()), std::abs(frame.maxCoeff()));
       min = -max;
 
-      m_min_init = min;
-      m_max_init = max;
+      hist_min = min * 1.5f;
+      hist_max = max * 1.5f;
     }
 
     void compute(const Eigen::MatrixXf &new_frame, long new_frame_counter) final {
@@ -115,9 +114,6 @@ namespace Transformation {
         prev_frames.push(std::move(front));
       }
     }
-
-    float min_init() { return m_min_init; };
-    float max_init() { return m_max_init; };
   };
 
   class ContrastEnhancement : public Base {
