@@ -555,14 +555,22 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   }
 
   if (!rec->points_videos.empty()) {
-    ImGui::SliderFloat("point size", &FlowData::pointsize, 0, 10);
+    ImGui::Separator();
+    for (const auto &vid : rec->points_videos) {
+      ImGui::PushID(vid.get());
+      ImGui::ColorEdit4("", vid->color.data(), ImGuiColorEditFlags_NoLabel);
+      ImGui::SliderFloat("point size", &vid->point_size, 0, 10);
+      ImGui::Separator();
+      ImGui::PopID();
+    }
+    ImGui::Separator();
   }
 
   // Plot traces and show their controls
   for (auto &[trace, pos, color, scale] : rec->traces) {
-    int size  = trace.size();
+    int size = trace.size();
     if (size == 0) continue;
-    
+
     auto label = pos.to_string();
     ImGui::PushID(label.c_str());
     auto data = trace.data();
@@ -578,9 +586,9 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
         scale.scaleX ? &scale.left : nullptr, scale.scaleX ? &scale.right : nullptr,
         scale.scaleY ? &scale.lower : nullptr, scale.scaleY ? &scale.upper : nullptr);
     auto ptitle = "###trace" + label;
-    if (ImPlot::BeginPlot(
-            ptitle.c_str(), nullptr, nullptr, ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
-            ImPlotFlags_AntiAliased)) {
+    if (ImPlot::BeginPlot(ptitle.c_str(), nullptr, nullptr,
+                          ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
+                          ImPlotFlags_AntiAliased)) {
       ImPlot::SetNextLineStyle({color[0], color[1], color[2], color[3]});
       auto title = "###ttrace" + label;
       ImPlot::PlotLine(title.c_str(), trace.data(), trace.size());

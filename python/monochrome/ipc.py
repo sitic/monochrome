@@ -1,6 +1,7 @@
 import socket
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Text, Union
 
@@ -19,19 +20,34 @@ from .fbs.DictEntry import (DictEntryAddKey, DictEntryAddVal, DictEntryEnd,
                             DictEntryStart)
 from .fbs.TransferFunction import TransferFunction
 
+MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome'
 TCP_IP, TCP_PORT = '127.0.0.1', 4864
 # OSX doesn't support abstract UNIX domain sockets
 SOCK_PATH = '/tmp/Monochrome.s' if sys.platform == 'darwin' else '\0Monochrome'
 USE_TCP = sys.platform in ['win32', 'cygwin']
 
 
-def create_socket():
+def start_monochrome():
+    subprocess.Popen(MONOCHROME_BIN_PATH)
+
+
+def _create_socket():
     if USE_TCP:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((TCP_IP, TCP_PORT))
     else:
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.connect(SOCK_PATH)
+    return s
+
+
+def create_socket():
+    try:
+        s = _create_socket()
+    except ConnectionRefusedError:
+        start_monochrome()
+        time.sleep(0.2)
+        s = _create_socket()
     return s
 
 
@@ -242,11 +258,7 @@ def show_files(paths: List[Union[Text, Path]]):
     if not all([path.exists() for path in paths]):
         raise FileNotFoundError(f"One of more files of {paths} do not exist")
     paths = [str(path.absolute()) for path in paths]
-    try:
-        s = create_socket()
-    except ConnectionRefusedError:
-        print("Error: unable to connect to Monochrome")
-        return
+    s = create_socket()
     buf = create_filepaths_msg(paths)
     s.sendall(buf)
 
@@ -260,11 +272,7 @@ def show_points(points, name="", parent_name=None, color=None):
     :param color: Matplotlib color (either string like 'black' or rgb tuple)
     :return:
     """
-    try:
-        s = create_socket()
-    except ConnectionRefusedError:
-        print("Error: unable to connect to Monochrome")
-        return
+    s = create_socket()
     buf = create_pointsvideo_msg(points, name, parent_name, color)
     s.sendall(buf)
 
@@ -318,11 +326,7 @@ def show_array(array: np.ndarray,
     if isinstance(bitrange, str):
         bitrange = getattr(BitRange, bitrange.upper())
 
-    try:
-        s = create_socket()
-    except ConnectionRefusedError:
-        print("Error: unable to connect to Monochrome")
-        return
+    s = create_socket()
     buf = create_array3meta_msg(dtype, name, array.shape, duration=duration_seconds, fps=fps, date=date,
                                 comment=comment, bitrange=bitrange, cmap=cmap, parentName=parentName,
                                 transfer_fct=transfer_fct, metaData=metaData)
@@ -352,12 +356,7 @@ def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
     if flow_uv.shape[3] != 2:
         raise ValueError("flow should be of shape [T, H, W, 2]")
 
-    try:
-        s = create_socket()
-    except ConnectionRefusedError:
-        print("Error: unable to connect to Monochrome")
-        return
-
+    s = create_socket()
     shape = (flow_uv.shape[0] * 2, flow_uv.shape[1], flow_uv.shape[2])
     buf = create_array3metaflow_msg(shape, parentName, name)
     s.sendall(buf)

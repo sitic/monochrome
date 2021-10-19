@@ -415,30 +415,29 @@ void RecordingWindow::display(Filters prefilter,
     glDrawArrays(GL_POINTS, 0, points_vert.size() / 2);
   }
 
-  for (const auto &positions : points_videos) {
-    auto data  = positions->data.at(t_frame);
-    auto color = positions->color;
-
+  for (const auto &vid : points_videos) {
     points_vert.clear();
+    if (vid->point_size < 0) {
+      vid->point_size = FlowData::pointsize;
+    }
+
+    auto data = vid->data.at(t_frame);
     float nx = Nx(), ny = Ny();
     for (size_t i = 0; i < data.size(); i += 2) {
-      float y = data[i];
-      float x = data[i + 1];
-
-      float xx = (2.f * x + 1) / static_cast<float>(nx) - 1;
-      float yy = 1 - (2.f * y + 1) / static_cast<float>(ny);
-      points_vert.push_back(xx);
-      points_vert.push_back(yy);
+      const float x = (2.f * data[i + 1] + 1) / nx - 1;
+      const float y = 1 - (2.f * data[i] + 1) / ny;
+      points_vert.push_back(x);
+      points_vert.push_back(y);
     }
 
     points_shader.use();
-    points_shader.setVec4("color", color);
+    points_shader.setVec4("color", vid->color);
     glBindVertexArray(points_vao);
     glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points_vert.size(), points_vert.data(),
                  GL_STREAM_DRAW);
     glEnable(GL_PROGRAM_POINT_SIZE);
-    glPointSize(FlowData::pointsize * scale_fct);
+    glPointSize(vid->point_size * scale_fct);
     glDrawArrays(GL_POINTS, 0, points_vert.size() / 2);
   }
 
