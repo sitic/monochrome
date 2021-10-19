@@ -660,6 +660,15 @@ void RecordingWindow::rotation_was_changed() {
 }
 
 void RecordingWindow::add_flow(std::shared_ptr<Recording> flow) {
+  auto inmemory = dynamic_cast<InMemoryFile *>(flow->file().get());
+  if (inmemory) {
+    auto color = inmemory->color();
+    if (color.has_value()) {
+      flows.emplace_back(flow, color.value());
+      return;
+    }
+  }
+
   if (flow->length() >= 2 * length())
     flows.emplace_back(flow, flows.size());
   else

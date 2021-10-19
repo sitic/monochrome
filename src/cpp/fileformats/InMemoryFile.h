@@ -86,4 +86,8 @@ class InMemoryFile : public AbstractFile {
         },
         _data->data);
   }
+
+  std::optional<Vec4f> color() {
+    return _data->meta.color;
+  }
 };

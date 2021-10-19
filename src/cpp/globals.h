@@ -64,6 +64,7 @@ namespace global {
     std::optional<std::string> parentName                     = std::nullopt;
     std::optional<TransferFunction> transfer_fct              = std::nullopt;
     std::vector<std::pair<std::string, std::string>> metaData = {};
+    std::optional<Vec4f> color                                = std::nullopt;
 
     bool is_flowfield = false;
   };

@@ -213,6 +213,8 @@ def create_array3metaflow_msg(shape, parentName=None, name="", color=None):
     Array3MetaFlow.AddName(builder, name_fb)
     if parent_fb:
         Array3MetaFlow.AddParentName(builder, parent_fb)
+    if color:
+        Array3MetaFlow.AddColor(builder, get_color(builder, color))
     d = Array3MetaFlow.End(builder)
 
     root = build_root(builder, Data.Data.Array3MetaFlow, d)
@@ -287,7 +289,7 @@ def show_array(array: np.ndarray,
                duration_seconds: float = 0,
                parentName: Optional[Text] = None,
                transfer_fct: Optional[TransferFunction] = None,
-               metaData: Optional[Dict] = None):
+               metadata: Optional[Dict] = None):
     """
 
     :param array: {t, x, y} ndarray
@@ -300,7 +302,7 @@ def show_array(array: np.ndarray,
     :param duration_seconds:
     :param parentName:
     :param transfer_fct:
-    :param metaData:
+    :param metadata:
     :return:
     """
     array = np.squeeze(array)
@@ -329,7 +331,7 @@ def show_array(array: np.ndarray,
     s = create_socket()
     buf = create_array3meta_msg(dtype, name, array.shape, duration=duration_seconds, fps=fps, date=date,
                                 comment=comment, bitrange=bitrange, cmap=cmap, parentName=parentName,
-                                transfer_fct=transfer_fct, metaData=metaData)
+                                transfer_fct=transfer_fct, metaData=metadata)
     s.sendall(buf)
 
     flat = array.flatten()
@@ -348,7 +350,7 @@ def show_layer(array: np.ndarray, parentName: Text, name: Text = "", **kwargs):
     show_array(array, parentName=parentName, name=name, **kwargs)
 
 
-def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text = ""):
+def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text = "", color=None):
     if flow_uv.ndim != 4:
         raise ValueError("array is not four-dimensional")
     if flow_uv.dtype != np.float32:
@@ -358,7 +360,7 @@ def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
 
     s = create_socket()
     shape = (flow_uv.shape[0] * 2, flow_uv.shape[1], flow_uv.shape[2])
-    buf = create_array3metaflow_msg(shape, parentName, name)
+    buf = create_array3metaflow_msg(shape, parentName, name, color)
     s.sendall(buf)
 
     flat = flow_uv.flatten()

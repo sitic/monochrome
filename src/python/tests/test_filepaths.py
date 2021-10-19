@@ -3,7 +3,7 @@ from pathlib import Path
 from time import sleep
 
 import numpy as np
-from monochrome import show, show_file, show_files
+import monochrome as mc
 
 with tempfile.TemporaryDirectory() as tmpdir:
     shape = (100, 128, 256)
@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
     tmpfile = str(tmpfile)
 
     paths = [tmpfile]
-    show_file(paths[0])
-    show_files(paths)
+    mc.show_file(paths[0])
+    mc.show_files(paths)
 
     sleep(2)

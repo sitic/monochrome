@@ -144,12 +144,12 @@ class SmoothScaler {
 
  public:
   std::vector<int> restarts = {};
-  bool scaleX  = true;
-  bool scaleY  = true;
-  double lower = 0;
-  double upper = 0;
-  double left  = 0;
-  double right = 0;
+  bool scaleX               = true;
+  bool scaleY               = true;
+  double lower              = 0;
+  double upper              = 0;
+  double left               = 0;
+  double right              = 0;
 
   SmoothScaler() = default;
 
@@ -210,6 +210,7 @@ class FlowData {
 
   FlowData(std::shared_ptr<Recording> data_, unsigned color_count)
       : data(std::move(data_)), color(next_color(color_count)) {}
+  FlowData(std::shared_ptr<Recording> data_, Vec4f color_) : data(std::move(data_)), color(color_) {}
   Vec4f next_color(unsigned color_count);
 };
 

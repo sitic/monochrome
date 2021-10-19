@@ -38,6 +38,7 @@ table Array3MetaFlow {
   nt:int;
   name:string;
   parentName:string;
+  color:Color;
 }
 
 // flatbuffers currently restricted to 2GB, so unfortunately we may need to chunk the data

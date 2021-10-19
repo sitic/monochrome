@@ -272,6 +272,11 @@ namespace {
       if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_PARENTNAME))
         meta.parentName = raw->parentName()->str();
       meta.is_flowfield = true;
+      if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_COLOR)) {
+        Vec4f color;
+        for (int i = 0; i < 4; i++) color[i] = raw->color()->values()->Get(i);
+        meta.color = color;
+      }
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
       array_msg_.array = global::RawArray3::create_float(meta, size);
