@@ -10,8 +10,8 @@ setup(
     python_requires='>=3.6',
     packages=['monochrome', 'monochrome.fbs'],
     package_dir={
-        'monochrome': 'python/monochrome',
-        'monochrome.fbs': 'python/monochrome/fbs'
+        'monochrome': 'src/python/monochrome',
+        'monochrome.fbs': 'src/python/monochrome/fbs'
     },
     tests_require=['pytest'],
     install_requires=['numpy', 'flatbuffers>=2.00'],
@@ -22,5 +22,5 @@ setup(
     },
     cmake_source_dir='.',
     cmake_args=['-DSTATIC_GCC:BOOL=ON'],
-    cmake_install_dir='python/monochrome/data',
+    cmake_install_dir='src/python/monochrome/data',
 )

@@ -59,18 +59,7 @@ class Array3MetaFlow(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-    # Array3MetaFlow
-    def Color(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
-        if o != 0:
-            x = o + self._tab.Pos
-            from fbs.Color import Color
-            obj = Color()
-            obj.Init(self._tab.Bytes, x)
-            return obj
-        return None
-
-def Start(builder): builder.StartObject(6)
+def Start(builder): builder.StartObject(5)
 def Array3MetaFlowStart(builder):
     """This method is deprecated. Please switch to Start."""
     return Start(builder)
@@ -94,10 +83,6 @@ def AddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(4, f
 def Array3MetaFlowAddParentName(builder, parentName):
     """This method is deprecated. Please switch to AddParentName."""
     return AddParentName(builder, parentName)
-def AddColor(builder, color): builder.PrependStructSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(color), 0)
-def Array3MetaFlowAddColor(builder, color):
-    """This method is deprecated. Please switch to AddColor."""
-    return AddColor(builder, color)
 def End(builder): return builder.EndObject()
 def Array3MetaFlowEnd(builder):
     """This method is deprecated. Please switch to End."""

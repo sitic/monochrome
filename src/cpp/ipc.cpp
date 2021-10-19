@@ -20,7 +20,7 @@ namespace fs = ghc::filesystem;
 
 #include "ipc.h"
 
-#include "schema/message_generated.h"
+#include "message_generated.h"
 
 namespace {
 #if defined(ASIO_HAS_LOCAL_SOCKETS) && !defined(MC_FORCE_TCP_IPC)

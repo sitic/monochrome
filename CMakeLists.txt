@@ -71,16 +71,19 @@ endif ()
 file(GLOB SHADERS "src/shaders/*.glsl")
 cmrc_add_resource_library(monochrome-resources ALIAS qvv::rc NAMESPACE rc ${SHADERS} "vendor/MultiRecorderVideo.png")
 
-add_executable(Monochrome src/main.cpp src/utils/utils.h src/fileformats/BmpFileParser.h src/recording.h src/utils/vectors.h
-        src/utils/videorecorder.h src/recordingwindow.h src/transformations.h src/main_window.h src/globals.cpp src/globals.h
-        src/ipc.h src/globals.cpp src/globals.h src/ipc.cpp src/recordingwindow.cpp src/utils/utils.cpp src/transformations.cpp
-        src/recording.cpp src/ui.h src/utils/colormap.cpp src/utils/colormap.h src/utils/iterators.h src/recordingwindow_helpers.cpp
-        src/recordingwindow_helpers.h src/fileformats/AbstractFile.h src/fileformats/all_formats.h
-        src/fileformats/all_formats.cpp src/utils/definitions.h src/utils/plot_utils.h)
+add_executable(Monochrome
+        src/cpp/main.cpp src/cpp/utils/utils.h src/cpp/fileformats/BmpFileParser.h src/cpp/recording.h
+        src/cpp/utils/vectors.h src/cpp/utils/videorecorder.h src/cpp/recordingwindow.h src/cpp/transformations.h
+        src/cpp/main_window.h src/cpp/globals.cpp src/cpp/globals.h src/cpp/ipc.h src/cpp/globals.cpp src/cpp/globals.h
+        src/cpp/ipc.cpp src/cpp/recordingwindow.cpp src/cpp/utils/utils.cpp src/cpp/transformations.cpp
+        src/cpp/recording.cpp src/cpp/ui.h src/cpp/utils/colormap.cpp src/cpp/utils/colormap.h src/cpp/utils/iterators.h
+        src/cpp/recordingwindow_helpers.cpp src/cpp/recordingwindow_helpers.h src/cpp/fileformats/AbstractFile.h
+        src/cpp/fileformats/all_formats.h src/cpp/fileformats/all_formats.cpp src/cpp/utils/definitions.h
+        src/cpp/utils/plot_utils.h)
 target_link_libraries(Monochrome PRIVATE
         CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy
         pugixml flagset cppcolormap qvv::rc)
-target_include_directories(Monochrome PRIVATE src)
+target_include_directories(Monochrome PRIVATE src/cpp src/schema)
 if (MC_FORCE_TCP_IPC)
     target_compile_definitions(Monochrome PRIVATE "-DMC_FORCE_TCP_IPC")
 endif ()
