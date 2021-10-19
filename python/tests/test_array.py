@@ -1,5 +1,5 @@
-from monochrome import show_array, show, ColorMap, BitRange
 import numpy as np
+from monochrome import BitRange, ColorMap, show, show_array
 
 shape = (100, 128, 256)
 arr = np.random.rand(*shape).astype(dtype=np.float32)

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.1)
 project(Monochrome C CXX)
 
 option(MC_FORCE_TCP_IPC "Force use of TCP for IPC" OFF)
-option(STATIC_GCC "Build with static libstdc++" OFF)
+option(STATIC_GCC "Build with static libstdc++ when using gcc" OFF)
 
 # default to Release build
 if (NOT CMAKE_BUILD_TYPE)

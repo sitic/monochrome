@@ -1,1 +1,2 @@
-from .ipc import show_file, show_files, show_array, show_layer, show_flow, show, show_points, ColorMap, BitRange
+from .ipc import (BitRange, ColorMap, show, show_array, show_file, show_files,
+                  show_flow, show_layer, show_points)

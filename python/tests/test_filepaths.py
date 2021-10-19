@@ -1,8 +1,9 @@
-from monochrome import show_file, show_files, show
 import tempfile
-import numpy as np
 from pathlib import Path
 from time import sleep
+
+import numpy as np
+from monochrome import show, show_file, show_files
 
 with tempfile.TemporaryDirectory() as tmpdir:
     shape = (100, 128, 256)

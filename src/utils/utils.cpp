@@ -33,12 +33,6 @@ std::string config_file_path() {
 #endif
 }
 
-std::string file_to_string(std::string filepath) {
-  std::ifstream t(filepath);
-  std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-  return str;
-}
-
 void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {
   auto prev_context = glfwGetCurrentContext();
   if (window) glfwMakeContextCurrent(window);
@@ -46,8 +40,9 @@ void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
 
-  const unsigned channels = 4;
+  const unsigned channels = 4;  // RGB: 3, RGBA: 4
   std::vector<GLubyte> image(width * height * channels);
+
   //glPixelStorei(GL_PACK_ALIGNMENT, 1); // needed when using GL_RGB
   glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
 

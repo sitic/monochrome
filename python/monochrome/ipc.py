@@ -1,19 +1,23 @@
+import socket
+import subprocess
+import sys
+from pathlib import Path
+from typing import Dict, List, Optional, Text, Union
+
 import flatbuffers
 import numpy as np
-from pathlib import Path
-import socket
-import sys
-from typing import List, Text, Union, Optional, Dict
 
 # from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, PointsVideo, \
 #     Points, Point
-from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, PointsVideo
-from .fbs.Color import CreateColor
+from .fbs import (Array3DataChunkf, Array3DataChunku16, Array3Meta,
+                  Array3MetaFlow, Data, Filepaths, PointsVideo, Root)
 from .fbs.ArrayDataType import ArrayDataType
-from .fbs.ColorMap import ColorMap
 from .fbs.BitRange import BitRange
+from .fbs.Color import CreateColor
+from .fbs.ColorMap import ColorMap
+from .fbs.DictEntry import (DictEntryAddKey, DictEntryAddVal, DictEntryEnd,
+                            DictEntryStart)
 from .fbs.TransferFunction import TransferFunction
-from .fbs.DictEntry import DictEntryStart, DictEntryAddKey, DictEntryAddVal, DictEntryEnd
 
 TCP_IP, TCP_PORT = '127.0.0.1', 4864
 # OSX doesn't support abstract UNIX domain sockets

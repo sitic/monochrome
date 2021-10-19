@@ -10,13 +10,21 @@
 // get the default path of our config file
 std::string config_file_path();
 
+void gl_save_snapshot(std::string out_png_path, GLFWwindow *window = nullptr);
+
+void add_window_icon(GLFWwindow *window);
+
+void glfw_error_callback(int error, const char *description);
+
+void checkGlError(std::string desc = "");
+
 template <typename T, size_t bin_count>
 class Histogram {
  public:
   std::array<T, bin_count> data = {};
 
-  T min = {};
-  T max = {};
+  T min          = {};
+  T max          = {};
   bool symmetric = false;
 
   Histogram() = default;
@@ -55,16 +63,6 @@ class Histogram {
     }
   }
 };
-
-std::string file_to_string(std::string filepath);
-
-void gl_save_snapshot(std::string out_png_path, GLFWwindow *window = nullptr);
-
-void add_window_icon(GLFWwindow *window);
-
-void glfw_error_callback(int error, const char *description);
-
-void checkGlError(std::string desc = "");
 
 class Shader {
  public:

@@ -1,10 +1,11 @@
 # Basic MultiRecorder file importer, based on the code from PythonAnalyser
 
-import numpy as np
+import locale
 import struct
 from datetime import datetime
-import locale
 from pathlib import Path
+
+import numpy as np
 
 from .ipc import show_array, show_layer
 

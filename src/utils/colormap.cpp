@@ -38,6 +38,10 @@ std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
   }
 }
 
+/*
+ * Implementation
+ */
+
 namespace {
   namespace PRGn {
     float colormap_red(float x) {
