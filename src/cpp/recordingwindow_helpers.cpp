@@ -47,6 +47,10 @@ void RecordingPlaybackCtrl::set(int t) {
   tf_ = t;
 }
 void RecordingPlaybackCtrl::set_next(int t) {
+  if (t >= length_ || t < 0) {
+    t = 0;
+  }
+
   t_  = std::numeric_limits<int>::lowest();
   tf_ = t - prm::playbackCtrl.val;
 }
@@ -72,11 +76,11 @@ bool Trace::is_near_point(const Vec2i &npos) const {
 Vec4f Trace::next_color() {
   // List of colors to cycle through
   const std::array<Vec4f, 4> cycle_list = {{
-                                               {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
-                                               {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
-                                               {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
-                                               {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
-                                           }};
+      {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
+      {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
+      {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
+      {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
+  }};
 
   static int count = -1;
   count++;
@@ -111,12 +115,12 @@ std::pair<Vec2i, Vec2i> Trace::clamp(const Vec2i &pos, const Vec2i &max_size) {
 Vec4f FlowData::next_color(unsigned color_count) {
   // List of colors to cycle through
   const std::array<Vec4f, 5> cycle_list = {{
-                                               {0, 0, 0, 1},
-                                               {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
-                                               {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
-                                               {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
-                                               {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
-                                           }};
+      {0, 0, 0, 1},
+      {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
+      {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
+      {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
+      {152 / 255.f, 78 / 255.f, 163 / 255.f, 1},
+  }};
 
   if (color_count >= cycle_list.size()) {
     color_count %= cycle_list.size();
