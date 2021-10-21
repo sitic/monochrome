@@ -100,7 +100,6 @@ namespace {
       auto verifier = flatbuffers::Verifier(body(), body_size());
       if (fbs::VerifyRootBuffer(verifier)) {
         auto root = fbs::GetRoot(body());
-        fmt::print("Rx {} message\n", fbs::EnumNameData(root->data_type()));
         switch (root->data_type()) {
           case fbs::Data_Filepaths:
             handle_message(root->data_as_Filepaths());
@@ -304,7 +303,7 @@ namespace {
                  array_msg_.array->data);
       array_msg_.counter += data->size();
       if (array_msg_.complete()) {
-        fmt::print("Loading of {} complete!\n", array_msg_.array->meta.name);
+//        fmt::print("Loading of {} complete!\n", array_msg_.array->meta.name);
         global::add_RawArray3_to_load(array_msg_.array);
         array_msg_.clear();
       }

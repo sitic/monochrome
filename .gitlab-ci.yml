@@ -82,13 +82,35 @@ gcc Release:
       - build/Monochrome.AppImage
     expire_in: 3 months
 
-gcc Debug:
-  <<: [*gcc, *docker_build]
+#gcc Debug:
+#  <<: [*gcc, *docker_build]
+#
+#clang Release:
+#  <<: [*clang, *docker_build]
+#  variables:
+#    CXXFLAGS: "-DCLI11_HAS_FILESYSTEM=0 -stdlib=libc++ -Wno-error=unused-command-line-argument"
 
-clang Release:
-  <<: [*clang, *docker_build]
-  variables:
-    CXXFLAGS: "-DCLI11_HAS_FILESYSTEM=0 -stdlib=libc++ -Wno-error=unused-command-line-argument"
+linux python:
+  image: quay.io/pypa/manylinux2014_x86_64
+  before_script:
+    - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
+    - python3.9 -m pip install build wheeltools
+    - export CCACHE_DIR=`pwd`/.ccache
+    - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
+    - ccache -s
+  script:
+    - python3.9 -m build --wheel
+    - curl -o convert_to_generic_platform_wheel.py https://raw.githubusercontent.com/scikit-build/cmake-python-distributions/master/scripts/convert_to_generic_platform_wheel.py
+    - mv dist/*.whl .
+    - python3.9 convert_to_generic_platform_wheel.py monochrome-*.whl
+  artifacts:
+    paths:
+      - dist/monochrome-*.whl
+    expire_in: 2 months
+  cache:
+    key: pip-linux
+    paths:
+      - .ccache
 
 #osx Release:
 #  <<: [*osx, *build_config_generator]
