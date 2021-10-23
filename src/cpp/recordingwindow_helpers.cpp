@@ -20,9 +20,10 @@ std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
   return {t, tf};
 }
 RecordingPlaybackCtrl &RecordingPlaybackCtrl::operator=(const RecordingPlaybackCtrl &other) {
-  if (other.t_ >= length_ - 1 || other.tf_ >= length_ - 1) {
-    global::new_ui_message(
-        "Synchronizing videos of unequal length, this might not work as expected");
+  if ((other.t_ >= length_ - 1 || other.tf_ >= length_ - 1)) {
+    if (length_ > 1)
+      global::new_ui_message(
+          "Synchronizing videos of unequal length, this might not work as expected");
     return *this;
   }
   t_  = other.t_;
