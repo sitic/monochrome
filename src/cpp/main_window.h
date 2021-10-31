@@ -346,9 +346,6 @@ void display_loop() {
     int rec_nr = 0;
     for (const auto &rec : global::recordings) {
       if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);
-      for (const auto &crec : rec->children) {
-        if (crec->active) crec->display(prm::prefilter, prm::transformation, prm::postfilter);
-      }
       rec_nr = show_recording_ui(rec, rec_nr);
       show_export_recording_ui(rec);
     }

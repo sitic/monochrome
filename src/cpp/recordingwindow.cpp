@@ -351,6 +351,15 @@ void RecordingWindow::display(Filters prefilter,
   glBindVertexArray(frame_vao);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
+  if (!children.empty()) {
+    for (const auto &crec : children) {
+      if (crec->active) crec->display(prefilter, transformation, postfilter);
+    }
+    glfwMakeContextCurrent(window);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glfwMakeContextCurrent(glcontext);
+  }
+
   // Draw the traces rectangle
   if (!traces.empty()) {
     trace_vert.clear();
