@@ -42,13 +42,20 @@ def _create_socket():
 
 
 def create_socket():
+    socket = None
     try:
-        s = _create_socket()
+        socket = _create_socket()
     except ConnectionRefusedError:
         start_monochrome()
-        time.sleep(0.2)
-        s = _create_socket()
-    return s
+        waiting = True
+        timeout = time.time() + 5
+        while waiting and time.time() < timeout:
+            try:
+                socket = _create_socket()
+                waiting = False
+            except ConnectionRefusedError:
+                pass
+    return socket
 
 
 def get_color(builder, color):
