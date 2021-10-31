@@ -237,18 +237,31 @@ void load_new_file(const fs::path &path) {
 }
 
 void load_from_queue() {
+  /* Check all our queues for new elements */
+
+  /* File paths */
   if (auto filepath = global::get_file_to_load()) {
     load_new_file(filepath.value());
   }
+
+  /* InMemory Arrays */
   if (auto arr = global::get_rawarray3_to_load()) {
     auto file = std::make_shared<InMemoryFile>(arr.value());
     load_new_file(file, arr.value()->meta.parentName);
   }
+
+  /* Point videos */
   if (auto pointsvideo = global::get_pointsvideo_to_load()) {
-    auto rec         = global::recordings.back();
-    auto parent_name = pointsvideo.value()->parent_name;
-    rec->add_points_video(pointsvideo.value());
+    if (global::recordings.empty()) {
+      global::new_ui_message("A video needs to be opened before points lists can be displayed");
+    } else {
+      auto rec         = global::recordings.back();
+      auto parent_name = pointsvideo.value()->parent_name;
+      rec->add_points_video(pointsvideo.value());
+    }
   }
+
+  /* Global merge queue */
   if (!global::merge_queue.empty()) {
     auto [child, parent, as_flow] = global::merge_queue.front();
     global::merge_queue.pop();
