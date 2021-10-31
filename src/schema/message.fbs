@@ -92,6 +92,7 @@ table PointsVideo {
   points_data:[float];
   time_idxs:[uint];
   color:Color;
+  point_size:float;
 }
 
 table VideoID {

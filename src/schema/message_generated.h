@@ -1121,7 +1121,8 @@ struct PointsVideo FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_PARENT_NAME = 6,
     VT_POINTS_DATA = 8,
     VT_TIME_IDXS = 10,
-    VT_COLOR = 12
+    VT_COLOR = 12,
+    VT_POINT_SIZE = 14
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -1138,6 +1139,9 @@ struct PointsVideo FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const fbs::Color *color() const {
     return GetStruct<const fbs::Color *>(VT_COLOR);
   }
+  float point_size() const {
+    return GetField<float>(VT_POINT_SIZE, 0.0f);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_NAME) &&
@@ -1149,6 +1153,7 @@ struct PointsVideo FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_TIME_IDXS) &&
            verifier.VerifyVector(time_idxs()) &&
            VerifyField<fbs::Color>(verifier, VT_COLOR) &&
+           VerifyField<float>(verifier, VT_POINT_SIZE) &&
            verifier.EndTable();
   }
 };
@@ -1172,6 +1177,9 @@ struct PointsVideoBuilder {
   void add_color(const fbs::Color *color) {
     fbb_.AddStruct(PointsVideo::VT_COLOR, color);
   }
+  void add_point_size(float point_size) {
+    fbb_.AddElement<float>(PointsVideo::VT_POINT_SIZE, point_size, 0.0f);
+  }
   explicit PointsVideoBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -1189,8 +1197,10 @@ inline flatbuffers::Offset<PointsVideo> CreatePointsVideo(
     flatbuffers::Offset<flatbuffers::String> parent_name = 0,
     flatbuffers::Offset<flatbuffers::Vector<float>> points_data = 0,
     flatbuffers::Offset<flatbuffers::Vector<uint32_t>> time_idxs = 0,
-    const fbs::Color *color = 0) {
+    const fbs::Color *color = 0,
+    float point_size = 0.0f) {
   PointsVideoBuilder builder_(_fbb);
+  builder_.add_point_size(point_size);
   builder_.add_color(color);
   builder_.add_time_idxs(time_idxs);
   builder_.add_points_data(points_data);
@@ -1205,7 +1215,8 @@ inline flatbuffers::Offset<PointsVideo> CreatePointsVideoDirect(
     const char *parent_name = nullptr,
     const std::vector<float> *points_data = nullptr,
     const std::vector<uint32_t> *time_idxs = nullptr,
-    const fbs::Color *color = 0) {
+    const fbs::Color *color = 0,
+    float point_size = 0.0f) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parent_name__ = parent_name ? _fbb.CreateString(parent_name) : 0;
   auto points_data__ = points_data ? _fbb.CreateVector<float>(*points_data) : 0;
@@ -1216,7 +1227,8 @@ inline flatbuffers::Offset<PointsVideo> CreatePointsVideoDirect(
       parent_name__,
       points_data__,
       time_idxs__,
-      color);
+      color,
+      point_size);
 }
 
 struct VideoID FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

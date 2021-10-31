@@ -103,7 +103,14 @@ class PointsVideo(object):
             return obj
         return None
 
-def Start(builder): builder.StartObject(5)
+    # PointsVideo
+    def PointSize(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+        return 0.0
+
+def Start(builder): builder.StartObject(6)
 def PointsVideoStart(builder):
     """This method is deprecated. Please switch to Start."""
     return Start(builder)
@@ -135,6 +142,10 @@ def AddColor(builder, color): builder.PrependStructSlot(4, flatbuffers.number_ty
 def PointsVideoAddColor(builder, color):
     """This method is deprecated. Please switch to AddColor."""
     return AddColor(builder, color)
+def AddPointSize(builder, pointSize): builder.PrependFloat32Slot(5, pointSize, 0.0)
+def PointsVideoAddPointSize(builder, pointSize):
+    """This method is deprecated. Please switch to AddPointSize."""
+    return AddPointSize(builder, pointSize)
 def End(builder): return builder.EndObject()
 def PointsVideoEnd(builder):
     """This method is deprecated. Please switch to End."""

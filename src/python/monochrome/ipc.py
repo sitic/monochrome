@@ -124,7 +124,7 @@ def create_filepaths_msg(paths):
 #     buf = builder.Output()
 #     return buf
 
-def create_pointsvideo_msg(points_py, name, parent_name=None, color=None):
+def create_pointsvideo_msg(points_py, name, parent_name=None, color=None, point_size=None):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
     parent_fb = builder.CreateString(parent_name) if parent_name else None
@@ -147,6 +147,8 @@ def create_pointsvideo_msg(points_py, name, parent_name=None, color=None):
         PointsVideo.AddParentName(builder, parent_fb)
     if color:
         PointsVideo.AddColor(builder, get_color(builder, color))
+    if point_size:
+        PointsVideo.AddPointSize(builder, point_size)
     PointsVideo.AddPointsData(builder, flat_fb)
     PointsVideo.AddTimeIdxs(builder, indexes_fb)
     fp = PointsVideo.End(builder)
@@ -265,7 +267,8 @@ def show_files(paths: List[Union[Text, Path]]):
     s.sendall(buf)
 
 
-def show_points(points, name="", parent_name=None, color=None):
+def show_points(points, name: Text = "", parent_name: Optional[Text] = None, color=None,
+                point_size: Optional[float] = None):
     """
 
     :param points:
@@ -275,7 +278,7 @@ def show_points(points, name="", parent_name=None, color=None):
     :return:
     """
     s = create_socket()
-    buf = create_pointsvideo_msg(points, name, parent_name, color)
+    buf = create_pointsvideo_msg(points, name, parent_name, color, point_size)
     s.sendall(buf)
 
 

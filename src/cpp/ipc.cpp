@@ -183,6 +183,9 @@ namespace {
       if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_COLOR)) {
         for (int i = 0; i < 4; i++) pv->color[i] = raw->color()->values()->Get(i);
       }
+      if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_POINT_SIZE)) {
+        pv->point_size = raw->point_size();
+      }
       if (!raw->points_data() || !raw->time_idxs()) {
         fmt::print("EROOR: parsing PointsVideo IPC packet failed!\n");
       };
@@ -303,7 +306,7 @@ namespace {
                  array_msg_.array->data);
       array_msg_.counter += data->size();
       if (array_msg_.complete()) {
-//        fmt::print("Loading of {} complete!\n", array_msg_.array->meta.name);
+        //        fmt::print("Loading of {} complete!\n", array_msg_.array->meta.name);
         global::add_RawArray3_to_load(array_msg_.array);
         array_msg_.clear();
       }
