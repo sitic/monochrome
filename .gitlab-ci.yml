@@ -94,6 +94,7 @@ linux python:
   image: quay.io/pypa/manylinux2014_x86_64
   before_script:
     - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
+    - export PIP_CACHE_DIR=`pwd`/.pip_cache
     - python3.9 -m pip install build wheeltools
     - python3.10 -m pip install pytest
     - python3.6 -m pip install pytest
@@ -103,9 +104,8 @@ linux python:
     - ccache -s
   script:
     - python3.9 -m build --wheel
-    - curl -o convert_to_generic_platform_wheel.py https://raw.githubusercontent.com/scikit-build/cmake-python-distributions/master/scripts/convert_to_generic_platform_wheel.py
     - mv dist/*.whl .
-    - python3.9 convert_to_generic_platform_wheel.py monochrome-*.whl
+    - python3.9 .gitlab/convert_to_generic_platform_wheel.py monochrome-*.whl
     - echo "Testing on python 3.10"
     - python3.10 -m pip install dist/monochrome-*.whl
     - python3.10 -m pytest src/python/tests -s
@@ -120,6 +120,7 @@ linux python:
     key: pip-linux
     paths:
       - .ccache
+      - .pip_cache
 
 #osx Release:
 #  <<: [*osx, *build_config_generator]
