@@ -95,14 +95,23 @@ linux python:
   before_script:
     - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
     - python3.9 -m pip install build wheeltools
+    - python3.10 -m pip install pytest
+    - python3.6 -m pip install pytest
     - export CCACHE_DIR=`pwd`/.ccache
     - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
+    - export CCACHE_MAX_SIZE="100M"
     - ccache -s
   script:
     - python3.9 -m build --wheel
     - curl -o convert_to_generic_platform_wheel.py https://raw.githubusercontent.com/scikit-build/cmake-python-distributions/master/scripts/convert_to_generic_platform_wheel.py
     - mv dist/*.whl .
     - python3.9 convert_to_generic_platform_wheel.py monochrome-*.whl
+    - echo "Testing on python 3.10"
+    - python3.10 -m pip install dist/monochrome-*.whl
+    - python3.10 -m pytest src/python/tests -s
+    - echo "Testing on python 3.6"
+    - python3.6 -m pip install dist/monochrome-*.whl
+    - python3.6 -m pytest src/python/tests -s
   artifacts:
     paths:
       - dist/monochrome-*.whl

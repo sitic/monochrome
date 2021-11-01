@@ -2,7 +2,7 @@ from skbuild import setup
 
 setup(
     name='monochrome',
-    version='0.2.0',
+    # version='0.2.0',
     url='https://gitlab.com/cardiac-vision/monochrome',
     classifiers=[
         "Private :: Do not Upload"

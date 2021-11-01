@@ -1,2 +1,13 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "scikit-build", "cmake>=3.18", "ninja"]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "setuptools_scm>=6.2",
+    "scikit-build",
+    "cmake>=3.18",
+    "ninja"
+]
+build-backend="setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/python/monochrome/_version.py"
