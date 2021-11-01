@@ -1,3 +1,7 @@
+stages:
+  - build
+  - test
+
 .linux: &linux
   image: registry.gitlab.com/cardiac-vision/monochrome
 
@@ -74,6 +78,7 @@
 
 gcc Release:
   <<: [*gcc, *docker_build]
+  stage: build
   variables:
     CMAKE_PARAMS: -DSTATIC_GCC=ON
     BUILD_APPIMAGE: "true"
@@ -90,14 +95,13 @@ gcc Release:
 #  variables:
 #    CXXFLAGS: "-DCLI11_HAS_FILESYSTEM=0 -stdlib=libc++ -Wno-error=unused-command-line-argument"
 
-linux python:
+linux_python:
   image: quay.io/pypa/manylinux2014_x86_64
+  stage: build
   before_script:
     - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
     - export PIP_CACHE_DIR=`pwd`/.pip_cache
     - python3.9 -m pip install build wheeltools
-    - python3.10 -m pip install pytest
-    - python3.6 -m pip install pytest
     - export CCACHE_DIR=`pwd`/.ccache
     - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
     - export CCACHE_MAX_SIZE="100M"
@@ -106,12 +110,6 @@ linux python:
     - python3.9 -m build --wheel
     - mv dist/*.whl .
     - python3.9 .gitlab/convert_to_generic_platform_wheel.py monochrome-*.whl
-    - echo "Testing on python 3.10"
-    - python3.10 -m pip install dist/monochrome-*.whl
-    - python3.10 -m pytest src/python/tests -s
-    - echo "Testing on python 3.6"
-    - python3.6 -m pip install dist/monochrome-*.whl
-    - python3.6 -m pytest src/python/tests -s
   artifacts:
     paths:
       - dist/monochrome-*.whl
@@ -120,6 +118,40 @@ linux python:
     key: pip-linux
     paths:
       - .ccache
+      - .pip_cache
+
+pytest_3.6:
+  image: quay.io/pypa/manylinux2014_x86_64
+  stage: test
+  before_script:
+    - export PIP_CACHE_DIR=`pwd`/.pip_cache
+    - python3.6 -m pip install pytest
+  script:
+    - python3.6 -m pip install dist/monochrome-*.whl
+    - python3.6 -m pytest src/python/tests
+  needs:
+    - job: linux_python
+      artifacts: true
+  cache:
+    key: pytest
+    paths:
+      - .pip_cache
+
+pytest_3.10:
+  image: quay.io/pypa/manylinux2014_x86_64
+  stage: test
+  before_script:
+    - export PIP_CACHE_DIR=`pwd`/.pip_cache
+    - python3.10 -m pip install pytest
+  script:
+    - python3.10 -m pip install dist/monochrome-*.whl
+    - python3.10 -m pytest src/python/tests
+  needs:
+    - job: linux_python
+      artifacts: true
+  cache:
+    key: pytest
+    paths:
       - .pip_cache
 
 #osx Release:
