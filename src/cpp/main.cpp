@@ -28,13 +28,13 @@ int main(int argc, char **argv) {
       "--fliph", [](std::int64_t count) { RecordingWindow::fliplr(); }, "Flip video horizontally");
   app.add_flag(
       "--flipv", [](std::int64_t count) { RecordingWindow::flipud(); }, "Flip video vertically");
-  app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
-  app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
   app.add_option("--font-scale", font_scale, "Fonts scaling factor");
   app.add_option("--trace_length", prm::trace_length, "Default length (in frames) for traces");
   app.add_option("--max_trace_length", prm::max_trace_length,
                  "Maximum length (in frames) for traces");
   app.add_option("--display_fps", prm::display_fps, "Default display framerate");
+  app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
+  app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
   app.add_flag(
       "--disable-ipc", disable_ipc,
       "Disable the TCP server which is used for interprocess-communication with python clients");
@@ -61,8 +61,8 @@ int main(int argc, char **argv) {
     std::exit(EXIT_SUCCESS);
   }
 
-  if (!disable_ipc && !files.empty()) {
-    if (ipc::is_another_instance_running()) {
+  if (!files.empty()) {
+    if (!disable_ipc && ipc::is_another_instance_running()) {
       if (send_files_over_wire) {
         for (const auto &file : files) {
           auto rec              = Recording(fs::path(file));
@@ -80,14 +80,14 @@ int main(int argc, char **argv) {
         ipc::send_filepaths(files);
       }
       std::exit(EXIT_SUCCESS);
+    } else {
+      for (const auto &file : files) {
+        global::add_file_to_load(file);
+      }
     }
   }
 
   open_main_window(font_scale);
-
-  for (const auto &file : files) {
-    load_new_file(file);
-  }
 
   if (!disable_ipc) {
     if (!ipc::is_another_instance_running()) {
