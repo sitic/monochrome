@@ -8,8 +8,6 @@ from typing import Dict, List, Optional, Text, Union
 import flatbuffers
 import numpy as np
 
-# from .fbs import Root, Data, Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, PointsVideo, \
-#     Points, Point
 from .fbs import (Array3DataChunkf, Array3DataChunku16, Array3Meta,
                   Array3MetaFlow, Data, Filepaths, PointsVideo, Root)
 from .fbs.ArrayDataType import ArrayDataType
@@ -21,14 +19,39 @@ from .fbs.DictEntry import (DictEntryAddKey, DictEntryAddVal, DictEntryEnd,
 from .fbs.TransferFunction import TransferFunction
 
 MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome'
+USE_TCP = sys.platform in ['win32', 'cygwin']
 TCP_IP, TCP_PORT = '127.0.0.1', 4864
 # OSX doesn't support abstract UNIX domain sockets
-SOCK_PATH = '/tmp/Monochrome.s' if sys.platform == 'darwin' else '\0Monochrome'
-USE_TCP = sys.platform in ['win32', 'cygwin']
+ABSTRACT_DOMAIN_SOCKET_SUPPORTED = sys.platform != 'darwin'
+SOCK_PATH = '\0Monochrome' if ABSTRACT_DOMAIN_SOCKET_SUPPORTED else '/tmp/Monochrome.s'
 
 
-def start_monochrome():
-    subprocess.Popen(MONOCHROME_BIN_PATH)
+def start_monochrome(speed: Optional[float] = None,
+                     display_fps: Optional[int] = None,
+                     scale: Optional[float] = None,
+                     **kwargs):
+    assert MONOCHROME_BIN_PATH.exists()
+    args = [str(MONOCHROME_BIN_PATH)]
+    if speed:
+        args.append('--speed')
+        args.append(str(speed))
+    if display_fps:
+        args.append('--display_fps')
+        args.append(str(display_fps))
+    if scale:
+        args.append('--scale')
+        args.append(str(scale))
+    for key, val in kwargs.items():
+        args.append(f'--{key}')
+        args.append(str(val))
+    subprocess.Popen(args, start_new_session=True)
+
+
+def console_entrypoint():
+    assert MONOCHROME_BIN_PATH.exists()
+    args = [str(MONOCHROME_BIN_PATH)]
+    args.extend(sys.argv[1:])
+    subprocess.Popen(args, start_new_session=True)
 
 
 def _create_socket():
@@ -95,41 +118,6 @@ def create_filepaths_msg(paths):
     buf = builder.Output()
     return buf
 
-
-# def create_pointsvideo_msg(points_py, name, parent_name):
-#     builder = flatbuffers.Builder(1024)
-#     name_fb = builder.CreateString(name)
-#     parent_fb = builder.CreateString(parent_name) if parent_name else None
-#
-#     points_video = []
-#     for frame in points_py:
-#         points_frame = []
-#         for point in frame:
-#             Point.Start(builder)
-#             Point.AddX(builder, float(point[0]))
-#             Point.AddY(builder, float(point[1]))
-#             point_fb = Point.End(builder)
-#             points_frame.append(point_fb)
-#         Points.StartPointsVector(builder, len(points_frame))
-#         for point in points_frame:
-#             builder.PrependUOffsetTRelative(point)
-#         points_video.append(builder.EndVector())
-#
-#     PointsVideo.StartPointsVideoVector(builder, len(points_video))
-#     for p in points_video:
-#         builder.PrependSOffsetTRelative(p)
-#     video_vec = builder.EndVector()
-#
-#     PointsVideo.Start(builder)
-#     PointsVideo.AddName(builder, name_fb)
-#     if parent_fb:
-#         PointsVideo.AddParentName(builder, parent_fb)
-#     PointsVideo.AddPointsVideo(builder, video_vec)
-#     fp = PointsVideo.End(builder)
-#     root = build_root(builder, Data.Data.PointsVideo, fp)
-#     builder.FinishSizePrefixed(root)
-#     buf = builder.Output()
-#     return buf
 
 def create_pointsvideo_msg(points_py, name, parent_name=None, color=None, point_size=None):
     builder = flatbuffers.Builder(1024)

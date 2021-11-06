@@ -17,7 +17,7 @@ setup(
     install_requires=['numpy', 'flatbuffers>=2.00'],
     entry_points={
         'console_scripts': [
-            'Monochrome=monochrome:monochrome'
+            'Monochrome=monochrome.ipc:console_entrypoint'
         ]
     },
     cmake_source_dir='.',
