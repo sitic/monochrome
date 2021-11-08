@@ -76,16 +76,16 @@ stages:
     - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
     - ccache -s
 
-gcc Release:
-  <<: [*gcc, *docker_build]
-  stage: build
-  variables:
-    CMAKE_PARAMS: -DSTATIC_GCC=ON
-    BUILD_APPIMAGE: "true"
-  artifacts:
-    paths:
-      - build/Monochrome.AppImage
-    expire_in: 3 months
+# gcc Release:
+#   <<: [*gcc, *docker_build]
+#   stage: build
+#   variables:
+#     CMAKE_PARAMS: -DSTATIC_GCC=ON
+#     BUILD_APPIMAGE: "true"
+#   artifacts:
+#     paths:
+#       - build/Monochrome.AppImage
+#     expire_in: 3 months
 
 #gcc Debug:
 #  <<: [*gcc, *docker_build]
@@ -95,64 +95,92 @@ gcc Release:
 #  variables:
 #    CXXFLAGS: "-DCLI11_HAS_FILESYSTEM=0 -stdlib=libc++ -Wno-error=unused-command-line-argument"
 
-linux_python:
-  image: quay.io/pypa/manylinux2014_x86_64
+#linux_python:
+#  image: quay.io/pypa/manylinux2014_x86_64
+#  stage: build
+#  before_script:
+#    - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
+#    - export PIP_CACHE_DIR=`pwd`/.pip_cache
+#    - python3.9 -m pip install build wheeltools
+#    - export CCACHE_DIR=`pwd`/.ccache
+#    - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
+#    - export CCACHE_MAX_SIZE="100M"
+#    - ccache -s
+#  script:
+#    - python3.9 -m build --wheel
+#    - mv dist/*.whl .
+#    - python3.9 .gitlab/convert_to_generic_platform_wheel.py monochrome-*.whl
+#  artifacts:
+#    paths:
+#      - dist/monochrome-*.whl
+#    expire_in: 2 months
+#  cache:
+#    key: pip-linux
+#    paths:
+#      - .ccache
+#      - .pip_cache
+#
+#pytest_3.6:
+#  image: quay.io/pypa/manylinux2014_x86_64
+#  stage: test
+#  before_script:
+#    - export PIP_CACHE_DIR=`pwd`/.pip_cache
+#    - python3.6 -m pip install pytest
+#  script:
+#    - python3.6 -m pip install dist/monochrome-*.whl
+#    - python3.6 -m pytest src/python/tests
+#  needs:
+#    - job: linux_python
+#      artifacts: true
+#  cache:
+#    key: pytest
+#    paths:
+#      - .pip_cache
+#
+#pytest_3.10:
+#  image: quay.io/pypa/manylinux2014_x86_64
+#  stage: test
+#  before_script:
+#    - export PIP_CACHE_DIR=`pwd`/.pip_cache
+#    - python3.10 -m pip install pytest
+#  script:
+#    - python3.10 -m pip install dist/monochrome-*.whl
+#    - python3.10 -m pytest src/python/tests
+#  needs:
+#    - job: linux_python
+#      artifacts: true
+#  cache:
+#    key: pytest
+#    paths:
+#      - .pip_cache
+
+macos:
+  tags:
+    - macOS
   stage: build
   before_script:
-    - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
-    - export PIP_CACHE_DIR=`pwd`/.pip_cache
-    - python3.9 -m pip install build wheeltools
-    - export CCACHE_DIR=`pwd`/.ccache
     - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
-    - export CCACHE_MAX_SIZE="100M"
     - ccache -s
+    - python3.10 -m pip install build wheeltools
   script:
-    - python3.9 -m build --wheel
-    - mv dist/*.whl .
-    - python3.9 .gitlab/convert_to_generic_platform_wheel.py monochrome-*.whl
+   - export CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+   - export MACOSX_DEPLOYMENT_TARGET="10.13"
+   - mkdir build dist
+   - cd build
+   - cmake ..
+   - make -j
+   - cpack -G DragNDrop
+   - mv Monochrome-*.dmg ../dist
+   - cd ..
+   - echo "Building Python Wheel"
+   - python3.10 -m build --wheel
+   - mv dist/*.whl .
+   - python3.10 .gitlab/convert_to_generic_platform_wheel.py monochrome-*.whl
   artifacts:
     paths:
       - dist/monochrome-*.whl
+      - dist/Monochrome-*.dmg
     expire_in: 2 months
-  cache:
-    key: pip-linux
-    paths:
-      - .ccache
-      - .pip_cache
-
-pytest_3.6:
-  image: quay.io/pypa/manylinux2014_x86_64
-  stage: test
-  before_script:
-    - export PIP_CACHE_DIR=`pwd`/.pip_cache
-    - python3.6 -m pip install pytest
-  script:
-    - python3.6 -m pip install dist/monochrome-*.whl
-    - python3.6 -m pytest src/python/tests
-  needs:
-    - job: linux_python
-      artifacts: true
-  cache:
-    key: pytest
-    paths:
-      - .pip_cache
-
-pytest_3.10:
-  image: quay.io/pypa/manylinux2014_x86_64
-  stage: test
-  before_script:
-    - export PIP_CACHE_DIR=`pwd`/.pip_cache
-    - python3.10 -m pip install pytest
-  script:
-    - python3.10 -m pip install dist/monochrome-*.whl
-    - python3.10 -m pytest src/python/tests
-  needs:
-    - job: linux_python
-      artifacts: true
-  cache:
-    key: pytest
-    paths:
-      - .pip_cache
 
 #osx Release:
 #  <<: [*osx, *build_config_generator]

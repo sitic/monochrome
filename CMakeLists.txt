@@ -60,7 +60,7 @@ if (MSVC)
 endif ()
 
 if (APPLE)
-    # OpenGL was depricated on MacOS, ignore warnings
+    # OpenGL was deprecated on MacOS, ignore warnings
     add_definitions(-DGL_SILENCE_DEPRECATION)
     # For backwards compatibility with MacOS High Sierra, this is not a good solution and should be avoided ...
     # https://stackoverflow.com/a/53868971/1393377
@@ -69,20 +69,54 @@ if (APPLE)
 endif ()
 
 file(GLOB SHADERS "src/shaders/*.glsl")
-cmrc_add_resource_library(monochrome-resources ALIAS qvv::rc NAMESPACE rc ${SHADERS} "vendor/MultiRecorderVideo.png")
+cmrc_add_resource_library(monochrome-resources ALIAS monochrome::rc NAMESPACE rc ${SHADERS} "vendor/MultiRecorderVideo.png")
 
-add_executable(Monochrome
-        src/cpp/main.cpp src/cpp/utils/utils.h src/cpp/fileformats/BmpFileParser.h src/cpp/recording.h
-        src/cpp/utils/vectors.h src/cpp/utils/videorecorder.h src/cpp/recordingwindow.h src/cpp/transformations.h
-        src/cpp/main_window.h src/cpp/globals.cpp src/cpp/globals.h src/cpp/ipc.h src/cpp/globals.cpp src/cpp/globals.h
-        src/cpp/ipc.cpp src/cpp/recordingwindow.cpp src/cpp/utils/utils.cpp src/cpp/transformations.cpp
-        src/cpp/recording.cpp src/cpp/ui.h src/cpp/utils/colormap.cpp src/cpp/utils/colormap.h src/cpp/utils/iterators.h
-        src/cpp/recordingwindow_helpers.cpp src/cpp/recordingwindow_helpers.h src/cpp/fileformats/AbstractFile.h
-        src/cpp/fileformats/all_formats.h src/cpp/fileformats/all_formats.cpp src/cpp/utils/definitions.h
-        src/cpp/utils/plot_utils.h)
+set(SOURCES
+        src/cpp/globals.cpp
+        src/cpp/globals.cpp
+        src/cpp/globals.h
+        src/cpp/globals.h
+        src/cpp/ipc.cpp
+        src/cpp/ipc.h
+        src/cpp/main.cpp
+        src/cpp/main_window.h
+        src/cpp/recording.cpp
+        src/cpp/recording.h
+        src/cpp/ui.h
+        src/cpp/recordingwindow.cpp
+        src/cpp/recordingwindow.h
+        src/cpp/recordingwindow_helpers.cpp
+        src/cpp/recordingwindow_helpers.h
+        src/cpp/transformations.cpp
+        src/cpp/transformations.h
+
+        src/cpp/fileformats/AbstractFile.h
+        src/cpp/fileformats/BmpFileParser.h
+        src/cpp/fileformats/all_formats.cpp
+        src/cpp/fileformats/all_formats.h
+
+        src/cpp/utils/colormap.cpp
+        src/cpp/utils/colormap.h
+        src/cpp/utils/definitions.h
+        src/cpp/utils/iterators.h
+        src/cpp/utils/plot_utils.h
+        src/cpp/utils/utils.cpp
+        src/cpp/utils/utils.h
+        src/cpp/utils/vectors.h
+        src/cpp/utils/videorecorder.h)
+
+if (APPLE AND NOT SKBUILD)
+    set(MACOSX_BUNDLE_ICON_FILE MultiRecorderVideo.icns)
+    set(myApp_ICON ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns)
+    set_source_files_properties(${myApp_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    add_executable(Monochrome MACOSX_BUNDLE ${myApp_ICON} ${SOURCES})
+else ()
+    add_executable(Monochrome ${SOURCES})
+endif ()
+
 target_link_libraries(Monochrome PRIVATE
         CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy
-        pugixml flagset cppcolormap qvv::rc)
+        pugixml flagset cppcolormap monochrome::rc)
 target_include_directories(Monochrome PRIVATE src/cpp src/schema)
 if (MC_FORCE_TCP_IPC)
     target_compile_definitions(Monochrome PRIVATE "-DMC_FORCE_TCP_IPC")
@@ -97,11 +131,21 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 endif ()
 
 install(TARGETS Monochrome
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        BUNDLE DESTINATION ./)
 
 # Do platform specific post target stuff
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # Install desktop entry and icon
     install(FILES vendor/Monochrome.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
     install(FILES vendor/MultiRecorderVideo.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps)
-endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+elseif (APPLE AND NOT SKBUILD)
+    set(APP_NAME Monochrome)
+    set(CPACK_BUNDLE_NAME Monochrome)
+    set(CPACK_PACKAGE_VERSION_MAJOR 0)
+    set(CPACK_PACKAGE_VERSION_MINOR 1)
+    set(CPACK_PACKAGE_VERSION_PATCH 0)
+    set(CPACK_GENERATOR "DRAGNDROP")
+    set(CPACK_BUNDLE_ICON ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns)
+    include(CPack)
+endif ()
