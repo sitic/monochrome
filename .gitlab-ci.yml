@@ -2,11 +2,7 @@ stages:
   - build
   - test
 
-.linux: &linux
-  image: registry.gitlab.com/cardiac-vision/monochrome
-
 .gcc: &gcc
-  <<: [*linux]
   image: registry.gitlab.com/cardiac-vision/monochrome/gcc
   cache:
     key: docker-gcc
@@ -14,24 +10,11 @@ stages:
       - .ccache
 
 .clang: &clang
-  <<: [*linux]
   image: registry.gitlab.com/cardiac-vision/monochrome/clang
   cache:
     key: docker-clang
     paths:
       - .ccache
-
-.osx: &osx
-  tags:
-    - osx
-
-.windows: &windows
-  tags:
-    - windows
-
-.xcode_generator: &xcode_generator
-  CMAKE_GENERATOR: 'Xcode'
-  CMAKE_OSX_DEPLOYMENT_TARGET: '10.13.6'
 
 .vs_generator: &vs_generator
   CMAKE_GENERATOR: 'Visual Studio 16 2019'
@@ -76,16 +59,16 @@ stages:
     - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
     - ccache -s
 
-# gcc Release:
-#   <<: [*gcc, *docker_build]
-#   stage: build
-#   variables:
-#     CMAKE_PARAMS: -DSTATIC_GCC=ON
-#     BUILD_APPIMAGE: "true"
-#   artifacts:
-#     paths:
-#       - build/Monochrome.AppImage
-#     expire_in: 3 months
+gcc Release:
+  <<: [*gcc, *docker_build]
+  stage: build
+  variables:
+   CMAKE_PARAMS: -DSTATIC_GCC=ON
+   BUILD_APPIMAGE: "true"
+  artifacts:
+   paths:
+     - build/Monochrome.AppImage
+   expire_in: 2 months
 
 #gcc Debug:
 #  <<: [*gcc, *docker_build]
@@ -95,64 +78,30 @@ stages:
 #  variables:
 #    CXXFLAGS: "-DCLI11_HAS_FILESYSTEM=0 -stdlib=libc++ -Wno-error=unused-command-line-argument"
 
-#linux_python:
-#  image: quay.io/pypa/manylinux2014_x86_64
-#  stage: build
-#  before_script:
-#    - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
-#    - export PIP_CACHE_DIR=`pwd`/.pip_cache
-#    - python3.9 -m pip install build wheeltools
-#    - export CCACHE_DIR=`pwd`/.ccache
-#    - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
-#    - export CCACHE_MAX_SIZE="100M"
-#    - ccache -s
-#  script:
-#    - python3.9 -m build --wheel
-#    - mv dist/*.whl .
-#    - python3.9 .gitlab/convert_to_generic_platform_wheel.py monochrome-*.whl
-#  artifacts:
-#    paths:
-#      - dist/monochrome-*.whl
-#    expire_in: 2 months
-#  cache:
-#    key: pip-linux
-#    paths:
-#      - .ccache
-#      - .pip_cache
-#
-#pytest_3.6:
-#  image: quay.io/pypa/manylinux2014_x86_64
-#  stage: test
-#  before_script:
-#    - export PIP_CACHE_DIR=`pwd`/.pip_cache
-#    - python3.6 -m pip install pytest
-#  script:
-#    - python3.6 -m pip install dist/monochrome-*.whl
-#    - python3.6 -m pytest src/python/tests
-#  needs:
-#    - job: linux_python
-#      artifacts: true
-#  cache:
-#    key: pytest
-#    paths:
-#      - .pip_cache
-#
-#pytest_3.10:
-#  image: quay.io/pypa/manylinux2014_x86_64
-#  stage: test
-#  before_script:
-#    - export PIP_CACHE_DIR=`pwd`/.pip_cache
-#    - python3.10 -m pip install pytest
-#  script:
-#    - python3.10 -m pip install dist/monochrome-*.whl
-#    - python3.10 -m pytest src/python/tests
-#  needs:
-#    - job: linux_python
-#      artifacts: true
-#  cache:
-#    key: pytest
-#    paths:
-#      - .pip_cache
+linux_python:
+  image: quay.io/pypa/manylinux2014_x86_64
+  stage: build
+  before_script:
+    - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
+    - export PIP_CACHE_DIR=`pwd`/.pip_cache
+    - python3.9 -m pip install build wheeltools
+    - export CCACHE_DIR=`pwd`/.ccache
+    - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
+    - export CCACHE_MAX_SIZE="100M"
+    - ccache -s
+  script:
+    - python3.9 -m build --wheel
+    - mv dist/*.whl .
+    - python3.9 .gitlab/convert_to_generic_platform_wheel.py monochrome-*.whl
+  artifacts:
+    paths:
+      - dist/monochrome-*.whl
+    expire_in: 2 months
+  cache:
+    key: pip-linux
+    paths:
+      - .ccache
+      - .pip_cache
 
 macos:
   tags:
@@ -163,8 +112,8 @@ macos:
     - ccache -s
     - python3.10 -m pip install build wheeltools
   script:
-   - export CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
    - export MACOSX_DEPLOYMENT_TARGET="10.13"
+   - export CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
    - mkdir build dist
    - cd build
    - cmake ..
@@ -181,26 +130,9 @@ macos:
       - dist/monochrome-*.whl
       - dist/Monochrome-*.dmg
     expire_in: 2 months
-
-#osx Release:
-#  <<: [*osx, *build_config_generator]
-#  variables:
-#    CMAKE_GENERATOR: 'Xcode'
-#    CMAKE_OSX_DEPLOYMENT_TARGET: '10.13.6'
-#    CMAKE_PARAMS: '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13.6 -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk/'
-#  artifacts:
-#    paths:
-#      - build/Release/monochrome
-#    expire_in: 3 months
-#  before_script:
-#    - date
-#    - curl --insecure -o MacOSX10.13.sdk.tar.xz -L https://github.com/phracker/MacOSX-SDKs/releases/download/10.15/MacOSX10.13.sdk.tar.xz
-#    - tar xf MacOSX10.13.sdk.tar.xz
-#    - sudo mv MacOSX10.13.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
-#    - date
 #  after_script:
 #    - otool -l build/Release/monochrome | grep -A 3 LC_VERSION_MIN_MACOSX
-#
+
 #windows Release:
 #  <<: [*windows, *build_config_generator]
 #  variables:
@@ -210,10 +142,29 @@ macos:
 #      - build/Release/Monochrome.exe
 #    expire_in: 3 months
 
+pytest:
+  stage: test
+  image: quay.io/pypa/manylinux2014_x86_64
+  before_script:
+    - export PIP_CACHE_DIR=`pwd`/.pip_cache
+    - python3.6 -m pip install pytest dist/monochrome-*.whl
+    - python3.10 -m pip install pytest dist/monochrome-*.whl
+  script:
+    - python3.6 -m pytest src/python/tests
+    - python3.10 -m pytest src/python/tests
+  needs:
+    - job: linux_python
+      artifacts: true
+  cache:
+    key: pytest
+    paths:
+      - .pip_cache
+
 glsl:
-  <<: [*linux]
+  stage: test
+  image: registry.gitlab.com/cardiac-vision/monochrome
+  script:
+    - glslangValidator -C src/shaders/*
   only:
     changes:
       - src/shaders/*
-  script:
-    - glslangValidator -C src/shaders/*
