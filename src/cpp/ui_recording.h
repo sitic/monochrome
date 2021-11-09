@@ -1,6 +1,6 @@
 int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow *parent = nullptr) {
   auto name = rec->name();
-  if (name.empty()) name = fmt::format("##{}", static_cast<void *>(rec.get()));
+  if (name.empty()) name = fmt::format("###{}", static_cast<void *>(rec.get()));
   if (!parent) {
     int x           = std::clamp(rec_nr / 3, 0, prm::main_window_multipier - 1);
     float y         = (rec_nr % 3) * 0.3f + 0.2f * (x == 0);
