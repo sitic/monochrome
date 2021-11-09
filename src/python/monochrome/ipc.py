@@ -8,8 +8,9 @@ from typing import Dict, List, Optional, Text, Union
 import flatbuffers
 import numpy as np
 
-from .fbs import (Array3DataChunkf, Array3DataChunku16, Array3Meta,
-                  Array3MetaFlow, Data, Filepaths, PointsVideo, Root)
+from .fbs import (Array3DataChunkf, Array3DataChunku8, Array3DataChunku16,
+                  Array3Meta, Array3MetaFlow, Data, Filepaths, PointsVideo,
+                  Root)
 from .fbs.ArrayDataType import ArrayDataType
 from .fbs.BitRange import BitRange
 from .fbs.Color import CreateColor
@@ -154,25 +155,25 @@ def create_pointsvideo_msg(points_py, name, parent_name=None, color=None, point_
 
 
 def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0., date="", comment="",
-                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parentName=None, transfer_fct=None,
-                          metaData=None):
+                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parent_name=None, transfer_fct=None,
+                          metadata=None):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
     date_fb = builder.CreateString(date)
     comment_fb = builder.CreateString(comment)
-    parent_fb = builder.CreateString(parentName) if parentName else None
-    if metaData:
-        metaData = [(builder.CreateString(key), builder.CreateString(val)) for key, val in metaData.items()]
+    parent_fb = builder.CreateString(parent_name) if parent_name else None
+    if metadata:
+        metadata = [(builder.CreateString(key), builder.CreateString(val)) for key, val in metadata.items()]
         metaData_fbs = []
-        for key, val in metaData:
+        for key, val in metadata:
             DictEntryStart(builder)
             DictEntryAddKey(builder, key)
             DictEntryAddVal(builder, val)
             metaData_fbs.append(DictEntryEnd(builder))
-        Array3Meta.Array3MetaStartMetaDataVector(builder, len(metaData))
+        Array3Meta.Array3MetaStartMetadataVector(builder, len(metadata))
         for e in metaData_fbs:
             builder.PrependUOffsetTRelative(e)
-        metaData = builder.EndVector()
+        metadata = builder.EndVector()
     Array3Meta.Start(builder)
     Array3Meta.AddType(builder, type)
     Array3Meta.AddNx(builder, shape[2])
@@ -188,9 +189,9 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     if parent_fb:
         Array3Meta.AddParentName(builder, parent_fb)
     if transfer_fct:
-        Array3Meta.AddAlphaTransferFct(builder, transfer_fct)
-    if metaData:
-        Array3Meta.AddMetaData(builder, metaData)
+        Array3Meta.AddAlphaTransfer(builder, transfer_fct)
+    if metadata:
+        Array3Meta.AddMetadata(builder, metadata)
     d = Array3Meta.End(builder)
 
     root = build_root(builder, Data.Data.Array3Meta, d)
@@ -199,17 +200,18 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     return buf
 
 
-def create_array3metaflow_msg(shape, parentName=None, name="", color=None):
+def create_array3metaflow_msg(shape, parent_name=None, name="", color=None):
+    if parent_name is None:
+        parent_name = ""
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
-    parent_fb = builder.CreateString(parentName) if parentName else None
+    parent_fb = builder.CreateString(parent_name)
     Array3MetaFlow.Start(builder)
     Array3MetaFlow.AddNx(builder, shape[2])
     Array3MetaFlow.AddNy(builder, shape[1])
     Array3MetaFlow.AddNt(builder, shape[0])
     Array3MetaFlow.AddName(builder, name_fb)
-    if parent_fb:
-        Array3MetaFlow.AddParentName(builder, parent_fb)
+    Array3MetaFlow.AddParentName(builder, parent_fb)
     if color:
         Array3MetaFlow.AddColor(builder, get_color(builder, color))
     d = Array3MetaFlow.End(builder)
@@ -229,6 +231,20 @@ def create_array3dataf_msg(array, idx=0):
     d = Array3DataChunkf.End(builder)
 
     root = build_root(builder, Data.Data.Array3DataChunkf, d)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    return buf
+
+
+def create_array3datau8_msg(array, idx=0):
+    builder = flatbuffers.Builder(65536)
+    data = builder.CreateNumpyVector(array)
+    Array3DataChunku8.Start(builder)
+    Array3DataChunku8.AddStartidx(builder, idx)
+    Array3DataChunku8.AddData(builder, data)
+    d = Array3DataChunku8.End(builder)
+
+    root = build_root(builder, Data.Data.Array3DataChunku8, d)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -262,18 +278,19 @@ def show_files(paths: List[Union[Text, Path]]):
     s.sendall(buf)
 
 
-def show_points(points, name: Text = "", parent_name: Optional[Text] = None, color=None,
+def show_points(points, name: Text = "", parent: Optional[Text] = None, color=None,
                 point_size: Optional[float] = None):
     """
 
-    :param points:
-    :param name:
-    :param parent_name:
+    :param points: A list of list of points (x, y). The outer list elements are the frames, the inner list is the list of points for a specific frame.
+    :param name: Optional description
+    :param parent: Name of the video onto which the points will be displayed. If none is given the last loaded video will be used.
     :param color: Matplotlib color (either string like 'black' or rgb tuple)
+    :param point_size: Size of points in image pixels
     :return:
     """
     s = create_socket()
-    buf = create_pointsvideo_msg(points, name, parent_name, color, point_size)
+    buf = create_pointsvideo_msg(points, name, parent, color, point_size)
     s.sendall(buf)
 
 
@@ -285,20 +302,23 @@ def show_array(array: np.ndarray,
                fps: float = 0,
                date: Text = "",
                duration_seconds: float = 0,
-               parentName: Optional[Text] = None,
+               parent: Optional[Text] = None,
                transfer_fct: Optional[TransferFunction] = None,
                metadata: Optional[Dict] = None):
     """
+    Play a video or open a image in Monochrome.
+    Arrays of dtype np.float, np.uint8, and np.uint16 are natively supported by Monochrome.
+    Arrays with other dtypes will be converted to np.float
 
     :param array: {t, x, y} ndarray
     :param name: name of the array
     :param cmap: 'default' (autodetect), 'gray', 'viridis', 'diff', 'hsv', or 'blackbody'
-    :param bitrange: 'autodetect', 'uint8', 'uint10', 'uint12', 'uint16', 'float' (for [0,1]), 'diff', 'phase', or 'phase_diff'
+    :param bitrange: 'autodetect', 'uint8', 'uint10', 'uint12', 'uint16', 'float' (for [0,1]), 'diff', 'phase' (for [-pi, pi]), or 'phase_diff'
     :param comment:
     :param fps: framerate in Hz
     :param date:
     :param duration_seconds:
-    :param parentName:
+    :param parent:
     :param transfer_fct:
     :param metadata:
     :return:
@@ -312,6 +332,8 @@ def show_array(array: np.ndarray,
 
     if array.dtype == np.float32:
         dtype = ArrayDataType.FLOAT
+    elif array.dtype == np.uint8:
+        dtype = ArrayDataType.UINT8
     elif array.dtype == np.uint16:
         dtype = ArrayDataType.UINT16
     else:
@@ -328,8 +350,8 @@ def show_array(array: np.ndarray,
 
     s = create_socket()
     buf = create_array3meta_msg(dtype, name, array.shape, duration=duration_seconds, fps=fps, date=date,
-                                comment=comment, bitrange=bitrange, cmap=cmap, parentName=parentName,
-                                transfer_fct=transfer_fct, metaData=metadata)
+                                comment=comment, bitrange=bitrange, cmap=cmap, parent_name=parent,
+                                transfer_fct=transfer_fct, metadata=metadata)
     s.sendall(buf)
 
     flat = array.flatten()
@@ -339,16 +361,22 @@ def show_array(array: np.ndarray,
         end = length if idx + max_size > length else idx + max_size
         if array.dtype == np.float32:
             buf = create_array3dataf_msg(flat[idx:end], idx)
-        else:
+        elif array.dtype == np.uint8:
+            buf = create_array3datau8_msg(flat[idx:end], idx)
+        elif array.dtype == np.uint16:
             buf = create_array3datau16_msg(flat[idx:end], idx)
+        else:
+            raise NotImplementedError("Unkown dtype")
         s.sendall(buf)
 
 
-def show_layer(array: np.ndarray, parentName: Text, name: Text = "", **kwargs):
-    show_array(array, parentName=parentName, name=name, **kwargs)
+def show_layer(array: np.ndarray, parent: Optional[Text] = None, name: Text = "", **kwargs):
+    if parent is None:
+        parent = ""
+    show_array(array, parent=parent, name=name, **kwargs)
 
 
-def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text = "", color=None):
+def show_flow(flow_uv: np.ndarray, parent: Optional[Text] = None, name: Text = "", color=None):
     if flow_uv.ndim != 4:
         raise ValueError("array is not four-dimensional")
     if flow_uv.dtype != np.float32:
@@ -358,7 +386,7 @@ def show_flow(flow_uv: np.ndarray, parentName: Optional[Text] = None, name: Text
 
     s = create_socket()
     shape = (flow_uv.shape[0] * 2, flow_uv.shape[1], flow_uv.shape[2])
-    buf = create_array3metaflow_msg(shape, parentName, name, color)
+    buf = create_array3metaflow_msg(shape, parent, name, color)
     s.sendall(buf)
 
     flat = flow_uv.flatten()

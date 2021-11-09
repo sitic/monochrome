@@ -8,8 +8,9 @@ class Data(object):
     Array3Meta = 2
     Array3MetaFlow = 3
     Array3DataChunkf = 4
-    Array3DataChunku16 = 5
-    Request = 6
-    PointsVideo = 7
-    VideoID = 8
+    Array3DataChunku8 = 5
+    Array3DataChunku16 = 6
+    Request = 7
+    PointsVideo = 8
+    VideoID = 9
 

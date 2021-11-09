@@ -2,7 +2,7 @@ namespace fbs;
 
 enum BitRange : int { AUTODETECT = 0, UINT8, UINT10, UINT12, UINT16, FLOAT, DIFF, PHASE, PHASE_DIFF }
 enum ColorMap : int { DEFAULT = 0, GRAY, DIFF, HSV, BLACKBODY, VIRIDIS}
-enum ArrayDataType : int { FLOAT = 0, UINT16 }
+enum ArrayDataType : int { FLOAT = 0, UINT8, UINT16 }
 enum TransferFunction : int { NONE = 0, LINEAR, DIFF, DIFF_POS, DIFF_NEG }
 enum RequestType : int { CLOSE = 0, CLOSE_ALL, TRACE_POS }
 
@@ -27,9 +27,9 @@ table Array3Meta {
   comment:string;
   bitrange:BitRange;
   cmap:ColorMap;
-  parentName:string;
-  alphaTransferFct:TransferFunction;
-  metaData:[DictEntry];
+  parent_name:string;
+  alpha_transfer:TransferFunction;
+  metadata:[DictEntry];
 }
 
 table Array3MetaFlow {
@@ -37,7 +37,7 @@ table Array3MetaFlow {
   ny:int;
   nt:int;
   name:string;
-  parentName:string;
+  parent_name:string;
   color:Color;
 }
 
@@ -45,6 +45,11 @@ table Array3MetaFlow {
 table Array3DataChunkf {
   startidx: uint64;
   data:[float];
+}
+
+table Array3DataChunku8 {
+  startidx: uint64;
+  data:[uint8];
 }
 
 table Array3DataChunku16 {
@@ -71,21 +76,6 @@ table ResponseTracePos {
   recordings:[RecordingTracePos];
 }
 
-//table Point {
-//   x:float;
-//   y:float;
-//}
-
-//table Points {
-//  points:[Point];
-//}
-
-//table PointsVideo {
-//  name:string;
-//  parent_name:string;
-//  points_video:[Points];
-//}
-
 table PointsVideo {
   name:string;
   parent_name:string;
@@ -100,7 +90,7 @@ table VideoID {
   error:string;
 }
 
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku16, Request, PointsVideo, VideoID}
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, Request, PointsVideo, VideoID }
 
 table Root {
     data:Data;

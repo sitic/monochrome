@@ -4,5 +4,6 @@
 
 class ArrayDataType(object):
     FLOAT = 0
-    UINT16 = 1
+    UINT8 = 1
+    UINT16 = 2
 

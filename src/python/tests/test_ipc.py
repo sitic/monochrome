@@ -3,13 +3,15 @@ from unittest import mock
 patcher = mock.patch('socket.socket')
 
 import os
+import random
 import sys
 import tempfile
 from pathlib import Path
 from time import sleep
 
-import monochrome as mc
 import numpy as np
+
+import monochrome as mc
 
 # Do want to mock the server? Check if we are in a CI server or if env 'HEADLESS' is set
 HEADLESS_TEST = ("pytest" in sys.modules or os.getenv('HEADLESS')
@@ -39,15 +41,14 @@ def test_filepaths():
 def test_array():
     shape = (100, 128, 256)
     arr = np.random.rand(*shape).astype(dtype=np.float32)
-
     mc.show_array(arr, 'TestArray', cmap='hsv', bitrange='float', duration_seconds=30, fps=500,
                   date="2020-04-29-13-10-27", comment="Test Comment")
 
-    mc.show_array(arr[0], 'TestArray 2D')
+    mc.show_array(arr[0], 'TestArray Image')
 
     arr = (np.random.rand(*shape) * 65535).astype(dtype=np.uint16)
-
     mc.show(arr, 'TestArray u16', metadata={'Foo': 'Bar'})
+    mc.show_array((arr[0]*255).astype(np.uint8), 'TestArray Image uint8')
 
 
 def test_flow():
@@ -59,11 +60,24 @@ def test_flow():
         flow[t, :64, :64, 0] = t / 100
         flow[t, :64, :64, 1] = t / 100
 
-    mc.show_array(vid)
+    mc.show_array(vid, "flows")
     mc.show_flow(flow, "", color='blue')
+
+
+def test_points():
+    vid = np.zeros((100, 128, 128), dtype=np.float32)
+    points = []
+    for _ in range(vid.shape[0]):
+        p = []
+        for _ in range(random.randint(0, 5)):
+            p.append([random.randint(0, 128), random.randint(0, 128)])
+        points.append(p)
+    mc.show_array(vid, "points")
+    mc.show_points(points, color='red', point_size=10)
 
 
 if __name__ == "__main__":
     test_filepaths()
     test_array()
     test_flow()
+    test_points()

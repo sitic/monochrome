@@ -75,21 +75,14 @@ namespace global {
 
    public:
     RawArray3MetaData meta;
-    std::variant<std::vector<float>, std::vector<uint16_t>> data;
+    std::variant<std::vector<float>, std::vector<uint8_t>, std::vector<uint16_t>> data;
 
-    static std::shared_ptr<RawArray3> create_float(RawArray3MetaData metadata_,
-                                                   std::size_t data_size) {
+    template <typename T>
+    static std::shared_ptr<RawArray3> create(RawArray3MetaData metadata_,
+                                             std::size_t data_size) {
       auto a  = std::shared_ptr<RawArray3>(new RawArray3);
       a->meta = std::move(metadata_);
-      a->data = std::vector<float>(data_size);
-      return a;
-    }
-
-    static std::shared_ptr<RawArray3> create_u16(RawArray3MetaData metadata_,
-                                                 std::size_t data_size) {
-      auto a  = std::shared_ptr<RawArray3>(new RawArray3);
-      a->meta = std::move(metadata_);
-      a->data = std::vector<uint16_t>(data_size);
+      a->data = std::vector<T>(data_size);
       return a;
     }
 

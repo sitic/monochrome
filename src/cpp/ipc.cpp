@@ -72,7 +72,7 @@ namespace {
 
     ~IpcMessage() {
       if (!array_msg_.empty()) {
-        fmt::print("ERROR: Client disconnected before full array was recieved!\n");
+        fmt::print("ERROR: Client disconnected before full array was received!\n");
       }
     }
 
@@ -113,6 +113,9 @@ namespace {
           case fbs::Data_Array3DataChunkf:
             handle_datachunk_message(root->data_as_Array3DataChunkf());
             break;
+          case fbs::Data_Array3DataChunku8:
+            handle_datachunk_message(root->data_as_Array3DataChunku8());
+            break;
           case fbs::Data_Array3DataChunku16:
             handle_datachunk_message(root->data_as_Array3DataChunku16());
             break;
@@ -142,30 +145,6 @@ namespace {
         global::add_file_to_load(file);
       }
     }
-
-
-    //    void handle_datachunk_message(const fbs::PointsVideo* raw) {
-    //      if (!raw) {
-    //        fmt::print("Error parsing flatbuffer\n");
-    //        return;
-    //      }
-    //
-    //      auto pv         = std::make_shared<global::PointsVideo>();
-    //      pv->name        = raw->name()->str();
-    //      if (flatbuffers::IsFieldPresent(raw, fbs::PointsVideo::VT_PARENT_NAME))
-    //        pv->parent_name = raw->parent_name()->str();
-    //
-    //      auto data = raw->points_video();
-    //      for (auto it : *data) {
-    //        auto points = it->points();
-    //        std::vector<std::pair<float, float>> positions;
-    //        for (auto i : *points) {
-    //          positions.emplace_back(i->x(), i->y());
-    //        }
-    //        pv->data.push_back(positions);
-    //      }
-    //      global::add_PointsVideo_to_load(pv);
-    //    }
 
     void handle_datachunk_message(const fbs::PointsVideo* raw) {
       if (!raw) {
@@ -215,13 +194,13 @@ namespace {
 
       int cmap         = raw->cmap() - 1;
       int bitrange     = raw->bitrange() - 1;
-      int transfer_fct = flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_ALPHATRANSFERFCT)
-                             ? raw->alphaTransferFct() - 1
+      int transfer_fct = flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_ALPHA_TRANSFER)
+                             ? raw->alpha_transfer() - 1
                              : -1;
 
       std::vector<std::pair<std::string, std::string>> metaData = {};
-      if (flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_METADATA) && raw->metaData()) {
-        for (const auto& m : *(raw->metaData())) {
+      if (flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_METADATA) && raw->metadata()) {
+        for (const auto& m : *(raw->metadata())) {
           auto key = m->key();
           auto val = m->val();
           if (key && val) {
@@ -241,8 +220,8 @@ namespace {
           raw->comment()->str(),
           bitrange < 0 ? std::nullopt : std::optional<BitRange>(static_cast<BitRange>(bitrange)),
           cmap < 0 ? std::nullopt : std::optional<ColorMap>(static_cast<ColorMap>(cmap)),
-          flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_PARENTNAME)
-              ? std::optional<std::string>(raw->parentName()->str())
+          flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_PARENT_NAME)
+              ? std::optional<std::string>(raw->parent_name()->str())
               : std::nullopt,
           transfer_fct < 0
               ? std::nullopt
@@ -251,9 +230,11 @@ namespace {
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
       if (raw->type() == fbs::ArrayDataType::ArrayDataType_FLOAT) {
-        array_msg_.array = global::RawArray3::create_float(meta, size);
+        array_msg_.array = global::RawArray3::create<float>(meta, size);
+      } else if (raw->type() == fbs::ArrayDataType::ArrayDataType_UINT8) {
+        array_msg_.array = global::RawArray3::create<uint8_t>(meta, size);
       } else if (raw->type() == fbs::ArrayDataType::ArrayDataType_UINT16) {
-        array_msg_.array = global::RawArray3::create_u16(meta, size);
+        array_msg_.array = global::RawArray3::create<uint16_t>(meta, size);
       } else {
         throw std::runtime_error("IPC: unkown ArrayDataType recieved");
       }
@@ -271,8 +252,8 @@ namespace {
       }
 
       global::RawArray3MetaData meta{raw->nx(), raw->ny(), raw->nt(), raw->name()->str()};
-      if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_PARENTNAME))
-        meta.parentName = raw->parentName()->str();
+      if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_PARENT_NAME))
+        meta.parentName = raw->parent_name()->str();
       meta.is_flowfield = true;
       if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_COLOR)) {
         Vec4f color;
@@ -281,7 +262,7 @@ namespace {
       }
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;
-      array_msg_.array = global::RawArray3::create_float(meta, size);
+      array_msg_.array = global::RawArray3::create<float>(meta, size);
     }
 
     template <typename ChunkPtr>
@@ -306,7 +287,6 @@ namespace {
                  array_msg_.array->data);
       array_msg_.counter += data->size();
       if (array_msg_.complete()) {
-        //        fmt::print("Loading of {} complete!\n", array_msg_.array->meta.name);
         global::add_RawArray3_to_load(array_msg_.array);
         array_msg_.clear();
       }

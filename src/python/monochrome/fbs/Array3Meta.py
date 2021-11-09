@@ -109,14 +109,14 @@ class Array3Meta(object):
         return None
 
     # Array3Meta
-    def AlphaTransferFct(self):
+    def AlphaTransfer(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # Array3Meta
-    def MetaData(self, j):
+    def Metadata(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
             x = self._tab.Vector(o)
@@ -129,14 +129,14 @@ class Array3Meta(object):
         return None
 
     # Array3Meta
-    def MetaDataLength(self):
+    def MetadataLength(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Array3Meta
-    def MetaDataIsNone(self):
+    def MetadataIsNone(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         return o == 0
 
@@ -192,18 +192,18 @@ def AddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(11, 
 def Array3MetaAddParentName(builder, parentName):
     """This method is deprecated. Please switch to AddParentName."""
     return AddParentName(builder, parentName)
-def AddAlphaTransferFct(builder, alphaTransferFct): builder.PrependInt32Slot(12, alphaTransferFct, 0)
-def Array3MetaAddAlphaTransferFct(builder, alphaTransferFct):
-    """This method is deprecated. Please switch to AddAlphaTransferFct."""
-    return AddAlphaTransferFct(builder, alphaTransferFct)
-def AddMetaData(builder, metaData): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(metaData), 0)
-def Array3MetaAddMetaData(builder, metaData):
-    """This method is deprecated. Please switch to AddMetaData."""
-    return AddMetaData(builder, metaData)
-def StartMetaDataVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def Array3MetaStartMetaDataVector(builder, numElems):
+def AddAlphaTransfer(builder, alphaTransfer): builder.PrependInt32Slot(12, alphaTransfer, 0)
+def Array3MetaAddAlphaTransfer(builder, alphaTransfer):
+    """This method is deprecated. Please switch to AddAlphaTransfer."""
+    return AddAlphaTransfer(builder, alphaTransfer)
+def AddMetadata(builder, metadata): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(metadata), 0)
+def Array3MetaAddMetadata(builder, metadata):
+    """This method is deprecated. Please switch to AddMetadata."""
+    return AddMetadata(builder, metadata)
+def StartMetadataVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def Array3MetaStartMetadataVector(builder, numElems):
     """This method is deprecated. Please switch to Start."""
-    return StartMetaDataVector(builder, numElems)
+    return StartMetadataVector(builder, numElems)
 def End(builder): return builder.EndObject()
 def Array3MetaEnd(builder):
     """This method is deprecated. Please switch to End."""
