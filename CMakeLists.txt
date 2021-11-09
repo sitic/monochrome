@@ -30,10 +30,6 @@ endif ()
 set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL)
 
-# add third party libraries
-add_subdirectory(vendor)
-include_directories(SYSTEM vendor)
-
 # use ccache if available for faster compile times
 find_program(CCACHE_PROGRAM ccache)
 if (CCACHE_PROGRAM)
@@ -41,11 +37,14 @@ if (CCACHE_PROGRAM)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif ()
 
-
 # require c++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# add third party libraries
+add_subdirectory(vendor)
+include_directories(SYSTEM vendor)
 
 if (MSVC)
     # Fix strange windows defaults

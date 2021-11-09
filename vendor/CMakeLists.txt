@@ -26,7 +26,6 @@ add_library(imgui_glfw_gl3
 target_include_directories(imgui_glfw_gl3 SYSTEM PUBLIC imgui imgui/backends imgui/misc/cpp implot)
 target_link_libraries(imgui_glfw_gl3 PUBLIC glad glfw OpenGL::GL)
 set_target_properties(imgui_glfw_gl3 PROPERTIES FOLDER libs)
-target_compile_definitions(imgui_glfw_gl3 PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
 
 add_library(lodepng lodepng/lodepng.cpp lodepng/lodepng.h)
 set_target_properties(lodepng PROPERTIES PUBLIC_HEADER "lodepng/lodepng.h")
