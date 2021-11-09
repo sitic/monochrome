@@ -49,7 +49,10 @@ namespace ImGuiConnector {
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, false);
+    glfwSetWindowFocusCallback(window, ImGui_ImplGlfw_WindowFocusCallback);
+    glfwSetCursorEnterCallback(window, ImGui_ImplGlfw_CursorEnterCallback);
     glfwSetMouseButtonCallback(window, ImGui_ImplGlfw_MouseButtonCallback);
+    // Scroll Callback
     if (user_scroll_fun) {
       GLFWscrollfun callback = [](GLFWwindow *window, double xoffset, double yoffset) {
         ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
@@ -63,6 +66,7 @@ namespace ImGuiConnector {
     } else {
       glfwSetScrollCallback(window, ImGui_ImplGlfw_ScrollCallback);
     }
+    // KeyCallback
     if (user_key_fun) {
       GLFWkeyfun callback = [](GLFWwindow *window, int key, int scancode, int action, int mods) {
         ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
@@ -77,6 +81,7 @@ namespace ImGuiConnector {
       glfwSetKeyCallback(window, ImGui_ImplGlfw_KeyCallback);
     }
     glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
+    glfwSetMonitorCallback(ImGui_ImplGlfw_MonitorCallback);
     ImGui_ImplOpenGL3_Init();
 
     // Load Fonts
