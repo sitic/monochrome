@@ -27,6 +27,8 @@
 // It is fine to use C99 in this file because it will not be built with VS
 //========================================================================
 
+#define _POSIX_C_SOURCE 199309L // Hotfix for manylinux2014_x86_64 image
+
 #include "internal.h"
 
 #include <unistd.h>
