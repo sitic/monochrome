@@ -30,6 +30,8 @@ SOCK_PATH = '\0Monochrome' if ABSTRACT_DOMAIN_SOCKET_SUPPORTED else '/tmp/Monoch
 def start_monochrome(speed: Optional[float] = None,
                      display_fps: Optional[int] = None,
                      scale: Optional[float] = None,
+                     fliph: bool = False,
+                     flipv: bool = False,
                      **kwargs):
     assert MONOCHROME_BIN_PATH.exists()
     args = [str(MONOCHROME_BIN_PATH)]
@@ -42,6 +44,10 @@ def start_monochrome(speed: Optional[float] = None,
     if scale:
         args.append('--scale')
         args.append(str(scale))
+    if fliph:
+        args.append('--fliph')
+    if flipv:
+        args.append('--flipv')
     for key, val in kwargs.items():
         args.append(f'--{key}')
         args.append(str(val))
