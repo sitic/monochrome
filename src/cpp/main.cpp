@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
   app.add_flag(
       "--disable-ipc", disable_ipc,
-      "Disable the TCP server which is used for interprocess-communication with python clients");
+      "Disable the server process which is used for interprocess-communication with python clients");
   app.add_flag("--remote-send", send_files_over_wire,
                "Test option to send file as array instead of the filename to the main process");
   std::string config_file       = config_file_path();

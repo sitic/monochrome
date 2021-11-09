@@ -56,7 +56,7 @@ namespace global {
 
     std::string name;
     float duration = 0;  // in seconds
-    float fps      = 0;
+    float fps      = 0;  // in Hz
     std::string date;
     std::string comment;
     std::optional<BitRange> bitrange                          = std::nullopt;

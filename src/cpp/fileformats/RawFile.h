@@ -29,7 +29,7 @@ class RawFile : public AbstractFile {
     std::string filename = path.filename().string();
     int nx, ny, nt;
     // The filename has to something like prefix_{width}x{height}x{#frames}_suffix.dat
-    // Note that we don't the same order as in numpy ({width}x{height} instead of {height}x{width})
+    // Note that we don't use the same order as in numpy ({width}x{height} instead of {height}x{width})
     const std::regex rgx(R"(^.*?_(\d+)x(\d+)(x(\d+))?f?.*?\.dat$)");
     if (std::smatch matches; std::regex_match(filename, matches, rgx)) {
       nx = std::stoi(matches[1]);

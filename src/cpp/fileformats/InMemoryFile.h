@@ -87,6 +87,7 @@ class InMemoryFile : public AbstractFile {
         _data->data);
   }
 
+  // color for points if it is a flow array 
   std::optional<Vec4f> color() {
     return _data->meta.color;
   }

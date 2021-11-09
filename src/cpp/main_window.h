@@ -15,6 +15,8 @@
 #include "fonts/IconsFontAwesome5.h"
 #include "fonts/IconsMaterialDesignIcons.h"
 
+#include "utils/ImGuiConnector.h"
+
 #include "globals.h"
 #include "recordingwindow.h"
 #include "ui.h"
@@ -27,203 +29,71 @@ namespace global {
   std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
 }  // namespace global
 
-namespace ImGuiConnector {
-  ImGuiIO *io                   = nullptr;
-  GLFWkeyfun user_key_fun       = nullptr;
-  GLFWscrollfun user_scroll_fun = nullptr;
+SharedRecordingPtr find_parent_recording(const std::string &parent_name) {
+  // If the parent_name is empty we default to using the last loaded video
+  if (parent_name.empty() && !global::recordings.empty())
+    return global::recordings.back();
 
-  void Init(GLFWwindow *window,
-            GLFWmonitor *primary_monitor,
-            float font_scale,
-            GLFWkeyfun key_fun       = nullptr,
-            GLFWscrollfun scroll_fun = nullptr) {
-    if (key_fun) user_key_fun = key_fun;
-    if (scroll_fun) user_scroll_fun = scroll_fun;
-
-    ImGui::CreateContext();
-    ImPlot::CreateContext();
-    io = &(ImGui::GetIO());
-    (void)io;
-    // Enable Keyboard Controls
-    io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    // Disable .ini generation/loading for now
-    io->IniFilename = nullptr;
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-
-#ifdef __APPLE__
-    // to prevent 1200x800 from becoming 2400x1600
-    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
-#endif
-    if (font_scale == 0) {
-#ifdef __APPLE__
-      font_scale = 1;
-#else
-      float xscale, yscale;
-      glfwGetMonitorContentScale(primary_monitor, &xscale, &yscale);
-      font_scale = std::max(xscale, yscale);
-#endif
-    }
-    ImGui::GetStyle().ScaleAllSizes(font_scale);
-    ImGui::GetStyle().FrameRounding = 3;
-
-    // Setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForOpenGL(window, false);
-    glfwSetMouseButtonCallback(window, ImGui_ImplGlfw_MouseButtonCallback);
-    if (user_scroll_fun) {
-      GLFWscrollfun callback = [](GLFWwindow *window, double xoffset, double yoffset) {
-        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-
-        // if imgui wants the input, don't dispatch it to our app
-        if (io && !io->WantCaptureKeyboard && user_scroll_fun) {
-          user_scroll_fun(window, xoffset, yoffset);
-        }
-      };
-      glfwSetScrollCallback(window, callback);
-    } else {
-      glfwSetScrollCallback(window, ImGui_ImplGlfw_ScrollCallback);
-    }
-    if (user_key_fun) {
-      GLFWkeyfun callback = [](GLFWwindow *window, int key, int scancode, int action, int mods) {
-        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-
-        // if imgui wants the input, don't dispatch it to our app
-        if (io && !io->WantCaptureKeyboard && user_key_fun) {
-          user_key_fun(window, key, scancode, action, mods);
-        }
-      };
-      glfwSetKeyCallback(window, callback);
-    } else {
-      glfwSetKeyCallback(window, ImGui_ImplGlfw_KeyCallback);
-    }
-    glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
-    ImGui_ImplOpenGL3_Init();
-
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can
-    // also load multiple fonts and use ImGui::PushFont()/PopFont() to select
-    // them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you
-    // need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please
-    // handle those errors in your application (e.g. use an assertion, or
-    // display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and
-    // stored into a texture when calling
-    // ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame
-    // below will call.
-    // - Read 'docs/FONTS.txt' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string
-    // literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    ImFontGlyphRangesBuilder builder;
-    builder.AddText(u8"σπ");
-    builder.AddRanges(io->Fonts->GetGlyphRangesDefault());
-    static ImVector<ImWchar> ranges;
-    builder.BuildRanges(&ranges);
-    ImFontConfig font_config;
-    font_config.OversampleH = 3;
-    font_config.OversampleV = 2;
-    //font_config.PixelSnapH = true;
-    io->Fonts->AddFontFromMemoryCompressedTTF(
-        fonts::DroidSans_compressed_data, fonts::DroidSans_compressed_size,
-        std::ceil(14.f * font_scale), &font_config, ranges.Data);
-    ImFontConfig icons_config;
-    icons_config.MergeMode  = true;
-    icons_config.PixelSnapH = true;
-
-    static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-    io->Fonts->AddFontFromMemoryCompressedTTF(
-        fonts::fontawesome5_solid_compressed_data, fonts::fontawesome5_solid_compressed_size,
-        std::ceil(11.f * font_scale), &icons_config, fontawesome_icons_ranges);
-    static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI, ICON_MAX_MDI, 0};
-    io->Fonts->AddFontFromMemoryCompressedTTF(
-        fonts::materialdesignicons_compressed_data, fonts::materialdesignicons_compressed_size,
-        std::ceil(11.f * font_scale), &icons_config, materialdesignicons_icons_ranges);
-  }
-
-  void NewFrame() {
-    if (!io) return;
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-  }
-
-  void Render(GLFWwindow *window, const ImVec4 &clear_color) {
-    if (!io) return;
-
-    ImGui::Render();
-    int display_w, display_h;
-    glfwGetFramebufferSize(window, &display_w, &display_h);
-    glViewport(0, 0, display_w, display_h);
-    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-  }
-
-  void Shutdown() {
-    if (!io) return;
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImPlot::DestroyContext();
-    ImGui::DestroyContext();
-  }
-}  // namespace ImGuiConnector
+  // Find the last video with the name `parent_name`
+  auto it = std::find_if(global::recordings.rbegin(), global::recordings.rend(),
+                          [name = parent_name](const auto &r) { return name == r->name(); });
+  if (it == std::rend(global::recordings))
+    return SharedRecordingPtr(nullptr);
+  else
+    return *it;
+}
 
 void load_new_file(std::shared_ptr<AbstractFile> file,
                    std::optional<std::string> parentName = std::nullopt) {
   if (!file || !file->good()) return;
-  auto findParent = [](const std::string &parent_name) {
-    auto it = std::find_if(global::recordings.begin(), global::recordings.end(),
-                           [name = parent_name](const auto &r) { return name == r->name(); });
-    if (it == std::end(global::recordings))
-      return SharedRecordingPtr(nullptr);
-    else
-      return *it;
-  };
 
-  if (!file->is_flow()) {
+  if (!file->is_flow()) { // Normal video
     auto rec = std::make_shared<RecordingWindow>(file);
     global::recordings.push_back(rec);
     rec->open_window();
 
     if (parentName) {
-      auto parent = findParent(parentName.value());
+      auto parent = find_parent_recording(parentName.value());
       if (!parent) {
-        global::new_ui_message(
-            "Array \"{}\" has requested \"{}\" as its parent recording, but no such recording "
-            "exists!",
-            rec->name(), parentName.value());
+        if (global::recordings.empty())
+          global::new_ui_message(
+            "ERROR: You need to load a video first before adding a layer"
+          );
+        else
+          global::new_ui_message(
+            "ERROR: Video \"{}\" has requested \"{}\" as its parent recording, but no such "
+            "recording exists!", rec->name(), parentName.value()
+          );
       } else {
         global::merge_queue.push({rec, parent, false});
       }
     } else if (global::recordings.size() / 3 + 1 != prm::main_window_multipier) {
+      // TODO: this should be removed in the UI rewrite
       prm::main_window_multipier = global::recordings.size() / 3 + 1;
       prm::main_window_multipier = std::clamp(prm::main_window_multipier, 1, 3);
       glfwSetWindowSize(global::main_window, prm::main_window_multipier * prm::main_window_width,
                         prm::main_window_height);
     }
-  } else {
+  } else { // Flow array
     SharedRecordingPtr parent;
     if (parentName) {
-      parent = findParent(parentName.value());
+      parent = find_parent_recording(parentName.value());
+    } else {
+      global::new_ui_message(
+          "ERROR: Failed to add flow to recording, no parent name set!",
+          parentName.value());
     }
     if (!parent) {
-      if (parentName) {
+      if (global::recordings.empty()) {
         global::new_ui_message(
-            "Failed to add flow to recording, no recording with name \"{}\" exists!",
+            "ERROR: Failed to add flow to recording, no recording with name \"{}\" exists!",
             parentName.value());
-        return;
-      } else if (global::recordings.empty()) {
-        global::new_ui_message(
-            "You loaded flow vectors before any regular recording, load regular recording first");
-        return;
       } else {
-        parent = global::recordings.back();
+        global::new_ui_message(
+            "ERROR: Failed to add flow to recording, you need to load a recording first!",
+            parentName.value());
       }
+      return;
     }
 
     auto rec = std::make_shared<Recording>(file);
@@ -250,14 +120,20 @@ void load_from_queue() {
     load_new_file(file, arr.value()->meta.parentName);
   }
 
-  /* Point videos */
+  /* Point Videos */
   if (auto pointsvideo = global::get_pointsvideo_to_load()) {
     if (global::recordings.empty()) {
-      global::new_ui_message("A video needs to be opened before points lists can be displayed");
+      global::new_ui_message("ERROR: A video needs to be opened before points lists can be displayed");
     } else {
-      auto rec         = global::recordings.back();
       auto parent_name = pointsvideo.value()->parent_name;
-      rec->add_points_video(pointsvideo.value());
+      auto parent = find_parent_recording(parent_name);
+      if (!parent) {
+        global::new_ui_message(
+            "ERROR: Points Array \"{}\" has requested \"{}\" as its parent recording, but no such "
+            "recording exists!", pointsvideo.value()->name, parent_name);
+      } else {
+        parent->add_points_video(pointsvideo.value());
+      }
     }
   }
 
@@ -287,6 +163,7 @@ void show_messages() {
   global::messages.erase(std::remove_if(global::messages.begin(), global::messages.end(),
                                         [](const auto &msg) -> bool { return !msg.show; }),
                          global::messages.end());
+  // Show messages
   for (auto &msg : global::messages) {
     if (msg.show) {
       auto label = fmt::format("Message {}", msg.id);

@@ -72,17 +72,19 @@ file(GLOB SHADERS "src/shaders/*.glsl")
 cmrc_add_resource_library(monochrome-resources ALIAS monochrome::rc NAMESPACE rc ${SHADERS} "vendor/MultiRecorderVideo.png")
 
 set(SOURCES
+        src/cpp/main.cpp
+
         src/cpp/globals.cpp
-        src/cpp/globals.cpp
-        src/cpp/globals.h
         src/cpp/globals.h
         src/cpp/ipc.cpp
         src/cpp/ipc.h
-        src/cpp/main.cpp
         src/cpp/main_window.h
         src/cpp/recording.cpp
         src/cpp/recording.h
         src/cpp/ui.h
+        src/cpp/ui_main.h
+        src/cpp/ui_recording.h
+        src/cpp/ui_export.h
         src/cpp/recordingwindow.cpp
         src/cpp/recordingwindow.h
         src/cpp/recordingwindow_helpers.cpp
@@ -91,19 +93,24 @@ set(SOURCES
         src/cpp/transformations.h
 
         src/cpp/fileformats/AbstractFile.h
-        src/cpp/fileformats/BmpFileParser.h
         src/cpp/fileformats/all_formats.cpp
         src/cpp/fileformats/all_formats.h
+        src/cpp/fileformats/BmpFile.h
+        src/cpp/fileformats/BmpFileParser.h
+        src/cpp/fileformats/InMemoryFile.h
+        src/cpp/fileformats/RawFile.h
 
         src/cpp/utils/colormap.cpp
         src/cpp/utils/colormap.h
         src/cpp/utils/definitions.h
+        src/cpp/utils/ImGuiConnector.h
         src/cpp/utils/iterators.h
         src/cpp/utils/plot_utils.h
         src/cpp/utils/utils.cpp
         src/cpp/utils/utils.h
         src/cpp/utils/vectors.h
-        src/cpp/utils/videorecorder.h)
+        src/cpp/utils/videorecorder.h
+)
 
 if (APPLE AND NOT SKBUILD)
     set(MACOSX_BUNDLE_ICON_FILE MultiRecorderVideo.icns)
@@ -118,6 +125,7 @@ target_link_libraries(Monochrome PRIVATE
         CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy
         pugixml flagset cppcolormap monochrome::rc)
 target_include_directories(Monochrome PRIVATE src/cpp src/schema)
+
 if (MC_FORCE_TCP_IPC)
     target_compile_definitions(Monochrome PRIVATE "-DMC_FORCE_TCP_IPC")
 endif ()
