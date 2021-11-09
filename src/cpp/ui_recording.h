@@ -281,9 +281,10 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     scale.left  = data - trace.data();
     scale.right = trace.size();
     scale.scale(data, data + size);
-    ImPlot::LinkNextPlotLimits(
-        scale.scaleX ? &scale.left : nullptr, scale.scaleX ? &scale.right : nullptr,
-        scale.scaleY ? &scale.lower : nullptr, scale.scaleY ? &scale.upper : nullptr);
+    ImPlot::SetNextAxisLinks(ImAxis_X1, scale.scaleX ? &scale.left : nullptr,
+                             scale.scaleX ? &scale.right : nullptr);
+    ImPlot::SetNextAxisLinks(ImAxis_Y1, scale.scaleY ? &scale.lower : nullptr,
+                             scale.scaleY ? &scale.upper : nullptr);
     auto ptitle = "###trace" + label;
     if (ImPlot::BeginPlot(ptitle.c_str(), nullptr, nullptr,
                           ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
