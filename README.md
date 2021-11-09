@@ -1,4 +1,4 @@
-# Monochrome — Video viewer for scientific fluorescence recordings
+# Monochrome — Video viewer for scientific monochromatic videos
 
 This is a simple viewer to play MultiRecorder and binary files. Drag & drop the file into the window or pass the paths as arguments.
 

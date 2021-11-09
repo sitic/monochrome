@@ -58,7 +58,7 @@ def console_entrypoint():
     assert MONOCHROME_BIN_PATH.exists()
     args = [str(MONOCHROME_BIN_PATH)]
     args.extend(sys.argv[1:])
-    subprocess.Popen(args, start_new_session=True)
+    subprocess.Popen(args).wait()
 
 
 def _create_socket():
