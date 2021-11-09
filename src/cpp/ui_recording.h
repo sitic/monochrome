@@ -256,12 +256,13 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::Separator();
     for (const auto &vid : rec->points_videos) {
       ImGui::PushID(vid.get());
-      ImGui::ColorEdit4("", vid->color.data(), ImGuiColorEditFlags_NoLabel);
       ImGui::SliderFloat("point size", &vid->point_size, 0, 10);
+      ImGui::SameLine();
+      ImGui::ColorEdit4("", vid->color.data(),
+                        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
       ImGui::Separator();
       ImGui::PopID();
     }
-    ImGui::Separator();
   }
 
   // Plot traces and show their controls
