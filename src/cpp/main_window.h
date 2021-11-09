@@ -31,12 +31,11 @@ namespace global {
 
 SharedRecordingPtr find_parent_recording(const std::string &parent_name) {
   // If the parent_name is empty we default to using the last loaded video
-  if (parent_name.empty() && !global::recordings.empty())
-    return global::recordings.back();
+  if (parent_name.empty() && !global::recordings.empty()) return global::recordings.back();
 
   // Find the last video with the name `parent_name`
   auto it = std::find_if(global::recordings.rbegin(), global::recordings.rend(),
-                          [name = parent_name](const auto &r) { return name == r->name(); });
+                         [name = parent_name](const auto &r) { return name == r->name(); });
   if (it == std::rend(global::recordings))
     return SharedRecordingPtr(nullptr);
   else
@@ -47,7 +46,7 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
                    std::optional<std::string> parentName = std::nullopt) {
   if (!file || !file->good()) return;
 
-  if (!file->is_flow()) { // Normal video
+  if (!file->is_flow()) {  // Normal video
     auto rec = std::make_shared<RecordingWindow>(file);
     global::recordings.push_back(rec);
     rec->open_window();
@@ -56,14 +55,12 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
       auto parent = find_parent_recording(parentName.value());
       if (!parent) {
         if (global::recordings.empty())
-          global::new_ui_message(
-            "ERROR: You need to load a video first before adding a layer"
-          );
+          global::new_ui_message("ERROR: You need to load a video first before adding a layer");
         else
           global::new_ui_message(
-            "ERROR: Video \"{}\" has requested \"{}\" as its parent recording, but no such "
-            "recording exists!", rec->name(), parentName.value()
-          );
+              "ERROR: Video \"{}\" has requested \"{}\" as its parent recording, but no such "
+              "recording exists!",
+              rec->name(), parentName.value());
       } else {
         global::merge_queue.push({rec, parent, false});
       }
@@ -74,14 +71,13 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
       glfwSetWindowSize(global::main_window, prm::main_window_multipier * prm::main_window_width,
                         prm::main_window_height);
     }
-  } else { // Flow array
+  } else {  // Flow array
     SharedRecordingPtr parent;
     if (parentName) {
       parent = find_parent_recording(parentName.value());
     } else {
-      global::new_ui_message(
-          "ERROR: Failed to add flow to recording, no parent name set!",
-          parentName.value());
+      global::new_ui_message("ERROR: Failed to add flow to recording, no parent name set!",
+                             parentName.value());
     }
     if (!parent) {
       if (global::recordings.empty()) {
@@ -112,25 +108,29 @@ void load_from_queue() {
   /* File paths */
   if (auto filepath = global::get_file_to_load()) {
     load_new_file(filepath.value());
+    return;  // there might be some order of operations issues for IPC if we don't return here
   }
 
   /* InMemory Arrays */
   if (auto arr = global::get_rawarray3_to_load()) {
     auto file = std::make_shared<InMemoryFile>(arr.value());
     load_new_file(file, arr.value()->meta.parentName);
+    return;  // there might be some order of operations issues for IPC if we don't return here
   }
 
   /* Point Videos */
   if (auto pointsvideo = global::get_pointsvideo_to_load()) {
     if (global::recordings.empty()) {
-      global::new_ui_message("ERROR: A video needs to be opened before points lists can be displayed");
+      global::new_ui_message(
+          "ERROR: A video needs to be opened before points lists can be displayed");
     } else {
       auto parent_name = pointsvideo.value()->parent_name;
-      auto parent = find_parent_recording(parent_name);
+      auto parent      = find_parent_recording(parent_name);
       if (!parent) {
         global::new_ui_message(
             "ERROR: Points Array \"{}\" has requested \"{}\" as its parent recording, but no such "
-            "recording exists!", pointsvideo.value()->name, parent_name);
+            "recording exists!",
+            pointsvideo.value()->name, parent_name);
       } else {
         parent->add_points_video(pointsvideo.value());
       }
