@@ -46,7 +46,24 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
                    std::optional<std::string> parentName = std::nullopt) {
   if (!file || !file->good()) return;
 
-  if (!file->is_flow()) {  // Normal video
+  if (file->is_flow()) {  // Flow array
+    SharedRecordingPtr parent;
+    if (!parentName) {
+      parentName = "";
+    }
+    parent = find_parent_recording(parentName.value());
+    if (!parent) {
+      std::string err_msg =
+          global::recordings.empty()
+              ? "ERROR: Failed to add flow to recording, no recording with name \"{}\" exists!"
+              : "ERROR: Failed to add flow to recording, you need to load a recording first!";
+      global::new_ui_message(err_msg, parentName.value());
+      return;
+    }
+
+    auto rec = std::make_shared<Recording>(file);
+    parent->add_flow(rec);
+  } else {
     auto rec = std::make_shared<RecordingWindow>(file);
     global::recordings.push_back(rec);
     rec->open_window();
@@ -71,29 +88,6 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
       glfwSetWindowSize(global::main_window, prm::main_window_multipier * prm::main_window_width,
                         prm::main_window_height);
     }
-  } else {  // Flow array
-    SharedRecordingPtr parent;
-    if (parentName) {
-      parent = find_parent_recording(parentName.value());
-    } else {
-      global::new_ui_message("ERROR: Failed to add flow to recording, no parent name set!",
-                             parentName.value());
-    }
-    if (!parent) {
-      if (global::recordings.empty()) {
-        global::new_ui_message(
-            "ERROR: Failed to add flow to recording, no recording with name \"{}\" exists!",
-            parentName.value());
-      } else {
-        global::new_ui_message(
-            "ERROR: Failed to add flow to recording, you need to load a recording first!",
-            parentName.value());
-      }
-      return;
-    }
-
-    auto rec = std::make_shared<Recording>(file);
-    parent->add_flow(rec);
   }
 }
 
