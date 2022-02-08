@@ -98,8 +98,8 @@ class RecordingWindow : public Recording {
 
   Vec2d mousepos;
   struct {
-    bool left  = false;
-    bool right = false;
+    bool holding_left = false;
+    bool pressing_left = false;
   } mousebutton;
 
   ColorMap cmap_      = ColorMap::GRAY;

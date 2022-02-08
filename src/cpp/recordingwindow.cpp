@@ -317,11 +317,11 @@ void RecordingWindow::display(Filters prefilter,
 
   // update traces
   if (playback.next_t() != playback.current_t()) {
-    for (auto &[trace, pos, color, scale] : traces) {
-      auto [start, size] = Trace::clamp(pos, {Nx(), Ny()});
+    for (auto &trace : traces) {
+      auto [start, size] = Trace::clamp(trace.pos, {Nx(), Ny()});
       if (size[0] > 0 && size[1] > 0) {
         auto block = arr->block(start[0], start[1], size[0], size[1]);
-        trace.push_back(block.mean());
+        trace.data.push_back(block.mean());
         //block.setConstant(0);  // for testing
       }
     }
@@ -459,13 +459,7 @@ void RecordingWindow::reset_traces() {
   }
 }
 void RecordingWindow::add_trace(const Vec2i &pos) {
-  for (auto &t : traces) {
-    if (t.is_near_point(pos)) {
-      t.set_pos(pos);
-      return;
-    }
-  }
-  traces.push_back({{}, pos, Trace::next_color()});
+  traces.push_back({std::rand(), pos, Trace::next_color()});
 }
 void RecordingWindow::remove_trace(const Vec2i &pos) {
   const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
@@ -542,13 +536,26 @@ void RecordingWindow::scroll_callback(GLFWwindow *window, double xoffset, double
 void RecordingWindow::cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
   auto rec      = rec_from_window_ptr(window);
   rec->mousepos = {xpos, ypos};
-  if (rec->mousebutton.left) {
+  if (rec->mousebutton.holding_left) {
     int w, h;
     glfwGetWindowSize(window, &w, &h);
     int x = rec->mousepos[0] * rec->Nx() / w;
     int y = rec->mousepos[1] * rec->Ny() / h;
+    Vec2i pos = {x, y};
 
-    rec->add_trace({x, y});
+    // if any trace point is nearby, move it to the new position
+    for (auto &t : rec->traces) {
+      if (t.is_near_point(pos)) {
+        t.set_pos(pos);
+        return;
+      }
+    }
+
+    // only add trace points on mouse press
+    if (rec->mousebutton.pressing_left) {
+      rec->add_trace({x, y});
+      rec->mousebutton.pressing_left = false;
+    }
   }
 }
 
@@ -556,10 +563,12 @@ void RecordingWindow::mouse_button_callback(GLFWwindow *window, int button, int 
   auto rec = rec_from_window_ptr(window);
   if (button == GLFW_MOUSE_BUTTON_LEFT) {
     if (action == GLFW_PRESS) {
-      rec->mousebutton.left = true;
+      rec->mousebutton.holding_left = true;
+      rec->mousebutton.pressing_left = true;
       rec->cursor_position_callback(window, rec->mousepos[0], rec->mousepos[1]);
     } else {
-      rec->mousebutton.left = false;
+      rec->mousebutton.holding_left = false;
+      rec->mousebutton.pressing_left = false;
     }
   } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
     if (action == GLFW_PRESS) {

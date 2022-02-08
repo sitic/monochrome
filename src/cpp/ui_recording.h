@@ -265,61 +265,66 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   }
 
   // Plot traces and show their controls
-  for (auto &[trace, pos, color, scale] : rec->traces) {
-    int size = trace.size();
+  for (auto &trace : rec->traces) {
+    int size = trace.data.size();
     if (size == 0) continue;
 
-    auto label = pos.to_string();
-    ImGui::PushID(label.c_str());
-    auto data = trace.data();
+    auto label = trace.pos.to_string();
+    ImGui::PushID(trace.id);
+    auto data = trace.data.data();
     if (size > prm::trace_length) {
       data += (size - prm::trace_length);
       size = prm::trace_length;
     }
 
-    scale.left  = data - trace.data();
-    scale.right = trace.size();
-    scale.scale(data, data + size);
-    ImPlot::SetNextAxisLinks(ImAxis_X1, scale.scaleX ? &scale.left : nullptr,
-                             scale.scaleX ? &scale.right : nullptr);
-    ImPlot::SetNextAxisLinks(ImAxis_Y1, scale.scaleY ? &scale.lower : nullptr,
-                             scale.scaleY ? &scale.upper : nullptr);
+    trace.scale.left  = data - trace.data.data();
+    trace.scale.right = trace.data.size();
+    trace.scale.scale(data, data + size);
+    ImPlot::SetNextAxisLinks(ImAxis_X1, trace.scale.scaleX ? &trace.scale.left : nullptr,
+                             trace.scale.scaleX ? &trace.scale.right : nullptr);
+    ImPlot::SetNextAxisLinks(ImAxis_Y1, trace.scale.scaleY ? &trace.scale.lower : nullptr,
+                             trace.scale.scaleY ? &trace.scale.upper : nullptr);
     auto ptitle = "###trace" + label;
     if (ImPlot::BeginPlot(ptitle.c_str(), nullptr, nullptr,
                           ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
                           ImPlotFlags_AntiAliased)) {
-      ImPlot::SetNextLineStyle({color[0], color[1], color[2], color[3]});
+      ImPlot::SetNextLineStyle({trace.color[0], trace.color[1], trace.color[2], trace.color[3]});
       auto title = "###ttrace" + label;
-      ImPlot::PlotLine(title.c_str(), trace.data(), trace.size());
-      ImPlotUtils::draw_liney(scale.restarts);
+      ImPlot::PlotLine(title.c_str(), trace.data.data(), trace.data.size());
+      ImPlotUtils::draw_liney(trace.scale.restarts);
       ImPlot::EndPlot();
     }
 
     ImGui::SameLine();
     ImGui::BeginGroup();
-    ImGui::Text("%s", label.c_str());
+    ImGui::Text("Trace ");
     ImGui::SameLine();
-    ImGui::ColorEdit3(label.c_str(), color.data(),
+    ImGui::ColorEdit3(label.c_str(), trace.color.data(),
                       ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-    ImGui::Checkbox("Scale X", &scale.scaleX);
-    ImGui::Checkbox("Scale Y", &scale.scaleY);
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.95f);
+    if (ImGui::InputInt2("###Trace", trace.pos.data())) {
+      trace.pos[0] = std::clamp(trace.pos[0], 0, rec->Nx());
+      trace.pos[1] = std::clamp(trace.pos[1], 0, rec->Ny());
+    }
+    ImGui::Checkbox("Scale X", &trace.scale.scaleX);
+    ImGui::Checkbox("Scale Y", &trace.scale.scaleY);
     if (ImGui::Button("Reset")) {
-      trace.clear();
+      trace.data.clear();
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_TRASH_ALT)) {
-      rec->remove_trace(pos);
+      rec->remove_trace(trace.pos);
     }
     if (ImGui::Button("Export Trace")) {
       auto &ctrl         = rec->export_ctrl.trace;
       ctrl.export_window = true;
-      ctrl.assign_auto_filename(rec->path(), pos, Trace::width());
+      ctrl.assign_auto_filename(rec->path(), trace.pos, Trace::width());
       ctrl.tend = rec->length();
     }
     if (ImGui::Button("Export ROI")) {
       auto &ctrl                      = rec->export_ctrl.raw;
       ctrl.export_window              = true;
-      std::tie(ctrl.start, ctrl.size) = Trace::clamp(pos, {rec->Nx(), rec->Ny()});
+      std::tie(ctrl.start, ctrl.size) = Trace::clamp(trace.pos, {rec->Nx(), rec->Ny()});
       ctrl.frames                     = {0, rec->length()};
       ctrl.assign_auto_filename(rec->path());
     }

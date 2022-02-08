@@ -186,10 +186,11 @@ class SmoothScaler {
 };
 
 struct Trace {
-  std::vector<float> data;
+  int id;
   Vec2i pos;
   Vec4f color;
   SmoothScaler scale;
+  std::vector<float> data;
 
   void set_pos(const Vec2i &npos);
   void clear() { data.clear(); }
