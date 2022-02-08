@@ -403,7 +403,7 @@ bool ipc::is_another_instance_running() {
   try {
     socket.connect(endpoint);
     return true;
-  } catch (const asio::system_error& error) {
+  } catch (const asio::system_error& ) {
     return false;
   }
 }

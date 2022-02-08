@@ -111,14 +111,16 @@ set(SOURCES
         src/cpp/utils/videorecorder.h
 )
 
-if (APPLE AND NOT SKBUILD)
+if(APPLE AND NOT SKBUILD)
     set(MACOSX_BUNDLE_ICON_FILE MultiRecorderVideo.icns)
     set(myApp_ICON ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns)
     set_source_files_properties(${myApp_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     add_executable(Monochrome MACOSX_BUNDLE ${myApp_ICON} ${SOURCES})
-else ()
+elseif(MSVC)
+    add_executable(Monochrome ${SOURCES} ${PROJECT_SOURCE_DIR}/vendor/Monochrome.rc)
+else()
     add_executable(Monochrome ${SOURCES})
-endif ()
+endif()
 
 target_link_libraries(Monochrome PRIVATE
         CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy
