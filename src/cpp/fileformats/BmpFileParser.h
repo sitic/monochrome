@@ -297,6 +297,7 @@ class BmpFileParser {
           std::string recordingTimeValue = recordingTime.child_value();
           if (recordingTimeUnit == "ms" && !recordingTimeValue.empty()) {
             mRecordingLength = std::chrono::milliseconds(std::stoul(recordingTimeValue));
+            mFPS             = mNumFrames / mRecordingLength.count();
           }
 
           // Concatenate `parts[3:]` with spaces to get camera model name
@@ -319,7 +320,7 @@ class BmpFileParser {
           };
 
           std::string vendor = camera.attribute("vendor").value();
-          if (vendor == "IDS") {
+          if (vendor == "IDS" || vendor == "Basler") {
             auto framerate = get_float(get_val("Framerate"));
             if (framerate) mFPS = framerate.value();
 
