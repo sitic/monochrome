@@ -3,12 +3,34 @@
 
 #ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
+#include <shellapi.h>
 #endif
 
 #include "ipc.h"
 #include "main_window.h"
 
+#ifdef USE_WIN32_MAIN
+INT WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPWSTR, INT) {
+  UNREFERENCED_PARAMETER(hInst);
+  UNREFERENCED_PARAMETER(hPrevInstance);
+
+  int argc;
+  char **argv;
+  {
+    LPWSTR *lpArgv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    argv           = (char **)malloc(argc * sizeof(char *));
+    int size, i = 0;
+    for (; i < argc; ++i) {
+      size    = wcslen(lpArgv[i]) + 1;
+      argv[i] = (char *)malloc(size);
+      wcstombs(argv[i], lpArgv[i], size);
+    }
+    LocalFree(lpArgv);
+  }
+
+#else
 int main(int argc, char **argv) {
+#endif
   CLI::App app{"Monochrome"};
   std::vector<std::string> files;
   bool send_files_over_wire = false;
@@ -109,5 +131,15 @@ int main(int argc, char **argv) {
   glfwDestroyWindow(global::main_window);
   global::recordings.clear();
   glfwTerminate();
+
+#ifdef USE_WIN32_MAIN
+  {
+    int i = 0;
+    for (; i < argc; ++i) {
+      free(argv[i]);
+    }
+    free(argv);
+  }
+#endif
   std::exit(EXIT_SUCCESS);
 }
