@@ -155,6 +155,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     if (ImGui::Button("Export") && create_directory(export_dir)) {
       recording->save_trace(ctrl.pos, fs::path(export_dir) / ctrl.filename,
                             {ctrl.tstart, ctrl.tend});
+      global::new_ui_message("Saved trace to {}", (fs::path(export_dir) / ctrl.filename).string());
     }
     ImGui::End();
   }
