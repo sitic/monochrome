@@ -1,38 +1,4 @@
-int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow *parent = nullptr) {
-  auto name = fmt::format("{}###{}", rec->name(), static_cast<void *>(rec.get()));
-  if (!parent) {
-    int x           = std::clamp(rec_nr / 3, 0, prm::main_window_multipier - 1);
-    float y         = (rec_nr % 3) * 0.3f + 0.2f * (x == 0);
-    auto window_pos = ImVec2(x * prm::main_window_width, y * prm::main_window_height);
-    ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
-    ImGui::SetNextWindowCollapsed(!rec->active, ImGuiCond_Always);
-    rec->active = ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-  } else {
-    if (ImGui::CollapsingHeader(name.c_str(),
-                                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanFullWidth)) {
-      if (!rec->active) {
-        // layer was just activated
-        rec->active   = true;
-        rec->playback = parent->playback;
-      }
-    } else {
-      rec->active = false;
-      return rec_nr;
-    }
-  }
-  ImGui::PushID(rec.get());
-  int t = rec->current_frame();
-  ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
-  ImGui::SetNextItemWidth(-1);
-  if (ImGui::SliderInt("##progress", &t, 0, rec->length() - 1, "Frame %d")) {
-    if (t < rec->length()) {
-      rec->playback.set_next(t);
-    }
-  }
-  ImGui::PopStyleColor(1);
-
-  // Show metadata
+void display_recording_metadata(const SharedRecordingPtr &rec) {
   if (!rec->date().empty()) ImGui::TextWrapped("Date: %s", rec->date().c_str());
   if (!rec->comment().empty()) {
     ImGui::TextWrapped("Comment: %s", rec->comment().c_str());
@@ -79,6 +45,10 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::TextWrapped("%s %s", v.first.c_str(), v.second.c_str());
     ImGui::NextColumn();
   }
+  ImGui::Columns(1);
+}
+
+bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *parent){
   if (!parent) {
     if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
       auto &ctrl         = rec->export_ctrl.raw;
@@ -122,18 +92,19 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
         ImGui::EndPopup();
       }
     }
+    return false;
   } else {
     if (ImGui::Button(ICON_FA_TRASH_ALT)) {
       rec->set_context(nullptr);
       // Child will be deleted later, after we have left the loop over all children.
       ImGui::Columns(1);
       ImGui::PopID();
-      return rec_nr;
+      return true;
     }
   }
-  ImGui::Columns(1);
+}
 
-
+void display_histogram(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   // Histogram and other controls
   ImGui::PushItemWidth(prm::main_window_width * 0.7f);
   ImGui::PlotHistogram("##histogram", rec->histogram.data.data(), rec->histogram.data.size(), 0,
@@ -220,6 +191,62 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   if (symmetrize_minmax) {
     rec->get_max(prm::transformation) = -rec->get_min(prm::transformation);
   }
+}
+
+int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow *parent = nullptr) {
+  auto name = fmt::format("{}###{}", rec->name(), static_cast<void *>(rec.get()));
+  if (!parent) {
+    int x           = std::clamp(rec_nr / 3, 0, prm::main_window_multipier - 1);
+    float y         = (rec_nr % 3) * 0.3f + 0.2f * (x == 0);
+    auto window_pos = ImVec2(x * prm::main_window_width, y * prm::main_window_height);
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::SetNextWindowCollapsed(!rec->active, ImGuiCond_Always);
+    if (ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+      if (!rec->active) {
+        // recording was enabled
+        rec->active = true;
+        glfwShowWindow(rec->window);
+      }
+    } else {
+      if (rec->active) {
+        // recording was disabled
+        rec->active = false;
+        glfwHideWindow(rec->window);
+      }
+    }
+  } else {
+    if (ImGui::CollapsingHeader(name.c_str(),
+                                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanFullWidth)) {
+      if (!rec->active) {
+        // layer was just activated
+        rec->active   = true;
+        rec->playback = parent->playback;
+      }
+    } else {
+      rec->active = false;
+      return rec_nr;
+    }
+  }
+  ImGui::PushID(rec.get());
+
+  int t = rec->current_frame();
+  ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
+  ImGui::SetNextItemWidth(-1);
+  if (ImGui::SliderInt("##progress", &t, 0, rec->length() - 1, "Frame %d")) {
+    if (t < rec->length()) {
+      rec->playback.set_next(t);
+    }
+  }
+  ImGui::PopStyleColor(1);
+
+  display_recording_metadata(rec);
+
+  if (display_recording_buttons(rec, parent)) {
+    return rec_nr;
+  }
+
+  display_histogram(rec, parent);
 
   // Controls for flows
   if (!rec->flows.empty()) {
@@ -285,9 +312,9 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImPlot::SetNextAxisLinks(ImAxis_Y1, trace.scale.scaleY ? &trace.scale.lower : nullptr,
                              trace.scale.scaleY ? &trace.scale.upper : nullptr);
     auto ptitle = "###trace" + label;
-    if (ImPlot::BeginPlot(ptitle.c_str(), nullptr, nullptr,
-                          ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
+    if (ImPlot::BeginPlot(ptitle.c_str(), ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
                           ImPlotFlags_AntiAliased)) {
+      ImPlot::SetupAxes(nullptr, nullptr);
       ImPlot::SetNextLineStyle({trace.color[0], trace.color[1], trace.color[2], trace.color[3]});
       auto title = "###ttrace" + label;
       ImPlot::PlotLine(title.c_str(), trace.data.data(), trace.data.size());
