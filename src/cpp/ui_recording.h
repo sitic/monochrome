@@ -102,6 +102,7 @@ bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *p
       return true;
     }
   }
+  return false;
 }
 
 void display_histogram(const SharedRecordingPtr &rec, RecordingWindow *parent) {
