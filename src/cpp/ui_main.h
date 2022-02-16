@@ -138,7 +138,7 @@ void show_main_ui() {
   };
 
   ImGui::Columns(3);
-  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+  ImGui::SetNextItemOpen(false, ImGuiCond_Once);
   if (ImGui::TreeNode("Pre Filters")) {
     auto selectable = selectable_factory(prm::prefilter, Filters::None);
     if (selectable("Gauss", Filters::Gauss)) {
@@ -172,7 +172,7 @@ void show_main_ui() {
 
   ImGui::NextColumn();
 
-  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+  ImGui::SetNextItemOpen(false, ImGuiCond_Once);
   if (ImGui::TreeNode("Transformations")) {
     auto selectable = selectable_factory(prm::transformation, Transformations::None);
     if (selectable("Frame Difference", Transformations::FrameDiff)) {
@@ -220,7 +220,7 @@ void show_main_ui() {
 
   ImGui::NextColumn();
 
-  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+  ImGui::SetNextItemOpen(false, ImGuiCond_Once);
   if (ImGui::TreeNode("Post Filters")) {
     auto selectable = selectable_factory(prm::postfilter, Filters::None);
     if (selectable("Gauss", Filters::Gauss)) {
