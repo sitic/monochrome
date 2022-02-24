@@ -314,7 +314,7 @@ class BmpFileParser {
             if (str.empty()) return std::nullopt;
             try {
               return std::stof(str);
-            } catch (const std::exception &e) {
+            } catch (const std::exception) {
               return std::nullopt;
             }
           };

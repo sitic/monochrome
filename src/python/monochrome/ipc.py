@@ -20,6 +20,9 @@ from .fbs.DictEntry import (DictEntryAddKey, DictEntryAddVal, DictEntryEnd,
 from .fbs.TransferFunction import TransferFunction
 
 MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome'
+if sys.platform == 'win32':
+    MONOCHROME_BIN_PATH = MONOCHROME_BIN_PATH.with_suffix('.exe')
+
 USE_TCP = sys.platform in ['win32', 'cygwin']
 TCP_IP, TCP_PORT = '127.0.0.1', 4864
 # OSX doesn't support abstract UNIX domain sockets
