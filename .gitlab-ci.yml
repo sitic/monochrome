@@ -137,9 +137,12 @@ windows Release:
     - cmake -Bbuild -G "Visual Studio 17 2022" -DCMAKE_GENERATOR_PLATFORM="x64" -Wdev .
     - cd build
     - cmake --build . --config "Release" --parallel 12
+    - cd ..
+    - py -3.10 -m build --wheel
   artifacts:
     paths:
       - build/Release/Monochrome.exe
+      - dist/monochrome-*.whl
     expire_in: 3 months
 
 pytest:
