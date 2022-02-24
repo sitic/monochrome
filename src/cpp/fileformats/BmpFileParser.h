@@ -319,18 +319,15 @@ class BmpFileParser {
             }
           };
 
-          std::string vendor = camera.attribute("vendor").value();
-          if (vendor == "IDS" || vendor == "Basler") {
-            auto framerate = get_float(get_val("Framerate"));
-            if (framerate) mFPS = framerate.value();
+          auto framerate = get_float(get_val("Framerate"));
+          if (framerate) mFPS = framerate.value();
 
-            auto gain = get_val("Gain");
-            if (!gain.empty()) mMetadata.emplace_back("Gain", gain);
+          auto gain = get_val("Gain");
+          if (!gain.empty()) mMetadata.emplace_back("Gain", gain);
 
-            auto exposure = get_float(get_val("Exposure"));
-            if (exposure) {
-              mMetadata.emplace_back("Exposure", fmt::format("{:.2f} ms", exposure.value()));
-            }
+          auto exposure = get_float(get_val("Exposure"));
+          if (exposure) {
+            mMetadata.emplace_back("Exposure", fmt::format("{:.2f} ms", exposure.value()));
           }
         }
       } else {
