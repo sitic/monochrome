@@ -101,7 +101,7 @@ linux_python:
 
 macos:
   tags:
-    - macOS
+    - cvl-macOS
   stage: build
   before_script:
     - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
@@ -132,7 +132,7 @@ macos:
 windows Release:
   stage: build
   tags:
-    - windows
+    - cvl-windows
   script:
     - cmake -Bbuild -G "Visual Studio 17 2022" -DCMAKE_GENERATOR_PLATFORM="x64" -Wdev .
     - cd build
