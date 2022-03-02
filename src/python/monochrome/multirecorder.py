@@ -74,7 +74,8 @@ class MultRecDatImport():
         self.import_file()
 
     def show(self):
-        show_array(self.data, str(self.filename), fps=self.framerate, comment=self.comment, date=str(self.starttime))
+        show_array(self.data, str(self.filename), fps=self.framerate, comment=self.comment, date=str(self.starttime),
+                   cmap="gray")
 
     def show_layer(self, arr, name="", **kwargs):
         show_layer(arr, self.filename.name, name=name, **kwargs)

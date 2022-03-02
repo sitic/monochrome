@@ -28,6 +28,7 @@ TCP_IP, TCP_PORT = '127.0.0.1', 4864
 # OSX doesn't support abstract UNIX domain sockets
 ABSTRACT_DOMAIN_SOCKET_SUPPORTED = sys.platform != 'darwin'
 SOCK_PATH = '\0Monochrome' if ABSTRACT_DOMAIN_SOCKET_SUPPORTED else '/tmp/Monochrome.s'
+MAX_BUFFER_SIZE = 16352
 
 
 def start_monochrome(speed: Optional[float] = None,
@@ -365,7 +366,7 @@ def show_array(array: np.ndarray,
 
     flat = array.flatten()
     length = flat.size
-    max_size = 16352
+    max_size = MAX_BUFFER_SIZE
     for idx in range(0, length, max_size):
         end = length if idx + max_size > length else idx + max_size
         if array.dtype == np.float32:
@@ -400,14 +401,14 @@ def show_flow(flow_uv: np.ndarray, parent: Optional[Text] = None, name: Text = "
 
     flat = flow_uv.flatten()
     length = flat.size
-    max_size = 16352
+    max_size = MAX_BUFFER_SIZE
     for idx in range(0, length, max_size):
         end = length if idx + max_size > length else idx + max_size
         buf = create_array3dataf_msg(flat[idx:end], idx)
         s.sendall(buf)
 
 
-def show(array_or_path: Union[str, np.ndarray], *args, **kwargs):
+def show(array_or_path: Union[str, Path, np.ndarray], *args, **kwargs):
     if isinstance(array_or_path, np.ndarray):
         return show_array(array_or_path, *args, **kwargs)
     elif isinstance(array_or_path, str) or isinstance(array_or_path, Path):
