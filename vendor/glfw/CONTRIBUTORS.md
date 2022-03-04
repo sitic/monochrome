@@ -10,6 +10,7 @@ video tutorials.
  - Matt Arsenault
  - ashishgamedev
  - David Avedissian
+ - Luca Bacci
  - Keith Bauer
  - John Bartholomew
  - Coşku Baş
@@ -53,20 +54,25 @@ video tutorials.
  - Ralph Eastwood
  - Fredrik Ehnbom
  - Robin Eklind
+ - Jan Ekström
  - Siavash Eliasi
  - Ahmad Fatoum
  - Felipe Ferreira
  - Michael Fogleman
+ - Jason Francis
  - Gerald Franz
  - Mário Freitas
  - GeO4d
  - Marcus Geelnard
+ - ghuser404
  - Charles Giessen
  - Ryan C. Gordon
  - Stephen Gowen
  - Kovid Goyal
  - Eloi Marín Gratacós
  - Stefan Gustavson
+ - Andrew Gutekanst
+ - Stephen Gutekanst
  - Jonathan Hale
  - hdf89shfdfs
  - Sylvain Hellegouarch
@@ -76,6 +82,8 @@ video tutorials.
  - Paul Holden
  - Warren Hu
  - Charles Huber
+ - illustris
+ - InKryption
  - IntellectualKitty
  - Aaron Jacobs
  - Erik S. V. Jansson
@@ -177,12 +185,15 @@ video tutorials.
  - Ali Sherief
  - Yoshiki Shibukawa
  - Dmitri Shuralyov
+ - Joao da Silva
+ - Daniel Sieger
  - Daniel Skorupski
  - Anthony Smith
  - Bradley Smith
  - Cliff Smolinsky
  - Patrick Snape
  - Erlend Sogge Heggen
+ - Olivier Sohn
  - Julian Squires
  - Johannes Stein
  - Pontus Stenetorp

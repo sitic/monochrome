@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/glfw/glfw.git
 	branch = master
-	commit = fb0f2f92a38c1d6a776ffeb253329f8d1c65694c
+	commit = adc202d2c3182ca6ad8344624941e56d8e0bc493
 	parent = 245c69f8b5720eb832d495bc5c5fc51d91a11b6c
 	method = merge
 	cmdver = 0.4.3
