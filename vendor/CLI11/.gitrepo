@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = https://github.com/CLIUtils/CLI11.git
-	branch = v2.0.0
-	commit = 0d06d21b56eadef9dcb24907ee2866b2b6f0babe
-	parent = 1f1dbeb1d228da808136cd9cb70287ef92aac632
+	branch = v2.1.2
+	commit = 70f8072f9dd2292fd0b9f9e5f58e279f60483ed3
+	parent = 538c1f2043ee222144f4ebdce25bbc86d43930d8
 	method = merge
 	cmdver = 0.4.3

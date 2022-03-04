@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// Copyright (c) 2017-2021, University of Cincinnati, developed by Henry Schreiner
 // under NSF AWARD 1414736 and by the respective contributors.
 // All rights reserved.
 //
@@ -55,7 +55,7 @@ std::string help(const App *app, const Error &e);
 
 /// enumeration of modes of how to deal with extras in config files
 
-enum class config_extras_mode : char { error = 0, ignore, capture };
+enum class config_extras_mode : char { error = 0, ignore, ignore_all, capture };
 
 class App;
 
@@ -368,23 +368,9 @@ class App {
 
     /// Set an alias for the app
     App *alias(std::string app_name) {
-        if(!detail::valid_name_string(app_name)) {
-            if(app_name.empty()) {
-                throw IncorrectConstruction("Empty aliases are not allowed");
-            }
-            if(!detail::valid_first_char(app_name[0])) {
-                throw IncorrectConstruction(
-                    "Alias starts with invalid character, allowed characters are [a-zA-z0-9]+'_','?','@' ");
-            }
-            for(auto c : app_name) {
-                if(!detail::valid_later_char(c)) {
-                    throw IncorrectConstruction(std::string("Alias contains invalid character ('") + c +
-                                                "'), allowed characters are "
-                                                "[a-zA-z0-9]+'_','?','@','.','-' ");
-                }
-            }
+        if(app_name.empty() || !detail::valid_alias_name_string(app_name)) {
+            throw IncorrectConstruction("Aliases may not be empty or contain newlines or null characters");
         }
-
         if(parent_ != nullptr) {
             aliases_.push_back(app_name);
             auto &res = _compare_subcommand_names(*this, *_get_fallthrough_parent());
@@ -961,6 +947,9 @@ class App {
     /// creates an option group as part of the given app
     template <typename T = Option_group>
     T *add_option_group(std::string group_name, std::string group_description = "") {
+        if(!detail::valid_alias_name_string(group_name)) {
+            throw IncorrectConstruction("option group names may not contain newlines or null characters");
+        }
         auto option_group = std::make_shared<T>(std::move(group_description), group_name, this);
         auto ptr = option_group.get();
         // move to App_p for overload resolution on older gcc versions
@@ -978,13 +967,13 @@ class App {
         if(!subcommand_name.empty() && !detail::valid_name_string(subcommand_name)) {
             if(!detail::valid_first_char(subcommand_name[0])) {
                 throw IncorrectConstruction(
-                    "Subcommand name starts with invalid character, allowed characters are [a-zA-z0-9]+'_','?','@' ");
+                    "Subcommand name starts with invalid character, '!' and '-' are not allowed");
             }
             for(auto c : subcommand_name) {
                 if(!detail::valid_later_char(c)) {
                     throw IncorrectConstruction(std::string("Subcommand name contains invalid character ('") + c +
-                                                "'), allowed characters are "
-                                                "[a-zA-z0-9]+'_','?','@','.','-' ");
+                                                "'), all characters are allowed except"
+                                                "'=',':','{','}', and ' '");
                 }
             }
         }
@@ -1301,6 +1290,16 @@ class App {
         run_callback();
     }
 
+    void parse_from_stream(std::istream &input) {
+        if(parsed_ == 0) {
+            _validate();
+            _configure();
+            // set the parent as nullptr as this object should be the top now
+        }
+
+        _parse_stream(input);
+        run_callback();
+    }
     /// Provide a function to print a help message. The function gets access to the App pointer and error.
     void failure_message(std::function<std::string(const App *, const Error &e)> function) {
         failure_message_ = function;
@@ -1740,10 +1739,10 @@ class App {
     /// Get a pointer to the version option. (const)
     const Option *get_version_ptr() const { return version_ptr_; }
 
-    /// Get the parent of this subcommand (or nullptr if master app)
+    /// Get the parent of this subcommand (or nullptr if main app)
     App *get_parent() { return parent_; }
 
-    /// Get the parent of this subcommand (or nullptr if master app) (const version)
+    /// Get the parent of this subcommand (or nullptr if main app) (const version)
     const App *get_parent() const { return parent_; }
 
     /// Get the name of the current app
@@ -1763,7 +1762,7 @@ class App {
         if(name_.empty()) {
             return std::string("[Option Group: ") + get_group() + "]";
         }
-        if(aliases_.empty() || !with_aliases || aliases_.empty()) {
+        if(aliases_.empty() || !with_aliases) {
             return name_;
         }
         std::string dispname = name_;
@@ -2083,7 +2082,7 @@ class App {
         }
 
         for(const Option_p &opt : options_) {
-            if(opt->count() > 0 && !opt->get_callback_run()) {
+            if((*opt) && !opt->get_callback_run()) {
                 opt->run_callback();
             }
         }
@@ -2360,6 +2359,18 @@ class App {
         _process_extras();
     }
 
+    /// Internal function to parse a stream
+    void _parse_stream(std::istream &input) {
+        auto values = config_formatter_->from_config(input);
+        _parse_config(values);
+        increment_parsed();
+        _trigger_pre_parse(values.size());
+        _process();
+
+        // Throw error if any items are left over (depending on settings)
+        _process_extras();
+    }
+
     /// Parse one config param, return false if not found in any subcommand, remove if it is
     ///
     /// If this has more than one dot.separated.name, go into the subcommand matching it
@@ -2420,8 +2431,12 @@ class App {
             return false;
         }
 
-        if(!op->get_configurable())
+        if(!op->get_configurable()) {
+            if(get_allow_config_extras() == config_extras_mode::ignore_all) {
+                return false;
+            }
             throw ConfigError::NotConfigurable(item.fullname());
+        }
 
         if(op->empty()) {
             // Flag parsing
@@ -2441,7 +2456,7 @@ class App {
     }
 
     /// Parse "one" argument (some may eat more than one), delegate to parent if fails, add to missing if missing
-    /// from master return false if the parse has failed and needs to return to parent
+    /// from main return false if the parse has failed and needs to return to parent
     bool _parse_single(std::vector<std::string> &args, bool &positional_only) {
         bool retval = true;
         detail::Classifier classifier = positional_only ? detail::Classifier::NONE : _recognize(args.back());
@@ -2716,7 +2731,7 @@ class App {
                     }
                 }
             }
-            // If a subcommand, try the master command
+            // If a subcommand, try the main command
             if(parent_ != nullptr && fallthrough_)
                 return _get_fallthrough_parent()->_parse_arg(args, current_type);
             // don't capture missing if this is a nameless subcommand
@@ -2738,6 +2753,9 @@ class App {
             if(!op->results().empty() && !op->results().back().empty()) {
                 op->add_result(std::string{});
             }
+        }
+        if(op->get_trigger_on_parse() && op->current_option_state_ == Option::option_state::callback_run) {
+            op->clear();
         }
         int min_num = (std::min)(op->get_type_size_min(), op->get_items_expected_min());
         int max_num = op->get_items_expected_max();
@@ -2811,7 +2829,9 @@ class App {
         if(min_num > 0 && op->get_type_size_max() != min_num && (collected % op->get_type_size_max()) != 0) {
             op->add_result(std::string{});
         }
-
+        if(op->get_trigger_on_parse()) {
+            op->run_callback();
+        }
         if(!rest.empty()) {
             rest = "-" + rest;
             args.push_back(rest);
@@ -3149,25 +3169,25 @@ struct AppFriend {
 #ifdef CLI11_CPP14
 
     /// Wrap _parse_short, perfectly forward arguments and return
-    template <typename... Args> static decltype(auto) parse_arg(App *app, Args &&... args) {
+    template <typename... Args> static decltype(auto) parse_arg(App *app, Args &&...args) {
         return app->_parse_arg(std::forward<Args>(args)...);
     }
 
     /// Wrap _parse_subcommand, perfectly forward arguments and return
-    template <typename... Args> static decltype(auto) parse_subcommand(App *app, Args &&... args) {
+    template <typename... Args> static decltype(auto) parse_subcommand(App *app, Args &&...args) {
         return app->_parse_subcommand(std::forward<Args>(args)...);
     }
 #else
     /// Wrap _parse_short, perfectly forward arguments and return
     template <typename... Args>
-    static auto parse_arg(App *app, Args &&... args) ->
+    static auto parse_arg(App *app, Args &&...args) ->
         typename std::result_of<decltype (&App::_parse_arg)(App, Args...)>::type {
         return app->_parse_arg(std::forward<Args>(args)...);
     }
 
     /// Wrap _parse_subcommand, perfectly forward arguments and return
     template <typename... Args>
-    static auto parse_subcommand(App *app, Args &&... args) ->
+    static auto parse_subcommand(App *app, Args &&...args) ->
         typename std::result_of<decltype (&App::_parse_subcommand)(App, Args...)>::type {
         return app->_parse_subcommand(std::forward<Args>(args)...);
     }

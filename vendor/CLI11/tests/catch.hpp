@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "CLI/CLI.hpp"
-#include "CLI/Timer.hpp"
+#pragma once
 
-int do_nothing() { return 7; }
+#include <catch2/catch.hpp>

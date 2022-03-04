@@ -1,12 +1,11 @@
 ci:
   autoupdate_commit_msg: "chore(deps): pre-commit.ci autoupdate"
-  skip:
-    - docker-clang-format
+  autofix_commit_msg: "style: pre-commit.ci fixes"
 
 
 repos:
 - repo: https://github.com/psf/black
-  rev: 21.6b0
+  rev: 21.9b0
   hooks:
   - id: black
 
@@ -22,23 +21,32 @@ repos:
   - id: mixed-line-ending
   - id: trailing-whitespace
 
-- repo: local
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v13.0.0
   hooks:
-  - id: docker-clang-format
-    name: Docker Clang Format
-    language: docker_image
-    types:
-    - c++
-    entry: unibeautify/clang-format:latest
-    args:
-    - -style=file
-    - -i
+   - id: clang-format
 
 - repo: https://github.com/cheshirekow/cmake-format-precommit
   rev: v0.6.13
   hooks:
   - id: cmake-format
     additional_dependencies: [pyyaml]
+
+- repo: https://github.com/markdownlint/markdownlint
+  rev: v0.11.0
+  hooks:
+  - id: markdownlint
+    args: ["--style=scripts/mdlint_style.rb"]
+
+- repo: local
+  hooks:
+  - id: remarklint
+    name: remarklint
+    language: node
+    entry: remark
+    types: [markdown]
+    args: ["--frail", "--quiet"]
+    additional_dependencies: [remark, remark-lint, remark-cli, remark-preset-lint-recommended, remark-lint-list-item-indent, remark-lint-no-undefined-references]
 
 - repo: local
   hooks:

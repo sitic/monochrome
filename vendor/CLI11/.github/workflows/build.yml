@@ -2,13 +2,11 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - main
       - v*
     tags:
       - "*"
   pull_request:
-    branches:
-      - master
 
 jobs:
   single-header:
@@ -37,10 +35,13 @@ jobs:
     - name: Make header
       run: cmake --build build --target CLI11-generate-single-file
 
+    - name: Copy file to main folder
+      run: cp build/include/CLI11.hpp CLI11.hpp
+
     - uses: actions/upload-artifact@v2
       with:
         name: CLI11.hpp
-        path: build/include/CLI11.hpp
+        path: CLI11.hpp
 
     - uses: actions/upload-artifact@v2
       with:

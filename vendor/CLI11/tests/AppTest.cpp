@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// Copyright (c) 2017-2021, University of Cincinnati, developed by Henry Schreiner
 // under NSF AWARD 1414736 and by the respective contributors.
 // All rights reserved.
 //
@@ -125,6 +125,17 @@ TEST_CASE_METHOD(TApp, "DashedOptionsSingleString", "[app]") {
     CHECK(app.count("--q") == 1u);
     CHECK(app.count("--this") == 2u);
     CHECK(app.count("--that") == 2u);
+}
+
+TEST_CASE_METHOD(TApp, "StrangeFlagNames", "[app]") {
+    app.add_flag("-=");
+    app.add_flag("--t\tt");
+    app.add_flag("-{");
+    CHECK_THROWS_AS(app.add_flag("--t t"), CLI::ConstructionError);
+    args = {"-=", "--t\tt"};
+    run();
+    CHECK(app.count("-=") == 1u);
+    CHECK(app.count("--t\tt") == 1u);
 }
 
 TEST_CASE_METHOD(TApp, "RequireOptionsError", "[app]") {
@@ -580,6 +591,20 @@ TEST_CASE_METHOD(TApp, "SingleArgVector", "[app]") {
     CHECK(channels.size() == 3u);
     CHECK(iargs.size() == 4u);
     CHECK("happy" == path);
+}
+
+TEST_CASE_METHOD(TApp, "StrangeOptionNames", "[app]") {
+    app.add_option("-:");
+    app.add_option("--t\tt");
+    app.add_option("--{}");
+    app.add_option("--:)");
+    CHECK_THROWS_AS(app.add_option("--t t"), CLI::ConstructionError);
+    args = {"-:)", "--{}", "5"};
+    run();
+    CHECK(app.count("-:") == 1u);
+    CHECK(app.count("--{}") == 1u);
+    CHECK(app["-:"]->as<char>() == ')');
+    CHECK(app["--{}"]->as<int>() == 5);
 }
 
 TEST_CASE_METHOD(TApp, "FlagLikeOption", "[app]") {
@@ -1933,7 +1958,6 @@ TEST_CASE_METHOD(TApp, "AllowExtrasArgModify", "[app]") {
     app.allow_extras();
     app.add_option("-f", v2);
     args = {"27", "-f", "45", "-x"};
-    auto cargs = args;
     app.parse(args);
     CHECK(std::vector<std::string>({"45", "-x"}) == args);
 
@@ -2254,4 +2278,33 @@ TEST_CASE_METHOD(TApp, "CustomUserSepParse5", "[app]") {
     app.add_option("bar", bar, "bar")->capture_default_str();
     run();
     CHECK(std::vector<std::string>({"this", "is", "a", "test"}) == bar);
+}
+
+// #218
+TEST_CASE_METHOD(TApp, "logFormSingleDash", "[app]") {
+    bool verbose{false};
+    bool veryverbose{false};
+    bool veryveryverbose{false};
+    app.name("testargs");
+    app.allow_extras();
+    args = {"-v", "-vv", "-vvv"};
+    app.final_callback([&]() {
+        auto rem = app.remaining();
+        for(auto &arg : rem) {
+            if(arg == "-v") {
+                verbose = true;
+            }
+            if(arg == "-vv") {
+                veryverbose = true;
+            }
+            if(arg == "-vvv") {
+                veryveryverbose = true;
+            }
+        }
+    });
+    run();
+    CHECK(app.remaining().size() == 3U);
+    CHECK(verbose);
+    CHECK(veryverbose);
+    CHECK(veryveryverbose);
 }

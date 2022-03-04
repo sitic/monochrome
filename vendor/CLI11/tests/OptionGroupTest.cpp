@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// Copyright (c) 2017-2021, University of Cincinnati, developed by Henry Schreiner
 // under NSF AWARD 1414736 and by the respective contributors.
 // All rights reserved.
 //
@@ -21,6 +21,16 @@ TEST_CASE_METHOD(TApp, "BasicOptionGroup", "[optiongroup]") {
     run();
     CHECK(5 == res);
     CHECK(1u == app.count_all());
+}
+
+TEST_CASE_METHOD(TApp, "OptionGroupInvalidNames", "[optiongroup]") {
+    CHECK_THROWS_AS(app.add_option_group("clusters\ncluster2", "description"), CLI::IncorrectConstruction);
+
+    std::string groupName("group1");
+    groupName += '\0';
+    groupName.append("group2");
+
+    CHECK_THROWS_AS(app.add_option_group(groupName), CLI::IncorrectConstruction);
 }
 
 TEST_CASE_METHOD(TApp, "BasicOptionGroupExact", "[optiongroup]") {

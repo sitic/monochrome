@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 3.4)
 # Note: this is a header only library. If you have an older CMake than 3.4,
 # just add the CLI11/include directory and that's all you need to do.
 
-# Make sure users don't get warnings on a tested (3.4 to 3.20) version
+# Make sure users don't get warnings on a tested (3.4 to 3.22) version
 # of CMake. For most of the policies, the new version is better (hence the change).
-# We don't use the 3.4...3.20 syntax because of a bug in an older MSVC's
+# We don't use the 3.4...3.21 syntax because of a bug in an older MSVC's
 # built-in and modified CMake 3.11
-if(${CMAKE_VERSION} VERSION_LESS 3.20)
+if(${CMAKE_VERSION} VERSION_LESS 3.22)
   cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 else()
-  cmake_policy(VERSION 3.20)
+  cmake_policy(VERSION 3.22)
 endif()
 
 set(VERSION_REGEX "#define CLI11_VERSION[ \t]+\"(.+)\"")
@@ -30,17 +30,28 @@ project(
 # Print the version number of CMake if this is the main project
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   message(STATUS "CMake ${CMAKE_VERSION}")
+
+  find_package(Doxygen)
+
+  if(CMAKE_VERSION VERSION_LESS 3.10)
+    message(STATUS "CMake 3.10+ adds Doxygen support. Update CMake to build documentation")
+  elseif(NOT Doxygen_FOUND)
+    message(STATUS "Doxygen not found, building docs has been disabled")
+  endif()
+
+  include(CTest)
+else()
+  if(NOT DEFINED BUILD_TESTING)
+    set(BUILD_TESTING OFF)
+  endif()
 endif()
 
 include(CMakeDependentOption)
 include(GNUInstallDirs)
-include(CTest)
 
 if(NOT CMAKE_VERSION VERSION_LESS 3.11)
   include(FetchContent)
 endif()
-
-find_package(Doxygen)
 
 list(APPEND force-libcxx "CMAKE_CXX_COMPILER_ID STREQUAL \"Clang\"")
 list(APPEND force-libcxx "CMAKE_SYSTEM_NAME STREQUAL \"Linux\"")
@@ -118,12 +129,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
-if(CMAKE_VERSION VERSION_LESS 3.10)
-  message(STATUS "CMake 3.10+ adds Doxygen support. Update CMake to build documentation")
-elseif(NOT Doxygen_FOUND)
-  message(STATUS "Doxygen not found, building docs has been disabled")
-endif()
-
 # Special target that adds warnings. Is not exported.
 add_library(CLI11_warnings INTERFACE)
 
@@ -154,9 +159,25 @@ add_library(CLI11::CLI11 ALIAS CLI11) # for add_subdirectory calls
 target_include_directories(CLI11 INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                                            $<INSTALL_INTERFACE:include>)
 
+if(CMAKE_VERSION VERSION_LESS 3.8)
+  # This might not be a complete list
+  target_compile_features(
+    CLI11
+    INTERFACE cxx_lambdas
+              cxx_nullptr
+              cxx_override
+              cxx_range_for
+              cxx_right_angle_brackets
+              cxx_strong_enums
+              cxx_constexpr
+              cxx_auto_type)
+else()
+  target_compile_features(CLI11 INTERFACE cxx_std_11)
+endif()
+
 # To see in IDE, headers must be listed for target
 set(header-patterns "${PROJECT_SOURCE_DIR}/include/CLI/*")
-if(NOT CMAKE_VERSION VERSION_LESS 3.12)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND NOT CMAKE_VERSION VERSION_LESS 3.12)
   list(INSERT header-patterns 0 CONFIGURE_DEPENDS)
 endif()
 
@@ -197,14 +218,14 @@ if(CLI11_INSTALL)
 
   # Make version available in the install
   install(FILES "${PROJECT_BINARY_DIR}/CLI11ConfigVersion.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CLI11")
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/CLI11")
 
   # Install the export target as a file
   install(
     EXPORT CLI11Targets
     FILE CLI11Config.cmake
     NAMESPACE CLI11::
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CLI11")
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/CLI11")
 
   # Use find_package on the installed package
   export(
@@ -254,6 +275,7 @@ if(CLI11_SINGLE_FILE)
 endif()
 
 if(CLI11_BUILD_TESTS)
+  include(CTest)
   add_subdirectory(tests)
 endif()
 

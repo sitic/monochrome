@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, University of Cincinnati, developed by Henry Schreiner
+// Copyright (c) 2017-2021, University of Cincinnati, developed by Henry Schreiner
 // under NSF AWARD 1414736 and by the respective contributors.
 // All rights reserved.
 //
@@ -269,6 +269,17 @@ TEST_CASE_METHOD(TApp, "vectorDefaults", "[optiontype]") {
     CHECK(std::vector<int>({5}) == res);
 }
 
+TEST_CASE_METHOD(TApp, "mapInput", "[optiontype]") {
+    std::map<int, std::string> vals{};
+    app.add_option("--long", vals);
+
+    args = {"--long", "5", "test"};
+
+    run();
+
+    CHECK(vals.at(5) == "test");
+}
+
 TEST_CASE_METHOD(TApp, "CallbackBoolFlags", "[optiontype]") {
 
     bool value{false};
@@ -319,8 +330,6 @@ TEST_CASE_METHOD(TApp, "pair_check", "[optiontype]") {
     std::remove(myfile.c_str());
     CHECK_THROWS_AS(run(), CLI::ValidationError);
 }
-
-// this will require that modifying the multi-option policy for tuples be allowed which it isn't at present
 
 TEST_CASE_METHOD(TApp, "pair_check_take_first", "[optiontype]") {
     std::string myfile{"pair_check_file2.txt"};
@@ -914,4 +923,77 @@ TEST_CASE_METHOD(TApp, "vectorDoubleArg", "[optiontype]") {
     run();
     CHECK(2U == cv.size());
     CHECK(2U == extras.size());
+}
+
+TEST_CASE_METHOD(TApp, "OnParseCall", "[optiontype]") {
+
+    int cnt{0};
+
+    auto *opt = app.add_option("-c",
+                               [&cnt](const CLI::results_t &) {
+                                   ++cnt;
+                                   return true;
+                               })
+                    ->expected(1, 20)
+                    ->trigger_on_parse();
+    std::vector<std::string> extras;
+    app.add_option("args", extras);
+    args = {"-c", "1", "-c", "2", "-c", "3"};
+    CHECK(opt->get_trigger_on_parse());
+    run();
+    CHECK(3 == cnt);
+}
+
+TEST_CASE_METHOD(TApp, "OnParseCallVector", "[optiontype]") {
+
+    std::vector<std::string> vec;
+
+    app.add_option("-c", vec)->trigger_on_parse();
+    args = {"-c", "1", "2", "3", "-c", "2", "-c", "3", "4", "5"};
+    run();
+    CHECK(vec.size() == 3U);
+}
+
+TEST_CASE_METHOD(TApp, "force_callback", "[optiontype]") {
+
+    int cnt{0};
+
+    auto *opt = app.add_option("-c",
+                               [&cnt](const CLI::results_t &) {
+                                   ++cnt;
+                                   return true;
+                               })
+                    ->expected(1, 20)
+                    ->force_callback()
+                    ->default_str("5");
+    std::vector<std::string> extras;
+    app.add_option("args", extras);
+    args = {};
+    CHECK(opt->get_force_callback());
+    run();
+    CHECK(1 == cnt);
+    cnt = 0;
+    args = {"-c", "10"};
+    run();
+    CHECK(1 == cnt);
+}
+
+TEST_CASE_METHOD(TApp, "force_callback2", "[optiontype]") {
+
+    int cnt{0};
+
+    app.add_option("-c", cnt)->force_callback()->default_val(5);
+    args = {};
+    run();
+    CHECK(5 == cnt);
+}
+
+TEST_CASE_METHOD(TApp, "force_callback3", "[optiontype]") {
+
+    int cnt{10};
+
+    app.add_option("-c", cnt)->force_callback();
+    args = {};
+    run();
+    CHECK(0 == cnt);
 }
