@@ -5,7 +5,7 @@
 ;
 [subrepo]
 	remote = https://github.com/tdegeus/cppcolormap.git
-	branch = master
+	branch = main
 	commit = 5e4ef0380480ebcdaa9687c3fd32b778403ec6d1
 	parent = 2db791cc19018f9baa433e50c9110b3c5ae1f522
 	method = merge
