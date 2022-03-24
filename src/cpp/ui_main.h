@@ -212,7 +212,7 @@ void show_main_ui() {
           c->reset();
         });
       }
-      ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
+//      ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
       ImGui::Unindent(10);
     }
     ImGui::TreePop();

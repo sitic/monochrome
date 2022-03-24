@@ -122,7 +122,7 @@ namespace Transformation {
     ContrastEnhancement(Recording &rec) : Base() { allocate(rec); }
 
     static inline unsigned kernel_size = 3;
-    static inline int maskVersion      = 0;
+    static inline int maskVersion      = 2;
 
     void allocate(Recording &rec) final { frame.setZero(rec.Nx(), rec.Ny()); }
 

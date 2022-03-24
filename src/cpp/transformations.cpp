@@ -110,11 +110,11 @@ namespace Transformation {
         }
       }
 
-      for (long row = 0; row < kernel_size; row++) {
-        for (long col = 0; col < kernel_size; col++) {
-          out(row, col) = mask(row, col) ? 1e3 : -1e3;
-        }
-      }
+//      for (long row = 0; row < kernel_size; row++) {
+//        for (long col = 0; col < kernel_size; col++) {
+//          out(row, col) = mask(row, col) ? 1e3 : -1e3;
+//        }
+//      }
     }
 
     void contrast_enhancement(const Eigen::MatrixXf &in,
@@ -147,11 +147,11 @@ namespace Transformation {
         }
       }
 
-      for (long row = 0; row < kernel_size; row++) {
-        for (long col = 0; col < kernel_size; col++) {
-          out(row, col) = mask(row, col) ? 1e3 : -1e3;
-        }
-      }
+//      for (long row = 0; row < kernel_size; row++) {
+//        for (long col = 0; col < kernel_size; col++) {
+//          out(row, col) = mask(row, col) ? 1e3 : -1e3;
+//        }
+//      }
     }
 
     void gauss_conv(const Eigen::MatrixXf &in,
