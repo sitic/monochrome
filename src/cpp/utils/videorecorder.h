@@ -71,33 +71,33 @@ class VideoRecorder {
     }
     glfwGetFramebufferSize(window, &width, &height);
 
-    buffer = std::vector<GLubyte>(width * height * 4ul);
+    buffer = std::vector<GLubyte>(width * height * 3ul);
 
     std::string cmd = fmt::format(
-        "ffmpeg -f rawvideo -pix_fmt rgba -framerate {fps:d} -s "
-        "{width}x{height} -i - "
-        "-y -threads 0 {encoder_args} -pix_fmt yuv420p "
+        "ffmpeg -f rawvideo -pix_fmt rgb24 -framerate {fps:d} -video_size {width}x{height} "
+        "-i - -y -threads 0 {encoder_args} -pix_fmt yuv420p "
         // ensure height and width are divisible by 2
         "-vf \"[in]vflip,scale=trunc(iw/2)*2:trunc(ih/2)*2[out]\" "
-        "-metadata title=\"{title}\" -metadata description=\"{description}\" \"{filename}\"",
+        "-metadata title=\"{title}\" -metadata description=\"{description}\" "
+        "\"{filename}\"",
         fmt::arg("fps", fps), fmt::arg("width", width), fmt::arg("height", height),
         fmt::arg("encoder_args", ffmpeg_encoder_args()), fmt::arg("title", videotitle),
         fmt::arg("description", description), fmt::arg("filename", filename));
 
-    ffmpeg = popen(cmd.c_str(), "w");
+    ffmpeg = popen(cmd.c_str(), "wb");
     if (!ffmpeg) {
-      global::new_ui_message("unable to open ffmpeg with popen(), can't record output");
+      global::new_ui_message("ERROR: Unable to open ffmpeg, please install it to create a .mp4 file.");
     }
   }
 
   void add_frame() {
     if (!ffmpeg) {
-      global::new_ui_message(
-          "VideoRecorder::start_recording has to be called before "
-          "using ::add_frame!");
+      // VideoRecorder::start_recording has to be called before using ::add_frame
+      return;
     }
 
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
+    glPixelStorei(GL_PACK_ALIGNMENT, 1); // needed when using GL_RGB
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer.data());
     fwrite(buffer.data(), sizeof(GLubyte), buffer.size(), ffmpeg);
   }
 
