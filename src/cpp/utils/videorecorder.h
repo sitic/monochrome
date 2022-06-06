@@ -2,14 +2,6 @@
 
 #ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
-
-inline FILE *popen(const char *command, const char *type) {
-  return _popen(command, type);
-}
-
-inline void pclose(FILE *file) {
-  _pclose(file);
-}
 #endif
 
 #include <stdio.h>
@@ -84,7 +76,11 @@ class VideoRecorder {
         fmt::arg("encoder_args", ffmpeg_encoder_args()), fmt::arg("title", videotitle),
         fmt::arg("description", description), fmt::arg("filename", filename));
 
-    ffmpeg = popen(cmd.c_str(), "wb");
+#ifdef _WIN32 // Needs to be "wb" for windows
+    ffmpeg = _popen(cmd.c_str(), "wb");
+#else
+    ffmpeg = popen(cmd.c_str(), "w");
+#endif
     if (!ffmpeg) {
       global::new_ui_message("ERROR: Unable to open ffmpeg, please install it to create a .mp4 file.");
     }
@@ -104,7 +100,11 @@ class VideoRecorder {
   void stop_recording() {
     if (ffmpeg) {
       fmt::print("Stopping movie recording …\n");
+#ifdef _WIN32
+      _pclose(ffmpeg);
+#else
       pclose(ffmpeg);
+#endif
       ffmpeg = nullptr;
     }
   }
