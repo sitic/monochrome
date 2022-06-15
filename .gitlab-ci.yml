@@ -1,6 +1,7 @@
 stages:
   - build
   - test
+  - deploy
 
 .gcc: &gcc
   image: registry.gitlab.com/cardiac-vision/monochrome/gcc
@@ -129,7 +130,7 @@ macos:
 #  after_script:
 #    - otool -l build/Release/monochrome | grep -A 3 LC_VERSION_MIN_MACOSX
 
-windows Release:
+windows:
   stage: build
   tags:
     - cvl-windows
@@ -138,6 +139,7 @@ windows Release:
     - cd build
     - cmake --build . --config "Release" --parallel 12
     - cd ..
+    - py -3.9 -m build --wheel
     - py -3.10 -m build --wheel
   artifacts:
     paths:
@@ -171,3 +173,21 @@ glsl:
   only:
     changes:
       - src/shaders/*
+
+upload:
+  stage: deploy
+  image: python:3.9-slim
+  script:
+    - python3.9 -m pip install twine
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python3.9 -m twine upload --repository-url https://gitlab.com/api/v4/projects/cardiac-vision%2Fpypi/packages/pypi dist/monochrome-*.whl
+  needs:
+    - job: linux_python
+      artifacts: true
+    - job: macos
+      artifacts: true
+    - job: windows
+      artifacts: true
+    - job: pytest
+      artifacts: false
+  only:
+    - master
