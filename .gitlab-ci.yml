@@ -87,12 +87,13 @@ linux_python:
     - export CCACHE_MAX_SIZE="100M"
     - ccache -s
   script:
-    - python3.9 -m build --wheel
+    - python3.9 -m build --wheel --sdist
     - mv dist/*.whl .
     - python3.9 .gitlab/convert_to_generic_platform_wheel.py monochrome-*.whl
   artifacts:
     paths:
       - dist/monochrome-*.whl
+      - dist/monochrome-*.tar.gz
     expire_in: 2 months
   cache:
     key: pip-linux
@@ -179,7 +180,7 @@ upload:
   image: python:3.9-slim
   script:
     - python3.9 -m pip install twine
-    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python3.9 -m twine upload --repository-url https://gitlab.com/api/v4/projects/cardiac-vision%2Fpypi/packages/pypi dist/monochrome-*.whl
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python3.9 -m twine upload --repository-url https://gitlab.com/api/v4/projects/cardiac-vision%2Fpypi/packages/pypi dist/monochrome-*
   needs:
     - job: linux_python
       artifacts: true
