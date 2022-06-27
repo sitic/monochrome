@@ -299,6 +299,7 @@ def show_points(points, name: Text = "", parent: Optional[Text] = None, color=No
     :param point_size: Size of points in image pixels
     :return:
     """
+    name = str(name)
     s = create_socket()
     buf = create_pointsvideo_msg(points, name, parent, color, point_size)
     s.sendall(buf)
@@ -353,6 +354,8 @@ def show_array(array: np.ndarray,
             array = array.astype(np.float32)
             dtype = ArrayDataType.FLOAT
 
+    name = str(name)
+
     if isinstance(cmap, str):
         cmap = getattr(ColorMap, cmap.upper())
     if isinstance(bitrange, str):
@@ -393,6 +396,7 @@ def show_flow(flow_uv: np.ndarray, parent: Optional[Text] = None, name: Text = "
         raise ValueError("array is not floating type")
     if flow_uv.shape[3] != 2:
         raise ValueError("flow should be of shape [T, H, W, 2]")
+    name = str(name)
 
     s = create_socket()
     shape = (flow_uv.shape[0] * 2, flow_uv.shape[1], flow_uv.shape[2])
