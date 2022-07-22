@@ -6,3 +6,4 @@ class RequestType(object):
     CLOSE = 0
     CLOSE_ALL = 1
     TRACE_POS = 2
+

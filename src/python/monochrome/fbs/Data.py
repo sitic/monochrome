@@ -13,3 +13,4 @@ class Data(object):
     Request = 7
     PointsVideo = 8
     VideoID = 9
+

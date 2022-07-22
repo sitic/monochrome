@@ -107,40 +107,37 @@ enum ColorMap : int32_t {
   ColorMap_HSV = 3,
   ColorMap_BLACKBODY = 4,
   ColorMap_VIRIDIS = 5,
-  ColorMap_MAGMA = 6,
   ColorMap_MIN = ColorMap_DEFAULT,
-  ColorMap_MAX = ColorMap_MAGMA
+  ColorMap_MAX = ColorMap_VIRIDIS
 };
 
-inline const ColorMap (&EnumValuesColorMap())[7] {
+inline const ColorMap (&EnumValuesColorMap())[6] {
   static const ColorMap values[] = {
     ColorMap_DEFAULT,
     ColorMap_GRAY,
     ColorMap_DIFF,
     ColorMap_HSV,
     ColorMap_BLACKBODY,
-    ColorMap_VIRIDIS,
-    ColorMap_MAGMA
+    ColorMap_VIRIDIS
   };
   return values;
 }
 
 inline const char * const *EnumNamesColorMap() {
-  static const char * const names[8] = {
+  static const char * const names[7] = {
     "DEFAULT",
     "GRAY",
     "DIFF",
     "HSV",
     "BLACKBODY",
     "VIRIDIS",
-    "MAGMA",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameColorMap(ColorMap e) {
-  if (flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_MAGMA)) return "";
+  if (flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_VIRIDIS)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesColorMap()[index];
 }
@@ -491,23 +488,23 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_TYPE, 4) &&
-           VerifyField<int32_t>(verifier, VT_NX, 4) &&
-           VerifyField<int32_t>(verifier, VT_NY, 4) &&
-           VerifyField<int32_t>(verifier, VT_NT, 4) &&
+           VerifyField<int32_t>(verifier, VT_TYPE) &&
+           VerifyField<int32_t>(verifier, VT_NX) &&
+           VerifyField<int32_t>(verifier, VT_NY) &&
+           VerifyField<int32_t>(verifier, VT_NT) &&
            VerifyOffset(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
-           VerifyField<float>(verifier, VT_DURATION, 4) &&
-           VerifyField<float>(verifier, VT_FPS, 4) &&
+           VerifyField<float>(verifier, VT_DURATION) &&
+           VerifyField<float>(verifier, VT_FPS) &&
            VerifyOffset(verifier, VT_DATE) &&
            verifier.VerifyString(date()) &&
            VerifyOffset(verifier, VT_COMMENT) &&
            verifier.VerifyString(comment()) &&
-           VerifyField<int32_t>(verifier, VT_BITRANGE, 4) &&
-           VerifyField<int32_t>(verifier, VT_CMAP, 4) &&
+           VerifyField<int32_t>(verifier, VT_BITRANGE) &&
+           VerifyField<int32_t>(verifier, VT_CMAP) &&
            VerifyOffset(verifier, VT_PARENT_NAME) &&
            verifier.VerifyString(parent_name()) &&
-           VerifyField<int32_t>(verifier, VT_ALPHA_TRANSFER, 4) &&
+           VerifyField<int32_t>(verifier, VT_ALPHA_TRANSFER) &&
            VerifyOffset(verifier, VT_METADATA) &&
            verifier.VerifyVector(metadata()) &&
            verifier.VerifyVectorOfTables(metadata()) &&
@@ -675,14 +672,14 @@ struct Array3MetaFlow FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_NX, 4) &&
-           VerifyField<int32_t>(verifier, VT_NY, 4) &&
-           VerifyField<int32_t>(verifier, VT_NT, 4) &&
+           VerifyField<int32_t>(verifier, VT_NX) &&
+           VerifyField<int32_t>(verifier, VT_NY) &&
+           VerifyField<int32_t>(verifier, VT_NT) &&
            VerifyOffset(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
            VerifyOffset(verifier, VT_PARENT_NAME) &&
            verifier.VerifyString(parent_name()) &&
-           VerifyField<fbs::Color>(verifier, VT_COLOR, 4) &&
+           VerifyField<fbs::Color>(verifier, VT_COLOR) &&
            verifier.EndTable();
   }
 };
@@ -727,7 +724,7 @@ inline flatbuffers::Offset<Array3MetaFlow> CreateArray3MetaFlow(
     int32_t nt = 0,
     flatbuffers::Offset<flatbuffers::String> name = 0,
     flatbuffers::Offset<flatbuffers::String> parent_name = 0,
-    const fbs::Color *color = nullptr) {
+    const fbs::Color *color = 0) {
   Array3MetaFlowBuilder builder_(_fbb);
   builder_.add_color(color);
   builder_.add_parent_name(parent_name);
@@ -745,7 +742,7 @@ inline flatbuffers::Offset<Array3MetaFlow> CreateArray3MetaFlowDirect(
     int32_t nt = 0,
     const char *name = nullptr,
     const char *parent_name = nullptr,
-    const fbs::Color *color = nullptr) {
+    const fbs::Color *color = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parent_name__ = parent_name ? _fbb.CreateString(parent_name) : 0;
   return fbs::CreateArray3MetaFlow(
@@ -772,7 +769,7 @@ struct Array3DataChunkf FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint64_t>(verifier, VT_STARTIDX, 8) &&
+           VerifyField<uint64_t>(verifier, VT_STARTIDX) &&
            VerifyOffset(verifier, VT_DATA) &&
            verifier.VerifyVector(data()) &&
            verifier.EndTable();
@@ -835,7 +832,7 @@ struct Array3DataChunku8 FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint64_t>(verifier, VT_STARTIDX, 8) &&
+           VerifyField<uint64_t>(verifier, VT_STARTIDX) &&
            VerifyOffset(verifier, VT_DATA) &&
            verifier.VerifyVector(data()) &&
            verifier.EndTable();
@@ -898,7 +895,7 @@ struct Array3DataChunku16 FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint64_t>(verifier, VT_STARTIDX, 8) &&
+           VerifyField<uint64_t>(verifier, VT_STARTIDX) &&
            VerifyOffset(verifier, VT_DATA) &&
            verifier.VerifyVector(data()) &&
            verifier.EndTable();
@@ -1013,7 +1010,7 @@ struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_TYPE, 4) &&
+           VerifyField<int32_t>(verifier, VT_TYPE) &&
            VerifyOffset(verifier, VT_ARG) &&
            verifier.VerifyString(arg()) &&
            verifier.EndTable();
@@ -1231,8 +1228,8 @@ struct PointsVideo FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyVector(points_data()) &&
            VerifyOffset(verifier, VT_TIME_IDXS) &&
            verifier.VerifyVector(time_idxs()) &&
-           VerifyField<fbs::Color>(verifier, VT_COLOR, 4) &&
-           VerifyField<float>(verifier, VT_POINT_SIZE, 4) &&
+           VerifyField<fbs::Color>(verifier, VT_COLOR) &&
+           VerifyField<float>(verifier, VT_POINT_SIZE) &&
            verifier.EndTable();
   }
 };
@@ -1276,7 +1273,7 @@ inline flatbuffers::Offset<PointsVideo> CreatePointsVideo(
     flatbuffers::Offset<flatbuffers::String> parent_name = 0,
     flatbuffers::Offset<flatbuffers::Vector<float>> points_data = 0,
     flatbuffers::Offset<flatbuffers::Vector<uint32_t>> time_idxs = 0,
-    const fbs::Color *color = nullptr,
+    const fbs::Color *color = 0,
     float point_size = 0.0f) {
   PointsVideoBuilder builder_(_fbb);
   builder_.add_point_size(point_size);
@@ -1294,7 +1291,7 @@ inline flatbuffers::Offset<PointsVideo> CreatePointsVideoDirect(
     const char *parent_name = nullptr,
     const std::vector<float> *points_data = nullptr,
     const std::vector<uint32_t> *time_idxs = nullptr,
-    const fbs::Color *color = nullptr,
+    const fbs::Color *color = 0,
     float point_size = 0.0f) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parent_name__ = parent_name ? _fbb.CreateString(parent_name) : 0;
@@ -1417,7 +1414,7 @@ struct Root FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, VT_DATA_TYPE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_DATA_TYPE) &&
            VerifyOffset(verifier, VT_DATA) &&
            VerifyData(verifier, data(), data_type()) &&
            verifier.EndTable();

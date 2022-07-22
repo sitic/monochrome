@@ -110,33 +110,43 @@ class PointsVideo(object):
             return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
         return 0.0
 
-def PointsVideoStart(builder): builder.StartObject(6)
-def Start(builder):
-    return PointsVideoStart(builder)
-def PointsVideoAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-def AddName(builder, name):
-    return PointsVideoAddName(builder, name)
-def PointsVideoAddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
-def AddParentName(builder, parentName):
-    return PointsVideoAddParentName(builder, parentName)
-def PointsVideoAddPointsData(builder, pointsData): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(pointsData), 0)
-def AddPointsData(builder, pointsData):
-    return PointsVideoAddPointsData(builder, pointsData)
-def PointsVideoStartPointsDataVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def StartPointsDataVector(builder, numElems):
-    return PointsVideoStartPointsDataVector(builder, numElems)
-def PointsVideoAddTimeIdxs(builder, timeIdxs): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(timeIdxs), 0)
-def AddTimeIdxs(builder, timeIdxs):
-    return PointsVideoAddTimeIdxs(builder, timeIdxs)
-def PointsVideoStartTimeIdxsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def StartTimeIdxsVector(builder, numElems):
-    return PointsVideoStartTimeIdxsVector(builder, numElems)
-def PointsVideoAddColor(builder, color): builder.PrependStructSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(color), 0)
-def AddColor(builder, color):
-    return PointsVideoAddColor(builder, color)
-def PointsVideoAddPointSize(builder, pointSize): builder.PrependFloat32Slot(5, pointSize, 0.0)
-def AddPointSize(builder, pointSize):
-    return PointsVideoAddPointSize(builder, pointSize)
-def PointsVideoEnd(builder): return builder.EndObject()
-def End(builder):
-    return PointsVideoEnd(builder)
+def Start(builder): builder.StartObject(6)
+def PointsVideoStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+def PointsVideoAddName(builder, name):
+    """This method is deprecated. Please switch to AddName."""
+    return AddName(builder, name)
+def AddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
+def PointsVideoAddParentName(builder, parentName):
+    """This method is deprecated. Please switch to AddParentName."""
+    return AddParentName(builder, parentName)
+def AddPointsData(builder, pointsData): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(pointsData), 0)
+def PointsVideoAddPointsData(builder, pointsData):
+    """This method is deprecated. Please switch to AddPointsData."""
+    return AddPointsData(builder, pointsData)
+def StartPointsDataVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def PointsVideoStartPointsDataVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartPointsDataVector(builder, numElems)
+def AddTimeIdxs(builder, timeIdxs): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(timeIdxs), 0)
+def PointsVideoAddTimeIdxs(builder, timeIdxs):
+    """This method is deprecated. Please switch to AddTimeIdxs."""
+    return AddTimeIdxs(builder, timeIdxs)
+def StartTimeIdxsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def PointsVideoStartTimeIdxsVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartTimeIdxsVector(builder, numElems)
+def AddColor(builder, color): builder.PrependStructSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(color), 0)
+def PointsVideoAddColor(builder, color):
+    """This method is deprecated. Please switch to AddColor."""
+    return AddColor(builder, color)
+def AddPointSize(builder, pointSize): builder.PrependFloat32Slot(5, pointSize, 0.0)
+def PointsVideoAddPointSize(builder, pointSize):
+    """This method is deprecated. Please switch to AddPointSize."""
+    return AddPointSize(builder, pointSize)
+def End(builder): return builder.EndObject()
+def PointsVideoEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)
