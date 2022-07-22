@@ -9,4 +9,4 @@ class ColorMap(object):
     HSV = 3
     BLACKBODY = 4
     VIRIDIS = 5
-
+    MAGMA = 6

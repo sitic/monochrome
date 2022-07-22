@@ -12,4 +12,3 @@ class BitRange(object):
     DIFF = 6
     PHASE = 7
     PHASE_DIFF = 8
-

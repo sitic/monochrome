@@ -6,4 +6,3 @@ class ArrayDataType(object):
     FLOAT = 0
     UINT8 = 1
     UINT16 = 2
-

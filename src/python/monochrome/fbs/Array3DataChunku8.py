@@ -58,23 +58,18 @@ class Array3DataChunku8(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         return o == 0
 
-def Start(builder): builder.StartObject(2)
-def Array3DataChunku8Start(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddStartidx(builder, startidx): builder.PrependUint64Slot(0, startidx, 0)
-def Array3DataChunku8AddStartidx(builder, startidx):
-    """This method is deprecated. Please switch to AddStartidx."""
-    return AddStartidx(builder, startidx)
-def AddData(builder, data): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
-def Array3DataChunku8AddData(builder, data):
-    """This method is deprecated. Please switch to AddData."""
-    return AddData(builder, data)
-def StartDataVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def Array3DataChunku8StartDataVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartDataVector(builder, numElems)
-def End(builder): return builder.EndObject()
-def Array3DataChunku8End(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def Array3DataChunku8Start(builder): builder.StartObject(2)
+def Start(builder):
+    return Array3DataChunku8Start(builder)
+def Array3DataChunku8AddStartidx(builder, startidx): builder.PrependUint64Slot(0, startidx, 0)
+def AddStartidx(builder, startidx):
+    return Array3DataChunku8AddStartidx(builder, startidx)
+def Array3DataChunku8AddData(builder, data): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
+def AddData(builder, data):
+    return Array3DataChunku8AddData(builder, data)
+def Array3DataChunku8StartDataVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def StartDataVector(builder, numElems):
+    return Array3DataChunku8StartDataVector(builder, numElems)
+def Array3DataChunku8End(builder): return builder.EndObject()
+def End(builder):
+    return Array3DataChunku8End(builder)

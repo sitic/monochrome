@@ -140,71 +140,54 @@ class Array3Meta(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         return o == 0
 
-def Start(builder): builder.StartObject(14)
-def Array3MetaStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddType(builder, type): builder.PrependInt32Slot(0, type, 0)
-def Array3MetaAddType(builder, type):
-    """This method is deprecated. Please switch to AddType."""
-    return AddType(builder, type)
-def AddNx(builder, nx): builder.PrependInt32Slot(1, nx, 0)
-def Array3MetaAddNx(builder, nx):
-    """This method is deprecated. Please switch to AddNx."""
-    return AddNx(builder, nx)
-def AddNy(builder, ny): builder.PrependInt32Slot(2, ny, 0)
-def Array3MetaAddNy(builder, ny):
-    """This method is deprecated. Please switch to AddNy."""
-    return AddNy(builder, ny)
-def AddNt(builder, nt): builder.PrependInt32Slot(3, nt, 0)
-def Array3MetaAddNt(builder, nt):
-    """This method is deprecated. Please switch to AddNt."""
-    return AddNt(builder, nt)
-def AddName(builder, name): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-def Array3MetaAddName(builder, name):
-    """This method is deprecated. Please switch to AddName."""
-    return AddName(builder, name)
-def AddDuration(builder, duration): builder.PrependFloat32Slot(5, duration, 0.0)
-def Array3MetaAddDuration(builder, duration):
-    """This method is deprecated. Please switch to AddDuration."""
-    return AddDuration(builder, duration)
-def AddFps(builder, fps): builder.PrependFloat32Slot(6, fps, 0.0)
-def Array3MetaAddFps(builder, fps):
-    """This method is deprecated. Please switch to AddFps."""
-    return AddFps(builder, fps)
-def AddDate(builder, date): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(date), 0)
-def Array3MetaAddDate(builder, date):
-    """This method is deprecated. Please switch to AddDate."""
-    return AddDate(builder, date)
-def AddComment(builder, comment): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(comment), 0)
-def Array3MetaAddComment(builder, comment):
-    """This method is deprecated. Please switch to AddComment."""
-    return AddComment(builder, comment)
-def AddBitrange(builder, bitrange): builder.PrependInt32Slot(9, bitrange, 0)
-def Array3MetaAddBitrange(builder, bitrange):
-    """This method is deprecated. Please switch to AddBitrange."""
-    return AddBitrange(builder, bitrange)
-def AddCmap(builder, cmap): builder.PrependInt32Slot(10, cmap, 0)
-def Array3MetaAddCmap(builder, cmap):
-    """This method is deprecated. Please switch to AddCmap."""
-    return AddCmap(builder, cmap)
-def AddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
-def Array3MetaAddParentName(builder, parentName):
-    """This method is deprecated. Please switch to AddParentName."""
-    return AddParentName(builder, parentName)
-def AddAlphaTransfer(builder, alphaTransfer): builder.PrependInt32Slot(12, alphaTransfer, 0)
-def Array3MetaAddAlphaTransfer(builder, alphaTransfer):
-    """This method is deprecated. Please switch to AddAlphaTransfer."""
-    return AddAlphaTransfer(builder, alphaTransfer)
-def AddMetadata(builder, metadata): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(metadata), 0)
-def Array3MetaAddMetadata(builder, metadata):
-    """This method is deprecated. Please switch to AddMetadata."""
-    return AddMetadata(builder, metadata)
-def StartMetadataVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def Array3MetaStartMetadataVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartMetadataVector(builder, numElems)
-def End(builder): return builder.EndObject()
-def Array3MetaEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def Array3MetaStart(builder): builder.StartObject(14)
+def Start(builder):
+    return Array3MetaStart(builder)
+def Array3MetaAddType(builder, type): builder.PrependInt32Slot(0, type, 0)
+def AddType(builder, type):
+    return Array3MetaAddType(builder, type)
+def Array3MetaAddNx(builder, nx): builder.PrependInt32Slot(1, nx, 0)
+def AddNx(builder, nx):
+    return Array3MetaAddNx(builder, nx)
+def Array3MetaAddNy(builder, ny): builder.PrependInt32Slot(2, ny, 0)
+def AddNy(builder, ny):
+    return Array3MetaAddNy(builder, ny)
+def Array3MetaAddNt(builder, nt): builder.PrependInt32Slot(3, nt, 0)
+def AddNt(builder, nt):
+    return Array3MetaAddNt(builder, nt)
+def Array3MetaAddName(builder, name): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+def AddName(builder, name):
+    return Array3MetaAddName(builder, name)
+def Array3MetaAddDuration(builder, duration): builder.PrependFloat32Slot(5, duration, 0.0)
+def AddDuration(builder, duration):
+    return Array3MetaAddDuration(builder, duration)
+def Array3MetaAddFps(builder, fps): builder.PrependFloat32Slot(6, fps, 0.0)
+def AddFps(builder, fps):
+    return Array3MetaAddFps(builder, fps)
+def Array3MetaAddDate(builder, date): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(date), 0)
+def AddDate(builder, date):
+    return Array3MetaAddDate(builder, date)
+def Array3MetaAddComment(builder, comment): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(comment), 0)
+def AddComment(builder, comment):
+    return Array3MetaAddComment(builder, comment)
+def Array3MetaAddBitrange(builder, bitrange): builder.PrependInt32Slot(9, bitrange, 0)
+def AddBitrange(builder, bitrange):
+    return Array3MetaAddBitrange(builder, bitrange)
+def Array3MetaAddCmap(builder, cmap): builder.PrependInt32Slot(10, cmap, 0)
+def AddCmap(builder, cmap):
+    return Array3MetaAddCmap(builder, cmap)
+def Array3MetaAddParentName(builder, parentName): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
+def AddParentName(builder, parentName):
+    return Array3MetaAddParentName(builder, parentName)
+def Array3MetaAddAlphaTransfer(builder, alphaTransfer): builder.PrependInt32Slot(12, alphaTransfer, 0)
+def AddAlphaTransfer(builder, alphaTransfer):
+    return Array3MetaAddAlphaTransfer(builder, alphaTransfer)
+def Array3MetaAddMetadata(builder, metadata): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(metadata), 0)
+def AddMetadata(builder, metadata):
+    return Array3MetaAddMetadata(builder, metadata)
+def Array3MetaStartMetadataVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartMetadataVector(builder, numElems):
+    return Array3MetaStartMetadataVector(builder, numElems)
+def Array3MetaEnd(builder): return builder.EndObject()
+def End(builder):
+    return Array3MetaEnd(builder)

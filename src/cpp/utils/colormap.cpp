@@ -33,6 +33,8 @@ std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
       return diff_colormapdata(0, 0.5);
     case ColorMap::VIRIDIS:
       return cppcolormap_to_std("viridis");
+    case ColorMap::MAGMA:
+      return cppcolormap_to_std("magma");
     default:
       throw std::logic_error("Unkown colormap!");
   }
