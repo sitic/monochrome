@@ -539,8 +539,8 @@ void RecordingWindow::cursor_position_callback(GLFWwindow *window, double xpos, 
   if (rec->mousebutton.holding_left) {
     int w, h;
     glfwGetWindowSize(window, &w, &h);
-    int x = rec->mousepos[0] * rec->Nx() / w;
-    int y = rec->mousepos[1] * rec->Ny() / h;
+    int x     = rec->mousepos[0] * rec->Nx() / w;
+    int y     = rec->mousepos[1] * rec->Ny() / h;
     Vec2i pos = {x, y};
 
     // if any trace point is nearby, move it to the new position
@@ -563,11 +563,11 @@ void RecordingWindow::mouse_button_callback(GLFWwindow *window, int button, int 
   auto rec = rec_from_window_ptr(window);
   if (button == GLFW_MOUSE_BUTTON_LEFT) {
     if (action == GLFW_PRESS) {
-      rec->mousebutton.holding_left = true;
+      rec->mousebutton.holding_left  = true;
       rec->mousebutton.pressing_left = true;
       rec->cursor_position_callback(window, rec->mousepos[0], rec->mousepos[1]);
     } else {
-      rec->mousebutton.holding_left = false;
+      rec->mousebutton.holding_left  = false;
       rec->mousebutton.pressing_left = false;
     }
   } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
@@ -613,15 +613,31 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
     // causes a segfault in glfw
     glfwSetWindowShouldClose(window, GLFW_TRUE);
   } else if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE) {
-    int steps = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
-    auto rec  = rec_from_window_ptr(window);
-    int t     = rec->current_frame();
-    rec->playback.set_next(t + steps);
+    int steps           = (mods & GLFW_MOD_SHIFT) ? 10 : 1;
+    bool all_recordings = !(mods & GLFW_MOD_CONTROL);
+    if (all_recordings) {
+      for (auto &rec : global::recordings) {
+        int t = rec->current_frame();
+        rec->playback.set_next(t + steps);
+      }
+    } else {
+      auto rec = rec_from_window_ptr(window);
+      int t    = rec->current_frame();
+      rec->playback.set_next(t + steps);
+    }
   } else if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE) {
-    int steps = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
-    auto rec  = rec_from_window_ptr(window);
-    int t     = rec->current_frame();
-    rec->playback.set_next(t - steps);
+    int steps           = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
+    bool all_recordings = !(mods & GLFW_MOD_CONTROL);
+    if (all_recordings) {
+      for (auto &rec : global::recordings) {
+        int t = rec->current_frame();
+        rec->playback.set_next(t - steps);
+      }
+    } else {
+      auto rec = rec_from_window_ptr(window);
+      int t    = rec->current_frame();
+      rec->playback.set_next(t - steps);
+    }
   } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
     auto rec = rec_from_window_ptr(window);
     if (rec->active) {
@@ -633,6 +649,12 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
     auto rec = rec_from_window_ptr(window);
     auto fn  = rec->save_snapshot();
     global::new_ui_message("Saved screenshot to {}", fn.string());
+  } else if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+    auto rec = rec_from_window_ptr(window);
+    int t    = rec->current_frame();
+    for (auto &r : global::recordings) {
+      r->playback.set_next(t);
+    }
   }
 }
 
