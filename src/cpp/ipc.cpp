@@ -24,33 +24,56 @@ namespace fs = ghc::filesystem;
 
 namespace {
 #if defined(ASIO_HAS_LOCAL_SOCKETS) && !defined(MC_FORCE_TCP_IPC)
+#define MC_USE_LOCAL_SOCKETS
   using IpcProtocol = asio::local::stream_protocol;
+#else
+  using IpcProtocol = asio::ip::tcp;
+#endif
 
   IpcProtocol::endpoint ipc_client_endpoint() {
+#if defined(MC_USE_LOCAL_SOCKETS)
 #ifdef __APPLE__  // OSX doesn't support abstract UNIX domain sockets
     std::string ep = std::string("/tmp/Monochrome.s");
 #else
     std::string ep = std::string({'\0'}) + std::string("Monochrome");
 #endif
     return IpcProtocol::endpoint(ep);
-  }
-
-  IpcProtocol::endpoint ipc_host_endpoint() { return ipc_client_endpoint(); }
 #else
-  using IpcProtocol = asio::ip::tcp;
-
-  IpcProtocol::endpoint ipc_client_endpoint() {
     return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
-  }
-
-  IpcProtocol::endpoint ipc_host_endpoint() {
-    // accept connections from all hosts
-    //return IpcProtocol::endpoint(IpcProtocol::v4(), global::tcp_port);
-
-    // accept connections from localhost
-    return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
-  }
 #endif
+  }
+
+  class IpcHostEndpoint {
+    bool connected_ = false;
+
+   public:
+    IpcHostEndpoint() = default;
+
+    ~IpcHostEndpoint() {
+#if defined(MC_USE_LOCAL_SOCKETS) && defined(__APPLE__)
+      if (connected_) {
+        fs::path path = ipc_client_endpoint().path();
+        fs::remove(path);
+      }
+#endif
+    }
+
+    void connected() {
+      connected_ = true;
+    }
+
+    IpcProtocol::endpoint get() {
+#if defined(MC_USE_LOCAL_SOCKETS)
+      return ipc_client_endpoint();
+#else
+      // accept connections from all hosts
+      //return IpcProtocol::endpoint(IpcProtocol::v4(), global::tcp_port);
+
+      // accept connections from localhost
+      return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+#endif
+    }
+  };
 
   struct Array3Msg {
     std::size_t counter = 0;
@@ -347,8 +370,8 @@ namespace {
 
   class IpcServer {
    public:
-    IpcServer(const IpcProtocol::endpoint& endpoint)
-        : acceptor_(io_context_, endpoint), socket_(io_context_) {
+    IpcServer() : ep_(), acceptor_(io_context_, ep_.get()), socket_(io_context_) {
+      ep_.connected();
       do_accept();
     }
 
@@ -369,6 +392,7 @@ namespace {
       });
     }
 
+    IpcHostEndpoint ep_;
     asio::io_context io_context_;
     IpcProtocol::acceptor acceptor_;
     IpcProtocol::socket socket_;
@@ -382,11 +406,10 @@ void ipc::start_server() {
   assert(!ipc_server);
 
   try {
-    auto endpoint = ipc_host_endpoint();
-    ipc_server    = std::make_unique<IpcServer>(endpoint);
+    ipc_server = std::make_unique<IpcServer>();
     std::thread([]() { ipc_server->run(); }).detach();
   } catch (const asio::system_error& error) {
-    fmt::print("Error starting tcp server {}: {}\n", error.code().value(), error.code().message());
+    fmt::print("Error starting IPC server {}: {}\n", error.code().value(), error.code().message());
   }
 }
 
@@ -403,7 +426,7 @@ bool ipc::is_another_instance_running() {
   try {
     socket.connect(endpoint);
     return true;
-  } catch (const asio::system_error& ) {
+  } catch (const asio::system_error&) {
     return false;
   }
 }
