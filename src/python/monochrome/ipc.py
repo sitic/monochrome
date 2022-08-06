@@ -1,3 +1,4 @@
+import os
 import socket
 import subprocess
 import sys
@@ -27,7 +28,7 @@ USE_TCP = sys.platform in ['win32', 'cygwin']
 TCP_IP, TCP_PORT = '127.0.0.1', 4864
 # OSX doesn't support abstract UNIX domain sockets
 ABSTRACT_DOMAIN_SOCKET_SUPPORTED = sys.platform != 'darwin'
-SOCK_PATH = '\0Monochrome' if ABSTRACT_DOMAIN_SOCKET_SUPPORTED else '/tmp/Monochrome.s'
+SOCK_PATH = f'\0Monochrome{os.getuid()}' if ABSTRACT_DOMAIN_SOCKET_SUPPORTED else f'/tmp/Monochrome{os.getuid()}.s'
 MAX_BUFFER_SIZE = 16352
 
 

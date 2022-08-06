@@ -18,11 +18,28 @@ namespace fs = std::filesystem;
 namespace fs = ghc::filesystem;
 #endif
 
+#ifndef WIN32
+#include <unistd.h>
+#endif
+
 #include "ipc.h"
 
 #include "message_generated.h"
 
 namespace {
+  std::string get_userid() {
+#ifdef WIN32
+//    char user_name[UNLEN + 1];
+//    DWORD user_name_size = sizeof(user_name);
+//    if (GetUserName(user_name, &user_name_size))
+//      return std::string(user_name, user_name_size);
+//    else
+    return "";
+#else
+    return fmt::format("{}", getuid());
+#endif
+  }
+
 #if defined(ASIO_HAS_LOCAL_SOCKETS) && !defined(MC_FORCE_TCP_IPC)
 #define MC_USE_LOCAL_SOCKETS
   using IpcProtocol = asio::local::stream_protocol;
@@ -33,9 +50,9 @@ namespace {
   IpcProtocol::endpoint ipc_client_endpoint() {
 #if defined(MC_USE_LOCAL_SOCKETS)
 #ifdef __APPLE__  // OSX doesn't support abstract UNIX domain sockets
-    std::string ep = std::string("/tmp/Monochrome.s");
+    std::string ep = fmt::format("/tmp/Monochrome{}.s", get_userid());
 #else
-    std::string ep = std::string({'\0'}) + std::string("Monochrome");
+    std::string ep = std::string({'\0'}) + std::string("Monochrome") + get_userid();
 #endif
     return IpcProtocol::endpoint(ep);
 #else
