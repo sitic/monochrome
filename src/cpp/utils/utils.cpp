@@ -80,6 +80,9 @@ void add_window_icon(GLFWwindow* window) {
 }
 
 void glfw_error_callback(int error, const char* description) {
+  if (std::string(description) == "Cocoa: Regular windows do not have icons on macOS"){
+    return;
+  }
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
