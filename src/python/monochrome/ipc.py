@@ -71,6 +71,8 @@ def _create_socket():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((TCP_IP, TCP_PORT))
     else:
+        if not ABSTRACT_DOMAIN_SOCKET_SUPPORTED and not Path(SOCK_PATH).exists():
+            raise ConnectionRefusedError("No socket found, please start Monochrome")
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.connect(SOCK_PATH)
     return s

@@ -14,8 +14,7 @@ import numpy as np
 import monochrome as mc
 
 # Do want to mock the server? Check if we are in a CI server or if env 'HEADLESS' is set
-HEADLESS_TEST = ("pytest" in sys.modules or os.getenv('HEADLESS')
-                 or (os.name == 'posix' and "DISPLAY" not in os.environ))
+HEADLESS_TEST = "pytest" in sys.modules or os.getenv('HEADLESS')
 
 if HEADLESS_TEST:
     patcher.start()
