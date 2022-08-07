@@ -65,6 +65,9 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
     parent->add_flow(rec);
   } else {
     auto rec = std::make_shared<RecordingWindow>(file);
+    if (!global::recordings.empty()) {
+      rec->playback.synchronize_with(global::recordings.back()->playback);
+    }
     global::recordings.push_back(rec);
     rec->open_window();
 
@@ -81,9 +84,10 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
       } else {
         global::merge_queue.push({rec, parent, false});
       }
-    } else if (global::recordings.size() / 3 + 1 != prm::main_window_multipier) {
+    } else if (auto num_recs = global::recordings.size();
+               num_recs / 3 + 1 != prm::main_window_multipier) {
       // TODO: this should be removed in the UI rewrite
-      prm::main_window_multipier = global::recordings.size() / 3 + 1;
+      prm::main_window_multipier = num_recs / 3 + 1;
       prm::main_window_multipier = std::clamp(prm::main_window_multipier, 1, 3);
       glfwSetWindowSize(global::main_window, prm::main_window_multipier * prm::main_window_width,
                         prm::main_window_height);
