@@ -66,7 +66,7 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
   } else {
     auto rec = std::make_shared<RecordingWindow>(file);
     if (!global::recordings.empty()) {
-      rec->playback.synchronize_with(global::recordings.back()->playback);
+      rec->playback.synchronize_with(global::recordings.back()->playback, false);
     }
     global::recordings.push_back(rec);
     rec->open_window();
