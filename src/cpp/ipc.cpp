@@ -67,16 +67,21 @@ namespace {
     IpcHostEndpoint() = default;
 
     ~IpcHostEndpoint() {
-#if defined(MC_USE_LOCAL_SOCKETS) && defined(__APPLE__)
-      if (connected_) {
-        fs::path path = ipc_client_endpoint().path();
-        fs::remove(path);
-      }
-#endif
+      disconnected();
     }
 
     void connected() {
       connected_ = true;
+    }
+
+    void disconnected() {
+#if defined(MC_USE_LOCAL_SOCKETS) && defined(__APPLE__)
+      if (connected_) {
+        fs::path path = ipc_client_endpoint().path();
+        fs::remove(path);
+        connected_ = false;
+      }
+#endif
     }
 
     IpcProtocol::endpoint get() {
@@ -333,6 +338,7 @@ namespace {
     }
 
     void handle_datachunk_message(const fbs::Request* raw) {
+      // TODO: implement
       if (!raw) {
         fmt::print("Error parsing flatbuffer\n");
         return;
@@ -394,7 +400,10 @@ namespace {
 
     void run() { io_context_.run(); }
 
-    void stop() { io_context_.stop(); }
+    void stop() {
+      io_context_.stop();
+      ep_.disconnected();
+    }
 
    private:
     void do_accept() {

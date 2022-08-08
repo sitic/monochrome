@@ -111,11 +111,21 @@ set(SOURCES
         src/cpp/utils/videorecorder.h
 )
 
-if(APPLE AND NOT SKBUILD)
-    set(MACOSX_BUNDLE_ICON_FILE MultiRecorderVideo.icns)
-    set(myApp_ICON ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns)
-    set_source_files_properties(${myApp_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    add_executable(Monochrome MACOSX_BUNDLE ${myApp_ICON} ${SOURCES})
+if(APPLE)
+    set(SOURCES ${SOURCES}
+        src/cpp/macOS/GLFWCustomDelegate.h
+        src/cpp/macOS/GLFWCustomDelegate.mm
+    )
+    set(MONOCHROME_ICONS
+        ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns
+        ${PROJECT_SOURCE_DIR}/vendor/npy-logo.icns
+    )
+    set_source_files_properties(${MONOCHROME_ICONS} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    add_executable(Monochrome ${MONOCHROME_ICONS} ${SOURCES})
+    set_target_properties(Monochrome PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/vendor/Info.plist
+    )
 elseif(MSVC AND NOT SKBUILD)
     add_executable(Monochrome WIN32 ${SOURCES} ${PROJECT_SOURCE_DIR}/vendor/Monochrome.rc)
     target_compile_definitions(Monochrome PRIVATE USE_WIN32_MAIN)

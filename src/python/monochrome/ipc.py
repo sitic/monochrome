@@ -20,9 +20,12 @@ from .fbs.DictEntry import (DictEntryAddKey, DictEntryAddVal, DictEntryEnd,
                             DictEntryStart)
 from .fbs.TransferFunction import TransferFunction
 
-MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome'
 if sys.platform == 'win32':
-    MONOCHROME_BIN_PATH = MONOCHROME_BIN_PATH.with_suffix('.exe')
+    MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome.exe'
+elif sys.platform == 'darwin':
+    MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'Monochrome.app'
+else:
+    MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome'
 
 USE_TCP = sys.platform in ['win32', 'cygwin']
 TCP_IP, TCP_PORT = '127.0.0.1', 4864
@@ -38,8 +41,10 @@ def start_monochrome(speed: Optional[float] = None,
                      fliph: bool = False,
                      flipv: bool = False,
                      **kwargs):
-    assert MONOCHROME_BIN_PATH.exists()
-    args = [str(MONOCHROME_BIN_PATH)]
+    if sys.platform != 'darwin':
+        args = [str(MONOCHROME_BIN_PATH)]
+    else:
+        args = ['open', '-a', str(MONOCHROME_BIN_PATH), '--args']
     if speed:
         args.append('--speed')
         args.append(str(speed))
@@ -60,8 +65,10 @@ def start_monochrome(speed: Optional[float] = None,
 
 
 def console_entrypoint():
-    assert MONOCHROME_BIN_PATH.exists()
-    args = [str(MONOCHROME_BIN_PATH)]
+    if sys.platform != 'darwin':
+        args = [str(MONOCHROME_BIN_PATH)]
+    else:
+        args = ['open', '-a', str(MONOCHROME_BIN_PATH), '--args']
     args.extend(sys.argv[1:])
     subprocess.Popen(args).wait()
 
