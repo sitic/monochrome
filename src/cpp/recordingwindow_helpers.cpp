@@ -21,8 +21,9 @@ std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
 }
 RecordingPlaybackCtrl &RecordingPlaybackCtrl::operator=(const RecordingPlaybackCtrl &other) {
   synchronize_with(other, true);
+  return *this;
 }
-void RecordingPlaybackCtrl::synchronize_with(const RecordingPlaybackCtrl& other, bool warn) {
+void RecordingPlaybackCtrl::synchronize_with(const RecordingPlaybackCtrl &other, bool warn) {
   if (other.length_ != length_) {
     if (warn && length_ > 1)
       global::new_ui_message(
