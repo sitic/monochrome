@@ -356,7 +356,7 @@ void RecordingWindow::display(Filters prefilter,
       if (crec->active) crec->display(prefilter, transformation, postfilter);
     }
     glfwMakeContextCurrent(window);
-    glClear(GL_COLOR_BUFFER_BIT);
+    //    glClear(GL_COLOR_BUFFER_BIT);
     glfwMakeContextCurrent(glcontext);
   }
 
