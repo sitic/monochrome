@@ -89,7 +89,9 @@ class NpyFile : public AbstractFile {
         _is_flow = false;
       } else if (header.shape.size() == 4) {
         if (header.shape[3] != 2 || dataType != PixelDataFormat::FLOAT) {
-          _error_msg = "Flow fields have to be of shape [T, H, W, 2]";
+          _error_msg =
+              fmt::format("Unsupported array dimenensions ({}, {}, {}, {})", header.shape[0],
+                          header.shape[1], header.shape[2], header.shape[3]);
           return;
         }
         _nt      = 2 * header.shape[1];

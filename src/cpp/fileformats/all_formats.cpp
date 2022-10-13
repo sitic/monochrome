@@ -22,17 +22,20 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
       file = std::make_shared<BmpFile>(path);
     }
   } else {
-    global::new_ui_message("ERROR: '{}' does has unknown extension. Only .dat and .npy are supported",
-                           path.string());
+    global::new_ui_message(
+        "ERROR: Unable to load file, it has an unknown extension. Only .dat and .npy are "
+        "supported.\nFile: {}",
+        path.string());
     return nullptr;
   }
 
   if (file && !file->good()) {
     if (!file->error_msg().empty()) {
-      global::new_ui_message("ERROR: loading file '{}' has failed with error message: {}",
-                             path.string(), file->error_msg());
+      global::new_ui_message("ERROR: file loading failed: \"{}\"\nFile: {}", file->error_msg(),
+                             path.string());
     } else {
-      global::new_ui_message("ERROR: loading file '{}' has failed with unkown error");
+      global::new_ui_message("ERROR: file loading has failed with unknown error.\nFile: {}",
+                             path.string());
     }
     return nullptr;
   }
