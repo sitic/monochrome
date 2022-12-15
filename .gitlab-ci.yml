@@ -82,6 +82,7 @@ linux_python:
     - yum install -y libXinerama-devel libXrandr-devel libXcursor-devel libXi-devel ninja-build ccache
     - export PIP_CACHE_DIR=`pwd`/.pip_cache
     - python3.9 -m pip install build wheeltools
+    - python3.9 -m pip install "wheel<=0.38.0"
     - export CCACHE_DIR=`pwd`/.ccache
     - export CCACHE_SLOPPINESS="file_macro,pch_defines,time_macros"
     - export CCACHE_MAX_SIZE="100M"
