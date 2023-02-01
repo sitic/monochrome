@@ -118,7 +118,7 @@ class MultRecDatImport():
                 self.nframes = self.readNFrames
             else:
                 self.nframes -= self.skipNFrames
-            self.nframes = np.int32(np.floor(self.nframes / self.subsK))
+            self.nframes = np.int64(np.floor(self.nframes / self.subsK))
 
             self.data = np.squeeze(self.read_frames(f))
 
@@ -144,8 +144,8 @@ class MultRecDatImport():
         f.seek(0)
         arr = np.memmap(
             f, np.byte, mode='r', offset=offset,
-            shape=(self.sx * self.sy * bs +
-                   self.skipAfterEachFrame) * self.nframes * self.subsK)
+            shape=((self.sx * self.sy * bs +
+                   self.skipAfterEachFrame) * self.nframes * self.subsK, 1))
         # import code
         # code.interact(local=locals())
         arr = np.ndarray((self.nframes, self.cropWidth,
