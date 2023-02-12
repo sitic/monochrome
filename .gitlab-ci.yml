@@ -192,4 +192,4 @@ upload:
     - job: pytest
       artifacts: false
   only:
-    - master
+    - tags
