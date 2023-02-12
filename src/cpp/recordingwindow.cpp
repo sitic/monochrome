@@ -3,6 +3,7 @@
 #include <cmrc/cmrc.hpp>
 #include "recordingwindow.h"
 #include "globals.h"
+#include "keybindings.h"
 
 CMRC_DECLARE(rc);
 
@@ -608,52 +609,7 @@ void RecordingWindow::close_callback(GLFWwindow *window) {
 }
 
 void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-  if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_PRESS) {
-    // Don't call RecordingWindow::close_callback() directly here,
-    // causes a segfault in glfw
-    glfwSetWindowShouldClose(window, GLFW_TRUE);
-  } else if ((key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT) && action != GLFW_RELEASE) {
-    auto set_playback = [](auto &rec, int steps) {
-      int t = rec->current_frame();
-      rec->playback.set_next(t + steps);
-      for (auto &c : rec->children) {
-        c->playback.set_next(t + steps);
-      }
-    };
-
-    int steps = (mods & GLFW_MOD_SHIFT) ? 10 : 1;
-    if (key == GLFW_KEY_LEFT) {
-      steps *= -1;
-    }
-
-    bool all_recordings = !(mods & GLFW_MOD_CONTROL);
-
-    if (all_recordings) {
-      for (auto &rec : global::recordings) {
-        set_playback(rec, steps);
-      }
-    } else {
-      auto rec = rec_from_window_ptr(window);
-      set_playback(rec, steps);
-    }
-  } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-    auto rec = rec_from_window_ptr(window);
-    if (rec->active) {
-      prm::playbackCtrl.toggle_play_pause();
-    } else {
-      rec->active = true;
-    }
-  } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-    auto rec = rec_from_window_ptr(window);
-    auto fn  = rec->save_snapshot();
-    global::new_ui_message("Saved screenshot to {}", fn.string());
-  } else if (key == GLFW_KEY_S && action == GLFW_PRESS) {
-    auto rec = rec_from_window_ptr(window);
-    int t    = rec->current_frame();
-    for (auto &r : global::recordings) {
-      r->playback.set_next(t);
-    }
-  }
+  global::common_key_callback(window, key, scancode, action, mods, rec_from_window_ptr(window));
 }
 
 void RecordingWindow::start_recording(const fs::path &filename, int fps, std::string description) {

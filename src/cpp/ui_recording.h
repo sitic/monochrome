@@ -235,8 +235,9 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
   ImGui::SetNextItemWidth(-1);
   if (ImGui::SliderInt("##progress", &t, 0, rec->length() - 1, "Frame %d")) {
-    if (t < rec->length()) {
-      rec->playback.set_next(t);
+    rec->playback.set_next(t);
+    for (auto &c : rec->children) {
+      c->playback.set_next(t);
     }
   }
   ImGui::PopStyleColor(1);

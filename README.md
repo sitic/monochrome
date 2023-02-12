@@ -2,6 +2,25 @@
 
 This is a simple viewer to play MultiRecorder and binary files. Drag & drop the file into the window or pass the paths as arguments.
 
+## Key Bindings
+
+| Keybinding | Action |
+| --- | --- |
+| `Ctrl + q` | Quit Monochrome |
+| `Esc` or `q` | Close focused recording |
+| `Space` | Play/Pause |
+| `Up` | Increase playback speed |
+| `Down` | Decrease playback speed |
+| `0` or `r` | Reset to beginning |
+| `Left` | Previous frame |
+| `Right` | Next frame |
+| `Shift + Left` | Previous frame (10x) |
+| `Shift + Right` | Next frame (10x) |
+| `p` | Save screenshot of focused recording |
+| `s` | Sync playback of all recordings |
+| `Ctrl + Left (+ Shift)` | Previous frame in focused recording only |
+| `Ctrl + Right (+ Shift)` | Next frame in focused recording only |
+
 ## Python Quickstart
 
 To install Monochrome with Python integration run the following command on Linux or macOS:

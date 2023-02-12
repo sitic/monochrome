@@ -90,6 +90,8 @@ set(SOURCES
         src/cpp/recordingwindow_helpers.h
         src/cpp/transformations.cpp
         src/cpp/transformations.h
+        src/cpp/keybindings.cpp
+        src/cpp/keybindings.h
 
         src/cpp/fileformats/AbstractFile.h
         src/cpp/fileformats/all_formats.cpp

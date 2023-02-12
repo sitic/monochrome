@@ -28,6 +28,14 @@ struct PlaybackCtrl {
     if (old_val > 0) val = 0;
   }
 
+  void increase_speed() {
+    val *= 2;
+  }
+
+  void deacrease_speed() {
+    val /= 2;
+  }
+
  private:
   float old_val = 0;
 };

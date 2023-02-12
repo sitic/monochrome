@@ -24,14 +24,14 @@ void show_main_ui() {
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_BACKWARD)) {
-        prm::playbackCtrl.val /= 2;
+        prm::playbackCtrl.deacrease_speed();
       }
       ImGui::SameLine();
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
       ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20, "playback speed = %.2f");
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FORWARD)) {
-        prm::playbackCtrl.val *= 2;
+        prm::playbackCtrl.increase_speed();
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FAST_FORWARD)) {

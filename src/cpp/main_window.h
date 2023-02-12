@@ -20,6 +20,7 @@
 #include "globals.h"
 #include "recordingwindow.h"
 #include "ui.h"
+#include "keybindings.h"
 
 namespace global {
   GLFWwindow *main_window = nullptr;
@@ -237,31 +238,6 @@ void display_loop() {
   }
 }
 
-void main_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-  if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_Q && action == GLFW_PRESS) {
-    glfwSetWindowShouldClose(window, GLFW_TRUE);
-  } else if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE) {
-    int steps = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
-    for (const auto &rec : global::recordings) {
-      int t = rec->current_frame();
-      rec->playback.set_next(t + steps);
-    }
-  } else if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE) {
-    int steps = (mods == GLFW_MOD_SHIFT) ? 10 : 1;
-    for (const auto &rec : global::recordings) {
-      int t = rec->current_frame();
-      rec->playback.set_next(t - steps);
-    }
-  } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-    prm::playbackCtrl.toggle_play_pause();
-  } else if (key == GLFW_KEY_R && action == GLFW_PRESS) {
-    for (const auto &rec : global::recordings) {
-      rec->playback.set_next(0);
-    }
-  }
-}
-
-
 void open_main_window(float font_scale = 0) {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit()) exit(EXIT_FAILURE);
@@ -301,7 +277,10 @@ void open_main_window(float font_scale = 0) {
     exit(EXIT_FAILURE);
   }
 
-  ImGuiConnector::Init(global::main_window, primary_monitor, font_scale, main_key_callback);
+  auto key_callback = [](GLFWwindow *window, int key, int scancode, int action, int mods) {
+    global::common_key_callback(window, key, scancode, action, mods);
+  };
+  ImGuiConnector::Init(global::main_window, primary_monitor, font_scale, key_callback);
 
   add_window_icon(global::main_window);
 
