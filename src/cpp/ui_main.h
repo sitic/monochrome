@@ -1,7 +1,7 @@
 void show_main_ui() {
   ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-  ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0),
-                                      ImVec2(prm::main_window_width, FLT_MAX));
+  ImGui::SetNextWindowSizeConstraints(ImVec2(ImGui::GetMainViewport()->Size[0], 0),
+                                      ImVec2(ImGui::GetMainViewport()->Size[0], FLT_MAX));
   auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize |
                ImGuiWindowFlags_NoSavedSettings;
   ImGui::Begin("Drag & drop .dat or .npy files into this window", nullptr, flags);

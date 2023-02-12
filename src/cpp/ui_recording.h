@@ -48,7 +48,7 @@ void display_recording_metadata(const SharedRecordingPtr &rec) {
   ImGui::Columns(1);
 }
 
-bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *parent){
+bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   if (!parent) {
     if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
       auto &ctrl         = rec->export_ctrl.raw;
@@ -107,7 +107,7 @@ bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *p
 
 void display_histogram(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   // Histogram and other controls
-  ImGui::PushItemWidth(prm::main_window_width * 0.7f);
+  ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
   ImGui::PlotHistogram("##histogram", rec->histogram.data.data(), rec->histogram.data.size(), 0,
                        nullptr, 0, rec->histogram.max_value(), ImVec2(0, 100));
   ImGui::SameLine();
@@ -197,11 +197,15 @@ void display_histogram(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow *parent = nullptr) {
   auto name = fmt::format("{}###{}", rec->name(), static_cast<void *>(rec.get()));
   if (!parent) {
-    int x           = std::clamp(rec_nr / 3, 0, prm::main_window_multipier - 1);
-    float y         = (rec_nr % 3) * 0.3f + 0.2f * (x == 0);
-    auto window_pos = ImVec2(x * prm::main_window_width, y * prm::main_window_height);
+    // TODO: a GUI rewrite should be done to make this more elegant
+    int x        = std::clamp(rec_nr / 3, 0, prm::main_window_multipier - 1);
+    float y      = (rec_nr % 3) * 0.3f + 0.2f * (x == 0);
+    auto vp_size = ImGui::GetMainViewport()->Size;
+    vp_size[0] /= static_cast<float>(prm::main_window_multipier);
+    auto window_pos    = ImVec2(x * vp_size[0], y * vp_size[1]);
+    float window_width = vp_size[0];
     ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(prm::main_window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::SetNextWindowCollapsed(!rec->active, ImGuiCond_Always);
     if (ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
       if (!rec->active) {

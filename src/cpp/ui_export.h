@@ -21,8 +21,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
    * Export array to .npy or .dat file
    */
   if (auto &ctrl = recording->export_ctrl.raw; ctrl.export_window) {
-    ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
-                                        ImVec2(prm::main_window_width, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.7f * ImGui::GetMainViewport()->Size[0], 0),
+                                        ImVec2(ImGui::GetMainViewport()->Size[0], FLT_MAX));
     ImGui::Begin("Export Raw ROI", &(ctrl.export_window), ImGuiWindowFlags_AlwaysAutoResize);
 
     bool refresh = ImGui::InputInt2("Top Left Position", ctrl.start.data());
@@ -74,8 +74,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
    * Export frames as video
    */
   if (auto &ctrl = recording->export_ctrl.video; ctrl.export_window) {
-    ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
-                                        ImVec2(prm::main_window_width, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.7f * ImGui::GetMainViewport()->Size[0], 0),
+                                        ImVec2(ImGui::GetMainViewport()->Size[0], FLT_MAX));
     ImGui::Begin("Export Video", &(ctrl.export_window));
     ImGui::TextWrapped(
         "Export the recording window as an .mp4 file. "
@@ -113,8 +113,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
    * Export frame(s) as png(s)
    */
   if (auto &ctrl = recording->export_ctrl.png; ctrl.export_window) {
-    ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
-                                        ImVec2(prm::main_window_width, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.7f * ImGui::GetMainViewport()->Size[0], 0),
+                                        ImVec2(ImGui::GetMainViewport()->Size[0], FLT_MAX));
     ImGui::Begin("Export .png", &ctrl.export_window);
     ImGui::InputText("Directory", &export_dir);
     ImGui::InputText("Filename", &ctrl.filename);
@@ -147,8 +147,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
    * Export trace as txt file
    */
   if (auto &ctrl = recording->export_ctrl.trace; ctrl.export_window) {
-    ImGui::SetNextWindowSizeConstraints(ImVec2(0.75f * prm::main_window_width, 0),
-                                        ImVec2(prm::main_window_width, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.7f * ImGui::GetMainViewport()->Size[0], 0),
+                                        ImVec2(ImGui::GetMainViewport()->Size[0], FLT_MAX));
     ImGui::Begin("Save Trace", &ctrl.export_window);
     ImGui::InputText("Directory", &export_dir);
     ImGui::InputText("Filename", &ctrl.filename);

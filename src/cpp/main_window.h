@@ -90,8 +90,9 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
       // TODO: this should be removed in the UI rewrite
       prm::main_window_multipier = num_recs / 3 + 1;
       prm::main_window_multipier = std::clamp(prm::main_window_multipier, 1, 3);
-      glfwSetWindowSize(global::main_window, prm::main_window_multipier * prm::main_window_width,
-                        prm::main_window_height);
+      glfwSetWindowSize(global::main_window,
+                        prm::main_window_multipier * ImGui::GetMainViewport()->Size[0],
+                        ImGui::GetMainViewport()->Size[1]);
     }
   }
 }
@@ -166,7 +167,7 @@ void show_messages() {
   for (auto &msg : global::messages) {
     if (msg.show) {
       auto label = fmt::format("Message {}", msg.id);
-      ImGui::SetNextWindowSizeConstraints(ImVec2(0.6f * prm::main_window_width, 0),
+      ImGui::SetNextWindowSizeConstraints(ImVec2(0.4f * ImGui::GetMainViewport()->Size[0], 0),
                                           ImVec2(FLT_MAX, FLT_MAX));
       ImGui::Begin(label.c_str(), &(msg.show), ImGuiWindowFlags_AlwaysAutoResize);
       ImGui::TextWrapped("%s", msg.msg.c_str());
