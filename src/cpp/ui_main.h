@@ -28,7 +28,7 @@ void show_main_ui() {
       }
       ImGui::SameLine();
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
-      ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20, "playback speed = %.2f");
+      ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20, "Playback Speed = %.2f");
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_FORWARD)) {
         prm::playbackCtrl.increase_speed();
@@ -53,7 +53,7 @@ void show_main_ui() {
       ImGui::SameLine();
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
       if (ImGui::DragFloat("##scaling", &RecordingWindow::scale_fct, 0.05, 0.5, 10,
-                           "window scaling = %.1f")) {
+                           "Window Scaling = %.1f")) {
         resize_windows = true;
       }
       ImGui::SameLine();
@@ -68,39 +68,13 @@ void show_main_ui() {
       }
     }
 
-    ImGui::NextColumn();
-    {
-      int trace_width = Trace::width();
-      if (ImGui::InputInt("ROI Width", &trace_width, 2, 5)) {
-        Trace::width(trace_width);
-      }
-    }
-
-    ImGui::NextColumn();
-    {
-      ImGui::Text("Image Flip");
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) RecordingWindow::flipud();
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_MDI_FLIP_HORIZONTAL)) RecordingWindow::fliplr();
-      ImGui::SameLine();
-      ImGui::Text("Rotate");
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) RecordingWindow::add_rotation(-90);
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) RecordingWindow::add_rotation(90);
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_FA_REMOVE_FORMAT)) RecordingWindow::set_rotation(0);
-    }
-
-    ImGui::NextColumn();
-    { ImGui::SliderInt("Trace Length", &prm::trace_length, 10, prm::max_trace_length); }
+    ImGui::Separator();
 
     ImGui::NextColumn();
     {
       int max_display_fps = prm::display_fps;
-      auto label = fmt::format("Max FPS (current avg. {:.0f}fps)###dfps", ImGui::GetIO().Framerate);
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
+      auto label = fmt::format("Display FPS (avg: {:.0f} FPS)###dfps", ImGui::GetIO().Framerate);
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
       if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
         if (ImGui::IsItemDeactivated() && max_display_fps > 0) {
           prm::display_fps   = max_display_fps;
@@ -108,6 +82,38 @@ void show_main_ui() {
         }
       }
     }
+
+    ImGui::NextColumn();
+    {
+      ImGui::AlignTextToFramePadding();
+      ImGui::Text("Rotate");
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) RecordingWindow::add_rotation(-90);
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) RecordingWindow::add_rotation(90);
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_REMOVE_FORMAT)) RecordingWindow::set_rotation(0);
+      ImGui::SameLine();
+      ImGui::Text("Image Flip");
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) RecordingWindow::flipud();
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_MDI_FLIP_HORIZONTAL)) RecordingWindow::fliplr();
+    }
+
+    ImGui::Separator();
+
+    ImGui::NextColumn();
+    {
+      int trace_width = Trace::width();
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
+      if (ImGui::InputInt("ROI Width", &trace_width, 2, 5)) {
+        Trace::width(trace_width);
+      }
+    }
+
+    ImGui::NextColumn();
+    { ImGui::SliderInt("Trace Length", &prm::trace_length, 10, prm::max_trace_length); }
 
     ImGui::Columns(1);
   }
