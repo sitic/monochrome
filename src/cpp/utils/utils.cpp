@@ -25,7 +25,8 @@ namespace {
 
 std::string config_file_path() {
 #ifdef _WIN32
-  return "%APPDATA%\\Monochrome\\Monochrome.ini";
+  char* appdata = getenv("APPDATA");
+  return fmt::format("{}\\Monochrome\\Monochrome.ini", appdata);
 #elif defined(__unix__) || defined(__unix) || defined(__APPLE__)
   return fmt::format("{}/.config/Monochrome.ini", get_user_homedir());
 #else
