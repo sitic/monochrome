@@ -52,7 +52,7 @@ namespace global {
       if (key == GLFW_KEY_LEFT) {
         steps *= -1;
       }
-      bool current_recording_only = !(mods & GLFW_MOD_CONTROL);
+      bool current_recording_only = (mods & GLFW_MOD_CONTROL);
 
       auto set_playback = [](auto &rec, int steps) {
         int t = rec->current_frame();
