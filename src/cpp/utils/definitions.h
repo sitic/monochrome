@@ -79,14 +79,14 @@ namespace utils {
       return std::nullopt;
     }
     if (min < 0) {
-      if (min >= -1 && max <= 1) {
+      if (min >= -1.2 && max <= 1.2) {
         return BitRange::DIFF;
       } else if (min >= -M_PI && max <= M_PI) {
         return BitRange::PHASE_DIFF;
       } else {
         return std::nullopt;
       }
-    } else if (max <= 1) {
+    } else if (max <= 1.5) {
       return BitRange::FLOAT;
     } else if (max <= 2 * M_PI) {
       return BitRange::PHASE;
