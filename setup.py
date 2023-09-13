@@ -2,13 +2,11 @@ from skbuild import setup
 
 setup(
     name='monochrome',
-    # version='0.2.0',
     url='https://gitlab.com/cardiac-vision/monochrome',
     author="Jan Lebert",
     author_email="jan.lebert@ucsf.edu",
     classifiers=[
-        "Private :: Do not Upload",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: Microsoft :: Windows",

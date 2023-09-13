@@ -318,7 +318,7 @@ def show_points(points, name: Text = "", parent: Optional[Text] = None, color=No
     s.sendall(buf)
 
 
-def show_array(array: np.ndarray,
+def show_video(array: np.ndarray,
                name: Text = "",
                cmap: Union[ColorMap, Text] = ColorMap.DEFAULT,
                bitrange: Union[BitRange, Text] = BitRange.AUTODETECT,
@@ -399,7 +399,7 @@ def show_array(array: np.ndarray,
 def show_layer(array: np.ndarray, parent: Optional[Text] = None, name: Text = "", **kwargs):
     if parent is None:
         parent = ""
-    show_array(array, parent=parent, name=name, **kwargs)
+    show_video(array, parent=parent, name=name, **kwargs)
 
 
 def show_flow(flow_uv: np.ndarray, parent: Optional[Text] = None, name: Text = "", color=None):
@@ -427,7 +427,7 @@ def show_flow(flow_uv: np.ndarray, parent: Optional[Text] = None, name: Text = "
 
 def show(array_or_path: Union[str, Path, np.ndarray], *args, **kwargs):
     if isinstance(array_or_path, np.ndarray):
-        return show_array(array_or_path, *args, **kwargs)
+        return show_video(array_or_path, *args, **kwargs)
     elif isinstance(array_or_path, str) or isinstance(array_or_path, Path):
         return show_file(array_or_path)
     else:

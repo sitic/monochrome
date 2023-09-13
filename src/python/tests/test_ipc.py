@@ -40,14 +40,14 @@ def test_filepaths():
 def test_array():
     shape = (100, 128, 256)
     arr = np.random.rand(*shape).astype(dtype=np.float32)
-    mc.show_array(arr, 'TestArray', cmap='hsv', bitrange='float', duration_seconds=30, fps=500,
+    mc.show_video(arr, 'TestArray', cmap='hsv', bitrange='float', duration_seconds=30, fps=500,
                   date="2020-04-29-13-10-27", comment="Test Comment")
 
-    mc.show_array(arr[0], 'TestArray Image')
+    mc.show_video(arr[0], 'TestArray Image')
 
     arr = (np.random.rand(*shape) * 65535).astype(dtype=np.uint16)
     mc.show(arr, 'TestArray u16', metadata={'Foo': 'Bar'})
-    mc.show_array((arr[0]*255).astype(np.uint8), 'TestArray Image uint8')
+    mc.show_video((arr[0]*255).astype(np.uint8), 'TestArray Image uint8')
 
 
 def test_flow():
@@ -59,7 +59,7 @@ def test_flow():
         flow[t, :64, :64, 0] = t / 100
         flow[t, :64, :64, 1] = t / 100
 
-    mc.show_array(vid, "flows")
+    mc.show_video(vid, "flows")
     mc.show_flow(flow, "", color='blue')
 
 
@@ -71,7 +71,7 @@ def test_points():
         for _ in range(random.randint(0, 5)):
             p.append([random.randint(0, 128), random.randint(0, 128)])
         points.append(p)
-    mc.show_array(vid, "points")
+    mc.show_video(vid, "points")
     mc.show_points(points, color='red', point_size=10)
 
 
