@@ -48,7 +48,7 @@ class BmpFileParser {
 
     uint32 mByteOrderMark;
     if (!read(mByteOrderMark) || mByteOrderMark != ByteOrderMark) {
-      _error_msg = fmt::format("Insupported byte order '{}'", mByteOrderMark);
+      _error_msg = fmt::format("Unsupported byte order '{}'", mByteOrderMark);
       return;
     }
 
