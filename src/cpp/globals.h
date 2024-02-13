@@ -106,6 +106,7 @@ namespace global {
     std::vector<std::vector<float>> data;
     Vec4f color      = {0, 0, 0, 0};
     float point_size = -1;
+    bool show        = true;
 
     void assign_next_color(unsigned color_count) {
       // List of colors to cycle through

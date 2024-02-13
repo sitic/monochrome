@@ -288,7 +288,13 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImGui::Separator();
     for (const auto &vid : rec->points_videos) {
       ImGui::PushID(vid.get());
+      ImGui::Text("%s", vid->name.c_str());
       ImGui::SliderFloat("point size", &vid->point_size, 0, 10);
+      ImGui::SameLine();
+      if (vid->show)
+        vid->show = !ImGui::Button(ICON_FA_EYE_SLASH);
+      else
+        vid->show = ImGui::Button(ICON_FA_EYE);
       ImGui::SameLine();
       ImGui::ColorEdit4("", vid->color.data(),
                         ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);

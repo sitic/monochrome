@@ -426,7 +426,9 @@ void RecordingWindow::display(Filters prefilter,
   }
 
   for (const auto &vid : points_videos) {
+    if (!vid->show) continue;
     points_vert.clear();
+    
     if (vid->point_size < 0) {
       vid->point_size = FlowData::pointsize;
     }
