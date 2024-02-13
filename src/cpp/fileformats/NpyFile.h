@@ -5,7 +5,8 @@
 #include "AbstractFile.h"
 
 class NpyFile : public AbstractFile {
-  enum class PixelDataFormat : int { UINT8 = 1, UINT16 = 2, FLOAT = 4, DOUBLE = 8 };
+  // WARNING: bool isn't well defined as numpy stores it as a byte, but C++ doesn't guarantee that sizeof(bool) == 1
+  enum class PixelDataFormat : int { UINT8 = 1, UINT16 = 2, FLOAT = 4, DOUBLE = 8, BOOL = -1 };
 
   mio::mmap_source _mmap;
   int _nx       = 0;
@@ -70,9 +71,11 @@ class NpyFile : public AbstractFile {
         dataType = PixelDataFormat::FLOAT;
       } else if (get_dtype<double>().str() == header.dtype.str()) {
         dataType = PixelDataFormat::DOUBLE;
+      } else if (get_dtype<bool>().str() == header.dtype.str()) {
+        dataType = PixelDataFormat::BOOL;
       } else {
         _error_msg = fmt::format(
-            "numpy dtype {} is unsupported, only uint8, uint16 and float32 are supported",
+            "numpy dtype {} is unsupported, only bool, uint8, uint16 and float32 are supported",
             header.dtype.str());
         return;
       }
@@ -109,7 +112,7 @@ class NpyFile : public AbstractFile {
       }
 
       auto l               = _mmap.length();
-      auto bytes_per_frame = _frame_size * static_cast<int>(dataType);
+      auto bytes_per_frame = _frame_size * std::abs(static_cast<int>(dataType));
       if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
         _error_msg = "File size does not match expected dimensions";
         return;
@@ -141,6 +144,9 @@ class NpyFile : public AbstractFile {
             break;
           case PixelDataFormat::DOUBLE:
             _bitrange = utils::detect_bitrange(get_data_ptr<double>(0), get_data_ptr<double>(1));
+            break;
+          case PixelDataFormat::BOOL:
+            _bitrange = BitRange::FLOAT;
             break;
         }
       }
@@ -186,6 +192,9 @@ class NpyFile : public AbstractFile {
       case PixelDataFormat::UINT8:
         copy_frame<uint8_t>(t);
         break;
+      case PixelDataFormat::BOOL:
+        copy_frame<bool>(t);
+        break;
       default:
         throw std::logic_error("This line should never be reached");
     }
@@ -202,6 +211,8 @@ class NpyFile : public AbstractFile {
         return get_data_ptr<uint16_t>(t)[y * Nx() + x];
       case PixelDataFormat::UINT8:
         return get_data_ptr<uint8_t>(t)[y * Nx() + x];
+      case PixelDataFormat::BOOL:
+        return get_data_ptr<bool>(t)[y * Nx() + x];
       default:
         throw std::logic_error("This line should never be reached");
     }

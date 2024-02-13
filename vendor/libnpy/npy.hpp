@@ -67,8 +67,8 @@ const char no_endian_char = '|';
 
 constexpr std::array<char, 3>
 endian_chars = {little_endian_char, big_endian_char, no_endian_char};
-constexpr std::array<char, 4>
-numtype_chars = {'f', 'i', 'u', 'c'};
+constexpr std::array<char, 5>
+numtype_chars = {'f', 'i', 'u', 'c', 'b'};
 
 constexpr char host_endian_char = (big_endian ?
                                    big_endian_char :
@@ -158,6 +158,16 @@ struct has_typestring<long double> {
 };
 constexpr dtype_t
 has_typestring<long double>::dtype;
+
+// WARNING: The bool handling here isn't well defined. Numpy stores it as a byte, but C++ doesn't guarantee that sizeof(bool) == 1
+template<>
+struct has_typestring<bool> {
+  static const bool value = true;
+  static constexpr dtype_t
+  dtype = {no_endian_char, 'b', sizeof(char)};  // bool is stored as 1 byte
+};
+constexpr dtype_t
+has_typestring<bool>::dtype;
 
 template<>
 struct has_typestring<char> {
