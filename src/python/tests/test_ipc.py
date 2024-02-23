@@ -10,15 +10,14 @@ from pathlib import Path
 from time import sleep
 
 import numpy as np
-
 import monochrome as mc
 
-# Do want to mock the server? Check if we are in a CI server or if env 'HEADLESS' is set
+# Do we want to mock the server?
 HEADLESS_TEST = "pytest" in sys.modules or os.getenv('HEADLESS')
 
 if HEADLESS_TEST:
     patcher.start()
-
+    mc.ipc.ABSTRACT_DOMAIN_SOCKET_SUPPORTED = True  # Fix for MacOS
 
 def test_filepaths():
     with tempfile.TemporaryDirectory() as tmpdir:
