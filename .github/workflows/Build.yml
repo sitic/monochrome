@@ -1,0 +1,111 @@
+name: Build and Package
+
+on:
+    push:
+
+jobs:
+  Python-Wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, windows-2019, macos-12]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.5
+        env:
+          CIBW_BUILD: "cp38-macosx* cp38-manylinux_x86_64 cp38-win_amd64"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-wheels
+          path: ./wheelhouse/*.whl
+
+  Linux-AppImage:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pypa/manylinux2014_x86_64
+    steps:
+    - name: Install dependencies
+      run: |
+        yum install -y libXrandr-devel libXcursor-devel libXinerama-devel libXi-devel mesa-libGL-devel libdwarf-devel binutils-devel cmake ninja-build
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure and build
+      run: |
+        cmake -Bbuild -G "Ninja" -Wdev -DSTATIC_GCC=ON -DCMAKE_BUILD_TYPE=Release .
+        cd build
+        cmake --build . --parallel 4
+    
+    - name: Create AppImage
+      run: |
+        cd build
+        curl -L -o linuxdeploy-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage
+        OUTPUT="Monochrome.AppImage" ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e Monochrome -d ../vendor/Monochrome.desktop -i ../vendor/MultiRecorderVideo.png --appdir AppDir --output appimage
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-standalone
+        path: build/Monochrome.AppImage
+
+  Windows-Standalone:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure and build
+      run: |
+        cmake -Bbuild -G "Visual Studio 17 2022" -DCMAKE_GENERATOR_PLATFORM="x64" -Wdev .
+        cd build
+        cmake --build . --config "Release" --parallel 4
+
+    - name: Package
+      run: |
+        cd build
+        cpack -G ZIP
+        mkdir -p ../dist
+        mv Monochrome-*.zip ../dist
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-standalone
+        path: dist/*.zip
+
+  macOS-Standalone:
+    runs-on: macos-12
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure and build
+      run: |
+        export MACOSX_DEPLOYMENT_TARGET="10.13"
+        export CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+        mkdir build dist
+        cd build
+        cmake .. -Wdev
+        make -j
+
+    - name: Package
+      run: |
+        cd build
+        cpack -G DragNDrop
+        mkdir -p ../dist
+        mv Monochrome-*.dmg ../dist
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-standalone
+        path: dist/Monochrome-*.dmg
