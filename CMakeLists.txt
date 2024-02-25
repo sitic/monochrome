@@ -1,6 +1,13 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.12)
 
-project(Monochrome C CXX)
+list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_SOURCE_DIR}/vendor/cmake)
+include(GitVersionDetect)
+
+project(Monochrome
+        HOMEPAGE_URL "https://github.com/sitic/monochrome"
+        DESCRIPTION "Monochrome is a video viewer for raw monochromatic video data."
+        VERSION ${GITVERSIONDETECT_VERSION_MAJOR}.${GITVERSIONDETECT_VERSION_MINOR}.${GITVERSIONDETECT_VERSION_PATCH}
+        LANGUAGES C CXX)
 
 option(MC_FORCE_TCP_IPC "Force use of TCP for IPC" OFF)
 option(STATIC_GCC "Build with static libstdc++ when using gcc" OFF)
@@ -13,11 +20,10 @@ endif ()
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
-list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/vendor/cmake)
 include(CMakeRC)
-
 include(GNUInstallDirs)
 
+# Build for oldest supported glibc version if STATIC_GCC is set
 if (CMAKE_COMPILER_IS_GNUCXX AND STATIC_GCC)
     # Check if it works with  `objdump -p <Executable>`
     set(GLIBC_VER "2.23")
@@ -161,13 +167,21 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # Install desktop entry and icon
     install(FILES vendor/Monochrome.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
     install(FILES vendor/MultiRecorderVideo.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps)
-elseif (APPLE AND NOT SKBUILD)
-    set(APP_NAME Monochrome)
-    set(CPACK_BUNDLE_NAME Monochrome)
-    set(CPACK_PACKAGE_VERSION_MAJOR 0)
-    set(CPACK_PACKAGE_VERSION_MINOR 1)
-    set(CPACK_PACKAGE_VERSION_PATCH 0)
-    set(CPACK_GENERATOR "DRAGNDROP")
-    set(CPACK_BUNDLE_ICON ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns)
+endif()
+
+if (NOT SKBUILD)
+    if (APPLE)
+        set(APP_NAME Monochrome)
+        set(CPACK_BUNDLE_NAME Monochrome)
+        set(CPACK_GENERATOR "DragNDrop")
+        set(CPACK_BUNDLE_ICON ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns)
+        set(CPACK_PACKAGE_FILE_NAME "${APP_NAME}-${CMAKE_PROJECT_VERSION}_macOS")
+    elseif(WIN32)
+        set(CPACK_GENERATOR "ZIP")
+        set(CPACK_PACKAGE_FILE_NAME "Monochrome-${CMAKE_PROJECT_VERSION}_Windows")
+    else()
+        set(CPACK_GENERATOR "TGZ")
+        set(CPACK_PACKAGE_FILE_NAME "Monochrome-${CMAKE_PROJECT_VERSION}_Linux")
+    endif()
     include(CPack)
-endif ()
+endif()

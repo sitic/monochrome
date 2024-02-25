@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Monochrome
-Comment=MultiRecorder and raw video viewer
+Comment=Video viewer for raw monochromatic video data
 Exec=Monochrome
 Icon=MultiRecorderVideo
 Type=Application
