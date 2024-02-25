@@ -4,7 +4,7 @@ on:
     push:
 
 jobs:
-  Python-Wheels:
+  Build-Python-Wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -12,18 +12,60 @@ jobs:
         os: [ubuntu-20.04, windows-2019, macos-12]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BUILD: "cp38-macosx* cp38-manylinux_x86_64 cp38-win_amd64"
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-${{ runner.os }}
           path: ./wheelhouse/*.whl
+
+  Test-Python-Wheels:
+    name: Run tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: [Build-Python-Wheels]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: python-wheels-${{ runner.os }}
+          path: dist
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
+
+      - name: Install Pytest
+        run: python -m pip install pytest
+
+      - name: Install wheels
+        if: runner.os != 'Windows'
+        run: |
+          python -m pip install dist/*.whl
+
+      - name: Install wheels
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -m pip install $(dir dist/*.whl)
+
+      - name: Run tests
+        run: |
+          python -m pytest
 
   Linux-AppImage:
     runs-on: ubuntu-latest
@@ -76,7 +118,7 @@ jobs:
         mv Monochrome-*.zip ../dist
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows-standalone
         path: dist/*.zip
@@ -105,7 +147,7 @@ jobs:
         mv Monochrome-*.dmg ../dist
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: macos-standalone
         path: dist/Monochrome-*.dmg
