@@ -4,7 +4,7 @@ setup(
     name='monochrome',
     url='https://gitlab.com/cardiac-vision/monochrome',
     author="Jan Lebert",
-    author_email="jan.lebert@ucsf.edu",
+    author_email="mail@janlebert.com",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",

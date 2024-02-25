@@ -18,7 +18,9 @@ It is designed to be fast and lightweight, i.e. it uses memory-mapping to load v
 
 Monochrome can be used as a standalone application or as a Python library. The standalone application is a simple video viewer with a minimalistic user interface. The Python library allows to load and play videos from Python scripts and Jupyter notebooks, see the [Python Quickstart](#python-quickstart).
 
-For the standalone application, download the latest release from the [releases page](https://github.com/sitic/monochrome/-/releases) and run the executable. For the Python library, install it with pip:
+For the standalone application, download the latest release from the [releases page](https://github.com/sitic/monochrome/-/releases) and run the executable. On Winodws you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe).
+
+For the Python library, install it with pip:
 
 ```bash
 python -m pip install monochrome
@@ -27,7 +29,7 @@ python -m pip install monochrome
 ## Native Video File Formats
 Monochrome supports the following video formats:
 
-* `.npy` (NumPy array) with shape (time, width, height). The data type can be float or integer (uint8, uint16, etc.).
+* `.npy` (NumPy array) with shape (time, width, height). The data type can be float, integer (uint8, uint16, etc.), or boolean.
 * `.dat` MultiRecorder format
 * `.dat` (binary) with shape (time, width, height) and data type float32
 
@@ -99,15 +101,7 @@ mc.show_layer(overlay, "Phase", parent="Our Test Video", cmap='hsv')
 
 ```
 
-## Standalone Application
 ## Development
-* [Linux](https://gitlab.com/cardiac-vision/monochrome/builds/artifacts/master/file/build/Monochrome.AppImage?job=gcc%20Release)
-  (mark as executable and run it)
-* [Windows](https://gitlab.gwdg.de/lebert/monochrome/builds/artifacts/master/file/build/Release/Monochrome.exe?job=windows%20Release)
-  (you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe))
-* [MacOS](https://gitlab.com/cardiac-vision/monochrome/builds/artifacts/master/file/dist/Monochrome-0.1.0-Darwin.dmg?job=macos)
-
-
 ### Linux
 
 ```bash
