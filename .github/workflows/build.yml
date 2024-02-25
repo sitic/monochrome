@@ -1,7 +1,12 @@
 name: Build and Package
 
 on:
-    push:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types:
+      - published
 
 jobs:
   build_python_wheels:
@@ -106,7 +111,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: linux-standalone
+        name: standalone-linux
         path: build/Monochrome.AppImage
 
   standalone_windows:
@@ -134,7 +139,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: windows-standalone
+        name: standalone-windows
         path: dist/*.zip
 
   standalone_macos:
@@ -166,5 +171,61 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: macos-standalone
+        name: standalone-macos
         path: dist/Monochrome-*.dmg
+
+  build_python_sdist:
+    name: Build python sdist
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build sdist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-sdist
+          path: dist/*.tar.gz
+
+  upload_pypi:
+    name: Upload to PyPI
+    needs: [test_python_wheels, build_python_sdist]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    if: github.event_name == 'release' && github.event.action == 'published'
+    # or, alternatively, upload to PyPI on every tag starting with 'v' (remove on: release above to use this)
+    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: python-wheels-*
+          path: dist
+          merge-multiple: true
+
+      - name: Upload to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+  
+  # upload_github_release:
+  #   name: Upload to GitHub Releases
+  #   needs: [test_python_wheels, standalone_linux, standalone_windows, standalone_macos]
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'release' && github.event.action == 'published'
+  #   steps:
+  #     - name: Download artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: standalone-*
+  #         path: dist
+  #         merge-multiple: true
+
+  #     - name: Upload release assets
+  #       uses: softprops/action-gh-release@v1
+  #       with:
+  #         files: dist/*
