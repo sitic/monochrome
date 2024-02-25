@@ -1,7 +1,7 @@
 /*
 LodePNG Benchmark
 
-Copyright (c) 2005-2019 Lode Vandevenne
+Copyright (c) 2005-2023 Lode Vandevenne
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -37,7 +37,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <SDL/SDL.h> //SDL is used for timing.
+#include <SDL2/SDL.h> //SDL is used for timing.
 
 bool apply_mods = false;
 
@@ -126,11 +126,14 @@ std::vector<unsigned char> testEncode(Image& image) {
   // Try custom compression settings
   if(apply_mods) {
     //state.encoder.filter_strategy = LFS_ZERO;
-    state.encoder.filter_strategy = LFS_ENTROPY;
+    //state.encoder.filter_strategy = LFS_ENTROPY;
+    //state.encoder.filter_strategy = LFS_FOUR;
     //state.encoder.zlibsettings.btype = 0;
     //state.encoder.zlibsettings.btype = 1;
     //state.encoder.auto_convert = 0;
     //state.encoder.zlibsettings.use_lz77 = 0;
+    state.encoder.zlibsettings.windowsize = 1;
+    //state.encoder.zlibsettings.windowsize = 32768;
   }
 
   double t_enc0 = getTime();
@@ -218,8 +221,8 @@ void testDecode(const std::vector<unsigned char>& png) {
 std::string getFilePart(const std::string& path) {
   if(path.empty()) return "";
   int slash = path.size() - 1;
-  while(slash >= 0 && path[slash] != '/') slash--;
-  return path.substr(slash + 1);
+  while(slash >= 0 && path[(size_t)slash] != '/') slash--;
+  return path.substr((size_t)(slash + 1));
 }
 
 void testFile(const std::string& filename) {

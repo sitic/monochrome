@@ -1,7 +1,7 @@
 /*
 LodePNG Utils
 
-Copyright (c) 2005-2020 Lode Vandevenne
+Copyright (c) 2005-2023 Lode Vandevenne
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -24,7 +24,6 @@ freely, subject to the following restrictions:
 */
 
 #include "lodepng_util.h"
-#include <iostream>  // TODO: remove, don't print stuff from here, return errors instead
 #include <stdlib.h> /* allocations */
 
 namespace lodepng {
@@ -32,7 +31,7 @@ namespace lodepng {
 LodePNGInfo getPNGHeaderInfo(const std::vector<unsigned char>& png) {
   unsigned w, h;
   lodepng::State state;
-  lodepng_inspect(&w, &h, &state, &png[0], png.size());
+  lodepng_inspect(&w, &h, &state, png.empty() ? NULL : &png[0], png.size());
   return state.info_png;
 }
 
@@ -140,7 +139,7 @@ unsigned getFilterTypesInterlaced(std::vector<std::vector<unsigned char> >& filt
   lodepng::State state;
   unsigned w, h;
   unsigned error;
-  error = lodepng_inspect(&w, &h, &state, &png[0], png.size());
+  error = lodepng_inspect(&w, &h, &state, png.empty() ? NULL : &png[0], png.size());
 
   if(error) return 1;
 
@@ -174,7 +173,7 @@ unsigned getFilterTypesInterlaced(std::vector<std::vector<unsigned char> >& filt
 
   //Decompress all IDAT data (if the while loop ended early, this might fail)
   std::vector<unsigned char> data;
-  error = lodepng::decompress(data, &zdata[0], zdata.size());
+  error = lodepng::decompress(data, zdata.empty() ? NULL : &zdata[0], zdata.size());
 
   if(error) return 1;
 
@@ -231,7 +230,7 @@ unsigned getFilterTypes(std::vector<unsigned char>& filterTypes, const std::vect
     const unsigned shift1[8] = {1, 1, 1, 1, 1, 1, 1, 1};
     lodepng::State state;
     unsigned w, h;
-    lodepng_inspect(&w, &h, &state, &png[0], png.size());
+    lodepng_inspect(&w, &h, &state, png.empty() ? NULL : &png[0], png.size());
     const unsigned* column = w > 1 ? column1 : column0;
     const unsigned* shift = w > 1 ? shift1 : shift0;
     for(size_t i = 0; i < h; i++) {
@@ -273,15 +272,12 @@ void* lodepng_malloc(size_t size);
 void lodepng_free(void* ptr);
 #endif /*LODEPNG_COMPILE_ALLOCATORS*/
 
-/* avoid needing <float.h> for FLT_MAX. This assumes IEEE 32-bit float. */
-static const float lodepng_flt_max = 3.40282346638528859811704183484516925e38f;
-
 /* define infinity and NaN in a way compatible with ANSI C90 (no INFINITY or NAN macros) yet also with visual studio */
-/* visual studio doesn't allow division through a zero literal, but allows it through non-const variable set to zero */
+/* visual studio doesn't allow division through a zero literal, but allows it through public non-const variable set to zero */
 float lodepng_flt_zero_ = 0.0f;
 static const float lodepng_flt_inf = 1.0f / lodepng_flt_zero_; /* infinity */
 static const float lodepng_flt_nan = 0.0f / lodepng_flt_zero_; /* not a number */
-
+static const float lodepng_flt_max = 3.40282346638528859811704183484516925e38f; /* avoid needing <float.h> for FLT_MAX. This assumes IEEE 32-bit float. */
 
 /* powf polyfill, 5-6 digits accurate, 33-80% slower than powf, assumes IEEE
 32-bit float, but other than that multiplatform and no math lib needed
@@ -291,15 +287,14 @@ static float lodepng_powf(float x, float y) {
   int i = 0;
   /* handle all the special floating point rules */
   if(x == 1 || y == 0) return 1; /*these cases return 1 even if the other value is NaN, as specified*/
-  if(y == 1) return x;
-  if(!(x > 0 && x <= lodepng_flt_max && y == y && y <= lodepng_flt_max && y >= -lodepng_flt_max)) {
-    if(y == 1) return x; /* preserves negative-0 */
+  if(y == 1) return x; /* preserves negative-0 */
+  if(!(x > 0 && x <= lodepng_flt_max && y >= -lodepng_flt_max && y <= lodepng_flt_max)) { /*all special cases*/
     if(x != x || y != y) return x + y; /* nan */
     if(x > 0) {
       if(x > lodepng_flt_max) return y <= 0 ? (y == 0 ? 1 : 0) : x; /* x = +infinity */
     } else {
       if(!(y < -1073741824.0f || y > 1073741824.0f)) { /* large y always even integer, but cast would overflow */
-        i = (int)y;
+        i = (int)y; /* not using floor: not using math lib */
         if(i != y) {
           return (x < -lodepng_flt_max) ? (y < 0 ? 0 : lodepng_flt_inf) :
               (x == 0 ? (y < 0 ? lodepng_flt_inf : 0) : lodepng_flt_nan);
@@ -312,7 +307,7 @@ static float lodepng_powf(float x, float y) {
             -lodepng_flt_inf : lodepng_flt_inf);
       }
       x = -x;
-      if(x == 1) return 1;
+      if(x == 1) return 1; /* under the C++ rules, pow(-1, +/- infinity) also returns 1 */
     }
     if(y < -lodepng_flt_max || y > lodepng_flt_max) return ((x < 1) != (y > 0)) ? (y < 0 ? -y : y) : 0;
   }
@@ -493,7 +488,6 @@ static float iccBackwardTRC(const LodePNGICCCurve* curve, float x) {
         a = m;
       }
     }
-    return 0;
   }
   if(curve->type == 2) {
     /* Gamma compression */
@@ -543,7 +537,7 @@ static int decodeICCInt32(const unsigned char* data, size_t size, size_t* pos) {
 }
 
 static float decodeICC15Fixed16(const unsigned char* data, size_t size, size_t* pos) {
-  return decodeICCInt32(data, size, pos) / 65536.0;
+  return decodeICCInt32(data, size, pos) / 65536.0f;
 }
 
 static unsigned isICCword(const unsigned char* data, size_t size, size_t pos, const char* word) {
@@ -721,9 +715,9 @@ static unsigned parseICC(LodePNGICC* icc, const unsigned char* data, size_t size
 static void mulMatrix(float* x2, float* y2, float* z2, const float* m, double x, double y, double z) {
   /* double used as inputs even though in general the images are float, so the sums happen in
   double precision, because float can give numerical problems for nearby values */
-  *x2 = x * m[0] + y * m[1] + z * m[2];
-  *y2 = x * m[3] + y * m[4] + z * m[5];
-  *z2 = x * m[6] + y * m[7] + z * m[8];
+  *x2 = (float)(x * m[0] + y * m[1] + z * m[2]);
+  *y2 = (float)(x * m[3] + y * m[4] + z * m[5]);
+  *z2 = (float)(x * m[6] + y * m[7] + z * m[8]);
 }
 
 static void mulMatrixMatrix(float* result, const float* a, const float* b) {
@@ -745,7 +739,7 @@ static unsigned invMatrix(float* m) {
   double e6 = (double)m[3] * m[7] - (double)m[4] * m[6];
   /* inverse determinant */
   double d = 1.0 / (m[0] * e0 + m[1] * e3 + m[2] * e6);
-  float result[9];
+  double result[9];
   if((d > 0 ? d : -d) > 1e15) return 1; /* error, likely not invertible */
   result[0] = e0 * d;
   result[1] = ((double)m[2] * m[7] - (double)m[1] * m[8]) * d;
@@ -756,7 +750,7 @@ static unsigned invMatrix(float* m) {
   result[6] = e6 * d;
   result[7] = ((double)m[6] * m[1] - (double)m[0] * m[7]) * d;
   result[8] = ((double)m[0] * m[4] - (double)m[3] * m[1]) * d;
-  for(i = 0; i < 9; i++) m[i] = result[i];
+  for(i = 0; i < 9; i++) m[i] = (float)result[i];
   return 0; /* ok */
 }
 
@@ -1347,8 +1341,8 @@ unsigned convertFromXYZ(unsigned char* out, const float* in, unsigned w, unsigne
       for(c = 0; c < 4; c++) {
         size_t j = i * 8 + c * 2;
         int i16 = (int)(0.5f + 65535.0f * LODEPNG_MIN(LODEPNG_MAX(0.0f, im[i * 4 + c]), 1.0f));
-        data[j + 0] = i16 >> 8;
-        data[j + 1] = i16 & 255;
+        data[j + 0] = (unsigned char)(i16 >> 8);
+        data[j + 1] = (unsigned char)(i16 & 255);
       }
     }
     error = lodepng_convert(out, data, mode_out, &mode16, w, h);
@@ -1357,8 +1351,7 @@ unsigned convertFromXYZ(unsigned char* out, const float* in, unsigned w, unsigne
     LodePNGColorMode mode8 = lodepng_color_mode_make(LCT_RGBA, 8);
     for(i = 0; i < n; i++) {
       for(c = 0; c < 4; c++) {
-        int i8 = (int)(0.5f + 255.0f * LODEPNG_MIN(LODEPNG_MAX(0.0f, im[i * 4 + c]), 1.0f));
-        data[i * 4 + c] = i8;
+        data[i * 4 + c] = (unsigned char)(0.5f + 255.0f * LODEPNG_MIN(LODEPNG_MAX(0.0f, im[i * 4 + c]), 1.0f));
       }
     }
     error = lodepng_convert(out, data, mode_out, &mode8, w, h);
@@ -1411,8 +1404,8 @@ unsigned convertRGBModel(unsigned char* out, const unsigned char* in,
     unsigned error = 0;
     float* xyz = (float*)lodepng_malloc(w * h * 4 * sizeof(float));
     float whitepoint[3];
-    error = convertToXYZ(&xyz[0], whitepoint, in, w, h, state_in);
-    if (!error) error = convertFromXYZ(out, &xyz[0], w, h, state_out, whitepoint, rendering_intent);
+    error = convertToXYZ(xyz, whitepoint, in, w, h, state_in);
+    if (!error) error = convertFromXYZ(out, xyz, w, h, state_out, whitepoint, rendering_intent);
     lodepng_free(xyz);
     return error;
   }
@@ -1616,12 +1609,11 @@ struct ExtractZlib { // Zlib decompression and information extraction
 
   void inflateHuffmanBlock(std::vector<unsigned char>& out,
                            const unsigned char* in, size_t& bp, size_t& pos, size_t inlength, unsigned long btype) {
-    size_t numcodes = 0, numlit = 0, numlen = 0; //for logging
+    size_t numlit = 0, numlen = 0; //for logging
     if(btype == 1) { generateFixedTrees(codetree, codetreeD); }
     else if(btype == 2) { getTreeInflateDynamic(codetree, codetreeD, in, bp, inlength); if(error) return; }
     for(;;) {
       unsigned long code = huffmanDecodeSymbol(in, bp, codetree, inlength); if(error) return;
-      numcodes++;
       zlibinfo->back().lz77_lcode.push_back(code); //output code
       zlibinfo->back().lz77_dcode.push_back(0);
       zlibinfo->back().lz77_lbits.push_back(0);
@@ -1698,7 +1690,7 @@ struct ExtractPNG { //PNG decoding and information extraction
   void decode(const unsigned char* in, size_t size) {
     error = 0;
     if(size == 0 || in == 0) { error = 48; return; } //the given data is empty
-    readPngHeader(&in[0], size); if(error) return;
+    readPngHeader(in, size); if(error) return;
     size_t pos = 33; //first byte of the first chunk after the header
     std::vector<unsigned char> idat; //the data from idat chunks
     bool IEND = false;
@@ -1759,11 +1751,11 @@ struct ExtractPNG { //PNG decoding and information extraction
   }
 };
 
-void extractZlibInfo(std::vector<ZlibBlockInfo>& zlibinfo, const std::vector<unsigned char>& in) {
+unsigned extractZlibInfo(std::vector<ZlibBlockInfo>& zlibinfo, const std::vector<unsigned char>& in) {
   ExtractPNG decoder(&zlibinfo);
-  decoder.decode(&in[0], in.size());
+  decoder.decode(in.empty() ? NULL : &in[0], in.size());
 
-  if(decoder.error) std::cout << "extract error: " << decoder.error << std::endl;
+  return decoder.error ? 1 : 0;
 }
 
 } // namespace lodepng

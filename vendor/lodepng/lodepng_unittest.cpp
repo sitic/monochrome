@@ -1,7 +1,7 @@
 /*
 LodePNG Unit Test
 
-Copyright (c) 2005-2020 Lode Vandevenne
+Copyright (c) 2005-2022 Lode Vandevenne
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -47,7 +47,7 @@ mv lodepng.cpp lodepng.c ; gcc -I ./ lodepng.c examples/example_decode.c -pedant
 *) test other compilers
 
 *) try lodepng_benchmark.cpp
-g++ lodepng.cpp lodepng_benchmark.cpp -Werror -Wall -Wextra -pedantic -ansi -lSDL -O3 && ./a.out testdata/corpus/''*
+g++ lodepng.cpp lodepng_benchmark.cpp -Werror -Wall -Wextra -pedantic -ansi -lSDL2 -O3 && ./a.out testdata/corpus/''*
 
 *) try the fuzzer
 clang++ -fsanitize=fuzzer -DLODEPNG_MAX_ALLOC=100000000 lodepng.cpp lodepng_fuzzer.cpp -O3 -o fuzzer && ./fuzzer
@@ -65,6 +65,7 @@ g++ lodepng.cpp lodepng_util.cpp pngdetail.cpp -Werror -W -Wall -ansi -pedantic 
 ./pngdetail testdata/PngSuite/basi0g01.png
 
 *) Test compiling with some code sections with #defines disabled, for unused static function warnings etc...
+g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_CRC
 g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_ZLIB
 g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_PNG
 g++ lodepng.cpp -W -Wall -ansi -pedantic -O3 -c -DLODEPNG_NO_COMPILE_DECODER
@@ -115,7 +116,7 @@ rm *.o *.obj
 *) check year in copyright message at top of all files as well as at bottom of lodepng.h
 
 *) check examples/sdl.cpp with the png test suite images (the "x" ones are expected to show error)
-g++ -I ./ lodepng.cpp examples/example_sdl.cpp -Werror -Wall -Wextra -pedantic -ansi -O3 -lSDL -o showpng && ./showpng testdata/PngSuite/''*.png
+g++ -I ./ lodepng.cpp examples/example_sdl.cpp -Werror -Wall -Wextra -pedantic -ansi -O3 -lSDL2 -o showpng && ./showpng testdata/PngSuite/''*.png
 
 *) strip trailing spaces and ensure consistent newlines
 
@@ -188,7 +189,7 @@ void assertEquals(const T& expected, const U& actual, const std::string& message
   }
 }
 
-// TODO: turn into ASSERT_TRUE with line number printed
+// TODO: remove, use only ASSERT_TRUE (it prints line number). Requires adding extra message ability to ASSERT_TRUE
 void assertTrue(bool value, const std::string& message = "") {
   if(!value) {
     std::cout << "Error: expected true. " << "Message: " << message << std::endl;
@@ -213,6 +214,13 @@ void assertNoError(unsigned error) {
 
 #define STR_EXPAND(s) #s
 #define STR(s) STR_EXPAND(s)
+#define ASSERT_TRUE(v) {\
+  if(!(v)) {\
+    std::cout << std::string("line ") + STR(__LINE__) + ": " + STR(v) + " ASSERT_TRUE failed: ";\
+    std::cout << "Expected true but got " << valtostr(v) << ". " << std::endl;\
+    fail();\
+  }\
+}
 #define ASSERT_EQUALS(e, v) {\
   if((e) != (v)) {\
     std::cout << std::string("line ") + STR(__LINE__) + ": " + STR(v) + " ASSERT_EQUALS failed: ";\
@@ -2504,9 +2512,9 @@ void testBkgdChunk(unsigned r, unsigned g, unsigned b,
   ASSERT_EQUALS(b2, info2.background_b);
 
   // compare pixels in the "raw" color model
-  LodePNGColorMode mode_temp; lodepng_color_mode_init(&mode_temp); mode_temp.bitdepth = 16; mode_temp.colortype = LCT_RGBA;
+  LodePNGColorMode mode_decoded; lodepng_color_mode_init(&mode_decoded); mode_decoded.bitdepth = 16; mode_decoded.colortype = LCT_RGBA;
   std::vector<unsigned char> image3((w * h * lodepng_get_bpp(&mode_raw) + 7) / 8);
-  error = lodepng_convert(image3.data(), image2.data(), &mode_raw, &mode_temp, w, h);
+  error = lodepng_convert(image3.data(), image2.data(), &mode_raw, &mode_decoded, w, h);
   ASSERT_NO_PNG_ERROR(error);
   ASSERT_EQUALS(pixels.size(), image3.size());
   for(size_t i = 0; i < image3.size(); i++) {
@@ -2527,10 +2535,10 @@ void testBkgdChunk(unsigned r, unsigned g, unsigned b,
   generateTestImageRequiringColorType16(image, type_pixels, bitdepth_pixels, false);
 
   LodePNGColorMode mode_raw; lodepng_color_mode_init(&mode_raw); mode_raw.bitdepth = bitdepth_raw; mode_raw.colortype = type_raw;
-  LodePNGColorMode mode_temp; lodepng_color_mode_init(&mode_temp); mode_temp.bitdepth = 16; mode_temp.colortype = LCT_RGBA;
+  LodePNGColorMode mode_test; lodepng_color_mode_init(&mode_test); mode_test.bitdepth = 16; mode_test.colortype = LCT_RGBA;
   LodePNGColorMode mode_png; lodepng_color_mode_init(&mode_png); mode_png.bitdepth = bitdepth_png; mode_png.colortype = type_png;
   std::vector<unsigned char> temp((image.width * image.height * lodepng_get_bpp(&mode_raw) + 7) / 8);
-  error = lodepng_convert(temp.data(), image.data.data(), &mode_raw, &mode_temp, image.width, image.height);
+  error = lodepng_convert(temp.data(), image.data.data(), &mode_raw, &mode_test, image.width, image.height);
   ASSERT_NO_PNG_ERROR(error);
   image.data = temp;
 
@@ -2643,6 +2651,220 @@ void testBkgdChunk2() {
   lodepng_inspect(&w2, &h2, &state2, png2.data(), png2.size());
   ASSERT_EQUALS(1, state2.info_png.color.bitdepth);
   ASSERT_EQUALS(LCT_GREY, state2.info_png.color.colortype);
+}
+
+// r, g, b, a are the bit depths to store
+void testSbitChunk(unsigned r, unsigned g, unsigned b, unsigned a,
+                   const std::vector<unsigned char>& pixels,
+                   unsigned w, unsigned h,
+                   const LodePNGColorMode& mode_raw,
+                   const LodePNGColorMode& mode_png,
+                   bool auto_convert,
+                   bool expect_encoder_error = false) {
+  unsigned error;
+
+  lodepng::State state;
+  LodePNGInfo& info = state.info_png;
+  lodepng_color_mode_copy(&info.color, &mode_png);
+  lodepng_color_mode_copy(&state.info_raw, &mode_raw);
+  state.encoder.auto_convert = auto_convert;
+  if(mode_raw.colortype == LCT_PALETTE) {
+    for(size_t i = 0; i < 256; i++) {
+      // TODO: consider allowing to set only 1 of these palettes in lodepng in the case
+      // where both info_raw and info_png have the palette color type
+      lodepng_palette_add(&state.info_raw, i, i, i, 255);
+      lodepng_palette_add(&info.color, i, i, i, 255);
+    }
+  }
+
+  info.sbit_defined = 1;
+  info.sbit_r = r;
+  info.sbit_g = g;
+  info.sbit_b = b;
+  info.sbit_a = a;
+
+  std::vector<unsigned char> png;
+  error = lodepng::encode(png, pixels, w, h, state);
+  if(expect_encoder_error) {
+    ASSERT_NOT_EQUALS(0, error);
+    return;
+  }
+  ASSERT_NO_PNG_ERROR(error);
+
+  lodepng::State state2;
+  LodePNGInfo& info2 = state2.info_png;
+  unsigned w2, h2;
+  std::vector<unsigned char> image2;
+  error = lodepng::decode(image2, w2, h2, state2, &png[0], png.size());
+  ASSERT_NO_PNG_ERROR(error);
+
+  LodePNGColorType type = mode_png.colortype;
+
+  ASSERT_EQUALS(w, w2);
+  ASSERT_EQUALS(h, h2);
+  ASSERT_EQUALS(1, info2.sbit_defined);
+  ASSERT_EQUALS(r, info2.sbit_r);
+  if(type == LCT_RGB || type == LCT_RGBA || type == LCT_PALETTE) {
+    ASSERT_EQUALS(g, info2.sbit_g);
+    ASSERT_EQUALS(b, info2.sbit_b);
+  }
+  if(type == LCT_GREY_ALPHA || type == LCT_RGBA) {
+    ASSERT_EQUALS(a, info2.sbit_a);
+  }
+
+  // compare pixels in a 16-bit color model
+  LodePNGColorMode mode_compare; lodepng_color_mode_init(&mode_compare); mode_compare.bitdepth = 16; mode_compare.colortype = LCT_RGBA;
+  LodePNGColorMode mode_decoded; lodepng_color_mode_init(&mode_decoded); mode_decoded.bitdepth = 8; mode_decoded.colortype = LCT_RGBA;
+  std::vector<unsigned char> image3(w * h * 8);
+  error = lodepng_convert(image3.data(), image2.data(), &mode_compare, &mode_decoded, w, h);
+  std::vector<unsigned char> image4(w * h * 8);
+  error = lodepng_convert(image4.data(), pixels.data(), &mode_compare, &state.info_raw, w, h);
+  ASSERT_NO_PNG_ERROR(error);
+  ASSERT_EQUALS(image4.size(), image3.size());
+  for(size_t i = 0; i < image3.size(); i++) {
+    ASSERT_EQUALS((int)image4[i], (int)image3[i]);
+  }
+}
+
+
+void testSbitChunk(unsigned r, unsigned g, unsigned b, unsigned a,
+                   LodePNGColorType type, unsigned bitdepth,
+                   bool expect_encoder_error = false) {
+  LodePNGColorMode mode_raw;
+  lodepng_color_mode_init(&mode_raw);
+  mode_raw.bitdepth = bitdepth;
+  mode_raw.colortype = type;
+  LodePNGColorMode mode_png;
+  lodepng_color_mode_init(&mode_png);
+  mode_png.bitdepth = bitdepth;
+  mode_png.colortype = type;
+
+  std::vector<unsigned char> pixels(8, 255); // force all pixels to be white, so encoder tries to use auto_convert as much as possible
+
+  testSbitChunk(r, g, b, a, pixels, 1, 1, mode_raw, mode_png, false, expect_encoder_error);
+  testSbitChunk(r, g, b, a, pixels, 1, 1, mode_raw, mode_png, true, expect_encoder_error);
+}
+
+// type_pixels = what the pixels should require at least for auto_convert
+// type_raw = actual raw pixel type to give to the encoder
+// type_png = PNG type to request from the encoder (if not auto_convert)
+// auto_convert: 0 = no, 1 = yes, 2 = try both
+void testSbitChunk2(unsigned r, unsigned g, unsigned b, unsigned a,
+                   LodePNGColorType type_pixels, unsigned bitdepth_pixels,
+                   LodePNGColorType type_raw, unsigned bitdepth_raw,
+                   LodePNGColorType type_png, unsigned bitdepth_png,
+                   int auto_convert,
+                   bool expect_encoder_error = false) {
+
+  unsigned error;
+  Image image;
+  generateTestImageRequiringColorType16(image, type_pixels, bitdepth_pixels, false);
+
+  LodePNGColorMode mode_raw; lodepng_color_mode_init(&mode_raw); mode_raw.bitdepth = bitdepth_raw; mode_raw.colortype = type_raw;
+  LodePNGColorMode mode_test; lodepng_color_mode_init(&mode_test); mode_test.bitdepth = 16; mode_test.colortype = LCT_RGBA;
+  LodePNGColorMode mode_png; lodepng_color_mode_init(&mode_png); mode_png.bitdepth = bitdepth_png; mode_png.colortype = type_png;
+  std::vector<unsigned char> temp((image.width * image.height * lodepng_get_bpp(&mode_raw) + 7) / 8);
+  error = lodepng_convert(temp.data(), image.data.data(), &mode_raw, &mode_test, image.width, image.height);
+  ASSERT_NO_PNG_ERROR(error);
+  image.data = temp;
+
+  if(auto_convert == 0 || auto_convert == 2) testSbitChunk(r, g, b, a, image.data, image.width, image.height, mode_raw, mode_png, false, expect_encoder_error);
+  if(auto_convert == 1 || auto_convert == 2) testSbitChunk(r, g, b, a, image.data, image.width, image.height, mode_raw, mode_png, true, expect_encoder_error);
+}
+
+// Test the sBIT chunk for all color types, and for possible combinations of pixel colors where auto_convert conversions occur (only conversions that
+// still allow storing all the sBIT information within the PNG specification limitations may occur)
+void testSbitChunk() {
+  std::cout << "testSbitChunk" << std::endl;
+  testSbitChunk(8, 8, 8, 0, LCT_RGB, 8, false);
+  testSbitChunk(1, 2, 3, 0, LCT_RGB, 8, false);
+  testSbitChunk(0, 2, 3, 0, LCT_RGB, 8, true);
+  testSbitChunk(9, 2, 3, 0, LCT_RGB, 8, true);
+
+  testSbitChunk(8, 8, 8, 8, LCT_RGBA, 8, false);
+  testSbitChunk(1, 2, 3, 4, LCT_RGBA, 8, false);
+  testSbitChunk(0, 2, 3, 4, LCT_RGBA, 8, true);
+  testSbitChunk(9, 2, 3, 4, LCT_RGBA, 8, true);
+
+  testSbitChunk(1, 2, 3, 0, LCT_RGB, 16, false);
+  testSbitChunk(0, 2, 3, 0, LCT_RGB, 16, true);
+  testSbitChunk(9, 2, 3, 0, LCT_RGB, 16, false);
+  testSbitChunk(17, 2, 3, 0, LCT_RGB, 16, true);
+
+  testSbitChunk(1, 2, 3, 4, LCT_RGBA, 16, false);
+  testSbitChunk(0, 2, 3, 4, LCT_RGBA, 16, true);
+  testSbitChunk(9, 2, 3, 4, LCT_RGBA, 16, false);
+  testSbitChunk(17, 2, 3, 4, LCT_RGBA, 16, true);
+
+  testSbitChunk(8, 2, 3, 0, LCT_PALETTE, 8, false);
+  testSbitChunk(8, 2, 3, 0, LCT_PALETTE, 4, false); // 4-bit palette still treats the RGB as 8-bit
+  testSbitChunk(9, 2, 3, 0, LCT_PALETTE, 8, true);
+
+  testSbitChunk(8, 0, 0, 0, LCT_GREY, 8, false);
+  testSbitChunk(8, 0, 0, 0, LCT_GREY, 4, true);
+  testSbitChunk(5, 0, 0, 0, LCT_GREY, 8, false);
+  testSbitChunk(1, 0, 0, 0, LCT_GREY, 1, false);
+  testSbitChunk(3, 0, 0, 0, LCT_GREY, 1, true);
+  testSbitChunk(0, 0, 0, 0, LCT_GREY, 1, true);
+
+  testSbitChunk(16, 0, 0, 0, LCT_GREY, 16, false);
+  testSbitChunk(17, 0, 0, 0, LCT_GREY, 16, true);
+  testSbitChunk(8, 0, 0, 0, LCT_GREY, 16, false);
+  testSbitChunk(5, 0, 0, 0, LCT_GREY, 16, false);
+
+  testSbitChunk(8, 0, 0, 8, LCT_GREY_ALPHA, 8, false);
+  testSbitChunk(8, 0, 0, 0, LCT_GREY_ALPHA, 8, true);
+  testSbitChunk(8, 0, 0, 9, LCT_GREY_ALPHA, 8, true);
+  testSbitChunk(5, 0, 0, 5, LCT_GREY_ALPHA, 8, false);
+  testSbitChunk(5, 0, 0, 8, LCT_GREY_ALPHA, 8, false);
+
+  testSbitChunk(16, 0, 0, 16, LCT_GREY_ALPHA, 16, false);
+  testSbitChunk(16, 0, 0, 8, LCT_GREY_ALPHA, 16, false);
+  testSbitChunk(8, 0, 0, 8, LCT_GREY_ALPHA, 16, false);
+  testSbitChunk(16, 0, 0, 0, LCT_GREY_ALPHA, 16, true);
+  testSbitChunk(16, 0, 0, 17, LCT_GREY_ALPHA, 16, true);
+  testSbitChunk(5, 0, 0, 5, LCT_GREY_ALPHA, 16, false);
+  testSbitChunk(5, 0, 0, 8, LCT_GREY_ALPHA, 16, false);
+
+  testSbitChunk2(8, 8, 8, 0, LCT_RGB, 8, LCT_RGB, 8, LCT_RGB, 8, 2, false);
+  testSbitChunk2(8, 8, 8, 0, LCT_GREY, 8, LCT_RGB, 8, LCT_RGB, 8, 2, false);
+  testSbitChunk2(12, 12, 12, 0, LCT_GREY, 8, LCT_RGB, 16, LCT_RGB, 16, 2, false);
+  testSbitChunk2(12, 12, 12, 8, LCT_GREY, 8, LCT_RGBA, 16, LCT_RGBA, 16, 2, false);
+  testSbitChunk2(8, 8, 8, 0, LCT_GREY, 8, LCT_RGB, 16, LCT_RGB, 16, 2, false);
+  testSbitChunk2(8, 7, 8, 0, LCT_GREY, 8, LCT_RGB, 16, LCT_RGB, 16, 2, false);
+  testSbitChunk2(8, 8, 7, 0, LCT_GREY, 8, LCT_RGB, 16, LCT_RGB, 16, 2, false);
+  testSbitChunk2(8, 7, 8, 0, LCT_GREY, 8, LCT_RGB, 8, LCT_RGB, 8, 2, false);
+  testSbitChunk2(8, 8, 7, 0, LCT_GREY, 8, LCT_RGB, 8, LCT_RGB, 8, 2, false);
+  testSbitChunk2(8, 8, 8, 0, LCT_GREY, 8, LCT_RGB, 8, LCT_GREY_ALPHA, 8, 1, false);
+  testSbitChunk2(8, 8, 8, 8, LCT_GREY, 8, LCT_RGB, 8, LCT_GREY_ALPHA, 8, 0, false);
+
+
+  // test png-suite image cs3n3p08.png, which has an sBIT chunk with RGB values set to 3 bits
+  {
+    std::vector<unsigned char> png, decoded;
+    fromBase64(png, std::string("iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAAYagMeiWXwAAAANzQklUAwMDo5KgQgAAAFRQTFRFkv8AAP+SAP//AP8AANv/AP9t/7YAAG3/tv8A/5IA2/8AAEn//yQA/wAAJP8ASf8AAP/bAP9JAP+2//8AAP8kALb//9sAAJL//20AACT//0kAbf8A33ArFwAAAEtJREFUeJyFyscBggAAALGzYldUsO2/pyMk73SGGE7QF3pDe2gLzdADHA7QDqIfdIUu0AocntAIbaAFdIdu0BIc1tAEvaABOkIf+AMiQDPhd/SuJgAAAABJRU5ErkJggg=="));
+    lodepng::State state;
+    unsigned w, h;
+
+    unsigned error = lodepng::decode(decoded, w, h, state, png);
+    assertNoError(error);
+    ASSERT_EQUALS(1, state.info_png.sbit_defined);
+    ASSERT_EQUALS(3, state.info_png.sbit_r);
+    ASSERT_EQUALS(3, state.info_png.sbit_g);
+    ASSERT_EQUALS(3, state.info_png.sbit_b);
+  }
+
+  // test png-suite image basn0g02.png, which is known to not have an sBIT chunk
+  {
+    std::vector<unsigned char> png, decoded;
+    fromBase64(png, std::string("iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAgAAAAAcoT2JAAAABGdBTUEAAYagMeiWXwAAAB9JREFUeJxjYAhd9R+M8TCIUMIAU4aPATMJH2OQuQcAvUl/gYsJiakAAAAASUVORK5CYII="));
+    lodepng::State state;
+    unsigned w, h;
+
+    unsigned error = lodepng::decode(decoded, w, h, state, png);
+    assertNoError(error);
+    ASSERT_EQUALS(0, state.info_png.sbit_defined);
+  }
 }
 
 // Test particular cHRM+gAMA conversion to srgb
@@ -3554,117 +3776,6 @@ void testErrorImages() {
   testBase64Image("iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAgMAAAAhHED1AAAAU0lEQVR4Ae3MwQAAAAxFoXnM3/NDvGsBdB8JBAKBQCAQCAQCgUAgEAgEAoFAIBAIBAKBQCAQCAQCgUAgEAgEAoFAIBAIBAKBQCAQCAQCgUAgEEQDHGPAW1eyhK0AAAAASUVORK5CYII=", true, 256, 256, "");
 }
 
-// defined in lodepng.cpp
-unsigned lode_png_test_bitreader(const unsigned char* data, size_t size, size_t numsteps, const size_t* steps, unsigned* result);
-
-void testBitReaderCase(const std::string& bits, const std::vector<size_t>& steps, bool expect_error, bool silent = false) {
-  if(!silent) std::cout << "testBitReaderCase: " << bits << ", #steps: " << steps.size() << std::endl;
-  std::vector<unsigned char> data;
-  std::vector<bool> bits0;
-  size_t bitcount = 0;
-  for(size_t i = 0; i < bits.size(); i++) {
-    char c = bits[i];
-    if(c != '0' && c != '1') continue;
-    if((bitcount & 7) == 0) data.push_back(0);
-    int bit = (c == '1');
-    data.back() |= (bit << (bitcount & 7));
-    bits0.push_back(bit);
-    bitcount++;
-  }
-  std::vector<unsigned> result(steps.size());
-  unsigned ok = lode_png_test_bitreader(data.data(), data.size(), steps.size(), steps.data(), result.data());
-  if(expect_error) {
-    assertEquals(0, ok, "expected it would give an error");
-    return;
-  }
-  assertEquals(1, ok, "expected there would be no error");
-
-  std::vector<bool> bits1;
-  for(size_t i = 0; i < steps.size(); i++) {
-    size_t step = steps[i];
-    size_t value = result[i];
-    for(size_t j = 0; j < step; j++) {
-      bits1.push_back((value >> j) & 1);
-    }
-  }
-  bits0.resize(bits1.size()); // only test those bits that were actually read for the test
-
-  assertEquals(bits0, bits1);
-}
-
-// This is still using C++98 for lodepng for compatibility, even though I'd love to use C++11 vector initializer lists here.
-// TODO: use modern C++ at least for the unit test
-#define V(arr) std::vector<size_t>(arr, arr + sizeof(arr) / sizeof(*arr))
-
-void testBitReader() {
-  std::string zeros = "0000000000000000000000000000000000000000000000000000000000000000";
-  testBitReaderCase("", std::vector<size_t>(0), false);
-  { size_t arr[] = {1}; testBitReaderCase("0", V(arr), false); }
-  { size_t arr[] = {1}; testBitReaderCase("1", V(arr), false); }
-  { size_t arr[] = {2}; testBitReaderCase("00", V(arr), false); }
-  { size_t arr[] = {2}; testBitReaderCase("01", V(arr), false); }
-  { size_t arr[] = {2}; testBitReaderCase("10", V(arr), false); }
-  { size_t arr[] = {2}; testBitReaderCase("11", V(arr), false); }
-  { size_t arr[] = {3}; testBitReaderCase("111", V(arr), false); }
-  { size_t arr[] = {4}; testBitReaderCase("1111", V(arr), false); }
-  { size_t arr[] = {8}; testBitReaderCase("11111111", V(arr), false); }
-  { size_t arr[] = {9}; testBitReaderCase("111111111", V(arr), false); }
-  { size_t arr[] = {9}; testBitReaderCase("11111111", V(arr), true); }
-  { size_t arr[] = {16}; testBitReaderCase("1111111111111111", V(arr), false); }
-  { size_t arr[] = {17}; testBitReaderCase("11111111111111111", V(arr), false); }
-  { size_t arr[] = {17}; testBitReaderCase("1111111111111111", V(arr), true); }
-  { size_t arr[] = {24}; testBitReaderCase("111111111111111111111111", V(arr), false); }
-  { size_t arr[] = {25}; testBitReaderCase("1111111111111111111111111", V(arr), false); }
-  { size_t arr[] = {25}; testBitReaderCase("111111111111111111111111", V(arr), true); }
-  { size_t arr[] = {31}; testBitReaderCase("1111111111111111111111111111111", V(arr), false); }
-  { size_t arr[] = {1, 31}; testBitReaderCase("11111111111111111111111111111111", V(arr), false); }
-  { size_t arr[] = {31}; testBitReaderCase("111111111111111111111111", V(arr), true); }
-  { size_t arr[] = {16, 16}; testBitReaderCase("11111111111111111111111111111111", V(arr), false); }
-  { size_t arr[] = {1}; testBitReaderCase("0" + zeros, V(arr), false); }
-  { size_t arr[] = {1}; testBitReaderCase("1" + zeros, V(arr), false); }
-  { size_t arr[] = {2}; testBitReaderCase("00" + zeros, V(arr), false); }
-  { size_t arr[] = {2}; testBitReaderCase("01" + zeros, V(arr), false); }
-  { size_t arr[] = {2}; testBitReaderCase("10" + zeros, V(arr), false); }
-  { size_t arr[] = {2}; testBitReaderCase("11" + zeros, V(arr), false); }
-  { size_t arr[] = {3}; testBitReaderCase("111" + zeros, V(arr), false); }
-  { size_t arr[] = {4}; testBitReaderCase("1111" + zeros, V(arr), false); }
-  { size_t arr[] = {8}; testBitReaderCase("11111111" + zeros, V(arr), false); }
-  { size_t arr[] = {9}; testBitReaderCase("111111111" + zeros, V(arr), false); }
-  { size_t arr[] = {16}; testBitReaderCase("1111111111111111" + zeros, V(arr), false); }
-  { size_t arr[] = {17}; testBitReaderCase("11111111111111111" + zeros, V(arr), false); }
-  { size_t arr[] = {24}; testBitReaderCase("111111111111111111111111" + zeros, V(arr), false); }
-  { size_t arr[] = {25}; testBitReaderCase("1111111111111111111111111" + zeros, V(arr), false); }
-  { size_t arr[] = {31}; testBitReaderCase("1111111111111111111111111111111" + zeros, V(arr), false); }
-  { size_t arr[] = {16, 16}; testBitReaderCase("11111111111111111111111111111111" + zeros, V(arr), false); }
-
-  // 128 arbitrary bits
-  std::string test = "10101011110000101110010010000101000100100000111000010010010010010010111100000100100100100000001010111111110001111010101011011001";
-  for(size_t i = 0; i < 32; i++) {
-    std::cout << "testBitReader loop " << i << std::endl;
-    { size_t arr[] = {i}; testBitReaderCase(test, V(arr), false, true); }
-    { size_t arr[] = {i, i}; testBitReaderCase(test, V(arr), false, true); }
-    { size_t arr[] = {i, i, i}; testBitReaderCase(test, V(arr), false, true); }
-    { size_t arr[] = {i, i, i, i}; testBitReaderCase(test, V(arr), false, true); }
-    { size_t arr[] = {1, i, i, i, i}; testBitReaderCase(test, V(arr), false, true); }
-    { size_t arr[] = {2, i, i, i, i}; testBitReaderCase(test, V(arr), false, true); }
-    { size_t arr[] = {3, i, i, i, i}; testBitReaderCase(test, V(arr), false, true); }
-    { size_t arr[] = {31, 31, 31, i}; testBitReaderCase(test, V(arr), false, true); }
-    { size_t arr[] = {i, i, i, i, i, i, i, i}; testBitReaderCase(test + test, V(arr), false, true); }
-    for(size_t j = 0; j < 32; j++) {
-      { size_t arr[] = {i, j}; testBitReaderCase(test, V(arr), false, true); }
-      { size_t arr[] = {i, j, i, j}; testBitReaderCase(test, V(arr), false, true); }
-      { size_t arr[] = {i, i, j, j}; testBitReaderCase(test, V(arr), false, true); }
-      { size_t arr[] = {31, 31, i, j}; testBitReaderCase(test, V(arr), false, true); }
-    }
-  }
-  { size_t arr[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}; testBitReaderCase(test, V(arr), false); }
-  { size_t arr[] = {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3}; testBitReaderCase(test, V(arr), false); }
-  { size_t arr[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,31,1,1,1,1,1,1,1,1,1,1,1}; testBitReaderCase(test, V(arr), false); }
-  { size_t arr[] = {16,1,2,4,7,3,6,28,28,31,1,17,12,1,3,8,3,3,14,21,25,24,1,8,7}; testBitReaderCase(test + test + test, V(arr), false); }
-  { size_t arr[] = {5,7,17,15,6,8,4,5,3,11,1,4,4,8,6,4,5,1,6,5,13,8,18,1,1,8,7,2}; testBitReaderCase(test + test + test, V(arr), false); }
-
-}
-
 void doMain() {
   //PNG
   testPngSuite();
@@ -3681,6 +3792,7 @@ void doMain() {
   testColorProfile();
   testBkgdChunk();
   testBkgdChunk2();
+  testSbitChunk();
 
   //Colors
 #ifndef DISABLE_SLOW
@@ -3707,7 +3819,6 @@ void doMain() {
   testCustomDeflate();
   testCustomZlibDecompress();
   testCustomInflate();
-  testBitReader();
   // TODO: add test for huffman code with exactly 0 and 1 symbols present
 
   //lodepng_util
