@@ -22,7 +22,6 @@ namespace ImGuiConnector {
     ImGui::CreateContext();
     ImPlot::CreateContext();
     io = &(ImGui::GetIO());
-    (void)io;
     // Enable Keyboard Controls
     io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     // Disable .ini generation/loading for now
@@ -52,6 +51,7 @@ namespace ImGuiConnector {
     glfwSetWindowFocusCallback(window, ImGui_ImplGlfw_WindowFocusCallback);
     glfwSetCursorEnterCallback(window, ImGui_ImplGlfw_CursorEnterCallback);
     glfwSetMouseButtonCallback(window, ImGui_ImplGlfw_MouseButtonCallback);
+    glfwSetCursorPosCallback(window, ImGui_ImplGlfw_CursorPosCallback);
     // Scroll Callback
     if (user_scroll_fun) {
       GLFWscrollfun callback = [](GLFWwindow *window, double xoffset, double yoffset) {
