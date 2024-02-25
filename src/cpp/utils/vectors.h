@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include <fmt/ostream.h>
+
 /* Forward Definitions */
 template <typename T, size_t N>
 class VectorN;
@@ -23,9 +25,6 @@ std::ostream &operator<<(std::ostream &out, const VectorN<T, N> &v);
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const Vector3<T> &v);
 
-// fmt/ostream.h needs to be included after std::ostream &operator<< definitions
-#include "fmt/ostream.h"
-
 /* Aliases */
 using Vec2i = Vector2<int>;
 using Vec2f = Vector2<float>;
@@ -34,6 +33,14 @@ using Vec2d = Vector2<double>;
 using Vec3i = Vector3<int>;
 using Vec3f = Vector3<float>;
 using Vec4f = Vector4<float>;
+
+/* fmtlib support */
+template <typename T>
+struct fmt::formatter<Vector2<T>> : fmt::ostream_formatter {};
+template <typename T>
+struct fmt::formatter<Vector3<T>> : fmt::ostream_formatter {};
+template <typename T>
+struct fmt::formatter<Vector4<T>> : fmt::ostream_formatter {};
 
 /* Implementations */
 

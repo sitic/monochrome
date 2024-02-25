@@ -324,8 +324,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     ImPlot::SetNextAxisLinks(ImAxis_Y1, trace.scale.scaleY ? &trace.scale.lower : nullptr,
                              trace.scale.scaleY ? &trace.scale.upper : nullptr);
     auto ptitle = "###trace" + label;
-    if (ImPlot::BeginPlot(ptitle.c_str(), ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180),
-                          ImPlotFlags_AntiAliased)) {
+    if (ImPlot::BeginPlot(ptitle.c_str(), ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180))) {
       ImPlot::SetupAxes(nullptr, nullptr);
       ImPlot::SetNextLineStyle({trace.color[0], trace.color[1], trace.color[2], trace.color[3]});
       auto title = "###ttrace" + label;
