@@ -1,6 +1,37 @@
 # Monochrome — Video viewer for scientific monochromatic videos
 
-This is a simple viewer to play MultiRecorder and binary files. Drag & drop the file into the window or pass the paths as arguments.
+Monochrome is a viewer for scientific monochromatic videos with high-dynamic range.
+
+It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our spefic needs for cariac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
+* Support for high-dynamic range (16-bit, 32-bit float)
+* Playback of multiple videos in sync
+* High-speed playback (as fast as the hardware allows)
+* Viewing of optical traces (average intensity in a region of interest over time)
+* Rendering of layers on top of videos with transparency
+* Rendering of point positions over time (e.g. for tracking, optical flow visualization)
+* Exporting of videos as PNG images or MP4 videos with precise control over the frame rate
+* Cross-platform (Linux, Windows, MacOS)
+
+It is designed to be fast and lightweight, i.e. it uses memory-mapping to load video files to avoid copying the data into RAM. 
+
+## Standalone Application and Python Library
+
+Monochrome can be used as a standalone application or as a Python library. The standalone application is a simple video viewer with a minimalistic user interface. The Python library allows to load and play videos from Python scripts and Jupyter notebooks, see the [Python Quickstart](#python-quickstart).
+
+For the standalone application, download the latest release from the [releases page](https://github.com/sitic/monochrome/-/releases) and run the executable. For the Python library, install it with pip:
+
+```bash
+python -m pip install monochrome
+```
+
+## Native Video File Formats
+Monochrome supports the following video formats:
+
+* `.npy` (NumPy array) with shape (time, width, height). The data type can be float or integer (uint8, uint16, etc.).
+* `.dat` MultiRecorder format
+* `.dat` (binary) with shape (time, width, height) and data type float32
+
+Drag & drop the file into the window or associate the file extension with Monochrome.
 
 ## Key Bindings
 
@@ -25,7 +56,7 @@ This is a simple viewer to play MultiRecorder and binary files. Drag & drop the 
 
 To install Monochrome with Python integration run the following command on Linux or macOS:
 ```bash
-python3 -m pip install monochrome
+python -m pip install monochrome
 ```
 On Windows you might need to run
 ```bash
@@ -51,7 +82,7 @@ mc.show(video, "Our Test Video", cmap='viridis')
 # Videos of type float or integer (uint8, uint16 ect.) are natively supported by Monochrome
 video2 = (np.random.rand((500, 128, 128)) * 65535).astype(dtype=np.uint16)
 
-# Several videos can be shown at the same time, it does not block the python process
+# Several videos can be shown at the same time, they will be played in sync if they have the same length
 mc.show(video2, "Another Video", cmap='gray',
         # we can also add some metadata
         date="2020-04-29-13-10-27", comment="Blebbistatin", fps=500, duration_seconds=30)
@@ -69,14 +100,13 @@ mc.show_layer(overlay, "Phase", parent="Our Test Video", cmap='hsv')
 ```
 
 ## Standalone Application
-
+## Development
 * [Linux](https://gitlab.com/cardiac-vision/monochrome/builds/artifacts/master/file/build/Monochrome.AppImage?job=gcc%20Release)
   (mark as executable and run it)
 * [Windows](https://gitlab.gwdg.de/lebert/monochrome/builds/artifacts/master/file/build/Release/Monochrome.exe?job=windows%20Release)
   (you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe))
 * [MacOS](https://gitlab.com/cardiac-vision/monochrome/builds/artifacts/master/file/dist/Monochrome-0.1.0-Darwin.dmg?job=macos)
 
-## Build Requirements
 
 ### Linux
 
