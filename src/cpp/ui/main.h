@@ -1,3 +1,5 @@
+#pragma once
+
 ImGuiWindow* show_main_ui() {
   ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SetNextWindowSizeConstraints(ImVec2(ImGui::GetMainViewport()->Size[0], 0),

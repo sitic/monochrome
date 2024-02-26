@@ -87,9 +87,6 @@ set(SOURCES
         src/cpp/recording.cpp
         src/cpp/recording.h
         src/cpp/ui.h
-        src/cpp/ui_main.h
-        src/cpp/ui_recording.h
-        src/cpp/ui_export.h
         src/cpp/recordingwindow.cpp
         src/cpp/recordingwindow.h
         src/cpp/recordingwindow_helpers.cpp
@@ -98,6 +95,14 @@ set(SOURCES
         src/cpp/transformations.h
         src/cpp/keybindings.cpp
         src/cpp/keybindings.h
+
+        src/cpp/ui/main.h
+        src/cpp/ui/export.h
+        src/cpp/ui/recording.h
+        src/cpp/ui/recording_controls.h
+        src/cpp/ui/recording_histogram.h
+        src/cpp/ui/recording_points.h
+        src/cpp/ui/recording_traces.h
 
         src/cpp/fileformats/AbstractFile.h
         src/cpp/fileformats/all_formats.cpp

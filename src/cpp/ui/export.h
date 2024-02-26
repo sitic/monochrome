@@ -1,3 +1,5 @@
+#pragma once
+
 /* Create directory, return false on error */
 bool create_directory(std::string path) {
   std::error_code error;

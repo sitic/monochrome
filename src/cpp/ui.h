@@ -44,6 +44,6 @@ namespace prm {
   std::map<ColorMap, GLuint> cmap_texs;
 }  // namespace prm
 
-#include "ui_main.h"
-#include "ui_recording.h"
-#include "ui_export.h"
+#include "ui/main.h"
+#include "ui/recording.h"
+#include "ui/export.h"
