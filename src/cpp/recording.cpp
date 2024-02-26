@@ -34,12 +34,17 @@ void RotationCtrl::add_rotation(short delta_rotation) {
   }
 }
 
-void RotationCtrl::fliplr() {
+void RotationCtrl::flip_lr() {
   _fliplr = !_fliplr;
 }
 
-void RotationCtrl::flipud() {
+void RotationCtrl::flip_ud() {
   _flipud = !_flipud;
+}
+
+void RotationCtrl::flip_reset() {
+  _fliplr = false;
+  _flipud = false;
 }
 
 void RotationCtrl::apply(Eigen::MatrixXf &arr) {

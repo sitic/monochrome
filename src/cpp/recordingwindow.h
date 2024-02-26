@@ -68,8 +68,9 @@ class RecordingWindow : public Recording {
   void remove_trace(const Vec2i &pos);
   void save_trace(const Vec2i &pos, fs::path ouput_txt_path, Vec2i t0tmax = {0, 0});
 
-  static void fliplr() { rotations.flipud(); }
-  static void flipud() { rotations.fliplr(); }
+  static void flip_lr() { rotations.flip_ud(); }
+  static void flip_ud() { rotations.flip_lr(); }
+  static void flip_reset() { rotations.flip_reset(); }
   static void set_rotation(short rotation);
   static void add_rotation(short d_rotation);
 

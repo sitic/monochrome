@@ -210,16 +210,13 @@ void display_loop() {
     }
     std::this_thread::sleep_for(sleep_duration);
 
-    // ImGui::ShowDemoWindow();
-
-    show_main_ui();
-
     // Check if recording window should close
     global::recordings.erase(
         std::remove_if(global::recordings.begin(), global::recordings.end(),
                        [](const auto &r) -> bool { return glfwWindowShouldClose(r->window); }),
         global::recordings.end());
 
+    auto top_window = show_main_ui();
     int rec_nr = 0;
     for (const auto &rec : global::recordings) {
       if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);

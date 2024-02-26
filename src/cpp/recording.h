@@ -21,8 +21,9 @@ struct RotationCtrl {
   void set_rotation(short rotation);
   void add_rotation(short delta_rotation);
 
-  void fliplr();
-  void flipud();
+  void flip_lr();
+  void flip_ud();
+  void flip_reset();
 
   void apply(Eigen::MatrixXf &arr);
 

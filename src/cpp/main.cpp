@@ -47,9 +47,9 @@ int main(int argc, char **argv) {
       ->check(CLI::IsMember({0, 90, 180, 270}))
       ->default_str("0");
   app.add_flag(
-      "--fliph", [](std::int64_t count) { RecordingWindow::fliplr(); }, "Flip video horizontally");
+      "--fliph", [](std::int64_t count) { RecordingWindow::flip_lr(); }, "Flip video horizontally");
   app.add_flag(
-      "--flipv", [](std::int64_t count) { RecordingWindow::flipud(); }, "Flip video vertically");
+      "--flipv", [](std::int64_t count) { RecordingWindow::flip_ud(); }, "Flip video vertically");
   app.add_option("--font-scale", font_scale, "Fonts scaling factor");
   app.add_option("--trace_length", prm::trace_length, "Default length (in frames) for traces");
   app.add_option("--max_trace_length", prm::max_trace_length,
