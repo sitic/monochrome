@@ -43,7 +43,7 @@ class Recording {
   Eigen::MatrixXf frame;
 
   Recording(const fs::path &path) : Recording(file_factory(path)){};
-  Recording(std::shared_ptr<AbstractFile> _file) : _file(std::move(_file)) {
+  Recording(std::shared_ptr<AbstractFile> file) : _file(std::move(file)) {
     if (!_file || !_file->good()) {
       return;
     }
