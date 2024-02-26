@@ -77,6 +77,7 @@ class RecordingWindow : public Recording {
   void colormap(ColorMap cmap);
   ColorMap colormap() const { return cmap_; }
 
+  void set_name(const std::string &new_name) override;
   void resize_window();
   fs::path save_snapshot(std::string output_png_path_template = "");
   void start_recording(const fs::path &filename, int fps = 30, std::string description = "");
@@ -121,7 +122,6 @@ class FixedTransformRecordingWindow : public RecordingWindow {
   Filters fixed_prefilter_;
   Transformations fixed_transformation_;
   Filters fixed_postfilter_;
-  const std::string name_;
 
  public:
   FixedTransformRecordingWindow(SharedRecordingPtr parent,
@@ -138,5 +138,4 @@ class FixedTransformRecordingWindow : public RecordingWindow {
   float &get_max(Transformations type) override {
     return RecordingWindow::get_max(fixed_transformation_);
   }
-  std::string name() const override { return name_; }
 };

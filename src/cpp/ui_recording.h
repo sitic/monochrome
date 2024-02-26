@@ -50,14 +50,8 @@ void display_recording_metadata(const SharedRecordingPtr &rec) {
 
 bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   if (!parent) {
-    if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
-      auto &ctrl         = rec->export_ctrl.raw;
-      ctrl.export_window = true;
-      ctrl.start         = {0, 0};
-      ctrl.size          = {rec->Nx(), rec->Ny()};
-      ctrl.frames        = {0, rec->length()};
-      ctrl.assign_auto_filename(rec->path());
-    }
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Export to video file: ");
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
       auto &ctrl         = rec->export_ctrl.video;
@@ -66,10 +60,21 @@ bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *p
       ctrl.tend        = rec->length();
       ctrl.description = rec->comment();
     }
+    ImGui::Text("Export as image sequence: ");
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
       auto &ctrl         = rec->export_ctrl.png;
       ctrl.export_window = true;
+      ctrl.assign_auto_filename(rec->path());
+    }
+    ImGui::Text("Export as raw video: ");
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
+      auto &ctrl         = rec->export_ctrl.raw;
+      ctrl.export_window = true;
+      ctrl.start         = {0, 0};
+      ctrl.size          = {rec->Nx(), rec->Ny()};
+      ctrl.frames        = {0, rec->length()};
       ctrl.assign_auto_filename(rec->path());
     }
     if (global::recordings.size() > 1) {
@@ -97,15 +102,13 @@ bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *p
     if (ImGui::Button(ICON_FA_TRASH_ALT)) {
       rec->set_context(nullptr);
       // Child will be deleted later, after we have left the loop over all children.
-      ImGui::Columns(1);
-      ImGui::PopID();
       return true;
     }
   }
   return false;
 }
 
-void display_histogram(const SharedRecordingPtr &rec, RecordingWindow *parent) {
+void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   // Histogram and other controls
   ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
   ImGui::PlotHistogram("##histogram", rec->histogram.data.data(), rec->histogram.data.size(), 0,
@@ -194,44 +197,331 @@ void display_histogram(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   }
 }
 
+void show_traces_ui(const SharedRecordingPtr &rec) {
+  ImGui::BeginTabBar("##traces");
+
+  if (ImGui::BeginTabItem("View")) {
+    for (auto &trace : rec->traces) {
+      ImGui::PushID(trace.id);
+
+      int size = trace.data.size();
+      if (size == 0) {
+        ImGui::PopID();
+        ImGui::EndTabItem();
+        continue;
+      }
+
+      auto label = trace.pos.to_string();
+      auto data = trace.data.data();
+      if (size > prm::trace_length) {
+        data += (size - prm::trace_length);
+        size = prm::trace_length;
+      }
+
+      trace.scale.left  = data - trace.data.data();
+      trace.scale.right = trace.data.size();
+      trace.scale.scale(data, data + size);
+      ImPlot::SetNextAxisLinks(ImAxis_X1, trace.scale.scaleX ? &trace.scale.left : nullptr,
+                              trace.scale.scaleX ? &trace.scale.right : nullptr);
+      ImPlot::SetNextAxisLinks(ImAxis_Y1, trace.scale.scaleY ? &trace.scale.lower : nullptr,
+                              trace.scale.scaleY ? &trace.scale.upper : nullptr);
+      auto ptitle = fmt::format("Pos {}###trace", label);
+      // auto plot_size = ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180);
+      auto plot_size = ImVec2(ImGui::GetContentRegionAvail().x, 180);
+      if (ImPlot::BeginPlot(ptitle.c_str(), plot_size)) {
+        ImPlot::SetupAxes(nullptr, nullptr);
+        ImPlot::SetNextLineStyle({trace.color[0], trace.color[1], trace.color[2], trace.color[3]});
+        auto title = "###ttrace" + label;
+        ImPlot::PlotLine(title.c_str(), trace.data.data(), trace.data.size());
+        ImPlotUtils::draw_liney(trace.scale.restarts);
+        ImPlot::EndPlot();
+      }
+
+      // ImGui::SameLine();
+      // ImGui::BeginGroup();
+      // ImGui::AlignTextToFramePadding();
+      // ImGui::Text("Trace ");
+      // ImGui::SameLine();
+      // ImGui::ColorEdit3(label.c_str(), trace.color.data(),
+      //                   ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+      // ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.95f);
+      // if (ImGui::InputInt2("###Trace", trace.pos.data())) {
+      //   trace.pos[0] = std::clamp(trace.pos[0], 0, rec->Nx());
+      //   trace.pos[1] = std::clamp(trace.pos[1], 0, rec->Ny());
+      // }
+      // ImGui::EndGroup();
+      ImGui::PopID();
+    }
+    ImGui::EndTabItem();
+  }
+
+  if (ImGui::BeginTabItem("Settings")) {
+    {
+      int trace_width = Trace::width();
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+      if (ImGui::InputInt("ROI width [px]", &trace_width, 2, 5)) {
+        Trace::width(trace_width);
+      }
+    }
+    {
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+      ImGui::SliderInt("Trace length [frames]", &prm::trace_length, 10, prm::max_trace_length);
+    }
+
+    for (auto &trace : rec->traces) {
+      ImGui::PushID(trace.id);
+      auto title = "Pos " + trace.pos.to_string();
+      if (ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
+          rec->remove_trace(trace.pos);
+        }
+
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
+        if (ImGui::InputInt2("Center position", trace.pos.data())) {
+          trace.pos[0] = std::clamp(trace.pos[0], 0, rec->Nx());
+          trace.pos[1] = std::clamp(trace.pos[1], 0, rec->Ny());
+        }
+
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
+        ImGui::ColorEdit3("Color", trace.color.data());
+
+        ImGui::NewLine();
+        if (ImGui::Button("Export video trace as .txt file")) {
+          auto &ctrl         = rec->export_ctrl.trace;
+          ctrl.export_window = true;
+          ctrl.assign_auto_filename(rec->path(), trace.pos, Trace::width());
+          ctrl.tend = rec->length();
+        }
+        if (ImGui::Button("Export ROI as .npy file")) {
+          auto &ctrl                      = rec->export_ctrl.raw;
+          ctrl.export_window              = true;
+          std::tie(ctrl.start, ctrl.size) = Trace::clamp(trace.pos, {rec->Nx(), rec->Ny()});
+          ctrl.frames                     = {0, rec->length()};
+          ctrl.assign_auto_filename(rec->path());
+        }
+        ImGui::NewLine();
+        if (ImGui::Button("Reset data")) {
+          trace.data.clear();
+        }
+        ImGui::NewLine();
+        ImGui::Checkbox("Auto scale x-axis", &trace.scale.scaleX);
+        ImGui::Checkbox("Auto scale y-axis", &trace.scale.scaleY);
+      }
+    }
+    ImGui::PopID();
+    ImGui::EndTabItem();
+  }
+  ImGui::EndTabBar();
+}
+
+void show_flow_ui(const SharedRecordingPtr &rec) {
+  for (auto &flow : rec->flows) {
+    ImGui::PushID(flow.data.get());
+    ImGui::Text("Flow %s", flow.data->name().c_str());
+    ImGui::SameLine();
+    ImGui::ColorEdit4("", flow.color.data(),
+                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+    ImGui::SameLine();
+    if (flow.show)
+      flow.show = !ImGui::Button(ICON_FA_EYE_SLASH);
+    else
+      flow.show = ImGui::Button(ICON_FA_EYE);
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_TRASH_ALT)) {
+      flow.data = nullptr;
+    }
+    ImGui::PopID();
+  }
+  // Actually remove deleted flows
+  rec->flows.erase(
+      std::remove_if(rec->flows.begin(), rec->flows.end(), [](const auto &f) { return !f.data; }),
+      rec->flows.end());
+  ImGui::Columns(2);
+  ImGui::SliderInt("flow skip", &FlowData::skip, 1, 25);
+  ImGui::NextColumn();
+  ImGui::SliderFloat("flow point size", &FlowData::pointsize, 0, 10);
+  ImGui::Columns(1);
+}
+
+void show_points_ui(const SharedRecordingPtr &rec) {
+  for (const auto &vid : rec->points_videos) {
+    ImGui::PushID(vid.get());
+    ImGui::Text("%s", vid->name.c_str());
+    ImGui::SliderFloat("point size", &vid->point_size, 0, 10);
+    ImGui::SameLine();
+    if (vid->show)
+      vid->show = !ImGui::Button(ICON_FA_EYE_SLASH);
+    else
+      vid->show = ImGui::Button(ICON_FA_EYE);
+    ImGui::SameLine();
+    ImGui::ColorEdit4("", vid->color.data(),
+                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+    ImGui::Separator();
+    ImGui::PopID();
+  }
+}
+
+void show_transformations_tab() {
+  auto selectable_factory = [](auto &p, auto default_val) {
+    return [&p, default_val](const char *label, auto e) {
+      bool is_active = p == e;
+      if (ImGui::Selectable(label, is_active)) {
+
+        p = is_active ? default_val : e;
+
+        global::do_forall_recordings([](auto &r) { r->reset_traces(); });
+      }
+
+      return is_active;
+    };
+  };
+
+  auto kernel_size_select = [](unsigned int &val, auto reset_fn) {
+    ImGui::Indent(10);
+    const int step = 2;
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32, &val, &step, nullptr, "%d")) {
+      global::do_forall_recordings([&reset_fn](auto &r) { reset_fn(r.get()); });
+    }
+    ImGui::Unindent(10);
+  };
+
+  ImGui::Columns(3);
+  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+  if (ImGui::TreeNode("Pre Filters")) {
+    auto selectable = selectable_factory(prm::prefilter, Filters::None);
+    if (selectable("Gauss", Filters::Gauss)) {
+      ImGui::Indent(10);
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+      float sigma = Transformation::GaussFilter::get_sigma();
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
+      if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, u8"σ = %.2f")) {
+        Transformation::GaussFilter::set_sigma(sigma);
+      }
+      ImGui::Unindent(10);
+    }
+    if (selectable("Mean", Filters::Mean)) {
+      kernel_size_select(Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
+        auto transform = r->transformationArena.create_if_needed(Filters::Mean, 0);
+        auto c         = dynamic_cast<Transformation::MeanFilter *>(transform);
+        assert(c);
+        c->reset();
+      });
+    }
+    if (selectable("Median", Filters::Median)) {
+      kernel_size_select(Transformation::MedianFilter::kernel_size, [](RecordingWindow *r) {
+        auto transform = r->transformationArena.create_if_needed(Filters::Median, 0);
+        auto c         = dynamic_cast<Transformation::MedianFilter *>(transform);
+        assert(c);
+        c->reset();
+      });
+    }
+    ImGui::TreePop();
+  }
+
+  ImGui::NextColumn();
+
+  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+  if (ImGui::TreeNode("Transformations")) {
+    auto selectable = selectable_factory(prm::transformation, Transformations::None);
+    if (selectable("Frame Difference", Transformations::FrameDiff)) {
+      ImGui::Indent(10);
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
+      ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 100);
+      if (ImGui::Button("Add As Overlays")) {
+        std::vector<std::pair<SharedRecordingPtr, SharedRecordingPtr>> new_recordings;
+        for (auto rec : global::recordings) {
+          auto r = std::make_shared<FixedTransformRecordingWindow>(
+              rec, prm::prefilter, prm::transformation, prm::postfilter, "Frame Difference");
+          new_recordings.push_back({r, rec});
+        }
+        for (auto [r, rec] : new_recordings) {
+          global::recordings.push_back(r);
+          r->open_window();
+          global::merge_queue.push({r, rec, false});
+        }
+        prm::transformation = Transformations::None;
+        prm::prefilter      = Filters::None;
+        prm::postfilter     = Filters::None;
+      }
+      ImGui::Unindent(10);
+    }
+    if (selectable("Contrast Enhancement", Transformations::ContrastEnhancement)) {
+      ImGui::Indent(10);
+      const int step = 2;
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+      if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32,
+                            &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
+                            "%d")) {
+        global::do_forall_recordings([](auto &r) {
+          auto transform =
+              r->transformationArena.create_if_needed(Transformations::ContrastEnhancement, 0);
+          auto c = dynamic_cast<Transformation::ContrastEnhancement *>(transform);
+          assert(c);
+          c->reset();
+        });
+      }
+//      ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
+      ImGui::Unindent(10);
+    }
+    ImGui::TreePop();
+  }
+
+  ImGui::NextColumn();
+
+  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+  if (ImGui::TreeNode("Post Filters")) {
+    auto selectable = selectable_factory(prm::postfilter, Filters::None);
+    if (selectable("Gauss", Filters::Gauss)) {
+      ImGui::Indent(10);
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+      float sigma = Transformation::GaussFilter::get_sigma();
+      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
+      if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, u8"σ = %.2f")) {
+        Transformation::GaussFilter::set_sigma(sigma);
+      }
+      ImGui::Unindent(10);
+    }
+    if (selectable("Mean", Filters::Mean)) {
+      kernel_size_select(Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
+        auto transform = r->transformationArena.create_if_needed(Filters::Mean, 1);
+        auto c         = dynamic_cast<Transformation::MeanFilter *>(transform);
+        assert(c);
+        c->reset();
+      });
+    }
+    if (selectable("Median", Filters::Median)) {
+      kernel_size_select(Transformation::MedianFilter::kernel_size, [](RecordingWindow *r) {
+        auto transform = r->transformationArena.create_if_needed(Filters::Median, 1);
+        auto c         = dynamic_cast<Transformation::MedianFilter *>(transform);
+        assert(c);
+        c->reset();
+      });
+    }
+    ImGui::TreePop();
+  }
+  ImGui::Columns(1);
+}
+
 int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow *parent = nullptr) {
   auto name = fmt::format("{}###{}", rec->name(), static_cast<void *>(rec.get()));
-  if (!parent) {
-    // TODO: a GUI rewrite should be done to make this more elegant
-    int x        = std::clamp(rec_nr / 3, 0, prm::main_window_multipier - 1);
-    float y      = (rec_nr % 3) * 0.3f + 0.2f * (x == 0);
-    auto vp_size = ImGui::GetMainViewport()->Size;
-    vp_size[0] /= static_cast<float>(prm::main_window_multipier);
-    auto window_pos    = ImVec2(x * vp_size[0], y * vp_size[1]);
-    float window_width = vp_size[0];
-    ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(window_width, 0), ImVec2(FLT_MAX, FLT_MAX));
-    ImGui::SetNextWindowCollapsed(!rec->active, ImGuiCond_Always);
-    if (ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-      if (!rec->active) {
-        // recording was enabled
-        rec->active = true;
+  if (ImGui::CollapsingHeader(name.c_str(),
+                              ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanFullWidth)) {
+    if (!rec->active) {
+      // layer was just activated
+      rec->active   = true;
+      if (!parent) {
         glfwShowWindow(rec->window);
-      }
-    } else {
-      if (rec->active) {
-        // recording was disabled
-        rec->active = false;
-        glfwHideWindow(rec->window);
+      } else {
+        rec->playback = parent->playback;
       }
     }
   } else {
-    if (ImGui::CollapsingHeader(name.c_str(),
-                                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanFullWidth)) {
-      if (!rec->active) {
-        // layer was just activated
-        rec->active   = true;
-        rec->playback = parent->playback;
-      }
-    } else {
-      rec->active = false;
-      return rec_nr;
+    rec->active = false;
+    if (!parent) {
+      glfwHideWindow(rec->window);
     }
+    return rec_nr;
   }
   ImGui::PushID(rec.get());
 
@@ -246,129 +536,58 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   }
   ImGui::PopStyleColor(1);
 
-  display_recording_metadata(rec);
+  if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_AutoSelectNewTabs)) {
+    if (ImGui::BeginTabItem("Histogram")) {
+      show_histogram_ui(rec, parent);
+      ImGui::EndTabItem();
+    }
 
-  if (display_recording_buttons(rec, parent)) {
-    return rec_nr;
-  }
+    // Controls for flows
+    if (!rec->flows.empty() && ImGui::BeginTabItem("Flows")) {
+      show_flow_ui(rec);
+      ImGui::EndTabItem();
+    }
 
-  display_histogram(rec, parent);
+    if (!rec->points_videos.empty() && ImGui::BeginTabItem("Points")) {
+      show_points_ui(rec);
+      ImGui::EndTabItem();
+    }
 
-  // Controls for flows
-  if (!rec->flows.empty()) {
-    for (auto &flow : rec->flows) {
-      ImGui::PushID(flow.data.get());
-      ImGui::Text("Flow %s", flow.data->name().c_str());
-      ImGui::SameLine();
-      ImGui::ColorEdit4("", flow.color.data(),
-                        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-      ImGui::SameLine();
-      if (flow.show)
-        flow.show = !ImGui::Button(ICON_FA_EYE_SLASH);
-      else
-        flow.show = ImGui::Button(ICON_FA_EYE);
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_FA_TRASH_ALT)) {
-        flow.data = nullptr;
+    // Plot traces and show their controls
+    if (!rec->traces.empty() && ImGui::BeginTabItem("Traces")) {
+      show_traces_ui(rec);
+      ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("Metadata & Controls")) {
+      auto rec_name = rec->name();
+      if (ImGui::InputText("Name", &rec_name)) {
+        rec->set_name(rec_name);
       }
-      ImGui::PopID();
-    }
-    // Actually remove deleted flows
-    rec->flows.erase(
-        std::remove_if(rec->flows.begin(), rec->flows.end(), [](const auto &f) { return !f.data; }),
-        rec->flows.end());
-    ImGui::Columns(2);
-    ImGui::SliderInt("flow skip", &FlowData::skip, 1, 25);
-    ImGui::NextColumn();
-    ImGui::SliderFloat("flow point size", &FlowData::pointsize, 0, 10);
-    ImGui::Columns(1);
-  }
+      ImGui::Checkbox("Show", &rec->active);
 
-  if (!rec->points_videos.empty()) {
-    ImGui::Separator();
-    for (const auto &vid : rec->points_videos) {
-      ImGui::PushID(vid.get());
-      ImGui::Text("%s", vid->name.c_str());
-      ImGui::SliderFloat("point size", &vid->point_size, 0, 10);
-      ImGui::SameLine();
-      if (vid->show)
-        vid->show = !ImGui::Button(ICON_FA_EYE_SLASH);
-      else
-        vid->show = ImGui::Button(ICON_FA_EYE);
-      ImGui::SameLine();
-      ImGui::ColorEdit4("", vid->color.data(),
-                        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
       ImGui::Separator();
-      ImGui::PopID();
+
+      display_recording_metadata(rec);
+
+      ImGui::Separator();
+
+      if (display_recording_buttons(rec, parent)) {
+        ImGui::Columns(1);
+        ImGui::PopID();
+        ImGui::EndTabItem();
+        ImGui::EndTabBar();
+        return rec_nr;
+      }
+
+      ImGui::Separator();
+      show_transformations_tab();
+
+      ImGui::EndTabItem();
     }
+    ImGui::EndTabBar();
   }
 
-  // Plot traces and show their controls
-  for (auto &trace : rec->traces) {
-    int size = trace.data.size();
-    if (size == 0) continue;
-
-    auto label = trace.pos.to_string();
-    ImGui::PushID(trace.id);
-    auto data = trace.data.data();
-    if (size > prm::trace_length) {
-      data += (size - prm::trace_length);
-      size = prm::trace_length;
-    }
-
-    trace.scale.left  = data - trace.data.data();
-    trace.scale.right = trace.data.size();
-    trace.scale.scale(data, data + size);
-    ImPlot::SetNextAxisLinks(ImAxis_X1, trace.scale.scaleX ? &trace.scale.left : nullptr,
-                             trace.scale.scaleX ? &trace.scale.right : nullptr);
-    ImPlot::SetNextAxisLinks(ImAxis_Y1, trace.scale.scaleY ? &trace.scale.lower : nullptr,
-                             trace.scale.scaleY ? &trace.scale.upper : nullptr);
-    auto ptitle = "###trace" + label;
-    if (ImPlot::BeginPlot(ptitle.c_str(), ImVec2(ImGui::GetContentRegionAvail().x * 0.85f, 180))) {
-      ImPlot::SetupAxes(nullptr, nullptr);
-      ImPlot::SetNextLineStyle({trace.color[0], trace.color[1], trace.color[2], trace.color[3]});
-      auto title = "###ttrace" + label;
-      ImPlot::PlotLine(title.c_str(), trace.data.data(), trace.data.size());
-      ImPlotUtils::draw_liney(trace.scale.restarts);
-      ImPlot::EndPlot();
-    }
-
-    ImGui::SameLine();
-    ImGui::BeginGroup();
-    ImGui::Text("Trace ");
-    ImGui::SameLine();
-    ImGui::ColorEdit3(label.c_str(), trace.color.data(),
-                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.95f);
-    if (ImGui::InputInt2("###Trace", trace.pos.data())) {
-      trace.pos[0] = std::clamp(trace.pos[0], 0, rec->Nx());
-      trace.pos[1] = std::clamp(trace.pos[1], 0, rec->Ny());
-    }
-    ImGui::Checkbox("Scale X", &trace.scale.scaleX);
-    ImGui::Checkbox("Scale Y", &trace.scale.scaleY);
-    if (ImGui::Button("Reset")) {
-      trace.data.clear();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_TRASH_ALT)) {
-      rec->remove_trace(trace.pos);
-    }
-    if (ImGui::Button("Export Trace")) {
-      auto &ctrl         = rec->export_ctrl.trace;
-      ctrl.export_window = true;
-      ctrl.assign_auto_filename(rec->path(), trace.pos, Trace::width());
-      ctrl.tend = rec->length();
-    }
-    if (ImGui::Button("Export ROI")) {
-      auto &ctrl                      = rec->export_ctrl.raw;
-      ctrl.export_window              = true;
-      std::tie(ctrl.start, ctrl.size) = Trace::clamp(trace.pos, {rec->Nx(), rec->Ny()});
-      ctrl.frames                     = {0, rec->length()};
-      ctrl.assign_auto_filename(rec->path());
-    }
-    ImGui::EndGroup();
-    ImGui::PopID();
-  }
   ImGui::PopID();
   for (const auto &crec : rec->children) {
     rec_nr = show_recording_ui(crec, rec_nr, rec.get());
@@ -377,8 +596,5 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   rec->children.erase(std::remove_if(rec->children.begin(), rec->children.end(),
                                      [](const auto &r) { return r->glcontext == r->window; }),
                       rec->children.end());
-  if (!parent) {
-    ImGui::End();
-  }
   return rec_nr + 1;
 }

@@ -217,12 +217,22 @@ void display_loop() {
         global::recordings.end());
 
     auto top_window = show_main_ui();
+    ImGui::SetNextWindowPos(ImVec2(0.0f, top_window->SizeFull.y));
+    ImGui::SetNextWindowSizeConstraints(
+      ImVec2(ImGui::GetMainViewport()->Size[0], ImGui::GetMainViewport()->Size[1]-top_window->SizeFull.y),
+      ImVec2(ImGui::GetMainViewport()->Size[0], ImGui::GetMainViewport()->Size[1]-top_window->SizeFull.y)
+    );
+    auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+    ImGui::Begin("Recordings", nullptr, flags);
     int rec_nr = 0;
     for (const auto &rec : global::recordings) {
       if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);
       rec_nr = show_recording_ui(rec, rec_nr);
       show_export_recording_ui(rec);
     }
+    ImGui::End();
+
+    // ImGui::ShowDemoWindow();
 
     show_messages();
 

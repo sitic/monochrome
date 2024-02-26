@@ -456,6 +456,13 @@ void RecordingWindow::display(Filters prefilter,
   glfwMakeContextCurrent(global::main_window);
 }
 
+void RecordingWindow::set_name(const std::string &new_name) {
+  if (window) {
+    glfwSetWindowTitle(window, new_name.c_str());
+  }
+  Recording::set_name(new_name);
+}
+
 void RecordingWindow::reset_traces() {
   for (auto &t : traces) {
     t.clear();
@@ -716,8 +723,9 @@ FixedTransformRecordingWindow::FixedTransformRecordingWindow(SharedRecordingPtr 
     : RecordingWindow(parent->file()),
       fixed_prefilter_(prefilter),
       fixed_transformation_(transformation),
-      fixed_postfilter_(postfilter),
-      name_(name) {
+      fixed_postfilter_(postfilter) {
+  set_name(name);
+  
   RecordingWindow::get_min(fixed_transformation_) = parent->get_min(fixed_transformation_);
   RecordingWindow::get_max(fixed_transformation_) = parent->get_max(fixed_transformation_);
 
