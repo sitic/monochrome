@@ -85,14 +85,6 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
       } else {
         global::merge_queue.push({rec, parent, false});
       }
-    } else if (auto num_recs = global::recordings.size();
-               num_recs / 3 + 1 != prm::main_window_multipier) {
-      // TODO: this should be removed in the UI rewrite
-      prm::main_window_multipier = num_recs / 3 + 1;
-      prm::main_window_multipier = std::clamp(prm::main_window_multipier, 1, 3);
-      glfwSetWindowSize(global::main_window,
-                        prm::main_window_multipier * ImGui::GetMainViewport()->Size[0],
-                        ImGui::GetMainViewport()->Size[1]);
     }
   }
 }
