@@ -115,8 +115,6 @@ void show_transformations_ui() {
     ImGui::Unindent(10);
   };
 
-  ImGui::Columns(3);
-  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Pre Filters")) {
     auto selectable = selectable_factory(prm::prefilter, Filters::None);
     if (selectable("Gauss", Filters::Gauss)) {
@@ -148,9 +146,6 @@ void show_transformations_ui() {
     ImGui::TreePop();
   }
 
-  ImGui::NextColumn();
-
-  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Transformations")) {
     auto selectable = selectable_factory(prm::transformation, Transformations::None);
     if (selectable("Frame Difference", Transformations::FrameDiff)) {
@@ -175,7 +170,7 @@ void show_transformations_ui() {
       }
       ImGui::Unindent(10);
     }
-    if (selectable("Contrast Enhancement", Transformations::ContrastEnhancement)) {
+    if (selectable("Optical Mapping Contrast Enhancement", Transformations::ContrastEnhancement)) {
       ImGui::Indent(10);
       const int step = 2;
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
@@ -196,9 +191,6 @@ void show_transformations_ui() {
     ImGui::TreePop();
   }
 
-  ImGui::NextColumn();
-
-  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Post Filters")) {
     auto selectable = selectable_factory(prm::postfilter, Filters::None);
     if (selectable("Gauss", Filters::Gauss)) {
@@ -229,10 +221,10 @@ void show_transformations_ui() {
     }
     ImGui::TreePop();
   }
-  ImGui::Columns(1);
 }
 
 bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
+    ImGui::SeparatorText("General");
     auto rec_name = rec->name();
     if (ImGui::InputText("Name", &rec_name)) {
     rec->set_name(rec_name);
@@ -259,18 +251,16 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
     }
     }
 
-    ImGui::Separator();
-
+    ImGui::SeparatorText("Metadata");
     display_recording_metadata(rec);
 
-    ImGui::Separator();
-
+    ImGui::SeparatorText("Export");
     if (display_recording_buttons(rec, parent)) {
         return true;
     }
 
-    ImGui::Separator();
+    ImGui::SeparatorText("Transformations");
     show_transformations_ui();
-    
+
     return false;
 }
