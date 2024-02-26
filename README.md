@@ -1,5 +1,7 @@
 # Monochrome — Video viewer for scientific monochromatic videos
 
+> ⚠️ An initial release is currently in preparation. The install instruction are not yet up-to-date.
+
 Monochrome is a viewer for scientific monochromatic videos with high-dynamic range.
 
 It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our spefic needs for cariac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
