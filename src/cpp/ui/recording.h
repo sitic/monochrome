@@ -1,4 +1,8 @@
 #pragma once
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "imgui_stdlib.h"
+
 #include "recording_traces.h"
 #include "recording_histogram.h"
 #include "recording_controls.h"
@@ -37,6 +41,7 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   }
   ImGui::PopStyleColor(1);
 
+  ImGui::Indent(10);
   if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_AutoSelectNewTabs)) {
     if (ImGui::BeginTabItem("Histogram")) {
       show_histogram_ui(rec, parent);
@@ -61,29 +66,13 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
     }
 
     if (ImGui::BeginTabItem("Metadata & Controls")) {
-      auto rec_name = rec->name();
-      if (ImGui::InputText("Name", &rec_name)) {
-        rec->set_name(rec_name);
-      }
-      ImGui::Checkbox("Show", &rec->active);
-
-      ImGui::Separator();
-
-      display_recording_metadata(rec);
-
-      ImGui::Separator();
-
-      if (display_recording_buttons(rec, parent)) {
-        ImGui::Columns(1);
-        ImGui::PopID();
+      if (show_controls_ui(rec, parent)) {
         ImGui::EndTabItem();
         ImGui::EndTabBar();
+        ImGui::Unindent(10);
+        ImGui::PopID();
         return rec_nr;
       }
-
-      ImGui::Separator();
-      show_transformations_ui();
-
       ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
@@ -93,6 +82,8 @@ int show_recording_ui(const SharedRecordingPtr &rec, int rec_nr, RecordingWindow
   for (const auto &crec : rec->children) {
     rec_nr = show_recording_ui(crec, rec_nr, rec.get());
   }
+  ImGui::Unindent(10);
+
   // Actually delete children which have been selected for deletionq
   rec->children.erase(std::remove_if(rec->children.begin(), rec->children.end(),
                                      [](const auto &r) { return r->glcontext == r->window; }),

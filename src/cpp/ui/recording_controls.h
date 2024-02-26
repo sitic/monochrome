@@ -79,26 +79,6 @@ bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *p
       ctrl.frames        = {0, rec->length()};
       ctrl.assign_auto_filename(rec->path());
     }
-    if (global::recordings.size() > 1) {
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_FA_LAYER_GROUP)) ImGui::OpenPopup("merge_popup");
-      if (ImGui::BeginPopup("merge_popup")) {
-        for (auto &r : global::recordings) {
-          if (r.get() == rec.get()) continue;
-          auto l = fmt::format("Merge into '{}'", r->name());
-          if (ImGui::Selectable(l.c_str())) {
-            global::merge_queue.push({rec, r, false});
-          }
-          if (rec->file()->capabilities()[FileCapabilities::AS_FLOW]) {
-            auto l2 = l + " as flow"s;
-            if (ImGui::Selectable(l2.c_str())) {
-              global::merge_queue.push({rec, r, true});
-            }
-          }
-        }
-        ImGui::EndPopup();
-      }
-    }
     return false;
   } else {
     if (ImGui::Button(ICON_FA_TRASH_ALT)) {
@@ -250,4 +230,47 @@ void show_transformations_ui() {
     ImGui::TreePop();
   }
   ImGui::Columns(1);
+}
+
+bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
+    auto rec_name = rec->name();
+    if (ImGui::InputText("Name", &rec_name)) {
+    rec->set_name(rec_name);
+    }
+    ImGui::Checkbox("Show", &rec->active);
+
+    if (global::recordings.size() > 1) {
+    if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP)) ImGui::OpenPopup("merge_popup");
+    if (ImGui::BeginPopup("merge_popup")) {
+        for (auto &r : global::recordings) {
+        if (r.get() == rec.get()) continue;
+        auto l = fmt::format("Merge into '{}'", r->name());
+        if (ImGui::Selectable(l.c_str())) {
+            global::merge_queue.push({rec, r, false});
+        }
+        if (rec->file()->capabilities()[FileCapabilities::AS_FLOW]) {
+            auto l2 = l + " as flow"s;
+            if (ImGui::Selectable(l2.c_str())) {
+            global::merge_queue.push({rec, r, true});
+            }
+        }
+        }
+        ImGui::EndPopup();
+    }
+    }
+
+    ImGui::Separator();
+
+    display_recording_metadata(rec);
+
+    ImGui::Separator();
+
+    if (display_recording_buttons(rec, parent)) {
+        return true;
+    }
+
+    ImGui::Separator();
+    show_transformations_ui();
+    
+    return false;
 }

@@ -1,4 +1,7 @@
 #pragma once
+#include "imgui.h"
+
+#include "utils/plot_utils.h"
 
 void show_traces_ui(const SharedRecordingPtr &rec) {
   ImGui::BeginTabBar("##traces");

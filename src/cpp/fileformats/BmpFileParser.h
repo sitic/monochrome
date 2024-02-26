@@ -331,7 +331,7 @@ class BmpFileParser {
           }
         }
       } else {
-        fmt::print("XML file {} not found!", mXML.path.string());
+        fmt::print("XML file {} not found!\n", mXML.path.string());
       }
     }
   }
