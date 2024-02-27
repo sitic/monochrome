@@ -7,9 +7,6 @@
 
 #include "vectors.h"
 
-// get the default path of our config file
-std::string config_file_path();
-
 void gl_save_snapshot(std::string out_png_path, GLFWwindow *window = nullptr);
 
 void add_window_icon(GLFWwindow *window);

@@ -1,8 +1,5 @@
 #include "recordingwindow_helpers.h"
-
-namespace prm {
-  PlaybackCtrl playbackCtrl;
-}  // namespace prm
+#include "prm.h"
 
 std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
   auto tf = tf_ + speed_;

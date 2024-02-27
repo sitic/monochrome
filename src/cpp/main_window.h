@@ -18,26 +18,19 @@
 #include "utils/ImGuiConnector.h"
 
 #include "globals.h"
+#include "prm.h"
 #include "recordingwindow.h"
 #include "ui.h"
 #include "keybindings.h"
 
-namespace global {
-  GLFWwindow *main_window = nullptr;
-
-  std::vector<SharedRecordingPtr> recordings = {};
-  // Queue Element: [child, parent, as_flow]
-  std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
-}  // namespace global
-
 SharedRecordingPtr find_parent_recording(const std::string &parent_name) {
   // If the parent_name is empty we default to using the last loaded video
-  if (parent_name.empty() && !global::recordings.empty()) return global::recordings.back();
+  if (parent_name.empty() && !prm::recordings.empty()) return prm::recordings.back();
 
   // Find the last video with the name `parent_name`
-  auto it = std::find_if(global::recordings.rbegin(), global::recordings.rend(),
+  auto it = std::find_if(prm::recordings.rbegin(), prm::recordings.rend(),
                          [name = parent_name](const auto &r) { return name == r->name(); });
-  if (it == std::rend(global::recordings))
+  if (it == std::rend(prm::recordings))
     return SharedRecordingPtr(nullptr);
   else
     return *it;
@@ -55,7 +48,7 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
     parent = find_parent_recording(parentName.value());
     if (!parent) {
       std::string err_msg =
-          global::recordings.empty()
+          prm::recordings.empty()
               ? "ERROR: Failed to add flow to recording, no recording with name \"{}\" exists!"
               : "ERROR: Failed to add flow to recording, you need to load a recording first!";
       global::new_ui_message(err_msg, parentName.value());
@@ -66,16 +59,16 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
     parent->add_flow(rec);
   } else {
     auto rec = std::make_shared<RecordingWindow>(file);
-    if (!global::recordings.empty()) {
-      rec->playback.synchronize_with(global::recordings.back()->playback, false);
+    if (!prm::recordings.empty()) {
+      rec->playback.synchronize_with(prm::recordings.back()->playback, false);
     }
-    global::recordings.push_back(rec);
+    prm::recordings.push_back(rec);
     rec->open_window();
 
     if (parentName) {
       auto parent = find_parent_recording(parentName.value());
       if (!parent) {
-        if (global::recordings.empty())
+        if (prm::recordings.empty())
           global::new_ui_message("ERROR: You need to load a video first before adding a layer");
         else
           global::new_ui_message(
@@ -83,7 +76,7 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
               "recording exists!",
               rec->name(), parentName.value());
       } else {
-        global::merge_queue.push({rec, parent, false});
+        prm::merge_queue.push({rec, parent, false});
       }
     }
   }
@@ -112,7 +105,7 @@ void load_from_queue() {
 
   /* Point Videos */
   if (auto pointsvideo = global::get_pointsvideo_to_load()) {
-    if (global::recordings.empty()) {
+    if (prm::recordings.empty()) {
       global::new_ui_message(
           "ERROR: A video needs to be opened before points lists can be displayed");
     } else {
@@ -130,9 +123,9 @@ void load_from_queue() {
   }
 
   /* Global merge queue */
-  if (!global::merge_queue.empty()) {
-    auto [child, parent, as_flow] = global::merge_queue.front();
-    global::merge_queue.pop();
+  if (!prm::merge_queue.empty()) {
+    auto [child, parent, as_flow] = prm::merge_queue.front();
+    prm::merge_queue.pop();
     if (!as_flow) {
       parent->children.push_back(child);
       child->set_context(parent->window);
@@ -143,10 +136,10 @@ void load_from_queue() {
         parent->add_flow(child);
       }
     }
-    global::recordings.erase(
-        std::remove_if(global::recordings.begin(), global::recordings.end(),
+    prm::recordings.erase(
+        std::remove_if(prm::recordings.begin(), prm::recordings.end(),
                        [ptr = child.get()](const auto &r) -> bool { return r.get() == ptr; }),
-        global::recordings.end());
+        prm::recordings.end());
   }
 }
 
@@ -175,7 +168,7 @@ void display_loop() {
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
   prm::lastframetime = glfwGetTime();
   // keep running until main window is closed
-  while (!glfwWindowShouldClose(global::main_window)) {
+  while (!glfwWindowShouldClose(prm::main_window)) {
     // Sleep until we need to wake up for desired framerate
     double time_per_frame = 1.0 / prm::display_fps;
     prm::lastframetime += time_per_frame;
@@ -193,10 +186,10 @@ void display_loop() {
     load_from_queue();
 
     // Check if recording window should close
-    global::recordings.erase(
-        std::remove_if(global::recordings.begin(), global::recordings.end(),
+    prm::recordings.erase(
+        std::remove_if(prm::recordings.begin(), prm::recordings.end(),
                        [](const auto &r) -> bool { return glfwWindowShouldClose(r->window); }),
-        global::recordings.end());
+        prm::recordings.end());
 
     // Show ImGui windows
     ImGuiConnector::NewFrame();
@@ -205,11 +198,11 @@ void display_loop() {
     ImGui::ShowDemoWindow();
 
     // Rendering
-    for (const auto &recording : global::recordings) {
+    for (const auto &recording : prm::recordings) {
       recording->render();
     }
-    ImGuiConnector::Render(global::main_window, clear_color);
-    glfwSwapBuffers(global::main_window);
+    ImGuiConnector::Render(prm::main_window, clear_color);
+    glfwSwapBuffers(prm::main_window);
     checkGlError("frame");
   }
 }
@@ -228,23 +221,23 @@ void open_main_window(float font_scale = 0) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
-  global::main_window = glfwCreateWindow(prm::main_window_multipier * prm::main_window_width,
+  prm::main_window = glfwCreateWindow(prm::main_window_multipier * prm::main_window_width,
                                          prm::main_window_height, "Monochrome", nullptr, nullptr);
-  if (!global::main_window) {
+  if (!prm::main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
-  glfwGetFramebufferSize(global::main_window, &prm::main_window_width, &prm::main_window_height);
-  glfwSetWindowSizeCallback(global::main_window, [](GLFWwindow *window, int w, int h) {
+  glfwGetFramebufferSize(prm::main_window, &prm::main_window_width, &prm::main_window_height);
+  glfwSetWindowSizeCallback(prm::main_window, [](GLFWwindow *window, int w, int h) {
     prm::main_window_width  = w / prm::main_window_multipier;
     prm::main_window_height = h;
   });
-  glfwSetDropCallback(global::main_window, [](GLFWwindow *window, int count, const char **paths) {
+  glfwSetDropCallback(prm::main_window, [](GLFWwindow *window, int count, const char **paths) {
     for (int i = 0; i < count; i++) {
       load_new_file(paths[i]);
     }
   });
-  glfwMakeContextCurrent(global::main_window);
+  glfwMakeContextCurrent(prm::main_window);
   // wait until the current frame has been drawn before drawing the next one
   glfwSwapInterval(0);
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -256,9 +249,9 @@ void open_main_window(float font_scale = 0) {
   auto key_callback = [](GLFWwindow *window, int key, int scancode, int action, int mods) {
     global::common_key_callback(window, key, scancode, action, mods);
   };
-  ImGuiConnector::Init(global::main_window, primary_monitor, font_scale, key_callback);
+  ImGuiConnector::Init(prm::main_window, primary_monitor, font_scale, key_callback);
 
-  add_window_icon(global::main_window);
+  add_window_icon(prm::main_window);
 
   // Initialize colormap textures
   for (auto cmap : prm::cmaps) {

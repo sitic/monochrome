@@ -1,11 +1,8 @@
-#include "globals.h"
-#include "recordingwindow.h"
 #include "keybindings.h"
 
-namespace global {
-  extern GLFWwindow *main_window;
-  extern std::vector<SharedRecordingPtr> recordings;
-}  // namespace global
+#include "globals.h"
+#include "recordingwindow.h"
+#include "prm.h"
 
 namespace global {
   void common_key_callback(GLFWwindow *window,
@@ -16,7 +13,7 @@ namespace global {
                            SharedRecordingPtr callback_rec) {
     if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_Q && action == GLFW_PRESS) {
       // CTRL + Q: Quit monochrome
-      glfwSetWindowShouldClose(global::main_window, GLFW_TRUE);
+      glfwSetWindowShouldClose(prm::main_window, GLFW_TRUE);
     } else if (callback_rec && (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) &&
                action == GLFW_PRESS) {
       // ESC or Q: close focused recording
@@ -38,7 +35,7 @@ namespace global {
       prm::playbackCtrl.deacrease_speed();
     } else if ((key == GLFW_KEY_R || key == GLFW_KEY_0) && action == GLFW_PRESS) {
       // R: reset
-      for (const auto &rec : global::recordings) {
+      for (const auto &rec : prm::recordings) {
         rec->playback.set_next(0);
         for (auto &c : rec->children) {
           c->playback.set_next(0);
@@ -65,7 +62,7 @@ namespace global {
       if (current_recording_only && callback_rec) {
         set_playback(callback_rec, steps);
       } else {
-        for (auto &rec : global::recordings) {
+        for (auto &rec : prm::recordings) {
           set_playback(rec, steps);
         }
       }
@@ -76,7 +73,7 @@ namespace global {
     } else if (callback_rec && key == GLFW_KEY_S && action == GLFW_PRESS) {
       // S: sync all recordings playback position to focused recording
       int t = callback_rec->current_frame();
-      for (auto &r : global::recordings) {
+      for (auto &r : prm::recordings) {
         r->playback.set_next(t);
         for (auto &c : r->children) {
           c->playback.set_next(t);

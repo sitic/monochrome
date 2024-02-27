@@ -8,6 +8,7 @@
 
 #include "ipc.h"
 #include "main_window.h"
+#include "utils/settings.h"
 
 #ifdef USE_WIN32_MAIN
 INT WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPWSTR, INT) {
@@ -37,26 +38,8 @@ int main(int argc, char **argv) {
   bool disable_ipc          = false;
   float font_scale          = 0;
   app.add_option("files", files, "List of files to open")->check(CLI::ExistingFile);
-  app.add_option("--scale", RecordingWindow::scale_fct, "Recording window size multiplier")
-      ->check(CLI::PositiveNumber);
-  app.add_option("--speed", prm::playbackCtrl.val, "Recording playback speed multiplier")
-      ->check(CLI::NonNegativeNumber);
-  app.add_option_function<short>(
-         "--rotation", [](const short &rotation) { RecordingWindow::set_rotation(rotation); },
-         "Default rotation of videos")
-      ->check(CLI::IsMember({0, 90, 180, 270}))
-      ->default_str("0");
-  app.add_flag(
-      "--fliph", [](std::int64_t count) { RecordingWindow::flip_lr(); }, "Flip video horizontally");
-  app.add_flag(
-      "--flipv", [](std::int64_t count) { RecordingWindow::flip_ud(); }, "Flip video vertically");
+  cli_add_global_options(app);
   app.add_option("--font-scale", font_scale, "Fonts scaling factor");
-  app.add_option("--trace_length", prm::trace_length, "Default length (in frames) for traces");
-  app.add_option("--max_trace_length", prm::max_trace_length,
-                 "Maximum length (in frames) for traces");
-  app.add_option("--display_fps", prm::display_fps, "Default display framerate");
-  app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
-  app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
   app.add_flag(
       "--disable-ipc", disable_ipc,
       "Disable the server process which is used for interprocess-communication with python clients");
@@ -128,8 +111,8 @@ int main(int argc, char **argv) {
   }
   ImGuiConnector::Shutdown();
 
-  glfwDestroyWindow(global::main_window);
-  global::recordings.clear();
+  glfwDestroyWindow(prm::main_window);
+  prm::recordings.clear();
   glfwTerminate();
 
 #ifdef USE_WIN32_MAIN

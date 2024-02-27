@@ -8,7 +8,7 @@
 #include "recording_controls.h"
 #include "recording_points.h"
 
-int show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = nullptr) {
+void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = nullptr) {
   auto name = fmt::format("{}###{}", rec->name(), static_cast<void *>(rec.get()));
   ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   auto active = rec->active;

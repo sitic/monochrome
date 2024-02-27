@@ -88,7 +88,7 @@ void show_transformations_ui() {
 
         p = is_active ? default_val : e;
 
-        global::do_forall_recordings([](auto &r) { r->reset_traces(); });
+        prm::do_forall_recordings([](auto &r) { r->reset_traces(); });
       }
 
       return is_active;
@@ -100,7 +100,7 @@ void show_transformations_ui() {
     const int step = 2;
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
     if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32, &val, &step, nullptr, "%d")) {
-      global::do_forall_recordings([&reset_fn](auto &r) { reset_fn(r.get()); });
+      prm::do_forall_recordings([&reset_fn](auto &r) { reset_fn(r.get()); });
     }
     ImGui::Unindent(10);
   };
@@ -144,15 +144,15 @@ void show_transformations_ui() {
       ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 100);
       if (ImGui::Button("Add As Overlays")) {
         std::vector<std::pair<SharedRecordingPtr, SharedRecordingPtr>> new_recordings;
-        for (auto rec : global::recordings) {
+        for (auto rec : prm::recordings) {
           auto r = std::make_shared<FixedTransformRecordingWindow>(
               rec, prm::prefilter, prm::transformation, prm::postfilter, "Frame Difference");
           new_recordings.push_back({r, rec});
         }
         for (auto [r, rec] : new_recordings) {
-          global::recordings.push_back(r);
+          prm::recordings.push_back(r);
           r->open_window();
-          global::merge_queue.push({r, rec, false});
+          prm::merge_queue.push({r, rec, false});
         }
         prm::transformation = Transformations::None;
         prm::prefilter      = Filters::None;
@@ -167,7 +167,7 @@ void show_transformations_ui() {
       if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32,
                             &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
                             "%d")) {
-        global::do_forall_recordings([](auto &r) {
+        prm::do_forall_recordings([](auto &r) {
           auto transform =
               r->transformationArena.create_if_needed(Transformations::ContrastEnhancement, 0);
           auto c = dynamic_cast<Transformation::ContrastEnhancement *>(transform);
@@ -246,19 +246,19 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
     }
 
 
-    if (global::recordings.size() > 1) {
+    if (prm::recordings.size() > 1) {
     if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP)) ImGui::OpenPopup("merge_popup");
     if (ImGui::BeginPopup("merge_popup")) {
-        for (auto &r : global::recordings) {
+        for (auto &r : prm::recordings) {
         if (r.get() == rec.get()) continue;
         auto l = fmt::format("Merge into '{}'", r->name());
         if (ImGui::Selectable(l.c_str())) {
-            global::merge_queue.push({rec, r, false});
+            prm::merge_queue.push({rec, r, false});
         }
         if (rec->file()->capabilities()[FileCapabilities::AS_FLOW]) {
             auto l2 = l + " as flow"s;
             if (ImGui::Selectable(l2.c_str())) {
-            global::merge_queue.push({rec, r, true});
+            prm::merge_queue.push({rec, r, true});
             }
         }
         }

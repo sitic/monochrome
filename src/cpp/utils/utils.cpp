@@ -8,32 +8,6 @@
 
 CMRC_DECLARE(rc);
 
-#if defined(__unix__) || defined(__unix) || defined(__APPLE__)
-#include <unistd.h>
-#include <pwd.h>
-namespace {
-  std::string get_user_homedir() {
-    const char* homedir;
-
-    if ((homedir = getenv("HOME")) == nullptr) {
-      homedir = getpwuid(getuid())->pw_dir;
-    }
-    return homedir;
-  }
-}  // namespace
-#endif
-
-std::string config_file_path() {
-#ifdef _WIN32
-  char* appdata = getenv("APPDATA");
-  return fmt::format("{}\\Monochrome\\Monochrome.ini", appdata);
-#elif defined(__unix__) || defined(__unix) || defined(__APPLE__)
-  return fmt::format("{}/.config/Monochrome.ini", get_user_homedir());
-#else
-  return "";
-#endif
-}
-
 void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {
   auto prev_context = glfwGetCurrentContext();
   if (window) glfwMakeContextCurrent(window);

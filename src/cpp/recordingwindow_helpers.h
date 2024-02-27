@@ -7,11 +7,6 @@
 #include "transformations.h"
 #include "utils/videorecorder.h"
 
-struct PlaybackCtrl;
-namespace prm {
-  extern PlaybackCtrl playbackCtrl;
-}  // namespace prm
-
 struct PlaybackCtrl {
   float val = 1;
 

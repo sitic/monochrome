@@ -4,21 +4,13 @@
 #include "recordingwindow.h"
 #include "globals.h"
 #include "keybindings.h"
+#include "prm.h"
 
 CMRC_DECLARE(rc);
 
-namespace prm {
-  extern double lastframetime;
-}  // namespace prm
-
-namespace global {
-  extern GLFWwindow *main_window;
-  extern std::vector<SharedRecordingPtr> recordings;
-}  // namespace global
-
 namespace {
   SharedRecordingPtr rec_from_window_ptr(GLFWwindow *_window) {
-    return *std::find_if(global::recordings.begin(), global::recordings.end(),
+    return *std::find_if(prm::recordings.begin(), prm::recordings.end(),
                          [_window](const auto &r) { return r->window == _window; });
   }
 
@@ -453,7 +445,7 @@ void RecordingWindow::display(Filters prefilter,
     glDrawArrays(GL_POINTS, 0, points_vert.size() / 2);
   }
 
-  glfwMakeContextCurrent(global::main_window);
+  glfwMakeContextCurrent(prm::main_window);
 }
 
 void RecordingWindow::set_name(const std::string &new_name) {
@@ -537,7 +529,7 @@ void RecordingWindow::scroll_callback(GLFWwindow *window, double xoffset, double
     Trace::width(new_w);
   } else {
     scale_fct = (yoffset < 0) ? 0.95f * scale_fct : 1.05f * scale_fct;
-    for (const auto &r : global::recordings) {
+    for (const auto &r : prm::recordings) {
       r->resize_window();
     }
   }
@@ -608,13 +600,13 @@ void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glBlendEquation(GL_FUNC_ADD);
 
-  glfwMakeContextCurrent(global::main_window);
+  glfwMakeContextCurrent(prm::main_window);
 }
 
 void RecordingWindow::close_callback(GLFWwindow *window) {
-  global::recordings.erase(std::remove_if(global::recordings.begin(), global::recordings.end(),
+  prm::recordings.erase(std::remove_if(prm::recordings.begin(), prm::recordings.end(),
                                           [window](auto r) { return r->window == window; }),
-                           global::recordings.end());
+                           prm::recordings.end());
 }
 
 void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -643,13 +635,13 @@ void RecordingWindow::stop_recording() {
 
 void RecordingWindow::set_rotation(short rotation) {
   rotations.set_rotation(rotation);
-  for (const auto &rec : global::recordings) {
+  for (const auto &rec : prm::recordings) {
     rec->rotation_was_changed();
   }
 }
 void RecordingWindow::add_rotation(short d_rotation) {
   rotations.add_rotation(d_rotation);
-  for (const auto &rec : global::recordings) {
+  for (const auto &rec : prm::recordings) {
     rec->rotation_was_changed();
   }
 }
@@ -711,7 +703,7 @@ void RecordingWindow::render() {
 
     glfwSwapBuffers(window);
 
-    glfwMakeContextCurrent(global::main_window);
+    glfwMakeContextCurrent(prm::main_window);
   }
 }
 

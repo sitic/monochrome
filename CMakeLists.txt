@@ -87,6 +87,7 @@ set(SOURCES
         src/cpp/recording.cpp
         src/cpp/recording.h
         src/cpp/ui.h
+        src/cpp/ui.cpp
         src/cpp/recordingwindow.cpp
         src/cpp/recordingwindow.h
         src/cpp/recordingwindow_helpers.cpp
@@ -95,6 +96,8 @@ set(SOURCES
         src/cpp/transformations.h
         src/cpp/keybindings.cpp
         src/cpp/keybindings.h
+        src/cpp/prm.h
+        src/cpp/prm.cpp
 
         src/cpp/ui/main.h
         src/cpp/ui/export.h
@@ -122,6 +125,8 @@ set(SOURCES
         src/cpp/utils/utils.h
         src/cpp/utils/vectors.h
         src/cpp/utils/videorecorder.h
+        src/cpp/utils/settings.h
+        src/cpp/utils/settings.cpp
 )
 
 if(APPLE)
