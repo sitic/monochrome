@@ -44,3 +44,32 @@ namespace prm {
 #include "ui/main.h"
 #include "ui/recording.h"
 #include "ui/export.h"
+
+void show_main_imgui_window() {
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImGui::GetMainViewport()->Size, ImGuiCond_Always);
+    auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    ImGui::Begin("Monochrome", nullptr, flags);
+
+    show_top_ui();
+
+    {
+      ImGui::Spacing();
+      ImGui::PushStyleColor(ImGuiCol_Separator, ImGui::GetStyleColorVec4(ImGuiCol_TabActive));
+      ImGui::Separator();
+      ImGui::PopStyleColor();
+      ImGui::Spacing();
+      ImGui::SeparatorText("Recordings");
+    }
+
+
+    int rec_nr = 0;
+    for (const auto &rec : global::recordings) {
+      if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);
+      rec_nr = show_recording_ui(rec, rec_nr);
+      show_export_recording_ui(rec);
+      ImGui::Spacing();
+    }
+
+    ImGui::End();
+}

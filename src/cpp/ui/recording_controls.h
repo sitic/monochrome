@@ -50,44 +50,34 @@ void display_recording_metadata(const SharedRecordingPtr &rec) {
   ImGui::Columns(1);
 }
 
-bool display_recording_buttons(const SharedRecordingPtr &rec, RecordingWindow *parent) {
-  if (!parent) {
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Export to video file: ");
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
-      auto &ctrl         = rec->export_ctrl.video;
-      ctrl.export_window = true;
-      ctrl.assign_auto_filename(rec->path());
-      ctrl.tend        = rec->length();
-      ctrl.description = rec->comment();
-    }
-    ImGui::Text("Export as image sequence: ");
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
-      auto &ctrl         = rec->export_ctrl.png;
-      ctrl.export_window = true;
-      ctrl.assign_auto_filename(rec->path());
-    }
-    ImGui::Text("Export as raw video: ");
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
-      auto &ctrl         = rec->export_ctrl.raw;
-      ctrl.export_window = true;
-      ctrl.start         = {0, 0};
-      ctrl.size          = {rec->Nx(), rec->Ny()};
-      ctrl.frames        = {0, rec->length()};
-      ctrl.assign_auto_filename(rec->path());
-    }
-    return false;
-  } else {
-    if (ImGui::Button(ICON_FA_TRASH_ALT)) {
-      rec->set_context(nullptr);
-      // Child will be deleted later, after we have left the loop over all children.
-      return true;
-    }
+void display_recording_buttons(const SharedRecordingPtr &rec) {
+  ImGui::AlignTextToFramePadding();
+  ImGui::Text("Export to video file: ");
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
+    auto &ctrl         = rec->export_ctrl.video;
+    ctrl.export_window = true;
+    ctrl.assign_auto_filename(rec->path());
+    ctrl.tend        = rec->length();
+    ctrl.description = rec->comment();
   }
-  return false;
+  ImGui::Text("Export as image sequence: ");
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
+    auto &ctrl         = rec->export_ctrl.png;
+    ctrl.export_window = true;
+    ctrl.assign_auto_filename(rec->path());
+  }
+  ImGui::Text("Export as raw video: ");
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
+    auto &ctrl         = rec->export_ctrl.raw;
+    ctrl.export_window = true;
+    ctrl.start         = {0, 0};
+    ctrl.size          = {rec->Nx(), rec->Ny()};
+    ctrl.frames        = {0, rec->length()};
+    ctrl.assign_auto_filename(rec->path());
+  }
 }
 
 void show_transformations_ui() {
@@ -229,6 +219,15 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
     if (ImGui::InputText("Name", &rec_name)) {
     rec->set_name(rec_name);
     }
+    if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
+      if (!parent) {
+        glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+      } else {
+        rec->set_context(nullptr);
+        // Child will be deleted later, after we have left the loop over all children.
+        return true;
+      }
+    }
     ImGui::Checkbox("Show", &rec->active);
 
     if (global::recordings.size() > 1) {
@@ -254,9 +253,9 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
     ImGui::SeparatorText("Metadata");
     display_recording_metadata(rec);
 
-    ImGui::SeparatorText("Export");
-    if (display_recording_buttons(rec, parent)) {
-        return true;
+    if (!parent) {
+      ImGui::SeparatorText("Export");
+      display_recording_buttons(rec);
     }
 
     ImGui::SeparatorText("Transformations");

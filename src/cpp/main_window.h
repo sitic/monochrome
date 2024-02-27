@@ -172,24 +172,10 @@ void show_messages() {
 }
 
 void display_loop() {
-  ImGuiIO &io = ImGui::GetIO();
-  (void)io;
-
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
   prm::lastframetime = glfwGetTime();
   // keep running until main window is closed
   while (!glfwWindowShouldClose(global::main_window)) {
-    // Poll and handle events (inputs, window resize, etc.)
-    // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-    // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
-    // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
-    // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-    glfwPollEvents();
-    load_from_queue();
-
-    // Start the Dear ImGui frame
-    ImGuiConnector::NewFrame();
-
     // Sleep until we need to wake up for desired framerate
     double time_per_frame = 1.0 / prm::display_fps;
     prm::lastframetime += time_per_frame;
@@ -202,31 +188,21 @@ void display_loop() {
     }
     std::this_thread::sleep_for(sleep_duration);
 
+    // Poll and handle events
+    glfwPollEvents();
+    load_from_queue();
+
     // Check if recording window should close
     global::recordings.erase(
         std::remove_if(global::recordings.begin(), global::recordings.end(),
                        [](const auto &r) -> bool { return glfwWindowShouldClose(r->window); }),
         global::recordings.end());
 
-    auto top_window = show_main_ui();
-    ImGui::SetNextWindowPos(ImVec2(0.0f, top_window->SizeFull.y));
-    ImGui::SetNextWindowSizeConstraints(
-      ImVec2(ImGui::GetMainViewport()->Size[0], ImGui::GetMainViewport()->Size[1]-top_window->SizeFull.y),
-      ImVec2(ImGui::GetMainViewport()->Size[0], ImGui::GetMainViewport()->Size[1]-top_window->SizeFull.y)
-    );
-    auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
-    ImGui::Begin("Recordings", nullptr, flags);
-    int rec_nr = 0;
-    for (const auto &rec : global::recordings) {
-      if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);
-      rec_nr = show_recording_ui(rec, rec_nr);
-      show_export_recording_ui(rec);
-    }
-    ImGui::End();
-
-    // ImGui::ShowDemoWindow();
-
+    // Show ImGui windows
+    ImGuiConnector::NewFrame();
+    show_main_imgui_window();
     show_messages();
+    ImGui::ShowDemoWindow();
 
     // Rendering
     for (const auto &recording : global::recordings) {

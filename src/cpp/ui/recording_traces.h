@@ -5,6 +5,7 @@
 
 void show_traces_ui(const SharedRecordingPtr &rec) {
   ImGui::BeginTabBar("##traces");
+  ImGui::Indent();
 
   if (ImGui::BeginTabItem("View")) {
     for (auto &trace : rec->traces) {
@@ -47,6 +48,7 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
   }
 
   if (ImGui::BeginTabItem("Settings")) {
+    ImGui::SeparatorText("Global Settings");
     {
       int trace_width = Trace::width();
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
@@ -58,11 +60,16 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       ImGui::SliderInt("Trace length [frames]", &prm::trace_length, 10, prm::max_trace_length);
     }
-
+    ImGui::Spacing();
+    ImGui::SeparatorText("Individual Trace Settings");
     for (auto &trace : rec->traces) {
       ImGui::PushID(trace.id);
       auto title = "Pos " + trace.pos.to_string();
+      auto color = ImVec4(trace.color[0], trace.color[1], trace.color[2], trace.color[3]);
+      ImGui::PushStyleColor(ImGuiCol_Header, color);
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, color);
       if (ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Indent();
         if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
           rec->remove_trace(trace.pos);
         }
@@ -76,7 +83,7 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
         ImGui::ColorEdit3("Color", trace.color.data());
 
-        ImGui::NewLine();
+        ImGui::Spacing();
         if (ImGui::Button("Export video trace as .txt file")) {
           auto &ctrl         = rec->export_ctrl.trace;
           ctrl.export_window = true;
@@ -90,17 +97,21 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
           ctrl.frames                     = {0, rec->length()};
           ctrl.assign_auto_filename(rec->path());
         }
-        ImGui::NewLine();
+        ImGui::Spacing();
         if (ImGui::Button("Reset data")) {
           trace.data.clear();
         }
-        ImGui::NewLine();
+        ImGui::Spacing();
         ImGui::Checkbox("Auto scale x-axis", &trace.scale.scaleX);
         ImGui::Checkbox("Auto scale y-axis", &trace.scale.scaleY);
+        ImGui::Unindent();
       }
+      ImGui::PopStyleColor(2);
+      ImGui::PopID();
     }
-    ImGui::PopID();
     ImGui::EndTabItem();
   }
+
+  ImGui::Unindent();
   ImGui::EndTabBar();
 }

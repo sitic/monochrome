@@ -1,36 +1,41 @@
 #pragma once
 
-ImGuiWindow* show_main_ui() {
-  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-  ImGui::SetNextWindowSizeConstraints(ImVec2(ImGui::GetMainViewport()->Size[0], 0),
-                                      ImVec2(ImGui::GetMainViewport()->Size[0], FLT_MAX));
-  auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize |
-               ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing;
-  ImGui::Begin("Drag & drop .dat or .npy files into this window", nullptr, flags);
-  
-  if (ImGui::BeginTabBar("##TabBar")) {
+void show_top_ui() {
+  if (ImGui::BeginTabBar("##TopUiTabs")) {
     if (ImGui::BeginTabItem("Main")) {
+      ImGui::Spacing();
+
       // Speed controls
+      if (prm::playbackCtrl.val == 0) {
+        if (ImGui::Button(ICON_FA_PLAY)) {
+          prm::playbackCtrl.toggle_play_pause();
+        }
+      } else {
+        if (ImGui::Button(ICON_FA_PAUSE)) {
+          prm::playbackCtrl.toggle_play_pause();
+        }
+      }
+      float button_w = ImGui::GetItemRectSize().x;
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_REDO_ALT)) {
+        global::do_forall_recordings([](auto &r) { r->playback.restart(); });
+      }
+      ImGui::SameLine();
+
+      float total_w = ImGui::GetContentRegionMaxAbs().x;
+      float size_slider = total_w / 4;
+      float size_firstgroup = button_w * 2 + 2 * ImGui::GetStyle().ItemSpacing.x;
+      float size_secondgroup = button_w * 2 + size_slider + 3 * ImGui::GetStyle().ItemSpacing.x;
+      float size_thirdgroup = button_w * 2 + size_slider + 3 * ImGui::GetStyle().ItemSpacing.x;
+      float total_space = total_w - size_firstgroup - size_secondgroup - size_thirdgroup;
+      
+      ImGui::SameLine(size_firstgroup + total_space / 2);
       {
-        if (prm::playbackCtrl.val == 0) {
-          if (ImGui::Button(ICON_FA_PLAY)) {
-            prm::playbackCtrl.toggle_play_pause();
-          }
-        } else {
-          if (ImGui::Button(ICON_FA_PAUSE)) {
-            prm::playbackCtrl.toggle_play_pause();
-          }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_REDO_ALT)) {
-          global::do_forall_recordings([](auto &r) { r->playback.restart(); });
-        }
-        ImGui::SameLine();
         if (ImGui::Button(ICON_FA_BACKWARD)) {
           prm::playbackCtrl.deacrease_speed();
         }
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
+        ImGui::SetNextItemWidth(total_w / 4);
         ImGui::DragFloat("##speed", &prm::playbackCtrl.val, 0.05, 0, 20, "Playback Speed = %.2f");
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_FORWARD)) {
@@ -38,6 +43,7 @@ ImGuiWindow* show_main_ui() {
         }
       }
 
+      ImGui::SameLine(total_w - size_secondgroup);
       {
         bool resize_windows = false;
         if (ImGui::Button(ICON_FA_SEARCH_MINUS)) {
@@ -45,7 +51,7 @@ ImGuiWindow* show_main_ui() {
           resize_windows = true;
         }
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
+        ImGui::SetNextItemWidth(total_w / 4);
         if (ImGui::DragFloat("##scaling", &RecordingWindow::scale_fct, 0.05, 0.5, 10,
                             "Window Scaling = %.1f")) {
           resize_windows = true;
@@ -79,6 +85,7 @@ ImGuiWindow* show_main_ui() {
         // ImGui::SameLine();
 
         ImGui::NextColumn();
+        ImGui::AlignTextToFramePadding();
         ImGui::Text("Video Flip");
         ImGui::SameLine();
         if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) RecordingWindow::flip_ud();
@@ -88,6 +95,7 @@ ImGuiWindow* show_main_ui() {
         if (ImGui::Button("Reset")) RecordingWindow::flip_reset();
       }
       ImGui::Columns(1);
+      ImGui::Spacing();
       {
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Display FPS");
@@ -114,9 +122,4 @@ ImGuiWindow* show_main_ui() {
     }
     ImGui::EndTabBar();
   }
-
-  auto window = ImGui::GetCurrentWindow();
-  ImGui::End();
-
-  return window;
 }
