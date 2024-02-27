@@ -1,4 +1,0 @@
-FROM registry.gitlab.com/cardiac-vision/monochrome:latest
-
-RUN update-alternatives --set c++ $(which g++)
-RUN update-alternatives --set cc  $(which gcc)
