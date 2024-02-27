@@ -4,13 +4,13 @@
 
 Monochrome is a viewer for scientific monochromatic videos with high-dynamic range.
 
-It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our spefic needs for cariac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
-* Support for high-dynamic range (16-bit, 32-bit float)
+It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our spefic needs for cardiac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
+* Support for high-dynamic range (uint16, 32-bit float)
 * Playback of multiple videos in sync
-* High-speed playback (as fast as the hardware allows)
+* High-speed playback with precise frame-rate control
 * Viewing of optical traces (average intensity in a region of interest over time)
 * Rendering of layers on top of videos with transparency
-* Rendering of point positions over time (e.g. for tracking, optical flow visualization)
+* Rendering of point positions over time (e.g. for tracking or optical flow visualization)
 * Exporting of videos as PNG images or MP4 videos with precise control over the frame rate
 * Cross-platform (Linux, Windows, MacOS)
 
@@ -32,8 +32,8 @@ python -m pip install monochrome
 Monochrome supports the following video formats:
 
 * `.npy` (NumPy array) with shape (time, width, height). The data type can be float, integer (uint8, uint16, etc.), or boolean.
-* `.dat` MultiRecorder format
 * `.dat` (binary) with shape (time, width, height) and data type float32
+* `.dat` MultiRecorder format
 
 Drag & drop the file into the window or associate the file extension with Monochrome.
 
