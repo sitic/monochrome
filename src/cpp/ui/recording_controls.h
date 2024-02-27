@@ -228,7 +228,23 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
         return true;
       }
     }
-    ImGui::Checkbox("Show", &rec->active);
+
+    {
+      bool hide = !rec->active;
+      const bool is_disabled = hide;
+      if (is_disabled) ImGui::EndDisabled();
+      if (ImGui::Checkbox("Hide", &hide)) {
+        if (hide) {
+          if (!parent) glfwHideWindow(rec->window);
+        } else {
+          if (!parent) glfwShowWindow(rec->window);
+          else rec->playback = parent->playback;
+        }
+        rec->active = !hide;
+      }
+      if (is_disabled) ImGui::BeginDisabled();
+    }
+
 
     if (global::recordings.size() > 1) {
     if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP)) ImGui::OpenPopup("merge_popup");
