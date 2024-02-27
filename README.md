@@ -25,7 +25,7 @@ For the standalone application, download the latest release from the [releases p
 For the Python library, install it with pip:
 
 ```bash
-python -m pip install monochrome
+python -m pip install monochrome-viewer
 ```
 
 ## Native Video File Formats
@@ -60,11 +60,11 @@ Drag & drop the file into the window or associate the file extension with Monoch
 
 To install Monochrome with Python integration run the following command on Linux or macOS:
 ```bash
-python -m pip install monochrome
+python -m pip install monochrome-viewer
 ```
 On Windows you might need to run
 ```bash
-py -m pip install monochrome
+py -m pip install monochrome-viewer
 ```
 The installation of the standalone Monochrome application is *not* required.
 

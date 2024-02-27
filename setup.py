@@ -1,7 +1,7 @@
 from skbuild import setup
 
 setup(
-    name='monochrome',
+    name='monochrome-viewer',
     url='https://gitlab.com/cardiac-vision/monochrome',
     author="Jan Lebert",
     author_email="mail@janlebert.com",
