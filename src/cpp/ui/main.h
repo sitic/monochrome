@@ -1,7 +1,87 @@
 #pragma once
 
+#include "imgui_md.h"
+
 #include "globals.h"
 #include "utils/settings.h"
+#include "utils/ImGuiConnector.h"
+
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+// Following includes for Windows LinkCallback
+#define WIN32_LEAN_AND_MEAN
+#include <process.h>
+void system_open_url(const std::string &url) {
+  ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+#elif defined(__APPLE__)
+void system_open_url(const std::string &url) {
+  std::string cmd = "open " + url;
+  system(cmd.c_str());
+}
+#elif defined(__linux__)
+void system_open_url(const std::string &url) {
+  std::string cmd = "xdg-open " + url;
+  system(cmd.c_str());
+}
+#else
+void system_open_url(const std::string &url) {
+  fmt::print("Cannot open url: {}\n", url);
+}
+#endif
+
+struct markdown_cls : public imgui_md {
+  ImFont *get_font() const override {
+    if (m_is_table_header) {
+      return ImGuiConnector::font_bold_large;
+    }
+
+    if (m_is_code) {
+      return ImGuiConnector::font_code;
+    }
+
+    switch (m_hlevel) {
+      case 0:
+        return m_is_strong ? ImGuiConnector::font_bold : ImGuiConnector::font_regular;
+      case 1:
+        return ImGuiConnector::font_bold_large;
+      case 2:
+        return ImGuiConnector::font_bold_large;
+      default:
+        return ImGuiConnector::font_bold;
+    }
+  };
+
+  void open_url() const override {
+    system_open_url(m_href);
+  }
+
+  void SPAN_CODE(bool e) override {
+    if (e) {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8, 0.8, 0.8, 1));
+    } else {
+      ImGui::PopStyleColor();
+    }
+  }
+
+  void BLOCK_CODE(const MD_BLOCK_CODE_DETAIL *, bool e) override {
+    m_is_code = e;
+    if (e) {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8, 0.8, 0.8, 1));
+      ImGui::Indent();
+    } else {
+      ImGui::Unindent();
+      ImGui::PopStyleColor();
+    }
+  }
+
+  void BLOCK_QUOTE(bool e) override {
+    if (e) {
+      ImGui::Indent();
+    } else {
+      ImGui::Unindent();
+    }
+  }
+};
 
 void show_top_ui() {
   if (ImGui::BeginTabBar("##TopUiTabs")) {
@@ -25,13 +105,13 @@ void show_top_ui() {
       }
       ImGui::SameLine();
 
-      float total_w = ImGui::GetContentRegionMaxAbs().x;
-      float size_slider = total_w / 4;
-      float size_firstgroup = button_w * 2 + 2 * ImGui::GetStyle().ItemSpacing.x;
+      float total_w          = ImGui::GetContentRegionMaxAbs().x;
+      float size_slider      = total_w / 4;
+      float size_firstgroup  = button_w * 2 + 2 * ImGui::GetStyle().ItemSpacing.x;
       float size_secondgroup = button_w * 2 + size_slider + 3 * ImGui::GetStyle().ItemSpacing.x;
-      float size_thirdgroup = button_w * 2 + size_slider + 3 * ImGui::GetStyle().ItemSpacing.x;
-      float total_space = total_w - size_firstgroup - size_secondgroup - size_thirdgroup;
-      
+      float size_thirdgroup  = button_w * 2 + size_slider + 3 * ImGui::GetStyle().ItemSpacing.x;
+      float total_space      = total_w - size_firstgroup - size_secondgroup - size_thirdgroup;
+
       ImGui::SameLine(size_firstgroup + total_space / 2);
       {
         if (ImGui::Button(ICON_FA_BACKWARD)) {
@@ -56,7 +136,7 @@ void show_top_ui() {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(total_w / 4);
         if (ImGui::DragFloat("##scaling", &RecordingWindow::scale_fct, 0.05, 0.5, 10,
-                            "Window Scaling = %.1f")) {
+                             "Window Scaling = %.1f")) {
           resize_windows = true;
         }
         ImGui::SameLine();
@@ -121,9 +201,11 @@ void show_top_ui() {
     }
 
     if (ImGui::BeginTabItem("About")) {
-      ImGui::Text("Monochrome is a tool for visualizing monochrome video data.");
-      ImGui::NewLine();
-      ImGui::Text("For more information, please visit the project's website at: https://github.com/sitic/monochrome");
+      static markdown_cls md;
+
+      static std::string readme = get_rc_text_file("README.md");
+      md.print(readme.data(), readme.data() + readme.size());
+
       ImGui::EndTabItem();
     }
     ImGui::EndTabBar();

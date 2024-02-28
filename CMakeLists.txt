@@ -74,7 +74,17 @@ if (APPLE)
 endif ()
 
 file(GLOB SHADERS "src/shaders/*.glsl")
-cmrc_add_resource_library(monochrome-resources ALIAS monochrome::rc NAMESPACE rc ${SHADERS} "vendor/MultiRecorderVideo.png")
+cmrc_add_resource_library(
+    monochrome-resources
+    ALIAS monochrome::rc
+    NAMESPACE rc
+    ${SHADERS}
+    "vendor/MultiRecorderVideo.png"
+    "README.md"
+    "vendor/fonts/NotoSansDisplay-Regular.ttf"
+    "vendor/fonts/NotoSansDisplay-Bold.ttf"
+    "vendor/fonts/FiraCode-Regular.ttf"
+)
 
 set(SOURCES
         src/cpp/main.cpp
@@ -119,6 +129,7 @@ set(SOURCES
         src/cpp/utils/colormap.h
         src/cpp/utils/definitions.h
         src/cpp/utils/ImGuiConnector.h
+        src/cpp/utils/ImGuiConnector.cpp
         src/cpp/utils/iterators.h
         src/cpp/utils/plot_utils.h
         src/cpp/utils/utils.cpp
@@ -152,8 +163,8 @@ else()
 endif()
 
 target_link_libraries(Monochrome PRIVATE
-        CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers ghc_filesystem mio libnpy
-        pugixml flagset cppcolormap monochrome::rc)
+        CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers
+        ghc_filesystem mio libnpy pugixml flagset cppcolormap monochrome::rc)
 target_include_directories(Monochrome PRIVATE src/cpp src/schema)
 
 if (MC_FORCE_TCP_IPC)

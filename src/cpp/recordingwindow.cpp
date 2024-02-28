@@ -1,12 +1,13 @@
 #include <fstream>
 #include <fmt/ostream.h>
-#include <cmrc/cmrc.hpp>
+
+#include <glad/glad.h>
+
 #include "recordingwindow.h"
 #include "globals.h"
 #include "keybindings.h"
 #include "prm.h"
-
-CMRC_DECLARE(rc);
+#include "utils/utils.h"
 
 namespace {
   SharedRecordingPtr rec_from_window_ptr(GLFWwindow *_window) {
@@ -14,14 +15,11 @@ namespace {
                          [_window](const auto &r) { return r->window == _window; });
   }
 
-  std::string get_shader_file(std::string filename) {  // copy shader source from embeded files
-    auto fs   = cmrc::rc::get_filesystem();
-    auto data = fs.open("src/shaders/" + filename);
-    return std::string(data.begin(), data.end());
-  }
-
   Shader create_frame_shader() {
-    return Shader::create(get_shader_file("frame.vert.glsl"), get_shader_file("frame.frag.glsl"));
+    return Shader::create(
+      get_rc_text_file("src/shaders/frame.vert.glsl"),
+      get_rc_text_file("src/shaders/frame.frag.glsl")
+    );
   }
 
   std::tuple<GLuint, GLuint, GLuint> create_frame_vaovboebo() {
@@ -62,8 +60,11 @@ namespace {
   }
 
   Shader create_trace_shader() {
-    return Shader::create(get_shader_file("trace.vert.glsl"), get_shader_file("trace.frag.glsl"),
-                          get_shader_file("trace.geom.glsl"));
+    return Shader::create(
+      get_rc_text_file("src/shaders/trace.vert.glsl"),
+      get_rc_text_file("src/shaders/trace.frag.glsl"),
+      get_rc_text_file("src/shaders/trace.geom.glsl")
+    );
   }
 
   std::pair<GLuint, GLuint> create_trace_vaovbo() {
@@ -81,7 +82,10 @@ namespace {
   }
 
   Shader create_points_shader() {
-    return Shader::create(get_shader_file("points.vert.glsl"), get_shader_file("points.frag.glsl"));
+    return Shader::create(
+      get_rc_text_file("src/shaders/points.vert.glsl"),
+      get_rc_text_file("src/shaders/points.frag.glsl")
+    );
   }
 
   std::pair<GLuint, GLuint> create_points_vaovbo() {

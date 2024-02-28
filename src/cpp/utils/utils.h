@@ -2,8 +2,8 @@
 
 #include <array>
 #include <Eigen/Dense>
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "imgui.h"
 
 #include "vectors.h"
 
@@ -14,6 +14,8 @@ void add_window_icon(GLFWwindow *window);
 void glfw_error_callback(int error, const char *description);
 
 void checkGlError(std::string desc = "");
+
+std::string get_rc_text_file(const std::string &filename);
 
 template <typename T, size_t bin_count>
 class Histogram {

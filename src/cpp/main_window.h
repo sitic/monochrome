@@ -11,10 +11,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "fonts/DroidSans.h"
-#include "fonts/IconsFontAwesome5.h"
-#include "fonts/IconsMaterialDesignIcons.h"
-
 #include "utils/ImGuiConnector.h"
 
 #include "globals.h"

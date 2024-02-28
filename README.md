@@ -39,7 +39,7 @@ Drag & drop the file into the window or associate the file extension with Monoch
 
 ## Key Bindings
 
-| Keybinding | Action |
+| Keybinding &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Action &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | --- | --- |
 | `Ctrl + q` | Quit Monochrome |
 | `Esc` or `q` | Close focused recording |
@@ -106,6 +106,7 @@ mc.show_layer(overlay, "Phase", parent="Our Test Video", cmap='hsv')
 ## Development
 ### Linux
 
+Install the following packages:
 ```bash
 sudo apt install build-essential cmake mesa-utils xorg-dev
 ```

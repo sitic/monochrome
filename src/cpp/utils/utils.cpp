@@ -1,5 +1,6 @@
 #include <fstream>
 
+#include <glad/glad.h>
 #include <lodepng/lodepng.h>
 #include <cmrc/cmrc.hpp>
 
@@ -55,7 +56,7 @@ void add_window_icon(GLFWwindow* window) {
 }
 
 void glfw_error_callback(int error, const char* description) {
-  if (std::string(description) == "Cocoa: Regular windows do not have icons on macOS"){
+  if (std::string(description) == "Cocoa: Regular windows do not have icons on macOS") {
     return;
   }
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -121,4 +122,10 @@ void Shader::checkCompileErrors(GLuint shader, const std::string& type) {
       fmt::print("{}\n\n -- --------------------------------------------------- --\n", infoLog);
     }
   }
+}
+
+std::string get_rc_text_file(const std::string& filename) {
+  auto fs   = cmrc::rc::get_filesystem();
+  auto file = fs.open(filename);
+  return std::string(file.begin(), file.end());
 }

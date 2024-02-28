@@ -10,6 +10,9 @@ set_target_properties(glfw PROPERTIES FOLDER libs)
 add_library(glad glad/src/glad.c)
 target_include_directories(glad PUBLIC glad/include)
 
+add_library(md4c md4c/md4c.c md4c/md4c.h md4c/md4c-html.c md4c/md4c-html.h md4c/entity.c md4c/entity.h)
+target_include_directories(md4c SYSTEM PUBLIC md4c)
+
 add_library(imgui_glfw_gl3
         imgui/imgui.cpp
         imgui/imgui_draw.cpp
@@ -19,12 +22,16 @@ add_library(imgui_glfw_gl3
         imgui/backends/imgui_impl_glfw.cpp
         imgui/backends/imgui_impl_opengl3.cpp
         imgui/misc/cpp/imgui_stdlib.cpp
+
         implot/implot.cpp implot/implot_items.cpp
+        
         fonts/IconsFontAwesome5.cpp
         fonts/IconsMaterialDesignIcons.cpp
-        fonts/DroidSans.cpp)
-target_include_directories(imgui_glfw_gl3 SYSTEM PUBLIC imgui imgui/backends imgui/misc/cpp implot)
-target_link_libraries(imgui_glfw_gl3 PUBLIC glad glfw OpenGL::GL)
+        
+        imgui_md/imgui_md.cpp imgui_md/imgui_md.h
+        )
+target_include_directories(imgui_glfw_gl3 SYSTEM PUBLIC imgui imgui/backends imgui/misc/cpp implot imgui_md)
+target_link_libraries(imgui_glfw_gl3 PUBLIC glad glfw OpenGL::GL md4c)
 set_target_properties(imgui_glfw_gl3 PROPERTIES FOLDER libs)
 
 add_library(lodepng lodepng/lodepng.cpp lodepng/lodepng.h)
