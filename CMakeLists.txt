@@ -166,6 +166,7 @@ target_link_libraries(Monochrome PRIVATE
         CLI11::CLI11 imgui_glfw_gl3 fmt lodepng Eigen ipol asio readerwriterqueue flatbuffers
         ghc_filesystem mio libnpy pugixml flagset cppcolormap monochrome::rc)
 target_include_directories(Monochrome PRIVATE src/cpp src/schema)
+target_compile_definitions(Monochrome PRIVATE "-DGLFW_INCLUDE_NONE")
 
 if (MC_FORCE_TCP_IPC)
     target_compile_definitions(Monochrome PRIVATE "-DMC_FORCE_TCP_IPC")

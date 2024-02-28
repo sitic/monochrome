@@ -1,8 +1,6 @@
 #include <fstream>
 #include <fmt/ostream.h>
 
-#include <glad/glad.h>
-
 #include "recordingwindow.h"
 #include "globals.h"
 #include "keybindings.h"

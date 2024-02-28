@@ -1,6 +1,5 @@
 #include <fstream>
 
-#include <glad/glad.h>
 #include <lodepng/lodepng.h>
 #include <cmrc/cmrc.hpp>
 
