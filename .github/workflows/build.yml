@@ -139,13 +139,13 @@ jobs:
     - name: Package
       run: |
         mkdir dist
-        cp build/Release/Monochome.exe dist
+        cp build/Release/Monochrome.exe dist
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: standalone-windows
-        path: dist/*.zip
+        path: dist/Monochrome.exe
 
   standalone_macos:
     name: Build standalone on macOS
