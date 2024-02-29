@@ -8,8 +8,7 @@ extern "C" {
 #include "ipol/gaussian_conv_deriche.h"
 }
 
-enum class Transformations : int { None, FrameDiff, ContrastEnhancement };
-enum class Filters { None, Gauss, Mean, Median };
+enum class Transformations { None, Gauss, Mean, Median, FrameDiff, ContrastEnhancement };
 
 namespace Transformation {
 
@@ -193,4 +192,6 @@ namespace Transformation {
 
     void reset() { frame.setZero(); }
   };
+
+  std::shared_ptr<Base> factory(Transformations type, Recording &rec);
 }  // namespace Transformation

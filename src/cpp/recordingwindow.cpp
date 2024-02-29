@@ -253,20 +253,14 @@ void RecordingWindow::clear_gl_memory() {
   glfwMakeContextCurrent(prev_window);
 }
 
-void RecordingWindow::display(Filters prefilter,
-                              Transformations transformation,
-                              Filters postfilter) {
+void RecordingWindow::display() {
   if (!glcontext) throw std::runtime_error("No window set, but RecordingWindow::display() called");
 
   load_next_frame();
 
   Eigen::MatrixXf *arr = &frame;
 
-  auto *pretransform = transformationArena.create_if_needed(prefilter, 0);
-  pretransform->compute(*arr, t_frame);
-  arr = &pretransform->frame;
-
-  auto *transform = transformationArena.create_if_needed(transformation, 0);
+  auto *transform = transformationArena.create_if_needed(transformation);
   transform->compute(*arr, t_frame);
   arr = &transform->frame;
 
@@ -296,11 +290,11 @@ void RecordingWindow::display(Filters prefilter,
       histogram.min = -0.1f;
       histogram.max = 1.1f;
       break;
+    default:  // Gauss, Mean, Median
+      histogram.min = get_min(Transformations::None);
+      histogram.min = get_max(Transformations::None);
+      break;
   }
-
-  auto *posttransform = transformationArena.create_if_needed(postfilter, 1);
-  posttransform->compute(*arr, t_frame);
-  arr = &posttransform->frame;
 
   histogram.compute(arr->reshaped());
 
@@ -342,7 +336,7 @@ void RecordingWindow::display(Filters prefilter,
 
   if (!children.empty()) {
     for (const auto &crec : children) {
-      if (crec->active) crec->display(prefilter, transformation, postfilter);
+      if (crec->active) crec->display();
     }
     glfwMakeContextCurrent(window);
     //    glClear(GL_COLOR_BUFFER_BIT);
@@ -703,19 +697,20 @@ void RecordingWindow::render() {
   }
 }
 
+void RecordingWindow::set_transform(Transformations type) {
+  transform_ptr = Transformation::factory(type, *this);
+  transformation = type;
+}
+
 FixedTransformRecordingWindow::FixedTransformRecordingWindow(SharedRecordingPtr parent,
-                                                             Filters prefilter,
-                                                             Transformations transformation,
-                                                             Filters postfilter,
+                                                             Transformations _transformation,
                                                              std::string name)
-    : RecordingWindow(parent->file()),
-      fixed_prefilter_(prefilter),
-      fixed_transformation_(transformation),
-      fixed_postfilter_(postfilter) {
+    : RecordingWindow(parent->file()) {
+  transformation = _transformation;
   set_name(name);
 
-  RecordingWindow::get_min(fixed_transformation_) = parent->get_min(fixed_transformation_);
-  RecordingWindow::get_max(fixed_transformation_) = parent->get_max(fixed_transformation_);
+  RecordingWindow::get_min(transformation) = parent->get_min(transformation);
+  RecordingWindow::get_max(transformation) = parent->get_max(transformation);
 
   if (transformation == Transformations::FrameDiff) {
     as_overlay          = true;

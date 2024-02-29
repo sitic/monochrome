@@ -129,58 +129,47 @@ Vec4f FlowData::next_color(unsigned color_count) {
   return cycle_list.at(color_count);
 }
 
-TransformationList::TransformationCtrl::TransformationCtrl(
-    std::variant<Transformations, Filters> type, Recording &rec, int _gen)
-    : m_gen(_gen), m_type(type) {
-  if (auto *t = std::get_if<Transformations>(&type)) {
-    switch (*t) {
-      case Transformations::None:
-        m_transform = std::make_unique<Transformation::None>(rec);
-        break;
-      case Transformations::FrameDiff:
-        m_transform = std::make_unique<Transformation::FrameDiff>(rec);
-        break;
-      case Transformations::ContrastEnhancement:
-        m_transform = std::make_unique<Transformation::ContrastEnhancement>(rec);
-        break;
-    }
-  } else if (auto *t = std::get_if<Filters>(&type)) {
-    switch (*t) {
-      case Filters::None:
-        m_transform = std::make_unique<Transformation::None>(rec);
-        break;
-      case Filters::Gauss:
-        m_transform = std::make_unique<Transformation::GaussFilter>(rec);
-        break;
-      case Filters::Mean:
-        m_transform = std::make_unique<Transformation::MeanFilter>(rec);
-        break;
-      case Filters::Median:
-        m_transform = std::make_unique<Transformation::MedianFilter>(rec);
-        break;
-    }
+TransformationList::TransformationCtrl::TransformationCtrl(Transformations type, Recording &rec)
+    : m_type(type) {
+  switch (type) {
+    case Transformations::None:
+      m_transform = std::make_unique<Transformation::None>(rec);
+      break;
+    case Transformations::FrameDiff:
+      m_transform = std::make_unique<Transformation::FrameDiff>(rec);
+      break;
+    case Transformations::ContrastEnhancement:
+      m_transform = std::make_unique<Transformation::ContrastEnhancement>(rec);
+      break;
+    case Transformations::Gauss:
+      m_transform = std::make_unique<Transformation::GaussFilter>(rec);
+      break;
+    case Transformations::Mean:
+      m_transform = std::make_unique<Transformation::MeanFilter>(rec);
+      break;
+    case Transformations::Median:
+      m_transform = std::make_unique<Transformation::MedianFilter>(rec);
+      break;
+    default:
+      fmt::print("Unknown transformation type {}\n", static_cast<int>(type));
+      // throw std::runtime_error("Unknown transformation type");
   }
 }
 
-Transformation::Base *TransformationList::create_if_needed(
-    std::variant<Transformations, Filters> type, int gen) {
+Transformation::Base *TransformationList::create_if_needed(Transformations type) {
   auto r = std::find_if(transformations.begin(), transformations.end(),
-                        [type, gen](const TransformationCtrl &t) -> bool {
-                          return (t.type() == type) && (t.gen() == gen);
-                        });
+                        [type](const auto &t) { return t.type() == type; });
   if (r != std::end(transformations)) {
     return r->transformation();
   } else {
-    transformations.emplace_back(type, m_parent, gen);
+    transformations.emplace_back(type, m_parent);
     return transformations.back().transformation();
   }
 }
 
 TransformationList::TransformationList(Recording &rec) : m_parent(rec) {
   if (!rec.good()) return;
-  transformations.emplace_back(Transformations::None, m_parent, 0);
-  transformations.emplace_back(Filters::None, m_parent, 0);
-  transformations.emplace_back(Filters::None, m_parent, 1);
+  transformations.emplace_back(Transformations::None, m_parent);
 }
 
 void TransformationList::reallocate() {

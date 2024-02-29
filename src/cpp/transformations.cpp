@@ -1,5 +1,24 @@
 #include "transformations.h"
 
+std::shared_ptr<Transformation::Base> Transformation::factory(Transformations type, Recording &rec) {
+  switch (type) {
+    case Transformations::None:
+      return std::make_shared<None>(rec);
+    case Transformations::Gauss:
+      return std::make_shared<GaussFilter>(rec);
+    case Transformations::Mean:
+      return std::make_shared<MeanFilter>(rec);
+    case Transformations::Median:
+      return std::make_shared<MedianFilter>(rec);
+    case Transformations::FrameDiff:
+      return std::make_shared<FrameDiff>(rec);
+    case Transformations::ContrastEnhancement:
+      return std::make_shared<ContrastEnhancement>(rec);
+    default:
+      throw std::logic_error("invalid transformation type");
+  }
+}
+
 void Transformation::ContrastEnhancement::compute(const Eigen::MatrixXf &new_frame,
                                                   long new_frame_counter) {
   // Used fixed size versions for common variants

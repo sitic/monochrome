@@ -80,34 +80,37 @@ void display_recording_buttons(const SharedRecordingPtr &rec) {
   }
 }
 
-void show_transformations_ui() {
-  auto selectable_factory = [](auto &p, auto default_val) {
-    return [&p, default_val](const char *label, auto e) {
-      bool is_active = p == e;
-      if (ImGui::Selectable(label, is_active)) {
+void show_transformations_ui(const SharedRecordingPtr &rec) {
+  auto selectable = [rec](const char *label, auto e) {
+    bool is_active = rec->transformation == e;
+    if (ImGui::Selectable(label, is_active)) {
 
-        p = is_active ? default_val : e;
+      rec->transformation = is_active ? Transformations::None : e;
 
-        prm::do_forall_recordings([](auto &r) { r->reset_traces(); });
-      }
+      // if (is_active) {
+      //   rec->set_transform(Transformations::None);
+      // } else {
+      //   rec->set_transform(e);
+      // }
 
-      return is_active;
-    };
+      rec->reset_traces();
+    }
+
+    return is_active;
   };
 
-  auto kernel_size_select = [](unsigned int &val, auto reset_fn) {
+  auto kernel_size_select = [rec](unsigned int &val, auto reset_fn) {
     ImGui::Indent(10);
     const int step = 2;
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
     if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32, &val, &step, nullptr, "%d")) {
-      prm::do_forall_recordings([&reset_fn](auto &r) { reset_fn(r.get()); });
+      reset_fn(rec.get());
     }
     ImGui::Unindent(10);
   };
 
-  if (ImGui::TreeNode("Pre Filters")) {
-    auto selectable = selectable_factory(prm::prefilter, Filters::None);
-    if (selectable("Gauss", Filters::Gauss)) {
+  if (ImGui::TreeNode("Transformations")) {
+    if (selectable("Gauss", Transformations::Gauss)) {
       ImGui::Indent(10);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       float sigma = Transformation::GaussFilter::get_sigma();
@@ -117,27 +120,26 @@ void show_transformations_ui() {
       }
       ImGui::Unindent(10);
     }
-    if (selectable("Mean", Filters::Mean)) {
+    if (selectable("Mean", Transformations::Mean)) {
       kernel_size_select(Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
-        auto transform = r->transformationArena.create_if_needed(Filters::Mean, 0);
+        // r->set_transform(Transformations::Mean);
+
+        auto transform = r->transformationArena.create_if_needed(Transformations::Mean);
         auto c         = dynamic_cast<Transformation::MeanFilter *>(transform);
         assert(c);
         c->reset();
       });
     }
-    if (selectable("Median", Filters::Median)) {
+    if (selectable("Median", Transformations::Median)) {
       kernel_size_select(Transformation::MedianFilter::kernel_size, [](RecordingWindow *r) {
-        auto transform = r->transformationArena.create_if_needed(Filters::Median, 0);
+        // r->set_transform(Transformations::Median);
+
+        auto transform = r->transformationArena.create_if_needed(Transformations::Median);
         auto c         = dynamic_cast<Transformation::MedianFilter *>(transform);
         assert(c);
         c->reset();
       });
     }
-    ImGui::TreePop();
-  }
-
-  if (ImGui::TreeNode("Transformations")) {
-    auto selectable = selectable_factory(prm::transformation, Transformations::None);
     if (selectable("Frame Difference", Transformations::FrameDiff)) {
       ImGui::Indent(10);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
@@ -145,8 +147,8 @@ void show_transformations_ui() {
       if (ImGui::Button("Add As Overlays")) {
         std::vector<std::pair<SharedRecordingPtr, SharedRecordingPtr>> new_recordings;
         for (auto rec : prm::recordings) {
-          auto r = std::make_shared<FixedTransformRecordingWindow>(
-              rec, prm::prefilter, prm::transformation, prm::postfilter, "Frame Difference");
+          auto r = std::make_shared<FixedTransformRecordingWindow>(rec, rec->transformation,
+                                                                   "Frame Difference");
           new_recordings.push_back({r, rec});
         }
         for (auto [r, rec] : new_recordings) {
@@ -154,9 +156,8 @@ void show_transformations_ui() {
           r->open_window();
           prm::merge_queue.push({r, rec, false});
         }
-        prm::transformation = Transformations::None;
-        prm::prefilter      = Filters::None;
-        prm::postfilter     = Filters::None;
+        rec->transformation = Transformations::None;
+        // rec->set_transform(Transformations::None);
       }
       ImGui::Unindent(10);
     }
@@ -167,47 +168,13 @@ void show_transformations_ui() {
       if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32,
                              &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
                              "%d")) {
-        prm::do_forall_recordings([](auto &r) {
-          auto transform =
-              r->transformationArena.create_if_needed(Transformations::ContrastEnhancement, 0);
+          auto transform = rec->transformationArena.create_if_needed(Transformations::ContrastEnhancement);
           auto c = dynamic_cast<Transformation::ContrastEnhancement *>(transform);
           assert(c);
           c->reset();
-        });
       }
       //      ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
       ImGui::Unindent(10);
-    }
-    ImGui::TreePop();
-  }
-
-  if (ImGui::TreeNode("Post Filters")) {
-    auto selectable = selectable_factory(prm::postfilter, Filters::None);
-    if (selectable("Gauss", Filters::Gauss)) {
-      ImGui::Indent(10);
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-      float sigma = Transformation::GaussFilter::get_sigma();
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
-      if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, u8"σ = %.2f")) {
-        Transformation::GaussFilter::set_sigma(sigma);
-      }
-      ImGui::Unindent(10);
-    }
-    if (selectable("Mean", Filters::Mean)) {
-      kernel_size_select(Transformation::MeanFilter::kernel_size, [](RecordingWindow *r) {
-        auto transform = r->transformationArena.create_if_needed(Filters::Mean, 1);
-        auto c         = dynamic_cast<Transformation::MeanFilter *>(transform);
-        assert(c);
-        c->reset();
-      });
-    }
-    if (selectable("Median", Filters::Median)) {
-      kernel_size_select(Transformation::MedianFilter::kernel_size, [](RecordingWindow *r) {
-        auto transform = r->transformationArena.create_if_needed(Filters::Median, 1);
-        auto c         = dynamic_cast<Transformation::MedianFilter *>(transform);
-        assert(c);
-        c->reset();
-      });
     }
     ImGui::TreePop();
   }
@@ -279,7 +246,7 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   }
 
   ImGui::SeparatorText("Transformations");
-  show_transformations_ui();
+  show_transformations_ui(rec);
 
   return false;
 }

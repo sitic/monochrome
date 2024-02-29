@@ -39,7 +39,7 @@ void show_main_imgui_window() {
     ImGui::Text("Or use the python library to load a recording.");
   } else {
     for (const auto &rec : prm::recordings) {
-      if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);
+      if (rec->active) rec->display();
       show_recording_ui(rec);
       show_export_recording_ui(rec);
       ImGui::Spacing();

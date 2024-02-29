@@ -27,6 +27,8 @@ class RecordingWindow : public Recording {
   BitRange bitrange = BitRange::U16;
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
+  Transformations transformation = Transformations::None;
+  std::shared_ptr<Transformation::Base> transform_ptr = nullptr;
   TransformationList transformationArena;
   std::vector<FlowData> flows;                                      // use add_flow() to add members
   std::vector<std::shared_ptr<global::PointsVideo>> points_videos;  // use add_points_video() to add
@@ -50,7 +52,7 @@ class RecordingWindow : public Recording {
   void open_window();
   void set_context(GLFWwindow *new_context);
 
-  virtual void display(Filters prefilter, Transformations transformation, Filters postfilter);
+  virtual void display();
   virtual void render();
 
   virtual void load_next_frame() { load_frame(playback.step()); }
@@ -81,6 +83,8 @@ class RecordingWindow : public Recording {
   fs::path save_snapshot(std::string output_png_path_template = "");
   void start_recording(const fs::path &filename, int fps = 30, std::string description = "");
   void stop_recording();
+
+  void set_transform(Transformations type);
 
   void add_flow(std::shared_ptr<Recording> flow);
   void add_points_video(std::shared_ptr<global::PointsVideo> pv);
@@ -117,24 +121,11 @@ class RecordingWindow : public Recording {
   std::vector<float> points_vert;
 };
 
+// TODO: remove this class
 class FixedTransformRecordingWindow : public RecordingWindow {
-  Filters fixed_prefilter_;
-  Transformations fixed_transformation_;
-  Filters fixed_postfilter_;
 
  public:
   FixedTransformRecordingWindow(SharedRecordingPtr parent,
-                                Filters prefilter,
                                 Transformations transformation,
-                                Filters postfilter,
                                 std::string name);
-  void display(Filters prefilter, Transformations transformation, Filters postfilter) override {
-    RecordingWindow::display(fixed_prefilter_, fixed_transformation_, fixed_postfilter_);
-  };
-  float &get_min(Transformations type) override {
-    return RecordingWindow::get_min(fixed_transformation_);
-  }
-  float &get_max(Transformations type) override {
-    return RecordingWindow::get_max(fixed_transformation_);
-  }
 };

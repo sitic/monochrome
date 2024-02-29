@@ -8,10 +8,6 @@ namespace prm {
   int display_fps        = 60;
   double lastframetime   = 0;
 
-  Filters prefilter              = Filters::None;
-  Transformations transformation = Transformations::None;
-  Filters postfilter             = Filters::None;
-
   const std::array<ColorMap, 7> cmaps = {ColorMap::GRAY,      ColorMap::DIFF,     ColorMap::HSV,
                                          ColorMap::BLACKBODY, ColorMap::DIFF_POS, ColorMap::DIFF_NEG,
                                          ColorMap::VIRIDIS};

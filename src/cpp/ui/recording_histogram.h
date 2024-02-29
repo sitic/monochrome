@@ -67,24 +67,24 @@ void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 
   // Controls for min and max values
   bool symmetrize_minmax = false;
-  if (ImGui::SliderFloat("min", &rec->get_min(prm::transformation), rec->histogram.min,
+  if (ImGui::SliderFloat("min", &rec->get_min(rec->transformation), rec->histogram.min,
                          rec->histogram.max)) {
     symmetrize_minmax =
-        (rec->histogram.symmetric || prm::transformation == Transformations::FrameDiff);
+        (rec->histogram.symmetric || rec->transformation == Transformations::FrameDiff);
   }
-  if (rec->get_min(prm::transformation) < 0) {
+  if (rec->get_min(rec->transformation) < 0) {
     ImGui::SameLine();
     if (ImGui::Checkbox("Symmetric", &rec->histogram.symmetric)) {
       symmetrize_minmax = rec->histogram.symmetric;
     }
   }
-  if (ImGui::SliderFloat("max", &rec->get_max(prm::transformation), rec->histogram.min,
+  if (ImGui::SliderFloat("max", &rec->get_max(rec->transformation), rec->histogram.min,
                          rec->histogram.max)) {
-    if (prm::transformation == Transformations::FrameDiff) {
-      rec->get_min(prm::transformation) = -rec->get_max(prm::transformation);
+    if (rec->transformation == Transformations::FrameDiff) {
+      rec->get_min(rec->transformation) = -rec->get_max(rec->transformation);
     }
   }
   if (symmetrize_minmax) {
-    rec->get_max(prm::transformation) = -rec->get_min(prm::transformation);
+    rec->get_max(rec->transformation) = -rec->get_min(rec->transformation);
   }
 }

@@ -15,10 +15,6 @@ namespace prm {
   extern int display_fps;
   extern double lastframetime;
 
-  extern Filters prefilter;
-  extern Transformations transformation;
-  extern Filters postfilter;
-
   extern const std::array<ColorMap, 7> cmaps;
 
   extern std::map<ColorMap, GLuint> cmap_texs;

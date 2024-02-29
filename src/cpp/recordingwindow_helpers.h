@@ -221,15 +221,13 @@ class TransformationList {
 
  public:
   class TransformationCtrl {
-    int m_gen;
-    std::variant<Transformations, Filters> m_type;
+    Transformations m_type;
     std::unique_ptr<Transformation::Base> m_transform;
 
    public:
-    TransformationCtrl(std::variant<Transformations, Filters> type, Recording &rec, int _gen = 0);
+    TransformationCtrl(Transformations type, Recording &rec);
 
-    int gen() const { return m_gen; }
-    std::variant<Transformations, Filters> type() const { return m_type; }
+    Transformations type() const { return m_type; }
     Transformation::Base *transformation() const { return m_transform.get(); }
   };
 
@@ -237,5 +235,5 @@ class TransformationList {
 
   TransformationList(Recording &rec);
   void reallocate();
-  Transformation::Base *create_if_needed(std::variant<Transformations, Filters> type, int gen = 0);
+  Transformation::Base *create_if_needed(Transformations type);
 };
