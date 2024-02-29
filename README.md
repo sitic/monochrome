@@ -29,15 +29,19 @@ python -m pip install monochrome-viewer
 ```
 
 ## Native Video File Formats
-Monochrome supports the following video formats:
+Monochrome supports the following video file formats:
 
 * `.npy` (NumPy array) with shape (time, width, height). The data type can be float, integer (uint8, uint16, etc.), or boolean.
 * `.dat` (binary) with shape (time, width, height) and data type float32
 * `.dat` MultiRecorder format
 
-Drag & drop the file into the window or associate the file extension with Monochrome.
+Drag & drop the file into the window or associate the file extension with Monochrome to open it with a double-click.
 
-## Key Bindings
+## Usage & Key Bindings
+
+Click in a video to view optical traces (average intensity in a region of interest over time). Click and drag to move the region of interest. Right-click to remove the region of interest.
+
+Keyboard shortcuts:
 
 | Keybinding &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Action &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | --- | --- |
@@ -53,8 +57,10 @@ Drag & drop the file into the window or associate the file extension with Monoch
 | `Shift + Right` | Next frame (10x) |
 | `p` | Save screenshot of focused recording |
 | `s` | Sync playback of all recordings |
-| `Ctrl + Left (+ Shift)` | Previous frame in focused recording only |
-| `Ctrl + Right (+ Shift)` | Next frame in focused recording only |
+| `Ctrl + Left` | Previous frame in focused recording only |
+| `Ctrl + Right` | Next frame in focused recording only |
+| `Ctrl + Left + Shift` | Previous frame in focused recording only (10x) |
+| `Ctrl + Right + Shift` | Next frame in focused recording only (10x) |
 
 ## Python Quickstart
 
@@ -104,22 +110,25 @@ mc.show_layer(overlay, "Phase", parent="Our Test Video", cmap='hsv')
 ```
 
 ## Development
-### Linux
+
+### Dependencies
+
+#### Linux
 
 Install the following packages:
 ```bash
 sudo apt install build-essential cmake mesa-utils xorg-dev
 ```
 
-### MacOS
+#### MacOS
 
 Download [CMake](https://cmake.org/download/) and Xcode.
 
-### Windows
+#### Windows
 
 Download [CMake](https://cmake.org/) and a C++ compiler like Microsoft Visual C++ or MinGW.
 
-## Compilation
+### Compilation
 
 This project uses CMake to generate cross-platform build configurations. Either use cmake-gui or the terminal from the project folder (where CMakeList is located):
 
