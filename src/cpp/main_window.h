@@ -217,22 +217,13 @@ void open_main_window(float font_scale = 0) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
-  prm::main_window = glfwCreateWindow(prm::main_window_multipier * prm::main_window_width,
-                                         prm::main_window_height, "Monochrome", nullptr, nullptr);
+  prm::main_window = glfwCreateWindow(prm::main_window_width, prm::main_window_height, "Monochrome",
+                                      nullptr, nullptr);
   if (!prm::main_window) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
   glfwGetFramebufferSize(prm::main_window, &prm::main_window_width, &prm::main_window_height);
-  glfwSetWindowSizeCallback(prm::main_window, [](GLFWwindow *window, int w, int h) {
-    prm::main_window_width  = w / prm::main_window_multipier;
-    prm::main_window_height = h;
-  });
-  glfwSetDropCallback(prm::main_window, [](GLFWwindow *window, int count, const char **paths) {
-    for (int i = 0; i < count; i++) {
-      load_new_file(paths[i]);
-    }
-  });
   glfwMakeContextCurrent(prm::main_window);
   // wait until the current frame has been drawn before drawing the next one
   glfwSwapInterval(0);
@@ -242,12 +233,25 @@ void open_main_window(float font_scale = 0) {
     exit(EXIT_FAILURE);
   }
 
+  add_window_icon(prm::main_window);
+  // On retina displays, the framebuffer size is twice the window size
+  glfwGetWindowSize(prm::main_window, &prm::main_window_width, &prm::main_window_height);
+
+  // Initialize Callbacks
+  glfwSetWindowSizeCallback(prm::main_window, [](GLFWwindow *window, int w, int h) {
+    prm::main_window_width  = w;
+    prm::main_window_height = h;
+  });
+  glfwSetDropCallback(prm::main_window, [](GLFWwindow *window, int count, const char **paths) {
+    for (int i = 0; i < count; i++) {
+      load_new_file(paths[i]);
+    }
+  });
   auto key_callback = [](GLFWwindow *window, int key, int scancode, int action, int mods) {
     global::common_key_callback(window, key, scancode, action, mods);
   };
-  ImGuiConnector::Init(prm::main_window, primary_monitor, font_scale, key_callback);
 
-  add_window_icon(prm::main_window);
+  ImGuiConnector::Init(prm::main_window, primary_monitor, font_scale, key_callback);
 
   // Initialize colormap textures
   for (auto cmap : prm::cmaps) {

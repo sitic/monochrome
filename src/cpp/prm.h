@@ -9,7 +9,6 @@
 namespace prm {
   // Declare global variables and enums
   extern int main_window_width;
-  extern int main_window_multipier;
   extern int main_window_height;
   extern int trace_length;
   extern int max_trace_length;

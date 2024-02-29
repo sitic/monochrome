@@ -2,7 +2,6 @@
 
 namespace prm {
   int main_window_width     = 0;
-  int main_window_multipier = 1;
   int main_window_height    = 0;
   int trace_length          = 200;
   int max_trace_length      = 2000;

@@ -35,9 +35,9 @@ std::string config_file_path() {
 
 void cli_add_global_options(CLI::App& app) {
   app.add_option("--scale", RecordingWindow::scale_fct, "Recording window size multiplier")
-      ->check(CLI::PositiveNumber);
+      ->check(CLI::PositiveNumber)->capture_default_str();
   app.add_option("--speed", prm::playbackCtrl.val, "Recording playback speed multiplier")
-      ->check(CLI::NonNegativeNumber);
+      ->check(CLI::NonNegativeNumber)->capture_default_str();
   app.add_option_function<short>(
          "--rotation", [](const short &rotation) { RecordingWindow::set_rotation(rotation); },
          "Default rotation of videos")
@@ -47,18 +47,24 @@ void cli_add_global_options(CLI::App& app) {
       "--fliph", [](std::int64_t count) { RecordingWindow::flip_lr(); }, "Flip video horizontally");
   app.add_flag(
       "--flipv", [](std::int64_t count) { RecordingWindow::flip_ud(); }, "Flip video vertically");
-  app.add_option("--trace_length", prm::trace_length, "Default length (in frames) for traces");
+  app.add_option("--trace_length", prm::trace_length, "Default length (in frames) for traces")
+      ->check(CLI::PositiveNumber)->capture_default_str();
   app.add_option("--max_trace_length", prm::max_trace_length,
-                 "Maximum length (in frames) for traces");
-  app.add_option("--display_fps", prm::display_fps, "Default display framerate");
-  app.add_option("--window-width", prm::main_window_width, "Window width of the main window");
-  app.add_option("--window-height", prm::main_window_height, "Window height of the main window");
+                 "Maximum length (in frames) for traces")
+      ->check(CLI::PositiveNumber)->capture_default_str();
+  app.add_option("--display_fps", prm::display_fps, "Default display framerate")
+      ->check(CLI::PositiveNumber)->capture_default_str();
+  app.add_option("--window-width", prm::main_window_width, "Window width of the main window")
+      ->check(CLI::PositiveNumber)->capture_default_str();
+  app.add_option("--window-height", prm::main_window_height, "Window height of the main window")
+      ->check(CLI::PositiveNumber)->capture_default_str();
 }
 
 std::string save_current_settings() {
     CLI::App app{"Monochrome"};
     cli_add_global_options(app);
-    app.parse("");
+    app.set_config("--config");
+    app.parse("", false);
 
     std::string config_path = config_file_path();
 
