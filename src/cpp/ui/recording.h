@@ -77,8 +77,12 @@ void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = 
       ImGui::EndTabBar();
     }
 
-    for (const auto &crec : rec->children) {
-      show_recording_ui(crec, rec.get());
+    if (!rec->children.empty()) {
+      ImGui::SeparatorText("Overlays");
+
+      for (const auto &crec : rec->children) {
+        show_recording_ui(crec, rec.get());
+      }
     }
 
     // Actually delete children which have been selected for deletionq

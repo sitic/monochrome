@@ -230,21 +230,22 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   }
 
   {
-    bool hide              = !rec->active;
-    const bool is_disabled = hide;
-    if (is_disabled) ImGui::EndDisabled();
-    if (ImGui::Checkbox("Hide", &hide)) {
-      if (hide) {
+    if (rec->active) {
+      if (ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH)) {
         if (!parent) glfwHideWindow(rec->window);
-      } else {
+        rec->active = false;
+      }
+    } else {
+      ImGui::EndDisabled();
+      if (ImGui::Button(u8"Show " ICON_FA_EYE)) {
+        rec->active = true;
         if (!parent)
           glfwShowWindow(rec->window);
         else
           rec->playback = parent->playback;
       }
-      rec->active = !hide;
+      ImGui::BeginDisabled();
     }
-    if (is_disabled) ImGui::BeginDisabled();
   }
 
 
