@@ -5,7 +5,7 @@
 
 void show_traces_ui(const SharedRecordingPtr &rec) {
   ImGui::BeginTabBar("##traces");
-  ImGui::Indent();
+  // ImGui::Indent();
 
   if (ImGui::BeginTabItem("View")) {
     for (auto &trace : rec->traces) {
@@ -68,7 +68,8 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
       auto color = ImVec4(trace.color[0], trace.color[1], trace.color[2], trace.color[3]);
       ImGui::PushStyleColor(ImGuiCol_Header, color);
       ImGui::PushStyleColor(ImGuiCol_HeaderHovered, color);
-      if (ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+      bool dont_delete_trace = true;
+      if (ImGui::CollapsingHeader(title.c_str(), &dont_delete_trace, ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
         if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
           rec->remove_trace(trace.pos);
@@ -106,12 +107,13 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
         ImGui::Checkbox("Auto scale y-axis", &trace.scale.scaleY);
         ImGui::Unindent();
       }
+      if (!dont_delete_trace) rec->remove_trace(trace.pos);
       ImGui::PopStyleColor(2);
       ImGui::PopID();
     }
     ImGui::EndTabItem();
   }
 
-  ImGui::Unindent();
+  // ImGui::Unindent();
   ImGui::EndTabBar();
 }

@@ -8,31 +8,45 @@
 #include "recording_controls.h"
 #include "recording_points.h"
 
+void show_progess_slider(const SharedRecordingPtr &rec) {
+  int t = rec->current_frame();
+  ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
+  ImGui::SetNextItemWidth(-1);
+  if (ImGui::SliderInt("##progress", &t, 0, rec->length() - 1, "Frame %d")) {
+    rec->playback.set_next(t);
+    for (auto &c : rec->children) {
+      c->playback.set_next(t);
+    }
+  }
+  ImGui::PopStyleColor(1);
+}
+
 void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = nullptr) {
+  ImGui::PushID(rec.get());
+  
   auto name = fmt::format("{}###{}", rec->name(), static_cast<void *>(rec.get()));
   ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-  auto active = rec->active;
-  if (ImGui::TreeNode(name.c_str())) { // ImGuiTreeNodeFlags_DefaultOpen
+  auto active                = rec->active;
+  bool dont_delete_recording = true;
+  ImGui::PushFont(ImGuiConnector::font_bold);
+  if (ImGui::CollapsingHeader(name.c_str(), &dont_delete_recording)) {
+    // if (ImGui::TreeNode(name.c_str())) { // ImGuiTreeNodeFlags_DefaultOpen
+    ImGui::PopFont();
     if (!active) {
       ImGui::BeginDisabled();
     }
-    
+
     ImGui::Spacing();
-    // ImGui::Indent();
-    
-    int t = rec->current_frame();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
-    ImGui::SetNextItemWidth(-1);
-    if (ImGui::SliderInt("##progress", &t, 0, rec->length() - 1, "Frame %d")) {
-      rec->playback.set_next(t);
-      for (auto &c : rec->children) {
-        c->playback.set_next(t);
-      }
-    }
-    ImGui::PopStyleColor(1);
+    ImGui::Indent();
+    ImGuiChildFlags child_flags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY |
+                                  ImGuiChildFlags_AlwaysUseWindowPadding;
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+    ImGui::BeginChild(name.c_str(), ImVec2(-FLT_MIN, 0), child_flags);
+
+    show_progess_slider(rec);
 
     if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_AutoSelectNewTabs)) {
-      ImGui::Indent();
+      // ImGui::Indent();
       if (ImGui::BeginTabItem("Histogram")) {
         show_histogram_ui(rec, parent);
         ImGui::EndTabItem();
@@ -56,32 +70,35 @@ void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = 
       }
 
       if (ImGui::BeginTabItem("Metadata & Controls")) {
-        if (show_controls_ui(rec, parent)) {
-          // ImGui::EndTabItem();
-          // ImGui::EndTabBar();
-          // ImGui::Unindent();
-          // ImGui::TreePop();
-          // return rec_nr;
-        }
+        show_controls_ui(rec, parent);
         ImGui::EndTabItem();
       }
-      ImGui::Unindent();
+      // ImGui::Unindent();
       ImGui::EndTabBar();
     }
 
     for (const auto &crec : rec->children) {
       show_recording_ui(crec, rec.get());
     }
-    // ImGui::Unindent();
 
     // Actually delete children which have been selected for deletionq
     rec->children.erase(std::remove_if(rec->children.begin(), rec->children.end(),
-                                      [](const auto &r) { return r->glcontext == r->window; }),
+                                       [](const auto &r) { return r->glcontext == r->window; }),
                         rec->children.end());
 
     if (!active) {
       ImGui::EndDisabled();
     }
-    ImGui::TreePop();
+    // ImGui::TreePop();
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+    ImGui::Unindent();
+  } else {
+    ImGui::PopFont();
   }
+
+  if (!dont_delete_recording) {
+    glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+  }
+  ImGui::PopID();
 }

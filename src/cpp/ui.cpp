@@ -23,6 +23,7 @@ void show_main_imgui_window() {
   ImGui::Begin("Monochrome", nullptr, flags);
 
   show_top_ui();
+  ImGui::BeginChild("Recordings", ImGui::GetContentRegionAvail(), ImGuiChildFlags_None);
 
   {
     ImGui::Spacing();
@@ -36,14 +37,15 @@ void show_main_imgui_window() {
   if (prm::recordings.empty()) {
     ImGui::Text("Drag and drop a .npy or .dat file here to load it.");
     ImGui::Text("Or use the python library to load a recording.");
+  } else {
+    for (const auto &rec : prm::recordings) {
+        if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);
+        show_recording_ui(rec);
+        show_export_recording_ui(rec);
+        ImGui::Spacing();
+    }
   }
-
-  for (const auto &rec : prm::recordings) {
-    if (rec->active) rec->display(prm::prefilter, prm::transformation, prm::postfilter);
-    show_recording_ui(rec);
-    show_export_recording_ui(rec);
-    ImGui::Spacing();
-  }
+  ImGui::EndChild();
 
   ImGui::End();
 }
