@@ -19,7 +19,7 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
       }
 
       auto label = trace.pos.to_string();
-      auto data = trace.data.data();
+      auto data  = trace.data.data();
       if (size > prm::trace_length) {
         data += (size - prm::trace_length);
         size = prm::trace_length;
@@ -29,10 +29,10 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
       trace.scale.right = trace.data.size();
       trace.scale.scale(data, data + size);
       ImPlot::SetNextAxisLinks(ImAxis_X1, trace.scale.scaleX ? &trace.scale.left : nullptr,
-                              trace.scale.scaleX ? &trace.scale.right : nullptr);
+                               trace.scale.scaleX ? &trace.scale.right : nullptr);
       ImPlot::SetNextAxisLinks(ImAxis_Y1, trace.scale.scaleY ? &trace.scale.lower : nullptr,
-                              trace.scale.scaleY ? &trace.scale.upper : nullptr);
-      auto ptitle = fmt::format("Pos {}, width {}###trace", label, Trace::width());
+                               trace.scale.scaleY ? &trace.scale.upper : nullptr);
+      auto ptitle    = fmt::format("Pos {}, width {}###trace", label, Trace::width());
       auto plot_size = ImVec2(ImGui::GetContentRegionAvail().x, 180);
       if (ImPlot::BeginPlot(ptitle.c_str(), plot_size)) {
         ImPlot::SetupAxes(nullptr, nullptr);
@@ -69,7 +69,8 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
       ImGui::PushStyleColor(ImGuiCol_Header, color);
       ImGui::PushStyleColor(ImGuiCol_HeaderHovered, color);
       bool dont_delete_trace = true;
-      if (ImGui::CollapsingHeader(title.c_str(), &dont_delete_trace, ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::CollapsingHeader(title.c_str(), &dont_delete_trace,
+                                  ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
         if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
           rec->remove_trace(trace.pos);

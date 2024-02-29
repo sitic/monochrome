@@ -24,7 +24,9 @@ namespace global {
   std::string tcp_host = "127.0.0.1";
   short tcp_port       = 4864;
 
-  void add_file_to_load(const std::string& file) { files_to_load.enqueue(file); }
+  void add_file_to_load(const std::string& file) {
+    files_to_load.enqueue(file);
+  }
 
   std::optional<std::string> get_file_to_load() {
     std::string tmp;
@@ -43,7 +45,9 @@ namespace global {
 
   void close_window(const std::string& recording_name) {}
   void close_all_windows() {}
-  std::vector<std::pair<std::string, std::vector<Vec2i>>> get_trace_pos() { return {}; }
+  std::vector<std::pair<std::string, std::vector<Vec2i>>> get_trace_pos() {
+    return {};
+  }
   void add_PointsVideo_to_load(std::shared_ptr<PointsVideo> obj) {
     pointsvideo_to_load.enqueue(std::move(obj));
   }

@@ -23,7 +23,7 @@ void show_progess_slider(const SharedRecordingPtr &rec) {
 
 void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = nullptr) {
   ImGui::PushID(rec.get());
-  
+
   auto name = fmt::format("{}###{}", rec->name(), static_cast<void *>(rec.get()));
   ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   auto active                = rec->active;

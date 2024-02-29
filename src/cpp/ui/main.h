@@ -51,9 +51,7 @@ struct markdown_cls : public imgui_md {
     }
   };
 
-  void open_url() const override {
-    system_open_url(m_href);
-  }
+  void open_url() const override { system_open_url(m_href); }
 
   void SPAN_CODE(bool e) override {
     if (e) {

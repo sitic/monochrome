@@ -45,8 +45,8 @@ class VideoRecorder {
   ~VideoRecorder() { stop_recording(); }
 
   void start_recording(const std::string &filename,
-                       GLFWwindow *window = nullptr,
-                       int fps            = 30,
+                       GLFWwindow *window      = nullptr,
+                       int fps                 = 30,
                        std::string description = "") {
     if (ffmpeg) return;  // if already recording, silently return
 
@@ -75,13 +75,14 @@ class VideoRecorder {
         fmt::arg("encoder_args", ffmpeg_encoder_args()), fmt::arg("title", videotitle),
         fmt::arg("description", description), fmt::arg("filename", filename));
 
-#ifdef _WIN32 // Needs to be "wb" for windows
+#ifdef _WIN32  // Needs to be "wb" for windows
     ffmpeg = _popen(cmd.c_str(), "wb");
 #else
     ffmpeg = popen(cmd.c_str(), "w");
 #endif
     if (!ffmpeg) {
-      global::new_ui_message("ERROR: Unable to open ffmpeg, please install it to create a .mp4 file.");
+      global::new_ui_message(
+          "ERROR: Unable to open ffmpeg, please install it to create a .mp4 file.");
     }
   }
 
@@ -91,7 +92,7 @@ class VideoRecorder {
       return;
     }
 
-    glPixelStorei(GL_PACK_ALIGNMENT, 1); // needed when using GL_RGB
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);  // needed when using GL_RGB
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer.data());
     fwrite(buffer.data(), sizeof(GLubyte), buffer.size(), ffmpeg);
   }

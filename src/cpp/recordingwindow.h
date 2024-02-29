@@ -99,7 +99,7 @@ class RecordingWindow : public Recording {
 
   Vec2d mousepos;
   struct {
-    bool holding_left = false;
+    bool holding_left  = false;
     bool pressing_left = false;
   } mousebutton;
 

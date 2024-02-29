@@ -6,10 +6,10 @@ namespace ImGuiConnector {
   extern GLFWkeyfun user_key_fun;
   extern GLFWscrollfun user_scroll_fun;
 
-  extern ImFont* font_regular;
-  extern ImFont* font_bold;
-  extern ImFont* font_bold_large;
-  extern ImFont* font_code;
+  extern ImFont *font_regular;
+  extern ImFont *font_bold;
+  extern ImFont *font_bold_large;
+  extern ImFont *font_code;
 
   void Init(GLFWwindow *window,
             GLFWmonitor *primary_monitor,

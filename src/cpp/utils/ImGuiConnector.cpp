@@ -18,8 +18,8 @@ CMRC_DECLARE(rc);
 namespace {
   ImFont* get_imgui_font(std::string name,
                          float pixel_size,
-                         ImFontConfig* font_cfg = nullptr,
-                         const ImWchar* glyph_ranges  = nullptr) {
+                         ImFontConfig* font_cfg      = nullptr,
+                         const ImWchar* glyph_ranges = nullptr) {
     auto fs       = cmrc::rc::get_filesystem();
     auto fontdata = fs.open("vendor/fonts/" + name);
     ImGuiIO& io   = ImGui::GetIO();
@@ -148,11 +148,12 @@ namespace ImGuiConnector {
     float font_size_regular = 16.f * font_scale;
     float font_size_large   = 18.f * font_scale;
     float font_size_icon    = 12.5f * font_scale;
-    font_regular    = get_imgui_font("NotoSansDisplay-Regular.ttf", font_size_regular, &font_config, ranges.Data);
+    font_regular =
+        get_imgui_font("NotoSansDisplay-Regular.ttf", font_size_regular, &font_config, ranges.Data);
 
     ImFontConfig icons_config;
-    icons_config.MergeMode  = true;
-    icons_config.PixelSnapH = true;
+    icons_config.MergeMode                          = true;
+    icons_config.PixelSnapH                         = true;
     static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
     io->Fonts->AddFontFromMemoryCompressedTTF(
         fonts::fontawesome5_solid_compressed_data, fonts::fontawesome5_solid_compressed_size,
@@ -162,8 +163,10 @@ namespace ImGuiConnector {
         fonts::materialdesignicons_compressed_data, fonts::materialdesignicons_compressed_size,
         font_size_icon, &icons_config, materialdesignicons_icons_ranges);
 
-    font_bold       = get_imgui_font("NotoSansDisplay-Bold.ttf", font_size_regular, &font_config, ranges.Data);
-    font_bold_large = get_imgui_font("NotoSansDisplay-Bold.ttf", font_size_large, &font_config, ranges.Data);
+    font_bold =
+        get_imgui_font("NotoSansDisplay-Bold.ttf", font_size_regular, &font_config, ranges.Data);
+    font_bold_large =
+        get_imgui_font("NotoSansDisplay-Bold.ttf", font_size_large, &font_config, ranges.Data);
     font_code = get_imgui_font("FiraCode-Regular.ttf", font_size_regular, &font_config, ranges.Data);
   }
 

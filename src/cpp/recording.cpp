@@ -134,7 +134,7 @@ bool Recording::export_ROI(
     unsigned long nt = t0tmax[1] - t0tmax[0];  // t0tmax[1] > t0tmax[0] guaranteed
     unsigned long ny = size[1];
     unsigned long nx = size[0];
-    auto header = create_npy_fileheader_float({nt, ny, nx});
+    auto header      = create_npy_fileheader_float({nt, ny, nx});
     out << header;
   }
 

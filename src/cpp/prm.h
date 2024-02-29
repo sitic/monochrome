@@ -22,7 +22,7 @@ namespace prm {
   extern const std::array<ColorMap, 7> cmaps;
 
   extern std::map<ColorMap, GLuint> cmap_texs;
-  
+
   // Global singletons
   extern PlaybackCtrl playbackCtrl;
   extern GLFWwindow *main_window;

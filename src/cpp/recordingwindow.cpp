@@ -14,10 +14,8 @@ namespace {
   }
 
   Shader create_frame_shader() {
-    return Shader::create(
-      get_rc_text_file("src/shaders/frame.vert.glsl"),
-      get_rc_text_file("src/shaders/frame.frag.glsl")
-    );
+    return Shader::create(get_rc_text_file("src/shaders/frame.vert.glsl"),
+                          get_rc_text_file("src/shaders/frame.frag.glsl"));
   }
 
   std::tuple<GLuint, GLuint, GLuint> create_frame_vaovboebo() {
@@ -58,11 +56,9 @@ namespace {
   }
 
   Shader create_trace_shader() {
-    return Shader::create(
-      get_rc_text_file("src/shaders/trace.vert.glsl"),
-      get_rc_text_file("src/shaders/trace.frag.glsl"),
-      get_rc_text_file("src/shaders/trace.geom.glsl")
-    );
+    return Shader::create(get_rc_text_file("src/shaders/trace.vert.glsl"),
+                          get_rc_text_file("src/shaders/trace.frag.glsl"),
+                          get_rc_text_file("src/shaders/trace.geom.glsl"));
   }
 
   std::pair<GLuint, GLuint> create_trace_vaovbo() {
@@ -80,10 +76,8 @@ namespace {
   }
 
   Shader create_points_shader() {
-    return Shader::create(
-      get_rc_text_file("src/shaders/points.vert.glsl"),
-      get_rc_text_file("src/shaders/points.frag.glsl")
-    );
+    return Shader::create(get_rc_text_file("src/shaders/points.vert.glsl"),
+                          get_rc_text_file("src/shaders/points.frag.glsl"));
   }
 
   std::pair<GLuint, GLuint> create_points_vaovbo() {
@@ -422,7 +416,7 @@ void RecordingWindow::display(Filters prefilter,
   for (const auto &vid : points_videos) {
     if (!vid->show) continue;
     points_vert.clear();
-    
+
     if (vid->point_size < 0) {
       vid->point_size = FlowData::pointsize;
     }
@@ -607,8 +601,8 @@ void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
 
 void RecordingWindow::close_callback(GLFWwindow *window) {
   prm::recordings.erase(std::remove_if(prm::recordings.begin(), prm::recordings.end(),
-                                          [window](auto r) { return r->window == window; }),
-                           prm::recordings.end());
+                                       [window](auto r) { return r->window == window; }),
+                        prm::recordings.end());
 }
 
 void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -719,7 +713,7 @@ FixedTransformRecordingWindow::FixedTransformRecordingWindow(SharedRecordingPtr 
       fixed_transformation_(transformation),
       fixed_postfilter_(postfilter) {
   set_name(name);
-  
+
   RecordingWindow::get_min(fixed_transformation_) = parent->get_min(fixed_transformation_);
   RecordingWindow::get_max(fixed_transformation_) = parent->get_max(fixed_transformation_);
 

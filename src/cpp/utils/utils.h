@@ -66,9 +66,9 @@ class Histogram {
 
 class Shader {
  public:
-  unsigned int ID        = GL_FALSE;
-  Shader()               = default;
-  Shader(const Shader &) = delete;
+  unsigned int ID                   = GL_FALSE;
+  Shader()                          = default;
+  Shader(const Shader &)            = delete;
   Shader &operator=(Shader const &) = delete;
   Shader(Shader &&other) noexcept { ID = other.ID; }
   Shader &operator=(Shader &&other) noexcept {

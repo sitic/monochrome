@@ -78,8 +78,7 @@ namespace global {
     std::variant<std::vector<float>, std::vector<uint8_t>, std::vector<uint16_t>> data;
 
     template <typename T>
-    static std::shared_ptr<RawArray3> create(RawArray3MetaData metadata_,
-                                             std::size_t data_size) {
+    static std::shared_ptr<RawArray3> create(RawArray3MetaData metadata_, std::size_t data_size) {
       auto a  = std::shared_ptr<RawArray3>(new RawArray3);
       a->meta = std::move(metadata_);
       a->data = std::vector<T>(data_size);

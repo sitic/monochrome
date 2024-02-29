@@ -165,8 +165,8 @@ void show_transformations_ui() {
       const int step = 2;
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32,
-                            &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
-                            "%d")) {
+                             &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
+                             "%d")) {
         prm::do_forall_recordings([](auto &r) {
           auto transform =
               r->transformationArena.create_if_needed(Transformations::ContrastEnhancement, 0);
@@ -175,7 +175,7 @@ void show_transformations_ui() {
           c->reset();
         });
       }
-//      ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
+      //      ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
       ImGui::Unindent(10);
     }
     ImGui::TreePop();
@@ -214,68 +214,71 @@ void show_transformations_ui() {
 }
 
 bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
-    ImGui::SeparatorText("General");
-    auto rec_name = rec->name();
-    if (ImGui::InputText("Name", &rec_name)) {
+  ImGui::SeparatorText("General");
+  auto rec_name = rec->name();
+  if (ImGui::InputText("Name", &rec_name)) {
     rec->set_name(rec_name);
+  }
+  if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
+    if (!parent) {
+      glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+    } else {
+      rec->set_context(nullptr);
+      // Child will be deleted later, after we have left the loop over all children.
+      return true;
     }
-    if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
-      if (!parent) {
-        glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+  }
+
+  {
+    bool hide              = !rec->active;
+    const bool is_disabled = hide;
+    if (is_disabled) ImGui::EndDisabled();
+    if (ImGui::Checkbox("Hide", &hide)) {
+      if (hide) {
+        if (!parent) glfwHideWindow(rec->window);
       } else {
-        rec->set_context(nullptr);
-        // Child will be deleted later, after we have left the loop over all children.
-        return true;
+        if (!parent)
+          glfwShowWindow(rec->window);
+        else
+          rec->playback = parent->playback;
       }
+      rec->active = !hide;
     }
-
-    {
-      bool hide = !rec->active;
-      const bool is_disabled = hide;
-      if (is_disabled) ImGui::EndDisabled();
-      if (ImGui::Checkbox("Hide", &hide)) {
-        if (hide) {
-          if (!parent) glfwHideWindow(rec->window);
-        } else {
-          if (!parent) glfwShowWindow(rec->window);
-          else rec->playback = parent->playback;
-        }
-        rec->active = !hide;
-      }
-      if (is_disabled) ImGui::BeginDisabled();
-    }
+    if (is_disabled) ImGui::BeginDisabled();
+  }
 
 
-    if (prm::recordings.size() > 1) {
-    if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP)) ImGui::OpenPopup("merge_popup");
+  if (prm::recordings.size() > 1) {
+    if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP))
+      ImGui::OpenPopup("merge_popup");
     if (ImGui::BeginPopup("merge_popup")) {
-        for (auto &r : prm::recordings) {
+      for (auto &r : prm::recordings) {
         if (r.get() == rec.get()) continue;
         auto l = fmt::format("Merge into '{}'", r->name());
         if (ImGui::Selectable(l.c_str())) {
-            prm::merge_queue.push({rec, r, false});
+          prm::merge_queue.push({rec, r, false});
         }
         if (rec->file()->capabilities()[FileCapabilities::AS_FLOW]) {
-            auto l2 = l + " as flow"s;
-            if (ImGui::Selectable(l2.c_str())) {
+          auto l2 = l + " as flow"s;
+          if (ImGui::Selectable(l2.c_str())) {
             prm::merge_queue.push({rec, r, true});
-            }
+          }
         }
-        }
-        ImGui::EndPopup();
+      }
+      ImGui::EndPopup();
     }
-    }
+  }
 
-    ImGui::SeparatorText("Metadata");
-    display_recording_metadata(rec);
+  ImGui::SeparatorText("Metadata");
+  display_recording_metadata(rec);
 
-    if (!parent) {
-      ImGui::SeparatorText("Export");
-      display_recording_buttons(rec);
-    }
+  if (!parent) {
+    ImGui::SeparatorText("Export");
+    display_recording_buttons(rec);
+  }
 
-    ImGui::SeparatorText("Transformations");
-    show_transformations_ui();
+  ImGui::SeparatorText("Transformations");
+  show_transformations_ui();
 
-    return false;
+  return false;
 }

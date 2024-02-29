@@ -139,7 +139,9 @@ namespace {
         return -6.0 * x + 195.0 / 32.0;
       }
     }
-    Vec3f colormap(float x) { return {colormap_red(x), colormap_green(x), colormap_blue(x)}; }
+    Vec3f colormap(float x) {
+      return {colormap_red(x), colormap_green(x), colormap_blue(x)};
+    }
   }  // namespace HSV
 
   std::array<float, 3 * 256> hsv_colormapdata() {

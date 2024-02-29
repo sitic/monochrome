@@ -29,11 +29,11 @@ namespace fs = ghc::filesystem;
 namespace {
   std::string get_userid() {
 #ifdef WIN32
-//    char user_name[UNLEN + 1];
-//    DWORD user_name_size = sizeof(user_name);
-//    if (GetUserName(user_name, &user_name_size))
-//      return std::string(user_name, user_name_size);
-//    else
+    //    char user_name[UNLEN + 1];
+    //    DWORD user_name_size = sizeof(user_name);
+    //    if (GetUserName(user_name, &user_name_size))
+    //      return std::string(user_name, user_name_size);
+    //    else
     return "";
 #else
     return fmt::format("{}", getuid());
@@ -66,13 +66,9 @@ namespace {
    public:
     IpcHostEndpoint() = default;
 
-    ~IpcHostEndpoint() {
-      disconnected();
-    }
+    ~IpcHostEndpoint() { disconnected(); }
 
-    void connected() {
-      connected_ = true;
-    }
+    void connected() { connected_ = true; }
 
     void disconnected() {
 #if defined(MC_USE_LOCAL_SOCKETS) && defined(__APPLE__)
