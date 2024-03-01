@@ -1,7 +1,5 @@
 # Monochrome — Viewer for scientific monochromatic video data
 
-> ⚠️ An initial release is currently in preparation. The install instruction are not yet up-to-date.
-
 Monochrome is a viewer for scientific monochromatic videos with high-dynamic range.
 
 It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our spefic needs for cardiac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
@@ -18,7 +16,7 @@ It is designed to be fast and lightweight, i.e. it uses memory-mapping to load v
 
 ## Standalone Application and Python Library
 
-Monochrome can be used as a standalone application or as a Python library. The standalone application is a simple video viewer with a minimalistic user interface. The Python library allows to load and play videos from Python scripts and Jupyter notebooks, see the [Python Quickstart](#python-quickstart).
+Monochrome can be used as a standalone application or as a Python library. The standalone application is a simple video viewer with a minimalistic user interface. The Python library allows to load and play videos from Python scripts and Jupyter notebooks, see the Python Quickstart section below.
 
 For the standalone application, download the latest release from the [releases page](https://github.com/sitic/monochrome/-/releases) and run the executable. On Winodws you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe).
 
