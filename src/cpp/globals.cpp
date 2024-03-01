@@ -4,7 +4,7 @@
 #include "readerwriterqueue.h"
 
 #include "globals.h"
-//#include "fileformats/InMemoryFile.h"
+#include "prm.h"
 
 namespace {
   moodycamel::ReaderWriterQueue<std::string> files_to_load(3);
@@ -55,5 +55,11 @@ namespace global {
     std::shared_ptr<PointsVideo> tmp;
     return pointsvideo_to_load.try_dequeue(tmp) ? std::optional<std::shared_ptr<PointsVideo>>(tmp)
                                                 : std::nullopt;
+  }
+
+  void quit(int) {
+    if (prm::main_window) {
+      glfwSetWindowShouldClose(prm::main_window, GLFW_TRUE);
+    }
   }
 }  // namespace global

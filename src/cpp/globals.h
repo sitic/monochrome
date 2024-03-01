@@ -127,4 +127,6 @@ namespace global {
 
   void add_PointsVideo_to_load(std::shared_ptr<PointsVideo> obj);
   std::optional<std::shared_ptr<PointsVideo>> get_pointsvideo_to_load();
+
+  void quit(int code = 0);
 }  // namespace global

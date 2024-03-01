@@ -94,6 +94,15 @@ int main(int argc, char **argv) {
 
   open_main_window(font_scale);
 
+  // Close window on control-c
+#ifndef _WIN32
+  struct sigaction sigIntHandler;
+  sigIntHandler.sa_handler = global::quit;
+  sigemptyset(&sigIntHandler.sa_mask);
+  sigIntHandler.sa_flags = 0;
+  sigaction(SIGINT, &sigIntHandler, nullptr);
+#endif
+
   if (!disable_ipc) {
     if (!ipc::is_another_instance_running()) {
       ipc::start_server();
