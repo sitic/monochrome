@@ -8,4 +8,3 @@ class TransferFunction(object):
     DIFF = 2
     DIFF_POS = 3
     DIFF_NEG = 4
-

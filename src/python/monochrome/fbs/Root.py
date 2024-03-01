@@ -41,19 +41,26 @@ class Root(object):
             return obj
         return None
 
-def Start(builder): builder.StartObject(2)
 def RootStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddDataType(builder, dataType): builder.PrependUint8Slot(0, dataType, 0)
+    builder.StartObject(2)
+
+def Start(builder):
+    RootStart(builder)
+
 def RootAddDataType(builder, dataType):
-    """This method is deprecated. Please switch to AddDataType."""
-    return AddDataType(builder, dataType)
-def AddData(builder, data): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
+    builder.PrependUint8Slot(0, dataType, 0)
+
+def AddDataType(builder, dataType):
+    RootAddDataType(builder, dataType)
+
 def RootAddData(builder, data):
-    """This method is deprecated. Please switch to AddData."""
-    return AddData(builder, data)
-def End(builder): return builder.EndObject()
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
+
+def AddData(builder, data):
+    RootAddData(builder, data)
+
 def RootEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+    return builder.EndObject()
+
+def End(builder):
+    return RootEnd(builder)

@@ -182,7 +182,7 @@ namespace Transformation {
 
     void mean_filter(const Eigen::MatrixXf &in, Eigen::MatrixXf &out, const unsigned kernel_size) {
       const bool is_odd = kernel_size % 2;
-      const long offset = is_odd ? (kernel_size - 1) / 2 - 1 : kernel_size / 2;
+      const long offset = is_odd ? (kernel_size - 1) / 2 : kernel_size / 2;
       for (long row = offset; row < in.rows() - offset; row++) {
         for (long col = offset; col < in.cols() - offset; col++) {
           const auto block = in.block(row - offset, col - offset, kernel_size, kernel_size);
@@ -196,7 +196,7 @@ namespace Transformation {
 
       std::vector<float> copy(kernel_size * kernel_size);
       const bool is_odd = kernel_size % 2;
-      const long offset = is_odd ? (kernel_size - 1) / 2 - 1 : kernel_size / 2;
+      const long offset = is_odd ? (kernel_size - 1) / 2 : kernel_size / 2;
       for (long row = offset; row < in.rows() - offset; row++) {
         for (long col = offset; col < in.cols() - offset; col++) {
           const auto block = in.block(row - offset, col - offset, kernel_size, kernel_size);

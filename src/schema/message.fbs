@@ -1,7 +1,7 @@
 namespace fbs;
 
-enum BitRange : int { AUTODETECT = 0, UINT8, UINT10, UINT12, UINT16, FLOAT, DIFF, PHASE, PHASE_DIFF }
-enum ColorMap : int { DEFAULT = 0, GRAY, DIFF, HSV, BLACKBODY, VIRIDIS}
+enum BitRange : int { AUTODETECT = 0, MINMAX, UINT8, UINT10, UINT12, UINT16, FLOAT, DIFF, PHASE, PHASE_DIFF, INT8 }
+enum ColorMap : int { DEFAULT = 0, GRAY, HSV, BLACKBODY, VIRIDIS, DIFF, DIFF_POS, DIFF_NEG}
 enum ArrayDataType : int { FLOAT = 0, UINT8, UINT16 }
 enum TransferFunction : int { NONE = 0, LINEAR, DIFF, DIFF_POS, DIFF_NEG }
 enum RequestType : int { CLOSE = 0, CLOSE_ALL, TRACE_POS }

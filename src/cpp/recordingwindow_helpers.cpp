@@ -1,3 +1,5 @@
+#include <random>
+
 #include "recordingwindow_helpers.h"
 #include "prm.h"
 
@@ -129,51 +131,34 @@ Vec4f FlowData::next_color(unsigned color_count) {
   return cycle_list.at(color_count);
 }
 
-TransformationList::TransformationCtrl::TransformationCtrl(Transformations type, Recording &rec)
-    : m_type(type) {
-  switch (type) {
-    case Transformations::None:
-      m_transform = std::make_unique<Transformation::None>(rec);
-      break;
-    case Transformations::FrameDiff:
-      m_transform = std::make_unique<Transformation::FrameDiff>(rec);
-      break;
-    case Transformations::ContrastEnhancement:
-      m_transform = std::make_unique<Transformation::ContrastEnhancement>(rec);
-      break;
-    case Transformations::Gauss:
-      m_transform = std::make_unique<Transformation::GaussFilter>(rec);
-      break;
-    case Transformations::Mean:
-      m_transform = std::make_unique<Transformation::MeanFilter>(rec);
-      break;
-    case Transformations::Median:
-      m_transform = std::make_unique<Transformation::MedianFilter>(rec);
-      break;
-    default:
-      fmt::print("Unknown transformation type {}\n", static_cast<int>(type));
-      // throw std::runtime_error("Unknown transformation type");
-  }
-}
+std::pair<float, float> oportunistic_minmax(std::shared_ptr<AbstractFile> file,
+                                            int sampling_frames) {
+  auto Nt         = file->length();
+  sampling_frames = std::min(sampling_frames, Nt);
 
-Transformation::Base *TransformationList::create_if_needed(Transformations type) {
-  auto r = std::find_if(transformations.begin(), transformations.end(),
-                        [type](const auto &t) { return t.type() == type; });
-  if (r != std::end(transformations)) {
-    return r->transformation();
-  } else {
-    transformations.emplace_back(type, m_parent);
-    return transformations.back().transformation();
+  std::vector<long> all_indices(Nt);
+  for (long i = 0; i < Nt; i++) {
+    all_indices[i] = i;
   }
-}
 
-TransformationList::TransformationList(Recording &rec) : m_parent(rec) {
-  if (!rec.good()) return;
-  transformations.emplace_back(Transformations::None, m_parent);
-}
+  std::vector<long> indices;
+  std::sample(all_indices.begin(), all_indices.end(), std::back_inserter(indices), sampling_frames,
+              std::mt19937{std::random_device{}()});
 
-void TransformationList::reallocate() {
-  for (auto &t : transformations) {
-    t.transformation()->allocate(m_parent);
+  float min = std::numeric_limits<float>::max();
+  float max = std::numeric_limits<float>::lowest();
+
+  for (auto i : indices) {
+    auto frame = file->read_frame(i);
+    auto [frame_min, frame_max] =
+        utils::minmax_element_skipNaN(frame.data(), frame.data() + frame.size());
+    if (frame_min < min) {
+      min = frame_min;
+    }
+    if (frame_max > max) {
+      max = frame_max;
+    }
   }
+
+  return {min, max};
 }

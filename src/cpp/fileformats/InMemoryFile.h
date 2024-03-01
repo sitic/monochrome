@@ -1,6 +1,5 @@
 #pragma once
 
-#include <variant>
 #include "AbstractFile.h"
 #include "globals.h"
 

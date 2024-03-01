@@ -46,8 +46,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
 
     static bool norm  = false;
     auto checkbox_lbl = fmt::format("Normalize values to [0, 1] using min = {} and max = {}",
-                                    recording->get_min(Transformations::None),
-                                    recording->get_max(Transformations::None));
+                                    recording->get_min(true),
+                                    recording->get_max(true));
     ImGui::Checkbox(checkbox_lbl.c_str(), &norm);
 
     ImGui::Spacing();
@@ -57,8 +57,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
       path /= ctrl.filename;
       fmt::print("Exporting ROI to {}\n", path.string());
 
-      Vec2f minmax = norm ? Vec2f(recording->get_min(Transformations::None),
-                                  recording->get_max(Transformations::None))
+      Vec2f minmax = norm ? Vec2f(recording->get_min(true),
+                                  recording->get_max(true))
                           : Vec2f(0, 0);
 
       bool success =

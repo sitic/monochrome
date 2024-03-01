@@ -52,14 +52,26 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
     }
 
     auto rec = std::make_shared<Recording>(file);
+
+    static int flow_counter = -1;
+    flow_counter++;
+    if (rec->name().empty()) {
+      rec->set_name(fmt::format("Flow {}", flow_counter));
+    }
+
     parent->add_flow(rec);
-  } else {
+  } else {  // Regular video
     auto rec = std::make_shared<RecordingWindow>(file);
+
+    static int video_counter = -1;
+    video_counter++;
+    if (rec->name().empty()) {
+      rec->set_name(fmt::format("Video {}", video_counter));
+    }
+
     if (!prm::recordings.empty()) {
       rec->playback.synchronize_with(prm::recordings.back()->playback, false);
     }
-    prm::recordings.push_back(rec);
-    rec->open_window();
 
     if (parentName) {
       auto parent = find_parent_recording(parentName.value());
@@ -71,9 +83,12 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
               "ERROR: Video \"{}\" has requested \"{}\" as its parent recording, but no such "
               "recording exists!",
               rec->name(), parentName.value());
-      } else {
-        prm::merge_queue.push({rec, parent, false});
+        return;
       }
+      prm::merge_queue.emplace(rec, parent, false);
+    } else {
+      prm::recordings.push_back(rec);
+      rec->open_window();
     }
   }
 }
@@ -83,39 +98,48 @@ void load_new_file(const fs::path &path) {
   load_new_file(file_factory(path));
 }
 
+void load_new_pointsvideo(std::shared_ptr<global::PointsVideo> pointsvideo) {
+  if (prm::recordings.empty()) {
+    global::new_ui_message("ERROR: A video needs to be opened before points lists can be displayed");
+    return;
+  }
+  auto parent_name = pointsvideo->parent_name;
+  auto parent      = find_parent_recording(parent_name);
+  if (!parent) {
+    global::new_ui_message(
+        "ERROR: Points Array \"{}\" has requested \"{}\" as its parent recording, but no such "
+        "recording exists!",
+        pointsvideo->name, parent_name);
+    return;
+  }
+
+  static int points_video_counter = -1;
+  points_video_counter++;
+  if (pointsvideo->name.empty()) {
+    pointsvideo->name = fmt::format("PointsVideo {}", points_video_counter);
+  }
+  parent->add_points_video(pointsvideo);
+}
+
 void load_from_queue() {
   /* Check all our queues for new elements */
 
   /* File paths */
   if (auto filepath = global::get_file_to_load()) {
     load_new_file(filepath.value());
-    return;  // there might be some order of operations issues for IPC if we don't return here
+    // return;  // there might be some order of operations issues for IPC if we don't return here
   }
 
   /* InMemory Arrays */
   if (auto arr = global::get_rawarray3_to_load()) {
     auto file = std::make_shared<InMemoryFile>(arr.value());
     load_new_file(file, arr.value()->meta.parentName);
-    return;  // there might be some order of operations issues for IPC if we don't return here
+    // return;  // there might be some order of operations issues for IPC if we don't return here
   }
 
   /* Point Videos */
   if (auto pointsvideo = global::get_pointsvideo_to_load()) {
-    if (prm::recordings.empty()) {
-      global::new_ui_message(
-          "ERROR: A video needs to be opened before points lists can be displayed");
-    } else {
-      auto parent_name = pointsvideo.value()->parent_name;
-      auto parent      = find_parent_recording(parent_name);
-      if (!parent) {
-        global::new_ui_message(
-            "ERROR: Points Array \"{}\" has requested \"{}\" as its parent recording, but no such "
-            "recording exists!",
-            pointsvideo.value()->name, parent_name);
-      } else {
-        parent->add_points_video(pointsvideo.value());
-      }
-    }
+    load_new_pointsvideo(pointsvideo.value());
   }
 
   /* Global merge queue */
@@ -177,14 +201,16 @@ void display_loop() {
     }
     std::this_thread::sleep_for(sleep_duration);
 
+    // Load new files from the queue
+    load_from_queue();
+
     // Poll and handle events
     glfwPollEvents();
-    load_from_queue();
 
     // Check if recording window should close
     prm::recordings.erase(
         std::remove_if(prm::recordings.begin(), prm::recordings.end(),
-                       [](const auto &r) -> bool { return glfwWindowShouldClose(r->window); }),
+                       [](const auto &r) -> bool { return r->window && glfwWindowShouldClose(r->window); }),
         prm::recordings.end());
 
     // Show ImGui windows

@@ -38,19 +38,26 @@ class VideoID(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(2)
 def VideoIDStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddId(builder, id): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(id), 0)
+    builder.StartObject(2)
+
+def Start(builder):
+    VideoIDStart(builder)
+
 def VideoIDAddId(builder, id):
-    """This method is deprecated. Please switch to AddId."""
-    return AddId(builder, id)
-def AddError(builder, error): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(error), 0)
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(id), 0)
+
+def AddId(builder, id):
+    VideoIDAddId(builder, id)
+
 def VideoIDAddError(builder, error):
-    """This method is deprecated. Please switch to AddError."""
-    return AddError(builder, error)
-def End(builder): return builder.EndObject()
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(error), 0)
+
+def AddError(builder, error):
+    VideoIDAddError(builder, error)
+
 def VideoIDEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+    return builder.EndObject()
+
+def End(builder):
+    return VideoIDEnd(builder)

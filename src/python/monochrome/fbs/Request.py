@@ -38,19 +38,26 @@ class Request(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(2)
 def RequestStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddType(builder, type): builder.PrependInt32Slot(0, type, 0)
+    builder.StartObject(2)
+
+def Start(builder):
+    RequestStart(builder)
+
 def RequestAddType(builder, type):
-    """This method is deprecated. Please switch to AddType."""
-    return AddType(builder, type)
-def AddArg(builder, arg): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(arg), 0)
+    builder.PrependInt32Slot(0, type, 0)
+
+def AddType(builder, type):
+    RequestAddType(builder, type)
+
 def RequestAddArg(builder, arg):
-    """This method is deprecated. Please switch to AddArg."""
-    return AddArg(builder, arg)
-def End(builder): return builder.EndObject()
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(arg), 0)
+
+def AddArg(builder, arg):
+    RequestAddArg(builder, arg)
+
 def RequestEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+    return builder.EndObject()
+
+def End(builder):
+    return RequestEnd(builder)

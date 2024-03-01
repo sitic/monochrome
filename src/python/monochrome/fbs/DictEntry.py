@@ -38,19 +38,26 @@ class DictEntry(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(2)
 def DictEntryStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddKey(builder, key): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0)
+    builder.StartObject(2)
+
+def Start(builder):
+    DictEntryStart(builder)
+
 def DictEntryAddKey(builder, key):
-    """This method is deprecated. Please switch to AddKey."""
-    return AddKey(builder, key)
-def AddVal(builder, val): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(val), 0)
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0)
+
+def AddKey(builder, key):
+    DictEntryAddKey(builder, key)
+
 def DictEntryAddVal(builder, val):
-    """This method is deprecated. Please switch to AddVal."""
-    return AddVal(builder, val)
-def End(builder): return builder.EndObject()
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(val), 0)
+
+def AddVal(builder, val):
+    DictEntryAddVal(builder, val)
+
 def DictEntryEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+    return builder.EndObject()
+
+def End(builder):
+    return DictEntryEnd(builder)

@@ -18,18 +18,25 @@ class Color(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Color
-    def Values(self): return [self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0 + i * 4)) for i in range(4)]
+    def Values(self, j = None):
+        if j is None:
+            return [self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0 + i * 4)) for i in range(self.ValuesLength())]
+        elif j >= 0 and j < self.ValuesLength():
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0 + j * 4))
+        else:
+            return None
+
+    # Color
+    def ValuesAsNumpy(self):
+        return self._tab.GetArrayAsNumpy(flatbuffers.number_types.Float32Flags, self._tab.Pos + 0, self.ValuesLength())
+
     # Color
     def ValuesLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(0))
-        if o != 0:
-            return self._tab.VectorLen(o)
-        return 0
+        return 4
 
     # Color
     def ValuesIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(0))
-        return o == 0
+        return False
 
 
 def CreateColor(builder, values):

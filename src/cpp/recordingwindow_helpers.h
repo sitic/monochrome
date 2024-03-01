@@ -1,7 +1,6 @@
 #pragma once
 
 #include <utility>
-#include <variant>
 
 #include "recording.h"
 #include "transformations.h"
@@ -215,25 +214,5 @@ class FlowData {
   Vec4f next_color(unsigned color_count);
 };
 
-class TransformationList {
- private:
-  Recording &m_parent;
-
- public:
-  class TransformationCtrl {
-    Transformations m_type;
-    std::unique_ptr<Transformation::Base> m_transform;
-
-   public:
-    TransformationCtrl(Transformations type, Recording &rec);
-
-    Transformations type() const { return m_type; }
-    Transformation::Base *transformation() const { return m_transform.get(); }
-  };
-
-  std::vector<TransformationCtrl> transformations;
-
-  TransformationList(Recording &rec);
-  void reallocate();
-  Transformation::Base *create_if_needed(Transformations type);
-};
+std::pair<float, float> oportunistic_minmax(std::shared_ptr<AbstractFile> file,
+                                            int sampling_frames = 10);

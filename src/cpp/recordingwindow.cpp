@@ -93,25 +93,26 @@ namespace {
   }
 }  // namespace
 
-RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_)
-    : Recording(std::move(file_)), playback(good() ? length() : 0), transformationArena(*this) {
+RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_, Transformations transformation_)
+    : Recording(std::move(file_)), playback(good() ? length() : 0) {
   if (!good()) {
     return;
   }
 
   if (Trace::width() == 0) {
     // if unset, set trace edge length to something reasonable
-    auto val = std::min(Nx(), Ny()) / 64;
-    Trace::width(std::max(val, 2));
+    auto val = std::min(Nx(), Ny()) / 20;
+    Trace::width(val);
   }
 
   if (_file->bitrange()) {
     bitrange = _file->bitrange().value();
   }
-  float &min = get_min(Transformations::None);
-  float &max = get_max(Transformations::None);
-  if ((min == max) || std::isnan(min) || std::isnan(max)) {
-    std::tie(min, max) = utils::bitrange_to_float(bitrange);
+
+  if (bitrange != BitRange::NONE) {
+    std::tie(get_min(true), get_max(true)) = utils::bitrange_to_float(bitrange);
+  } else {
+    std::tie(get_min(true), get_max(true)) = oportunistic_minmax(_file, 25);
   }
 
   if (_file->cmap()) {
@@ -120,6 +121,8 @@ RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_)
     // assume that's its a phase map and the user prefers HSV in this circumstances
     cmap_ = ColorMap::HSV;
   }
+
+  set_transformation(transformation_);
 }
 
 void RecordingWindow::open_window() {
@@ -168,7 +171,7 @@ void RecordingWindow::open_window() {
 void RecordingWindow::set_context(GLFWwindow *new_context) {
   auto *prev_window = glfwGetCurrentContext();
   if (new_context == nullptr) new_context = window;
-  if (window != new_context) glfwHideWindow(window);
+  if (window && window != new_context) glfwHideWindow(window);
   if (glcontext && frame_shader) clear_gl_memory();
 
   glcontext = new_context;
@@ -259,40 +262,36 @@ void RecordingWindow::display() {
   load_next_frame();
 
   Eigen::MatrixXf *arr = &frame;
-
-  auto *transform = transformationArena.create_if_needed(transformation);
-  transform->compute(*arr, t_frame);
-  arr = &transform->frame;
+  if (transformation != Transformations::None) {
+    assert(transform_ptr);
+    transform_ptr->compute(frame, t_frame);
+    arr = &transform_ptr->frame;
+  }
 
   switch (transformation) {
-    case Transformations::None:
-      if (as_overlay) {
-        histogram.min           = -100;
-        histogram.max           = 100;
-        get_max(transformation) = -get_min(transformation);
-      } else
-        std::tie(histogram.min, histogram.max) = utils::bitrange_to_float(bitrange);
-      break;
     case Transformations::FrameDiff: {
-      auto *frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform);
+      auto *frameDiff = dynamic_cast<Transformation::FrameDiff *>(transform_ptr.get());
       assert(frameDiff);
 
-      histogram.min = frameDiff->hist_min;
-      histogram.max = frameDiff->hist_max;
-
-      // TODO
-      //      if ((get_max(transformation) == histogram.max) || (get_min(transformation) == histogram.min)) {
-      //        frameDiff->hist_min *= 1.1f;
-      //        frameDiff->hist_max *= 1.1f;
-      //      }
+      histogram.min = std::min(frameDiff->hist_min, get_min());
+      histogram.max = std::max(frameDiff->hist_max, get_max());
     } break;
     case Transformations::ContrastEnhancement:
-      histogram.min = -0.1f;
-      histogram.max = 1.1f;
+      histogram.min = 0;
+      histogram.max = 1;
       break;
-    default:  // Gauss, Mean, Median
-      histogram.min = get_min(Transformations::None);
-      histogram.min = get_max(Transformations::None);
+    default:  // None, Gauss, Mean, Median
+      if (bitrange == BitRange::NONE) {
+        auto [min, max] = utils::minmax_element_skipNaN(arr->data(), arr->data() + arr->size());
+        if (min < histogram.min) {
+          histogram.min = min;
+        }
+        if (max > histogram.max) {
+          histogram.max = max;
+        }
+      } else {
+        std::tie(histogram.min, histogram.max) = utils::bitrange_to_float(bitrange);
+      }
       break;
   }
 
@@ -316,7 +315,7 @@ void RecordingWindow::display() {
   glfwMakeContextCurrent(glcontext);
 
   frame_shader.use();
-  frame_shader.setVec2("minmax", get_min(transformation), get_max(transformation));
+  frame_shader.setVec2("minmax", get_min(), get_max());
   frame_shader.setBool("use_transfer_fct", as_overlay);
   frame_shader.setInt("transfer_fct_version", overlay_method);
   glActiveTexture(GL_TEXTURE0);
@@ -637,7 +636,9 @@ void RecordingWindow::add_rotation(short d_rotation) {
 }
 void RecordingWindow::rotation_was_changed() {
   load_frame(t_frame);
-  transformationArena.reallocate();
+  if (transform_ptr) {
+    transform_ptr->allocate(*this);
+  }
   resize_window();
   update_gl_texture();
   glfwSetWindowAspectRatio(window, Nx(), Ny());
@@ -697,24 +698,7 @@ void RecordingWindow::render() {
   }
 }
 
-void RecordingWindow::set_transform(Transformations type) {
+void RecordingWindow::set_transformation(Transformations type) {
   transform_ptr = Transformation::factory(type, *this);
   transformation = type;
-}
-
-FixedTransformRecordingWindow::FixedTransformRecordingWindow(SharedRecordingPtr parent,
-                                                             Transformations _transformation,
-                                                             std::string name)
-    : RecordingWindow(parent->file()) {
-  transformation = _transformation;
-  set_name(name);
-
-  RecordingWindow::get_min(transformation) = parent->get_min(transformation);
-  RecordingWindow::get_max(transformation) = parent->get_max(transformation);
-
-  if (transformation == Transformations::FrameDiff) {
-    as_overlay          = true;
-    histogram.symmetric = true;
-    cmap_               = ColorMap::DIFF;
-  }
 }

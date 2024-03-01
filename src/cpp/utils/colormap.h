@@ -2,9 +2,9 @@
 
 #include <array>
 
-enum class ColorMap : int { GRAY, DIFF, HSV, BLACKBODY, VIRIDIS, DIFF_POS, DIFF_NEG };
-inline const char *ColorMapsNames[7] = {"Gray",    "Diff",          "HSV",          "Black Body",
-                                        "Viridis", "Diff Positive", "Diff Negative"};
+enum class ColorMap : int { GRAY, HSV, BLACKBODY, VIRIDIS, DIFF, DIFF_POS, DIFF_NEG };
+inline const char *ColorMapsNames[7] = {"Gray", "HSV",           "Black Body",   "Viridis",
+                                        "Diff", "Diff Positive", "Diff Negative"};
 
 inline bool is_diff_colormap(const ColorMap &cmap) {
   return cmap == ColorMap::DIFF || cmap == ColorMap::DIFF_POS || cmap == ColorMap::DIFF_NEG;

@@ -4,12 +4,13 @@
 
 class BitRange(object):
     AUTODETECT = 0
-    UINT8 = 1
-    UINT10 = 2
-    UINT12 = 3
-    UINT16 = 4
-    FLOAT = 5
-    DIFF = 6
-    PHASE = 7
-    PHASE_DIFF = 8
-
+    MINMAX = 1
+    UINT8 = 2
+    UINT10 = 3
+    UINT12 = 4
+    UINT16 = 5
+    FLOAT = 6
+    DIFF = 7
+    PHASE = 8
+    PHASE_DIFF = 9
+    INT8 = 10

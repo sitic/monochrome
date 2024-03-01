@@ -5,8 +5,9 @@
 class ColorMap(object):
     DEFAULT = 0
     GRAY = 1
-    DIFF = 2
-    HSV = 3
-    BLACKBODY = 4
-    VIRIDIS = 5
-
+    HSV = 2
+    BLACKBODY = 3
+    VIRIDIS = 4
+    DIFF = 5
+    DIFF_POS = 6
+    DIFF_NEG = 7

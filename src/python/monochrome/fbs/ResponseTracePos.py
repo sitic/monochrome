@@ -49,19 +49,26 @@ class ResponseTracePos(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
-def Start(builder): builder.StartObject(1)
 def ResponseTracePosStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRecordings(builder, recordings): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(recordings), 0)
+    builder.StartObject(1)
+
+def Start(builder):
+    ResponseTracePosStart(builder)
+
 def ResponseTracePosAddRecordings(builder, recordings):
-    """This method is deprecated. Please switch to AddRecordings."""
-    return AddRecordings(builder, recordings)
-def StartRecordingsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(recordings), 0)
+
+def AddRecordings(builder, recordings):
+    ResponseTracePosAddRecordings(builder, recordings)
+
 def ResponseTracePosStartRecordingsVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartRecordingsVector(builder, numElems)
-def End(builder): return builder.EndObject()
+    return builder.StartVector(4, numElems, 4)
+
+def StartRecordingsVector(builder, numElems: int) -> int:
+    return ResponseTracePosStartRecordingsVector(builder, numElems)
+
 def ResponseTracePosEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+    return builder.EndObject()
+
+def End(builder):
+    return ResponseTracePosEnd(builder)

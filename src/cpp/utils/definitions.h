@@ -6,8 +6,8 @@
 
 #include "utils/colormap.h"
 
-enum class BitRange : int { U8, U10, U12, U16, FLOAT, DIFF, PHASE, PHASE_DIFF, I8 };
-inline const char *BitRangeNames[9] = {"uint8",   "uint10",  "uint12",  "uint16", "[0, 1]",
+enum class BitRange : int { NONE, U8, U10, U12, U16, FLOAT, DIFF, PHASE, PHASE_DIFF, I8 };
+inline const char *BitRangeNames[10] = {"MinMax", "uint8",   "uint10",  "uint12",  "uint16", "[0, 1]",
                                        "[-1, 1]", "[0, 2π]", "[-π, π]", "int8"};
 
 enum class TransferFunction : int { LINEAR, DIFF, DIFF_POS, DIFF_NEG };
@@ -35,6 +35,8 @@ namespace utils {
         return {-M_PI, M_PI};
       case BitRange::I8:
         return {-125, 125};
+      case BitRange::NONE:
+        throw std::logic_error("NONE bitrange has no fixed min and max");
     }
     throw std::logic_error("This line should not be reached");
   }
@@ -79,7 +81,7 @@ namespace utils {
       return std::nullopt;
     }
     if (min < 0) {
-      if (min >= -1.2 && max <= 1.2) {
+      if (min >= -1.1 && max <= 1.1) {
         return BitRange::DIFF;
       } else if (min >= -M_PI && max <= M_PI) {
         return BitRange::PHASE_DIFF;

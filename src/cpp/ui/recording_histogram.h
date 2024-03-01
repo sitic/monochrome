@@ -16,10 +16,16 @@ void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       ImGui::Combo("Format", &item, BitRangeNames, IM_ARRAYSIZE(BitRangeNames));
       if (auto br = static_cast<BitRange>(item); rec->bitrange != br) {
-        rec->bitrange      = br;
-        float &min         = rec->get_min(Transformations::None);
-        float &max         = rec->get_max(Transformations::None);
-        std::tie(min, max) = utils::bitrange_to_float(br);
+        rec->bitrange = br;
+        if (br != BitRange::NONE) {
+          float &min         = rec->get_min();
+          float &max         = rec->get_max();
+          std::tie(min, max) = utils::bitrange_to_float(br);
+        } else {
+          std::tie(rec->get_min(), rec->get_max()) = oportunistic_minmax(rec->file());
+          rec->histogram.min = rec->get_min();
+          rec->histogram.max = rec->get_max();
+        }
       }
     }
     // Colormap switcher
@@ -67,24 +73,28 @@ void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 
   // Controls for min and max values
   bool symmetrize_minmax = false;
-  if (ImGui::SliderFloat("min", &rec->get_min(rec->transformation), rec->histogram.min,
-                         rec->histogram.max)) {
+  if (ImGui::SliderFloat("min", &rec->get_min(), rec->histogram.min, rec->histogram.max)) {
     symmetrize_minmax =
-        (rec->histogram.symmetric || rec->transformation == Transformations::FrameDiff);
+        (rec->histogram.symmetric || rec->get_transformation() == Transformations::FrameDiff);
   }
-  if (rec->get_min(rec->transformation) < 0) {
+  if (rec->bitrange != BitRange::NONE) {
+    ImGui::SameLine();
+    if (ImGui::Button("Auto")) {
+      std::tie(rec->get_min(), rec->get_max()) = oportunistic_minmax(rec->file());
+    }
+  }
+  if (ImGui::SliderFloat("max", &rec->get_max(), rec->histogram.min, rec->histogram.max)) {
+      if (rec->get_transformation() == Transformations::FrameDiff) {
+        rec->get_min() = -rec->get_max();
+      }
+    }
+  if (rec->get_min() < 0) {
     ImGui::SameLine();
     if (ImGui::Checkbox("Symmetric", &rec->histogram.symmetric)) {
       symmetrize_minmax = rec->histogram.symmetric;
     }
   }
-  if (ImGui::SliderFloat("max", &rec->get_max(rec->transformation), rec->histogram.min,
-                         rec->histogram.max)) {
-    if (rec->transformation == Transformations::FrameDiff) {
-      rec->get_min(rec->transformation) = -rec->get_max(rec->transformation);
-    }
-  }
   if (symmetrize_minmax) {
-    rec->get_max(rec->transformation) = -rec->get_min(rec->transformation);
+    rec->get_max() = -rec->get_min();
   }
 }

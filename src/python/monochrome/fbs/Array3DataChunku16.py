@@ -58,23 +58,32 @@ class Array3DataChunku16(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         return o == 0
 
-def Start(builder): builder.StartObject(2)
 def Array3DataChunku16Start(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddStartidx(builder, startidx): builder.PrependUint64Slot(0, startidx, 0)
+    builder.StartObject(2)
+
+def Start(builder):
+    Array3DataChunku16Start(builder)
+
 def Array3DataChunku16AddStartidx(builder, startidx):
-    """This method is deprecated. Please switch to AddStartidx."""
-    return AddStartidx(builder, startidx)
-def AddData(builder, data): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
+    builder.PrependUint64Slot(0, startidx, 0)
+
+def AddStartidx(builder, startidx):
+    Array3DataChunku16AddStartidx(builder, startidx)
+
 def Array3DataChunku16AddData(builder, data):
-    """This method is deprecated. Please switch to AddData."""
-    return AddData(builder, data)
-def StartDataVector(builder, numElems): return builder.StartVector(2, numElems, 2)
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
+
+def AddData(builder, data):
+    Array3DataChunku16AddData(builder, data)
+
 def Array3DataChunku16StartDataVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartDataVector(builder, numElems)
-def End(builder): return builder.EndObject()
+    return builder.StartVector(2, numElems, 2)
+
+def StartDataVector(builder, numElems: int) -> int:
+    return Array3DataChunku16StartDataVector(builder, numElems)
+
 def Array3DataChunku16End(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+    return builder.EndObject()
+
+def End(builder):
+    return Array3DataChunku16End(builder)

@@ -107,7 +107,7 @@ namespace {
 
   class IpcMessage {
    public:
-    static constexpr std::size_t HeaderSize = sizeof(flatbuffers::uoffset_t);
+    static constexpr std::size_t HeaderSize = sizeof(flatbuffers::uoffset_t) / sizeof(uint8_t);
 
     IpcMessage() = default;
 
@@ -138,7 +138,12 @@ namespace {
     }
 
     void verify_and_deliver() {
-      auto verifier = flatbuffers::Verifier(body(), body_size());
+      // I think our buffers used to be aligned, but not always anymore.
+      // Just skip alignment check for now, TODO: figure out what's going on
+      flatbuffers::Verifier::Options opts;
+      opts.check_alignment = false;
+      
+      auto verifier = flatbuffers::Verifier(body(), body_size(), opts);
       if (fbs::VerifyRootBuffer(verifier)) {
         auto root = fbs::GetRoot(body());
         switch (root->data_type()) {

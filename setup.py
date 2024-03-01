@@ -25,7 +25,7 @@ setup(
         'monochrome.fbs': 'src/python/monochrome/fbs'
     },
     tests_require=['pytest'],
-    install_requires=['numpy', 'flatbuffers>=2.00'],
+    install_requires=['numpy', 'flatbuffers>=23.5.26'],
     entry_points={
         'console_scripts': [
             'Monochrome=monochrome.ipc:console_entrypoint'
