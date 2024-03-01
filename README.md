@@ -48,19 +48,19 @@ Keyboard shortcuts:
 | `Ctrl + q` | Quit Monochrome |
 | `Esc` or `q` | Close focused recording |
 | `Space` | Play/Pause |
-| `Up` | Increase playback speed |
-| `Down` | Decrease playback speed |
-| `0` or `r` | Reset to beginning |
-| `Left` | Previous frame |
-| `Right` | Next frame |
-| `Shift + Left` | Previous frame (10x) |
-| `Shift + Right` | Next frame (10x) |
-| `p` | Save screenshot of focused recording |
-| `s` | Sync playback of all recordings |
+| `Up` | Increase playback speed (frame skip) |
+| `Down` | Decrease playback speed (frame skip) |
+| `0` or `r` | Reset playback to beginning |
+| `Left` | Skip to next frame |
+| `Right` | Skip to previous frame |
+| `Shift + Left` | 10x previous frame |
+| `Shift + Right` | 10x next frame |
 | `Ctrl + Left` | Previous frame in focused recording only |
 | `Ctrl + Right` | Next frame in focused recording only |
-| `Ctrl + Left + Shift` | Previous frame in focused recording only (10x) |
-| `Ctrl + Right + Shift` | Next frame in focused recording only (10x) |
+| `Ctrl + Left + Shift` | 10x previous frame in focused recording only |
+| `Ctrl + Right + Shift` | 10x next frame in focused recording only |
+| `p` | Save screenshot of focused recording |
+| `s` | Sync playback of all recordings |
 
 ## Python Quickstart
 
@@ -89,7 +89,7 @@ mc.show(video, "Our Test Video", cmap='viridis')
 # It plays independently from the python process, it does not block it.
 # The playback speed etc. can be controlled in Monochrome, as well as the export as png images or as mp4 video
 
-# Videos of type float or integer (uint8, uint16 ect.) are natively supported by Monochrome
+# Videos of type float or unsigned integer (uint8, uint16 etc.) are natively supported by Monochrome
 video2 = (np.random.rand((500, 128, 128)) * 65535).astype(dtype=np.uint16)
 
 # Several videos can be shown at the same time, they will be played in sync if they have the same length
@@ -106,7 +106,6 @@ mc.show_layer(overlay, "Overlay Name", cmap='hsv')
 
 # By default, layers are added to the last video loaded, unless the parent name is specified.
 mc.show_layer(overlay, "Phase", parent="Our Test Video", cmap='hsv')
-
 ```
 
 ## Development
