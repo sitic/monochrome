@@ -40,7 +40,7 @@ void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {
 
 void add_window_icon(GLFWwindow* window) {
   auto fs       = cmrc::rc::get_filesystem();
-  auto icondata = fs.open("vendor/MultiRecorderVideo.png");
+  auto icondata = fs.open("assets/Monochrome_256x256.png");
   unsigned icon_width, icon_height;
   std::vector<unsigned char> icon_image;
   auto error = lodepng::decode(icon_image, icon_width, icon_height,

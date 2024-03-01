@@ -97,22 +97,29 @@ jobs:
 
     - name: Configure and build
       run: |
-        cmake -Bbuild -G "Ninja" -Wdev -DSTATIC_GCC=ON -DCMAKE_BUILD_TYPE=Release .
+        cmake -Bbuild -G "Ninja" -Wdev -DSTATIC_GCC=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .
         cd build
         cmake --build . --parallel 4
     
-    - name: Create AppImage
+    - name: Download linuxdeploy
       run: |
         cd build
         curl -L -o linuxdeploy-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
         chmod +x linuxdeploy-x86_64.AppImage
-        OUTPUT="Monochrome.AppImage" ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e Monochrome -d ../vendor/Monochrome.desktop -i ../vendor/MultiRecorderVideo.png --appdir AppDir --output appimage
+
+    - name: Create AppImage
+      run: |
+        cd build
+        DESTDIR=AppDir cmake --build . --target install
+        ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run --appdir AppDir --output appimage
+        mkdir -p ../dist
+        mv Monochrome-*.AppImage ../dist
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: standalone-linux
-        path: build/Monochrome.AppImage
+        path: dist/Monochrome-*.AppImage
 
   standalone_windows:
     name: Build standalone on Windows

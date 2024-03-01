@@ -40,6 +40,7 @@ set_target_properties(lodepng PROPERTIES PUBLIC_HEADER "lodepng/lodepng.h")
 add_library(ipol ipol/gaussian_conv_deriche.c ipol/gaussian_short_conv.c ipol/filter_util.c)
 target_compile_definitions(ipol PUBLIC "-DNUM_SINGLE")
 
+set(FMT_INSTALL OFF CACHE BOOL "Generate fmt installation target" FORCE)
 add_subdirectory(fmt)
 set_target_properties(fmt PROPERTIES FOLDER libs)
 

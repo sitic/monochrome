@@ -2,7 +2,7 @@
 Name=Monochrome
 Comment=Video viewer for raw monochromatic video data
 Exec=Monochrome
-Icon=MultiRecorderVideo
+Icon=Monochrome
 Type=Application
 Terminal=false
 Categories=Science;

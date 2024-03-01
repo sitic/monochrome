@@ -77,16 +77,15 @@ if (APPLE)
 endif ()
 
 file(GLOB SHADERS "src/shaders/*.glsl")
-cmrc_add_resource_library(
-    monochrome-resources
-    ALIAS monochrome::rc
-    NAMESPACE rc
-    ${SHADERS}
-    "vendor/MultiRecorderVideo.png"
-    "README.md"
-    "vendor/fonts/NotoSansDisplay-Regular.ttf"
-    "vendor/fonts/NotoSansDisplay-Bold.ttf"
-    "vendor/fonts/FiraCode-Regular.ttf"
+cmrc_add_resource_library(monochrome-resources
+                          ALIAS monochrome::rc
+                          NAMESPACE rc
+                          ${SHADERS}
+                          "assets/Monochrome_256x256.png"
+                          "README.md"
+                          "vendor/fonts/NotoSansDisplay-Regular.ttf"
+                          "vendor/fonts/NotoSansDisplay-Bold.ttf"
+                          "vendor/fonts/FiraCode-Regular.ttf"
 )
 
 set(SOURCES
@@ -149,17 +148,17 @@ if(APPLE)
         src/cpp/macOS/GLFWCustomDelegate.mm
     )
     set(MONOCHROME_ICONS
-        ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns
-        ${PROJECT_SOURCE_DIR}/vendor/npy-logo.icns
+        ${PROJECT_SOURCE_DIR}/assets/Monochrome.icns
+        ${PROJECT_SOURCE_DIR}/assets/npy-logo.icns
     )
     set_source_files_properties(${MONOCHROME_ICONS} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     add_executable(Monochrome ${MONOCHROME_ICONS} ${SOURCES})
     set_target_properties(Monochrome PROPERTIES
         MACOSX_BUNDLE TRUE
-        MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/vendor/Info.plist
+        MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/assets/Info.plist
     )
 elseif(MSVC AND NOT SKBUILD)
-    add_executable(Monochrome WIN32 ${SOURCES} ${PROJECT_SOURCE_DIR}/vendor/Monochrome.rc)
+    add_executable(Monochrome WIN32 ${SOURCES} ${PROJECT_SOURCE_DIR}/assets/Monochrome.rc)
     target_compile_definitions(Monochrome PRIVATE USE_WIN32_MAIN)
 else()
     add_executable(Monochrome ${SOURCES})
@@ -190,8 +189,8 @@ install(TARGETS Monochrome
 # Do platform specific post target stuff
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # Install desktop entry and icon
-    install(FILES vendor/Monochrome.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-    install(FILES vendor/MultiRecorderVideo.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps)
+    install(FILES assets/Monochrome.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+    install(FILES assets/Monochrome_256x256.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps RENAME Monochrome.png)
 endif()
 
 if (NOT SKBUILD)
@@ -199,7 +198,7 @@ if (NOT SKBUILD)
         set(APP_NAME Monochrome)
         set(CPACK_BUNDLE_NAME Monochrome)
         set(CPACK_GENERATOR "DragNDrop")
-        set(CPACK_BUNDLE_ICON ${PROJECT_SOURCE_DIR}/vendor/MultiRecorderVideo.icns)
+        set(CPACK_BUNDLE_ICON ${PROJECT_SOURCE_DIR}/assets/Monochrome.icns)
         set(CPACK_PACKAGE_FILE_NAME "${APP_NAME}-${CMAKE_PROJECT_VERSION}_macOS")
     elseif(WIN32)
         set(CPACK_GENERATOR "ZIP")
