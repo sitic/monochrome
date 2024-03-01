@@ -93,6 +93,8 @@ def create_socket():
     try:
         s = _create_socket()
     except ConnectionRefusedError:
+        if not USE_TCP and not ABSTRACT_DOMAIN_SOCKET_SUPPORTED:
+            Path(SOCK_PATH).unlink(missing_ok=True)
         start_monochrome()
         waiting = True
         timeout = time.time() + 5
@@ -102,6 +104,8 @@ def create_socket():
                 waiting = False
             except ConnectionRefusedError:
                 pass
+        if waiting:
+            raise ConnectionRefusedError("Could not connect to Monochrome")
     return s
 
 
@@ -184,7 +188,7 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     name_fb = builder.CreateString(name)
     date_fb = builder.CreateString(date)
     comment_fb = builder.CreateString(comment)
-    parent_fb = builder.CreateString(parent_name) if parent_name else None
+    parent_fb = builder.CreateString(parent_name) if parent_name is not None else None
     if metadata:
         metadata = [(builder.CreateString(key), builder.CreateString(val)) for key, val in metadata.items()]
         metaData_fbs = []
@@ -288,10 +292,26 @@ def create_array3datau16_msg(array, idx=0):
 
 
 def show_file(filepath: Union[Text, Path]):
+    """
+    Load a file in Monochrome.
+    
+    Parameters
+    ----------
+    filepath : str or Path
+        Path to the file to be loaded
+    """
     show_files([filepath])
 
 
 def show_files(paths: List[Union[Text, Path]]):
+    """
+    Load multiple files in Monochrome.
+
+    Parameters
+    ----------
+    paths : List[str or Path]
+        List of paths to the files to be loaded
+    """
     paths = [Path(path) for path in paths]
     if not all([path.exists() for path in paths]):
         raise FileNotFoundError(f"One of more files of {paths} do not exist")
@@ -304,14 +324,22 @@ def show_files(paths: List[Union[Text, Path]]):
 def show_points(points, name: Text = "", parent: Optional[Text] = None, color=None,
                 point_size: Optional[float] = None):
     """
+    Show a list of points for each frame in Monochrome.
 
-    :param points: A list of list of points (x, y). The outer list elements are the frames, the inner list is the list of points for a specific frame.
-    :param name: Optional description
-    :param parent: Name of the video onto which the points will be displayed. If none is given the last loaded video will be used.
-    :param color: Matplotlib color (either string like 'black' or rgb tuple)
-    :param point_size: Size of points in image pixels
-    :return:
+    Parameters
+    ----------
+    points : List[List[Tuple[float, float]]]
+        A list of list of points (x, y). The outer list elements are the frames, the inner list is the list of points for a specific frame.
+    name : str
+        Optional description
+    parent : str
+        Name of the video onto which the points will be displayed. If none is given the last loaded video will be used.
+    color : str or tuple
+        Matplotlib color (either string like 'black' or rgba tuple)
+    point_size : float
+        Size of points in image pixels
     """
+
     name = str(name)
     s = create_socket()
     buf = create_pointsvideo_msg(points, name, parent, color, point_size)
@@ -334,19 +362,32 @@ def show_video(array: np.ndarray,
     Arrays of dtype np.float, np.uint8, and np.uint16 are natively supported by Monochrome.
     Arrays with other dtypes will be converted to np.float
 
-    :param array: {t, x, y} ndarray
-    :param name: name of the array
-    :param cmap: 'default' (autodetect), 'gray', 'viridis', 'diff', 'hsv', or 'blackbody'
-    :param bitrange: 'autodetect', 'uint8', 'uint10', 'uint12', 'uint16', 'float' (for [0,1]), 'diff', 'phase' (for [-pi, pi]), or 'phase_diff'
-    :param comment:
-    :param fps: framerate in Hz
-    :param date:
-    :param duration_seconds:
-    :param parent:
-    :param transfer_fct:
-    :param metadata:
-    :return:
+    Parameters
+    ----------
+    array : np.ndarray
+        The video to be displayed. The array should have the shape (T, H, W) or (H, W).
+    name : str
+        Name of the video
+    cmap : str or ColorMap
+        'default' (autodetect), 'gray', 'viridis', 'diff', 'hsv', or 'blackbody'
+    bitrange : str or BitRange
+        'autodetect', 'uint8', 'uint10', 'uint12', 'uint16', 'float' (for [0,1]), 'diff', 'phase' (for [-pi, pi]), or 'phase_diff'
+    comment : str
+        Comment to be displayed
+    fps : float
+        Framerate in Hz
+    date : str
+        Date of the recording
+    duration_seconds : float
+        Duration of the video in seconds
+    parent : str
+        Name of the parent video
+    transfer_fct : TransferFunction
+        Transfer function for alpha blending
+    metadata : dict
+        Additional metadata
     """
+
     array = np.squeeze(array)
     if array.ndim == 2:
         # assume that it is a 2D image
@@ -396,13 +437,41 @@ def show_video(array: np.ndarray,
         s.sendall(buf)
 
 
-def show_layer(array: np.ndarray, parent: Optional[Text] = None, name: Text = "", **kwargs):
+def show_layer(array: np.ndarray, name: Text = "", parent: Optional[Text] = None, **kwargs):
+    """
+    Add a layer to the parent video in Monochrome.
+    
+    Parameters
+    ----------
+    array : np.ndarray
+        The layer to be displayed. The array should have the shape (T, H, W) or (H, W).
+    name : str
+        Name of the layer
+    parent : str
+        Name of the parent video, if None the last loaded video will be used
+    kwargs : dict
+        Additional arguments to be passed to :func:`show_video`
+    """
     if parent is None:
         parent = ""
     show_video(array, parent=parent, name=name, **kwargs)
 
 
-def show_flow(flow_uv: np.ndarray, parent: Optional[Text] = None, name: Text = "", color=None):
+def show_flow(flow_uv: np.ndarray, name: Text = "", parent: Optional[Text] = None, color=None):
+    """
+    Visualize optical flow in Monochrome.
+
+    Parameters
+    ----------
+    flow_uv : np.ndarray
+        Optical flow field of shape (T, H, W, 2)
+    name : str
+        Name of the flow
+    parent : str
+        Name of the parent video, if None the last loaded video will be used
+    color : str or tuple
+        Matplotlib color (either string like 'black' or rgba tuple)
+    """
     if flow_uv.ndim != 4:
         raise ValueError("array is not four-dimensional")
     if flow_uv.dtype != np.float32:

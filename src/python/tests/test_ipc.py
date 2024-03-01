@@ -49,6 +49,17 @@ def test_array():
     mc.show_video((arr[0]*255).astype(np.uint8), 'TestArray Image uint8')
 
 
+def test_overlay():
+    shape = (100, 128, 256)
+    arr = np.random.rand(*shape).astype(dtype=np.float32)
+    mc.show_video(arr, 'TestArray', bitrange='float')
+    
+    overlay = arr.copy()
+    overlay[32:96, 32:96] = np.nan
+
+    mc.show_layer(overlay, parent="", name="Overlay Name", cmap='hsv')
+
+
 def test_flow():
     vid = np.zeros((100, 128, 128), dtype=np.float32)
     vid[:, :64:2, :64:2] = 1
@@ -59,23 +70,30 @@ def test_flow():
         flow[t, :64, :64, 1] = t / 100
 
     mc.show_video(vid, "flows")
-    mc.show_flow(flow, "", color='blue')
+    mc.show_flow(flow, name="", color='blue')
+    mc.show_flow(flow, name="2", color='yellow')
 
 
 def test_points():
     vid = np.zeros((100, 128, 128), dtype=np.float32)
-    points = []
-    for _ in range(vid.shape[0]):
-        p = []
-        for _ in range(random.randint(0, 5)):
-            p.append([random.randint(0, 128), random.randint(0, 128)])
-        points.append(p)
+    def random_points(shape):
+        points = []
+        for _ in range(shape[0]):
+            p = []
+            for _ in range(random.randint(0, 5)):
+                p.append([random.randint(0, shape[0]), random.randint(0, shape[1])])
+            points.append(p)
+        return points
     mc.show_video(vid, "points")
-    mc.show_points(points, color='red', point_size=10)
+    points = random_points(vid.shape)
+    mc.show_points(points, name="Foo", color='red', point_size=4)
+    points = random_points(vid.shape)
+    mc.show_points(points, name="Test", color='yellow', point_size=10)
 
 
 if __name__ == "__main__":
     test_filepaths()
     test_array()
+    test_overlay()
     test_flow()
     test_points()
