@@ -17,13 +17,15 @@ struct RotationCtrl {
   bool _flipud    = false;
 
  public:
-  short get_rotation() { return _rotation; }
   void set_rotation(short rotation);
   void add_rotation(short delta_rotation);
+  short get_rotation() { return _rotation; }
 
   void flip_lr();
   void flip_ud();
   void flip_reset();
+  bool get_flip_lr() { return _fliplr; }
+  bool get_flip_ud() { return _flipud; }
 
   void apply(Eigen::MatrixXf &arr);
 

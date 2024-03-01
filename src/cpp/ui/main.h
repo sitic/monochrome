@@ -154,10 +154,11 @@ void show_top_ui() {
 
     if (ImGui::BeginTabItem("Display Settings")) {
 
+      auto pos_x = ImGui::CalcTextSize("Auto Brightness").x + 2*ImGui::GetStyle().ItemSpacing.x;
+
       ImGui::AlignTextToFramePadding();
       ImGui::Text("Video Rotation");
-      ImGui::SameLine();
-      auto pos_x = ImGui::GetCursorPosX();
+      ImGui::SameLine(pos_x);
       if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) RecordingWindow::add_rotation(-90);
       ImGui::SameLine();
       if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) RecordingWindow::add_rotation(90);
@@ -174,6 +175,11 @@ void show_top_ui() {
       ImGui::SameLine();
       if (ImGui::Button("Reset")) RecordingWindow::flip_reset();
 
+      ImGui::Spacing();
+      ImGui::AlignTextToFramePadding();
+      ImGui::Text("Auto Brightness");
+      ImGui::SameLine(pos_x);
+      ImGui::Checkbox("##auto_brightness", &prm::auto_brightness);
 
       ImGui::Spacing();
       ImGui::AlignTextToFramePadding();

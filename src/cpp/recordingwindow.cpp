@@ -110,7 +110,7 @@ RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_,
     bitrange = _file->bitrange().value();
   }
 
-  if (bitrange != BitRange::NONE) {
+  if (!prm::auto_brightness && bitrange != BitRange::NONE) {
     std::tie(get_min(true), get_max(true)) = utils::bitrange_to_float(bitrange);
   } else {
     std::tie(get_min(true), get_max(true)) = oportunistic_minmax(_file, 25);

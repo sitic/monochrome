@@ -10,9 +10,10 @@ namespace prm {
   // Declare global variables and enums
   extern int main_window_width;
   extern int main_window_height;
+  extern bool auto_brightness;
+  extern int display_fps;
   extern int trace_length;
   extern int max_trace_length;
-  extern int display_fps;
   extern double lastframetime;
 
   extern std::map<ColorMap, GLuint> cmap_texs;

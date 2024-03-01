@@ -84,6 +84,10 @@ class RecordingWindow : public Recording {
   static void set_rotation(short rotation);
   static void add_rotation(short d_rotation);
 
+  static short get_rotation() { return rotations.get_rotation(); }
+  static bool get_flip_lr() { return rotations.get_flip_lr(); }
+  static bool get_flip_ud() { return rotations.get_flip_ud(); }
+
   void colormap(ColorMap cmap);
   ColorMap colormap() const { return cmap_; }
 
