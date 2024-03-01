@@ -39,8 +39,7 @@ def test_filepaths():
 def test_array():
     shape = (100, 128, 256)
     arr = np.random.rand(*shape).astype(dtype=np.float32)
-    mc.show_video(arr, 'TestArray', cmap='hsv', bitrange='float', duration_seconds=30, fps=500,
-                  date="2020-04-29-13-10-27", comment="Test Comment")
+    mc.show_video(arr, 'TestArray', cmap='hsv', bitrange='float', comment="Test Comment")
 
     mc.show_video(arr[0], 'TestArray Image')
 

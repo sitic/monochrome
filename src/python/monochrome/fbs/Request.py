@@ -4,13 +4,15 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+from typing import Any
+from typing import Optional
 np = import_numpy()
 
 class Request(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAs(cls, buf, offset=0):
+    def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Request()
         x.Init(buf, n + offset)
@@ -21,7 +23,7 @@ class Request(object):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
     # Request
-    def Init(self, buf, pos):
+    def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Request
@@ -32,32 +34,32 @@ class Request(object):
         return 0
 
     # Request
-    def Arg(self):
+    def Arg(self) -> Optional[str]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def RequestStart(builder):
+def RequestStart(builder: flatbuffers.Builder):
     builder.StartObject(2)
 
-def Start(builder):
+def Start(builder: flatbuffers.Builder):
     RequestStart(builder)
 
-def RequestAddType(builder, type):
+def RequestAddType(builder: flatbuffers.Builder, type: int):
     builder.PrependInt32Slot(0, type, 0)
 
-def AddType(builder, type):
+def AddType(builder: flatbuffers.Builder, type: int):
     RequestAddType(builder, type)
 
-def RequestAddArg(builder, arg):
+def RequestAddArg(builder: flatbuffers.Builder, arg: int):
     builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(arg), 0)
 
-def AddArg(builder, arg):
+def AddArg(builder: flatbuffers.Builder, arg: int):
     RequestAddArg(builder, arg)
 
-def RequestEnd(builder):
+def RequestEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
-def End(builder):
+def End(builder: flatbuffers.Builder) -> int:
     return RequestEnd(builder)

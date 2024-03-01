@@ -44,6 +44,9 @@ def start_monochrome(speed: Optional[float] = None,
                      fliph: bool = False,
                      flipv: bool = False,
                      **kwargs):
+    """
+    Start bundled Monochrome executable with the given settings.
+    """
     if sys.platform != 'darwin':
         args = [str(MONOCHROME_BIN_PATH)]
     else:

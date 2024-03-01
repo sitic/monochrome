@@ -2,7 +2,8 @@
 
 # namespace: fbs
 
-class BitRange(object):
+from enum import IntEnum
+class BitRange(IntEnum):
     AUTODETECT = 0
     MINMAX = 1
     UINT8 = 2

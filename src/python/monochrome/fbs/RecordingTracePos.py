@@ -4,13 +4,15 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+from typing import Any
+from typing import Optional
 np = import_numpy()
 
 class RecordingTracePos(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAs(cls, buf, offset=0):
+    def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = RecordingTracePos()
         x.Init(buf, n + offset)
@@ -21,18 +23,18 @@ class RecordingTracePos(object):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
     # RecordingTracePos
-    def Init(self, buf, pos):
+    def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # RecordingTracePos
-    def Name(self):
+    def Name(self) -> Optional[str]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # RecordingTracePos
-    def Posx(self, j):
+    def Posx(self, j: int):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             a = self._tab.Vector(o)
@@ -47,19 +49,19 @@ class RecordingTracePos(object):
         return 0
 
     # RecordingTracePos
-    def PosxLength(self):
+    def PosxLength(self) -> int:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # RecordingTracePos
-    def PosxIsNone(self):
+    def PosxIsNone(self) -> bool:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         return o == 0
 
     # RecordingTracePos
-    def Posy(self, j):
+    def Posy(self, j: int):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
@@ -74,55 +76,55 @@ class RecordingTracePos(object):
         return 0
 
     # RecordingTracePos
-    def PosyLength(self):
+    def PosyLength(self) -> int:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # RecordingTracePos
-    def PosyIsNone(self):
+    def PosyIsNone(self) -> bool:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
-def RecordingTracePosStart(builder):
+def RecordingTracePosStart(builder: flatbuffers.Builder):
     builder.StartObject(3)
 
-def Start(builder):
+def Start(builder: flatbuffers.Builder):
     RecordingTracePosStart(builder)
 
-def RecordingTracePosAddName(builder, name):
+def RecordingTracePosAddName(builder: flatbuffers.Builder, name: int):
     builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
 
-def AddName(builder, name):
+def AddName(builder: flatbuffers.Builder, name: int):
     RecordingTracePosAddName(builder, name)
 
-def RecordingTracePosAddPosx(builder, posx):
+def RecordingTracePosAddPosx(builder: flatbuffers.Builder, posx: int):
     builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(posx), 0)
 
-def AddPosx(builder, posx):
+def AddPosx(builder: flatbuffers.Builder, posx: int):
     RecordingTracePosAddPosx(builder, posx)
 
-def RecordingTracePosStartPosxVector(builder, numElems):
+def RecordingTracePosStartPosxVector(builder, numElems: int) -> int:
     return builder.StartVector(4, numElems, 4)
 
 def StartPosxVector(builder, numElems: int) -> int:
     return RecordingTracePosStartPosxVector(builder, numElems)
 
-def RecordingTracePosAddPosy(builder, posy):
+def RecordingTracePosAddPosy(builder: flatbuffers.Builder, posy: int):
     builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(posy), 0)
 
-def AddPosy(builder, posy):
+def AddPosy(builder: flatbuffers.Builder, posy: int):
     RecordingTracePosAddPosy(builder, posy)
 
-def RecordingTracePosStartPosyVector(builder, numElems):
+def RecordingTracePosStartPosyVector(builder, numElems: int) -> int:
     return builder.StartVector(4, numElems, 4)
 
 def StartPosyVector(builder, numElems: int) -> int:
     return RecordingTracePosStartPosyVector(builder, numElems)
 
-def RecordingTracePosEnd(builder):
+def RecordingTracePosEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
-def End(builder):
+def End(builder: flatbuffers.Builder) -> int:
     return RecordingTracePosEnd(builder)

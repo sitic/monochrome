@@ -4,13 +4,15 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+from typing import Any
+from typing import Optional
 np = import_numpy()
 
 class VideoID(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAs(cls, buf, offset=0):
+    def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = VideoID()
         x.Init(buf, n + offset)
@@ -21,43 +23,43 @@ class VideoID(object):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
     # VideoID
-    def Init(self, buf, pos):
+    def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # VideoID
-    def Id(self):
+    def Id(self) -> Optional[str]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # VideoID
-    def Error(self):
+    def Error(self) -> Optional[str]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def VideoIDStart(builder):
+def VideoIDStart(builder: flatbuffers.Builder):
     builder.StartObject(2)
 
-def Start(builder):
+def Start(builder: flatbuffers.Builder):
     VideoIDStart(builder)
 
-def VideoIDAddId(builder, id):
+def VideoIDAddId(builder: flatbuffers.Builder, id: int):
     builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(id), 0)
 
-def AddId(builder, id):
+def AddId(builder: flatbuffers.Builder, id: int):
     VideoIDAddId(builder, id)
 
-def VideoIDAddError(builder, error):
+def VideoIDAddError(builder: flatbuffers.Builder, error: int):
     builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(error), 0)
 
-def AddError(builder, error):
+def AddError(builder: flatbuffers.Builder, error: int):
     VideoIDAddError(builder, error)
 
-def VideoIDEnd(builder):
+def VideoIDEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
-def End(builder):
+def End(builder: flatbuffers.Builder) -> int:
     return VideoIDEnd(builder)

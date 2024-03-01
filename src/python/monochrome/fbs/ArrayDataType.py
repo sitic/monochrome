@@ -2,7 +2,8 @@
 
 # namespace: fbs
 
-class ArrayDataType(object):
+from enum import IntEnum
+class ArrayDataType(IntEnum):
     FLOAT = 0
     UINT8 = 1
     UINT16 = 2

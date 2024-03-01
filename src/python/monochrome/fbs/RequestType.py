@@ -2,7 +2,8 @@
 
 # namespace: fbs
 
-class RequestType(object):
+from enum import IntEnum
+class RequestType(IntEnum):
     CLOSE = 0
     CLOSE_ALL = 1
     TRACE_POS = 2

@@ -4,13 +4,16 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+from typing import Any
+from .Color import Color
+from typing import Optional
 np = import_numpy()
 
 class PointsVideo(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAs(cls, buf, offset=0):
+    def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = PointsVideo()
         x.Init(buf, n + offset)
@@ -21,25 +24,25 @@ class PointsVideo(object):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
     # PointsVideo
-    def Init(self, buf, pos):
+    def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # PointsVideo
-    def Name(self):
+    def Name(self) -> Optional[str]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # PointsVideo
-    def ParentName(self):
+    def ParentName(self) -> Optional[str]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # PointsVideo
-    def PointsData(self, j):
+    def PointsData(self, j: int):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
@@ -54,19 +57,19 @@ class PointsVideo(object):
         return 0
 
     # PointsVideo
-    def PointsDataLength(self):
+    def PointsDataLength(self) -> int:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # PointsVideo
-    def PointsDataIsNone(self):
+    def PointsDataIsNone(self) -> bool:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
     # PointsVideo
-    def TimeIdxs(self, j):
+    def TimeIdxs(self, j: int):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             a = self._tab.Vector(o)
@@ -81,23 +84,22 @@ class PointsVideo(object):
         return 0
 
     # PointsVideo
-    def TimeIdxsLength(self):
+    def TimeIdxsLength(self) -> int:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # PointsVideo
-    def TimeIdxsIsNone(self):
+    def TimeIdxsIsNone(self) -> bool:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         return o == 0
 
     # PointsVideo
-    def Color(self):
+    def Color(self) -> Optional[Color]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             x = o + self._tab.Pos
-            from fbs.Color import Color
             obj = Color()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -110,62 +112,62 @@ class PointsVideo(object):
             return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
         return 0.0
 
-def PointsVideoStart(builder):
+def PointsVideoStart(builder: flatbuffers.Builder):
     builder.StartObject(6)
 
-def Start(builder):
+def Start(builder: flatbuffers.Builder):
     PointsVideoStart(builder)
 
-def PointsVideoAddName(builder, name):
+def PointsVideoAddName(builder: flatbuffers.Builder, name: int):
     builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
 
-def AddName(builder, name):
+def AddName(builder: flatbuffers.Builder, name: int):
     PointsVideoAddName(builder, name)
 
-def PointsVideoAddParentName(builder, parentName):
+def PointsVideoAddParentName(builder: flatbuffers.Builder, parentName: int):
     builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
 
-def AddParentName(builder, parentName):
+def AddParentName(builder: flatbuffers.Builder, parentName: int):
     PointsVideoAddParentName(builder, parentName)
 
-def PointsVideoAddPointsData(builder, pointsData):
+def PointsVideoAddPointsData(builder: flatbuffers.Builder, pointsData: int):
     builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(pointsData), 0)
 
-def AddPointsData(builder, pointsData):
+def AddPointsData(builder: flatbuffers.Builder, pointsData: int):
     PointsVideoAddPointsData(builder, pointsData)
 
-def PointsVideoStartPointsDataVector(builder, numElems):
+def PointsVideoStartPointsDataVector(builder, numElems: int) -> int:
     return builder.StartVector(4, numElems, 4)
 
 def StartPointsDataVector(builder, numElems: int) -> int:
     return PointsVideoStartPointsDataVector(builder, numElems)
 
-def PointsVideoAddTimeIdxs(builder, timeIdxs):
+def PointsVideoAddTimeIdxs(builder: flatbuffers.Builder, timeIdxs: int):
     builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(timeIdxs), 0)
 
-def AddTimeIdxs(builder, timeIdxs):
+def AddTimeIdxs(builder: flatbuffers.Builder, timeIdxs: int):
     PointsVideoAddTimeIdxs(builder, timeIdxs)
 
-def PointsVideoStartTimeIdxsVector(builder, numElems):
+def PointsVideoStartTimeIdxsVector(builder, numElems: int) -> int:
     return builder.StartVector(4, numElems, 4)
 
 def StartTimeIdxsVector(builder, numElems: int) -> int:
     return PointsVideoStartTimeIdxsVector(builder, numElems)
 
-def PointsVideoAddColor(builder, color):
+def PointsVideoAddColor(builder: flatbuffers.Builder, color: Any):
     builder.PrependStructSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(color), 0)
 
-def AddColor(builder, color):
+def AddColor(builder: flatbuffers.Builder, color: Any):
     PointsVideoAddColor(builder, color)
 
-def PointsVideoAddPointSize(builder, pointSize):
+def PointsVideoAddPointSize(builder: flatbuffers.Builder, pointSize: float):
     builder.PrependFloat32Slot(5, pointSize, 0.0)
 
-def AddPointSize(builder, pointSize):
+def AddPointSize(builder: flatbuffers.Builder, pointSize: float):
     PointsVideoAddPointSize(builder, pointSize)
 
-def PointsVideoEnd(builder):
+def PointsVideoEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
-def End(builder):
+def End(builder: flatbuffers.Builder) -> int:
     return PointsVideoEnd(builder)

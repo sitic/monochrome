@@ -2,7 +2,8 @@
 
 # namespace: fbs
 
-class OpacityFunction(object):
+from enum import IntEnum
+class OpacityFunction(IntEnum):
     NONE = 0
     LINEAR = 1
     LINEAR_R = 2

@@ -2,7 +2,8 @@
 
 # namespace: fbs
 
-class Data(object):
+from enum import IntEnum
+class Data(IntEnum):
     NONE = 0
     Filepaths = 1
     Array3Meta = 2

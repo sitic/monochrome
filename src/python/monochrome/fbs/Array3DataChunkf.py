@@ -4,13 +4,14 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+from typing import Any
 np = import_numpy()
 
 class Array3DataChunkf(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAs(cls, buf, offset=0):
+    def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Array3DataChunkf()
         x.Init(buf, n + offset)
@@ -21,7 +22,7 @@ class Array3DataChunkf(object):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
     # Array3DataChunkf
-    def Init(self, buf, pos):
+    def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Array3DataChunkf
@@ -32,7 +33,7 @@ class Array3DataChunkf(object):
         return 0
 
     # Array3DataChunkf
-    def Data(self, j):
+    def Data(self, j: int):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             a = self._tab.Vector(o)
@@ -47,43 +48,43 @@ class Array3DataChunkf(object):
         return 0
 
     # Array3DataChunkf
-    def DataLength(self):
+    def DataLength(self) -> int:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Array3DataChunkf
-    def DataIsNone(self):
+    def DataIsNone(self) -> bool:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         return o == 0
 
-def Array3DataChunkfStart(builder):
+def Array3DataChunkfStart(builder: flatbuffers.Builder):
     builder.StartObject(2)
 
-def Start(builder):
+def Start(builder: flatbuffers.Builder):
     Array3DataChunkfStart(builder)
 
-def Array3DataChunkfAddStartidx(builder, startidx):
+def Array3DataChunkfAddStartidx(builder: flatbuffers.Builder, startidx: int):
     builder.PrependUint64Slot(0, startidx, 0)
 
-def AddStartidx(builder, startidx):
+def AddStartidx(builder: flatbuffers.Builder, startidx: int):
     Array3DataChunkfAddStartidx(builder, startidx)
 
-def Array3DataChunkfAddData(builder, data):
+def Array3DataChunkfAddData(builder: flatbuffers.Builder, data: int):
     builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
 
-def AddData(builder, data):
+def AddData(builder: flatbuffers.Builder, data: int):
     Array3DataChunkfAddData(builder, data)
 
-def Array3DataChunkfStartDataVector(builder, numElems):
+def Array3DataChunkfStartDataVector(builder, numElems: int) -> int:
     return builder.StartVector(4, numElems, 4)
 
 def StartDataVector(builder, numElems: int) -> int:
     return Array3DataChunkfStartDataVector(builder, numElems)
 
-def Array3DataChunkfEnd(builder):
+def Array3DataChunkfEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
-def End(builder):
+def End(builder: flatbuffers.Builder) -> int:
     return Array3DataChunkfEnd(builder)

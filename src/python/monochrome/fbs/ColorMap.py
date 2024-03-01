@@ -2,7 +2,8 @@
 
 # namespace: fbs
 
-class ColorMap(object):
+from enum import IntEnum
+class ColorMap(IntEnum):
     DEFAULT = 0
     GRAY = 1
     HSV = 2

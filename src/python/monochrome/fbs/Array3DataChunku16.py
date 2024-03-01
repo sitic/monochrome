@@ -4,13 +4,14 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+from typing import Any
 np = import_numpy()
 
 class Array3DataChunku16(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAs(cls, buf, offset=0):
+    def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Array3DataChunku16()
         x.Init(buf, n + offset)
@@ -21,7 +22,7 @@ class Array3DataChunku16(object):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
     # Array3DataChunku16
-    def Init(self, buf, pos):
+    def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Array3DataChunku16
@@ -32,7 +33,7 @@ class Array3DataChunku16(object):
         return 0
 
     # Array3DataChunku16
-    def Data(self, j):
+    def Data(self, j: int):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             a = self._tab.Vector(o)
@@ -47,43 +48,43 @@ class Array3DataChunku16(object):
         return 0
 
     # Array3DataChunku16
-    def DataLength(self):
+    def DataLength(self) -> int:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Array3DataChunku16
-    def DataIsNone(self):
+    def DataIsNone(self) -> bool:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         return o == 0
 
-def Array3DataChunku16Start(builder):
+def Array3DataChunku16Start(builder: flatbuffers.Builder):
     builder.StartObject(2)
 
-def Start(builder):
+def Start(builder: flatbuffers.Builder):
     Array3DataChunku16Start(builder)
 
-def Array3DataChunku16AddStartidx(builder, startidx):
+def Array3DataChunku16AddStartidx(builder: flatbuffers.Builder, startidx: int):
     builder.PrependUint64Slot(0, startidx, 0)
 
-def AddStartidx(builder, startidx):
+def AddStartidx(builder: flatbuffers.Builder, startidx: int):
     Array3DataChunku16AddStartidx(builder, startidx)
 
-def Array3DataChunku16AddData(builder, data):
+def Array3DataChunku16AddData(builder: flatbuffers.Builder, data: int):
     builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
 
-def AddData(builder, data):
+def AddData(builder: flatbuffers.Builder, data: int):
     Array3DataChunku16AddData(builder, data)
 
-def Array3DataChunku16StartDataVector(builder, numElems):
+def Array3DataChunku16StartDataVector(builder, numElems: int) -> int:
     return builder.StartVector(2, numElems, 2)
 
 def StartDataVector(builder, numElems: int) -> int:
     return Array3DataChunku16StartDataVector(builder, numElems)
 
-def Array3DataChunku16End(builder):
+def Array3DataChunku16End(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
-def End(builder):
+def End(builder: flatbuffers.Builder) -> int:
     return Array3DataChunku16End(builder)

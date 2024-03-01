@@ -4,13 +4,16 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+from typing import Any
+from .Color import Color
+from typing import Optional
 np = import_numpy()
 
 class Array3MetaFlow(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAs(cls, buf, offset=0):
+    def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Array3MetaFlow()
         x.Init(buf, n + offset)
@@ -21,7 +24,7 @@ class Array3MetaFlow(object):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
     # Array3MetaFlow
-    def Init(self, buf, pos):
+    def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Array3MetaFlow
@@ -46,74 +49,73 @@ class Array3MetaFlow(object):
         return 0
 
     # Array3MetaFlow
-    def Name(self):
+    def Name(self) -> Optional[str]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Array3MetaFlow
-    def ParentName(self):
+    def ParentName(self) -> Optional[str]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Array3MetaFlow
-    def Color(self):
+    def Color(self) -> Optional[Color]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             x = o + self._tab.Pos
-            from fbs.Color import Color
             obj = Color()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-def Array3MetaFlowStart(builder):
+def Array3MetaFlowStart(builder: flatbuffers.Builder):
     builder.StartObject(6)
 
-def Start(builder):
+def Start(builder: flatbuffers.Builder):
     Array3MetaFlowStart(builder)
 
-def Array3MetaFlowAddNx(builder, nx):
+def Array3MetaFlowAddNx(builder: flatbuffers.Builder, nx: int):
     builder.PrependInt32Slot(0, nx, 0)
 
-def AddNx(builder, nx):
+def AddNx(builder: flatbuffers.Builder, nx: int):
     Array3MetaFlowAddNx(builder, nx)
 
-def Array3MetaFlowAddNy(builder, ny):
+def Array3MetaFlowAddNy(builder: flatbuffers.Builder, ny: int):
     builder.PrependInt32Slot(1, ny, 0)
 
-def AddNy(builder, ny):
+def AddNy(builder: flatbuffers.Builder, ny: int):
     Array3MetaFlowAddNy(builder, ny)
 
-def Array3MetaFlowAddNt(builder, nt):
+def Array3MetaFlowAddNt(builder: flatbuffers.Builder, nt: int):
     builder.PrependInt32Slot(2, nt, 0)
 
-def AddNt(builder, nt):
+def AddNt(builder: flatbuffers.Builder, nt: int):
     Array3MetaFlowAddNt(builder, nt)
 
-def Array3MetaFlowAddName(builder, name):
+def Array3MetaFlowAddName(builder: flatbuffers.Builder, name: int):
     builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
 
-def AddName(builder, name):
+def AddName(builder: flatbuffers.Builder, name: int):
     Array3MetaFlowAddName(builder, name)
 
-def Array3MetaFlowAddParentName(builder, parentName):
+def Array3MetaFlowAddParentName(builder: flatbuffers.Builder, parentName: int):
     builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
 
-def AddParentName(builder, parentName):
+def AddParentName(builder: flatbuffers.Builder, parentName: int):
     Array3MetaFlowAddParentName(builder, parentName)
 
-def Array3MetaFlowAddColor(builder, color):
+def Array3MetaFlowAddColor(builder: flatbuffers.Builder, color: Any):
     builder.PrependStructSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(color), 0)
 
-def AddColor(builder, color):
+def AddColor(builder: flatbuffers.Builder, color: Any):
     Array3MetaFlowAddColor(builder, color)
 
-def Array3MetaFlowEnd(builder):
+def Array3MetaFlowEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
-def End(builder):
+def End(builder: flatbuffers.Builder) -> int:
     return Array3MetaFlowEnd(builder)

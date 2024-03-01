@@ -2,11 +2,11 @@ from skbuild import setup
 
 setup(
     name='monochrome-viewer',
-    url='https://gitlab.com/cardiac-vision/monochrome',
+    url='https://gitlab.com/sitic/monochrome',
     author="Jan Lebert",
     author_email="mail@janlebert.com",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: Microsoft :: Windows",
@@ -37,5 +37,22 @@ setup(
         '-DDISABLE_MACOS_BUNDLE:BOOL=ON',
         ],
     cmake_install_dir='src/python/monochrome/data',
-    zip_safe=False
+    zip_safe=False,
+    extras_require={
+        "docs": [
+            "sphinx",
+            "sphinxcontrib-napoleon",
+            "sphinxcontrib-bibtex",
+            "sphinxcontrib-video",
+            "sphinx-autobuild",
+            "sphinx-copybutton",
+            "sphinx-codeautolink",
+            "furo",
+            "myst_nb>=1.0.0",
+            "jupytext",
+            "jupyter-cache",
+            "sphinx-remove-toctrees",
+            "sphinx-design",
+        ],
+    },
 )
