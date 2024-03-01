@@ -1,4 +1,4 @@
-# Monochrome — Video viewer for scientific monochromatic videos
+# Monochrome — Viewer for scientific monochromatic video data
 
 > ⚠️ An initial release is currently in preparation. The install instruction are not yet up-to-date.
 

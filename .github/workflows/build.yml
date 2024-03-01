@@ -189,7 +189,7 @@ jobs:
   build_python_sdist:
     name: Build python sdist
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: (github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     steps:
       - uses: actions/checkout@v4
 
@@ -201,28 +201,28 @@ jobs:
           name: python-wheels-sdist
           path: dist/*.tar.gz
 
-  upload_pypi:
-    name: Upload to PyPI
-    needs: [test_python_wheels, build_python_sdist]
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write
-    if: github.event_name == 'release' && github.event.action == 'published'
-    # or, alternatively, upload to PyPI on every tag starting with 'v' (remove on: release above to use this)
-    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: python-wheels-*
-          path: dist
-          merge-multiple: true
+  # upload_pypi:
+  #   name: Upload to PyPI
+  #   needs: [test_python_wheels, build_python_sdist]
+  #   runs-on: ubuntu-latest
+  #   environment: pypi
+  #   permissions:
+  #     id-token: write
+  #   if: github.event_name == 'release' && github.event.action == 'published'
+  #   # or, alternatively, upload to PyPI on every tag starting with 'v' (remove on: release above to use this)
+  #   # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+  #   steps:
+  #     - name: Download artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: python-wheels-*
+  #         path: dist
+  #         merge-multiple: true
 
-      - name: Upload to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
+  #     - name: Upload to PyPI
+  #       uses: pypa/gh-action-pypi-publish@release/v1
+  #       with:
+  #         repository-url: https://test.pypi.org/legacy/
   
   # upload_github_release:
   #   name: Upload to GitHub Releases

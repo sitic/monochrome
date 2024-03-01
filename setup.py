@@ -5,6 +5,10 @@ setup(
     url='https://gitlab.com/sitic/monochrome',
     author="Jan Lebert",
     author_email="mail@janlebert.com",
+    license="MIT",
+    description="Viewer for scientific monochromatic video data",
+    long_description=open("README.md", encoding="utf8").read(),
+    long_description_content_type="text/markdown",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
