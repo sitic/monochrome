@@ -93,16 +93,14 @@ mc.show(video, "Our Test Video", cmap='viridis')
 video2 = (np.random.rand((500, 128, 128)) * 65535).astype(dtype=np.uint16)
 
 # Several videos can be shown at the same time, they will be played in sync if they have the same length
-mc.show(video2, "Another Video", cmap='gray',
-        # we can also add some metadata
-        date="2020-04-29-13-10-27", comment="Blebbistatin", fps=500, duration_seconds=30)
+mc.show(video2, "Another Video", cmap='gray', comment="Blebbistatin")
 
 # Layers can be added on top of video.
 # Pixels with value NaN are not displayed, instead the layer/video below is shown
 overlay = np.random.rand((500, 128, 128))
 overlay[32:96, 32:96] = np.nan
 
-mc.show_layer(overlay, "Overlay Name", cmap='hsv')
+mc.show_layer(overlay, "Overlay Name", cmap='hsv', opacity='linear')
 
 # By default, layers are added to the last video loaded, unless the parent name is specified.
 mc.show_layer(overlay, "Phase", parent="Our Test Video", cmap='hsv')

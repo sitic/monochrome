@@ -57,6 +57,8 @@ setup(
             "jupyter-cache",
             "sphinx-remove-toctrees",
             "sphinx-design",
+            "enum-tools[sphinx]",
+            "opticalmapping[all]"
         ],
     },
 )
