@@ -20,15 +20,17 @@ table Array3Meta {
   nx:int;
   ny:int;
   nt:int;
+  bitrange:BitRange;
+  cmap:ColorMap;
+  vmin:float;
+  vmax:float;
+  opacity:OpacityFunction;
   name:string;
+  parent_name:string;
   duration:float; // in seconds
   fps:float; // original framerate
   date:string; // creation date
   comment:string;
-  bitrange:BitRange;
-  cmap:ColorMap;
-  parent_name:string;
-  opacity:OpacityFunction;
   metadata:[DictEntry];
 }
 

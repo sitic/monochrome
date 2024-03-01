@@ -61,6 +61,8 @@ namespace global {
     std::string comment;
     std::optional<BitRange> bitrange                          = std::nullopt;
     std::optional<ColorMap> cmap                              = std::nullopt;
+    std::optional<float> vmin                                 = std::nullopt;
+    std::optional<float> vmax                                 = std::nullopt;
     std::optional<std::string> parentName                     = std::nullopt;
     std::optional<OpacityFunction> opacity                    = std::nullopt;
     std::vector<std::pair<std::string, std::string>> metaData = {};

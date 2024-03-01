@@ -180,15 +180,14 @@ def create_pointsvideo_msg(points_py, name, parent_name=None, color=None, point_
     buf = builder.Output()
     return buf
 
-
 def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0., date="", comment="",
                           bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parent_name=None, opacity=None,
-                          metadata=None):
+                          metadata=None, vmin=None, vmax=None):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
+    parent_fb = builder.CreateString(parent_name) if parent_name is not None else None
     date_fb = builder.CreateString(date)
     comment_fb = builder.CreateString(comment)
-    parent_fb = builder.CreateString(parent_name) if parent_name is not None else None
     if metadata:
         metadata = [(builder.CreateString(key), builder.CreateString(val)) for key, val in metadata.items()]
         metaData_fbs = []
@@ -206,17 +205,21 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     Array3Meta.AddNx(builder, shape[2])
     Array3Meta.AddNy(builder, shape[1])
     Array3Meta.AddNt(builder, shape[0])
+    Array3Meta.AddBitrange(builder, bitrange)
+    Array3Meta.AddCmap(builder, cmap)
+    if vmin is not None:
+        Array3Meta.AddVmin(builder, vmin)
+    if vmax is not None:
+        Array3Meta.AddVmax(builder, vmax)
+    if opacity is not None:
+        Array3Meta.AddOpacity(builder, opacity)
     Array3Meta.AddName(builder, name_fb)
+    if parent_fb:
+        Array3Meta.AddParentName(builder, parent_fb)
     Array3Meta.AddDuration(builder, duration)
     Array3Meta.AddFps(builder, fps)
     Array3Meta.AddDate(builder, date_fb)
     Array3Meta.AddComment(builder, comment_fb)
-    Array3Meta.AddBitrange(builder, bitrange)
-    Array3Meta.AddCmap(builder, cmap)
-    if parent_fb:
-        Array3Meta.AddParentName(builder, parent_fb)
-    if opacity:
-        Array3Meta.AddOpacity(builder, opacity)
     if metadata:
         Array3Meta.AddMetadata(builder, metadata)
     d = Array3Meta.End(builder)
@@ -349,13 +352,12 @@ def show_points(points, name: Text = "", parent: Optional[Text] = None, color=No
 def show_video(array: np.ndarray,
                name: Text = "",
                cmap: Union[ColorMap, Text] = ColorMap.DEFAULT,
+               vmin: Optional[float] = None,
+               vmax: Optional[float] = None,
                bitrange: Union[BitRange, Text] = BitRange.AUTODETECT,
-               comment: Text = "",
-               fps: float = 0,
-               date: Text = "",
-               duration_seconds: float = 0,
                parent: Optional[Text] = None,
                opacity: Optional[OpacityFunction] = None,
+               comment: Text = "",
                metadata: Optional[Dict] = None):
     """
     Play a video or open a image in Monochrome.
@@ -370,22 +372,20 @@ def show_video(array: np.ndarray,
         Name of the video
     cmap : str or ColorMap
         Colormap for the video. One of 'default' (autodetect), 'gray', 'hsv', 'blackbody', 'viridis', 'PRGn', 'PRGn_pos', 'PRGn_neg', 'RdBu'.
+    vmin : float
+        Minimum value for the colormap. Default is None.
+    vmax : float
+        Maximum value for the colormap. Default is None.
     bitrange : str or BitRange
         Valuerange for the video. One of 'autodetect', 'MinMax' 'uint8', 'uint10', 'uint12', 'uint16', 'float' (for [0,1]), 'diff' (for [-1, 1]), 'phase' (for [0, 2*pi]), or 'phase_diff (for [-pi, pi])'. Default is 'autodetect'.
-    comment : str
-        Comment to be displayed
-    fps : float
-        Framerate in Hz
-    date : str
-        Date of the recording
-    duration_seconds : float
-        Duration of the video in seconds
     parent : str
         Name of the parent video
     opacity : OpacityFunction
         Opacity function for alpha blending if video is a layer. One of 'linear', 'linear_r', 'centered', 1.0, 0.75, 0.5, 0.25, or 0.0. Default is `opacity=1.0`.
+    comment : str
+        Comment to be displayed
     metadata : dict
-        Additional metadata
+        Additional metadata to be displayed
     """
 
     array = np.squeeze(array)
@@ -434,9 +434,8 @@ def show_video(array: np.ndarray,
         opacity = getattr(OpacityFunction, opacity.upper())
 
     s = create_socket()
-    buf = create_array3meta_msg(dtype, name, array.shape, duration=duration_seconds, fps=fps, date=date,
-                                comment=comment, bitrange=bitrange, cmap=cmap, parent_name=parent,
-                                opacity=opacity, metadata=metadata)
+    buf = create_array3meta_msg(dtype, name, array.shape, comment=comment, bitrange=bitrange, cmap=cmap,
+                                parent_name=parent, opacity=opacity, metadata=metadata, vmin=vmin, vmax=vmax)
     s.sendall(buf)
 
     flat = array.flatten()

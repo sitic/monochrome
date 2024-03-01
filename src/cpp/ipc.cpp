@@ -238,11 +238,10 @@ namespace {
             "Array3Meta message arrived before previous array was completely loaded");
       }
 
-      int cmap         = raw->cmap() - 1;
-      int bitrange     = raw->bitrange() - 1;
-      int opacity_fct = flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_OPACITY)
-                             ? raw->opacity() - 1
-                             : -1;
+      int cmap     = raw->cmap() - 1;
+      int bitrange = raw->bitrange() - 1;
+      int opacity_fct =
+          flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_OPACITY) ? raw->opacity() - 1 : -1;
 
       std::vector<std::pair<std::string, std::string>> metaData = {};
       if (flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_METADATA) && raw->metadata()) {
@@ -266,6 +265,12 @@ namespace {
           raw->comment()->str(),
           bitrange < 0 ? std::nullopt : std::optional<BitRange>(static_cast<BitRange>(bitrange)),
           cmap < 0 ? std::nullopt : std::optional<ColorMap>(static_cast<ColorMap>(cmap)),
+          flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_VMIN)
+              ? std::optional<float>(raw->vmin())
+              : std::nullopt,
+          flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_VMAX)
+              ? std::optional<float>(raw->vmax())
+              : std::nullopt,
           flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_PARENT_NAME)
               ? std::optional<std::string>(raw->parent_name()->str())
               : std::nullopt,
@@ -496,7 +501,8 @@ void ipc::send_array3(const float* data, int nx, int ny, int nt, const std::stri
 
   /* Metadata Message */
   auto fbs_start  = fbs::CreateArray3MetaDirect(builder, fbs::ArrayDataType_FLOAT, nx, ny, nt,
-                                                name.c_str(), 0, 0, "", "");
+                                                fbs::BitRange_AUTODETECT, fbs::ColorMap_DEFAULT, NAN, NAN,
+                                                fbs::OpacityFunction_NONE, name.c_str());
   auto root_start = CreateRoot(builder, fbs::Data_Array3Meta, fbs_start.Union());
   builder.FinishSizePrefixed(root_start);
   asio::write(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));

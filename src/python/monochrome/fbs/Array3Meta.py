@@ -53,71 +53,85 @@ class Array3Meta(object):
         return 0
 
     # Array3Meta
-    def Name(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Array3Meta
-    def Duration(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
-        return 0.0
-
-    # Array3Meta
-    def Fps(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
-        return 0.0
-
-    # Array3Meta
-    def Date(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Array3Meta
-    def Comment(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Array3Meta
     def Bitrange(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # Array3Meta
     def Cmap(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # Array3Meta
-    def ParentName(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+    def Vmin(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+        return 0.0
+
+    # Array3Meta
+    def Vmax(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+        return 0.0
+
+    # Array3Meta
+    def Opacity(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+        return 0
+
+    # Array3Meta
+    def Name(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Array3Meta
-    def Opacity(self):
+    def ParentName(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Array3Meta
+    def Duration(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+        return 0.0
+
+    # Array3Meta
+    def Fps(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
-        return 0
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+        return 0.0
+
+    # Array3Meta
+    def Date(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Array3Meta
+    def Comment(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
 
     # Array3Meta
     def Metadata(self, j):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
@@ -130,18 +144,18 @@ class Array3Meta(object):
 
     # Array3Meta
     def MetadataLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Array3Meta
     def MetadataIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         return o == 0
 
 def Array3MetaStart(builder):
-    builder.StartObject(14)
+    builder.StartObject(16)
 
 def Start(builder):
     Array3MetaStart(builder)
@@ -170,62 +184,74 @@ def Array3MetaAddNt(builder, nt):
 def AddNt(builder, nt):
     Array3MetaAddNt(builder, nt)
 
-def Array3MetaAddName(builder, name):
-    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-
-def AddName(builder, name):
-    Array3MetaAddName(builder, name)
-
-def Array3MetaAddDuration(builder, duration):
-    builder.PrependFloat32Slot(5, duration, 0.0)
-
-def AddDuration(builder, duration):
-    Array3MetaAddDuration(builder, duration)
-
-def Array3MetaAddFps(builder, fps):
-    builder.PrependFloat32Slot(6, fps, 0.0)
-
-def AddFps(builder, fps):
-    Array3MetaAddFps(builder, fps)
-
-def Array3MetaAddDate(builder, date):
-    builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(date), 0)
-
-def AddDate(builder, date):
-    Array3MetaAddDate(builder, date)
-
-def Array3MetaAddComment(builder, comment):
-    builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(comment), 0)
-
-def AddComment(builder, comment):
-    Array3MetaAddComment(builder, comment)
-
 def Array3MetaAddBitrange(builder, bitrange):
-    builder.PrependInt32Slot(9, bitrange, 0)
+    builder.PrependInt32Slot(4, bitrange, 0)
 
 def AddBitrange(builder, bitrange):
     Array3MetaAddBitrange(builder, bitrange)
 
 def Array3MetaAddCmap(builder, cmap):
-    builder.PrependInt32Slot(10, cmap, 0)
+    builder.PrependInt32Slot(5, cmap, 0)
 
 def AddCmap(builder, cmap):
     Array3MetaAddCmap(builder, cmap)
 
-def Array3MetaAddParentName(builder, parentName):
-    builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
+def Array3MetaAddVmin(builder, vmin):
+    builder.PrependFloat32Slot(6, vmin, 0.0)
 
-def AddParentName(builder, parentName):
-    Array3MetaAddParentName(builder, parentName)
+def AddVmin(builder, vmin):
+    Array3MetaAddVmin(builder, vmin)
+
+def Array3MetaAddVmax(builder, vmax):
+    builder.PrependFloat32Slot(7, vmax, 0.0)
+
+def AddVmax(builder, vmax):
+    Array3MetaAddVmax(builder, vmax)
 
 def Array3MetaAddOpacity(builder, opacity):
-    builder.PrependInt32Slot(12, opacity, 0)
+    builder.PrependInt32Slot(8, opacity, 0)
 
 def AddOpacity(builder, opacity):
     Array3MetaAddOpacity(builder, opacity)
 
+def Array3MetaAddName(builder, name):
+    builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+
+def AddName(builder, name):
+    Array3MetaAddName(builder, name)
+
+def Array3MetaAddParentName(builder, parentName):
+    builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(parentName), 0)
+
+def AddParentName(builder, parentName):
+    Array3MetaAddParentName(builder, parentName)
+
+def Array3MetaAddDuration(builder, duration):
+    builder.PrependFloat32Slot(11, duration, 0.0)
+
+def AddDuration(builder, duration):
+    Array3MetaAddDuration(builder, duration)
+
+def Array3MetaAddFps(builder, fps):
+    builder.PrependFloat32Slot(12, fps, 0.0)
+
+def AddFps(builder, fps):
+    Array3MetaAddFps(builder, fps)
+
+def Array3MetaAddDate(builder, date):
+    builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(date), 0)
+
+def AddDate(builder, date):
+    Array3MetaAddDate(builder, date)
+
+def Array3MetaAddComment(builder, comment):
+    builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(comment), 0)
+
+def AddComment(builder, comment):
+    Array3MetaAddComment(builder, comment)
+
 def Array3MetaAddMetadata(builder, metadata):
-    builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(metadata), 0)
+    builder.PrependUOffsetTRelativeSlot(15, flatbuffers.number_types.UOffsetTFlags.py_type(metadata), 0)
 
 def AddMetadata(builder, metadata):
     Array3MetaAddMetadata(builder, metadata)

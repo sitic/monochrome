@@ -50,15 +50,9 @@ class InMemoryFile : public AbstractFile {
   };
   std::optional<BitRange> bitrange() const final { return _data->meta.bitrange; }
   std::optional<ColorMap> cmap() const final { return _data->meta.cmap; }
-  bool is_flow() const final { return _data->meta.is_flowfield; };
-  bool set_flow(bool _is_flow) final {
-    _data->meta.is_flowfield = _is_flow;
-    return true;
-  }
-  void set_comment(const std::string& new_comment) final {}
-  flag_set<FileCapabilities> capabilities() const final {
-    return flag_set<FileCapabilities>(FileCapabilities::AS_FLOW);
-  }
+  std::optional<float> vmin() const final { return _data->meta.vmin; };
+  std::optional<float> vmax() const final { return _data->meta.vmax; };
+
   Eigen::MatrixXf read_frame(long t) final {
     std::visit(
         [this, t](const auto& data) {
@@ -86,8 +80,16 @@ class InMemoryFile : public AbstractFile {
         _data->data);
   }
 
-  // color for points if it is a flow array 
-  std::optional<Vec4f> color() {
-    return _data->meta.color;
+  bool is_flow() const final { return _data->meta.is_flowfield; };
+  bool set_flow(bool _is_flow) final {
+    _data->meta.is_flowfield = _is_flow;
+    return true;
   }
+  void set_comment(const std::string& new_comment) final {}
+  flag_set<FileCapabilities> capabilities() const final {
+    return flag_set<FileCapabilities>(FileCapabilities::AS_FLOW);
+  }
+
+  // color for points if it is a flow array
+  std::optional<Vec4f> color() { return _data->meta.color; }
 };

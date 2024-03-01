@@ -467,16 +467,18 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_NX = 6,
     VT_NY = 8,
     VT_NT = 10,
-    VT_NAME = 12,
-    VT_DURATION = 14,
-    VT_FPS = 16,
-    VT_DATE = 18,
-    VT_COMMENT = 20,
-    VT_BITRANGE = 22,
-    VT_CMAP = 24,
-    VT_PARENT_NAME = 26,
-    VT_OPACITY = 28,
-    VT_METADATA = 30
+    VT_BITRANGE = 12,
+    VT_CMAP = 14,
+    VT_VMIN = 16,
+    VT_VMAX = 18,
+    VT_OPACITY = 20,
+    VT_NAME = 22,
+    VT_PARENT_NAME = 24,
+    VT_DURATION = 26,
+    VT_FPS = 28,
+    VT_DATE = 30,
+    VT_COMMENT = 32,
+    VT_METADATA = 34
   };
   fbs::ArrayDataType type() const {
     return static_cast<fbs::ArrayDataType>(GetField<int32_t>(VT_TYPE, 0));
@@ -490,8 +492,26 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   int32_t nt() const {
     return GetField<int32_t>(VT_NT, 0);
   }
+  fbs::BitRange bitrange() const {
+    return static_cast<fbs::BitRange>(GetField<int32_t>(VT_BITRANGE, 0));
+  }
+  fbs::ColorMap cmap() const {
+    return static_cast<fbs::ColorMap>(GetField<int32_t>(VT_CMAP, 0));
+  }
+  float vmin() const {
+    return GetField<float>(VT_VMIN, 0.0f);
+  }
+  float vmax() const {
+    return GetField<float>(VT_VMAX, 0.0f);
+  }
+  fbs::OpacityFunction opacity() const {
+    return static_cast<fbs::OpacityFunction>(GetField<int32_t>(VT_OPACITY, 0));
+  }
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  }
+  const ::flatbuffers::String *parent_name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_PARENT_NAME);
   }
   float duration() const {
     return GetField<float>(VT_DURATION, 0.0f);
@@ -505,18 +525,6 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *comment() const {
     return GetPointer<const ::flatbuffers::String *>(VT_COMMENT);
   }
-  fbs::BitRange bitrange() const {
-    return static_cast<fbs::BitRange>(GetField<int32_t>(VT_BITRANGE, 0));
-  }
-  fbs::ColorMap cmap() const {
-    return static_cast<fbs::ColorMap>(GetField<int32_t>(VT_CMAP, 0));
-  }
-  const ::flatbuffers::String *parent_name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_PARENT_NAME);
-  }
-  fbs::OpacityFunction opacity() const {
-    return static_cast<fbs::OpacityFunction>(GetField<int32_t>(VT_OPACITY, 0));
-  }
   const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>> *>(VT_METADATA);
   }
@@ -526,19 +534,21 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int32_t>(verifier, VT_NX, 4) &&
            VerifyField<int32_t>(verifier, VT_NY, 4) &&
            VerifyField<int32_t>(verifier, VT_NT, 4) &&
+           VerifyField<int32_t>(verifier, VT_BITRANGE, 4) &&
+           VerifyField<int32_t>(verifier, VT_CMAP, 4) &&
+           VerifyField<float>(verifier, VT_VMIN, 4) &&
+           VerifyField<float>(verifier, VT_VMAX, 4) &&
+           VerifyField<int32_t>(verifier, VT_OPACITY, 4) &&
            VerifyOffset(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
+           VerifyOffset(verifier, VT_PARENT_NAME) &&
+           verifier.VerifyString(parent_name()) &&
            VerifyField<float>(verifier, VT_DURATION, 4) &&
            VerifyField<float>(verifier, VT_FPS, 4) &&
            VerifyOffset(verifier, VT_DATE) &&
            verifier.VerifyString(date()) &&
            VerifyOffset(verifier, VT_COMMENT) &&
            verifier.VerifyString(comment()) &&
-           VerifyField<int32_t>(verifier, VT_BITRANGE, 4) &&
-           VerifyField<int32_t>(verifier, VT_CMAP, 4) &&
-           VerifyOffset(verifier, VT_PARENT_NAME) &&
-           verifier.VerifyString(parent_name()) &&
-           VerifyField<int32_t>(verifier, VT_OPACITY, 4) &&
            VerifyOffset(verifier, VT_METADATA) &&
            verifier.VerifyVector(metadata()) &&
            verifier.VerifyVectorOfTables(metadata()) &&
@@ -562,8 +572,26 @@ struct Array3MetaBuilder {
   void add_nt(int32_t nt) {
     fbb_.AddElement<int32_t>(Array3Meta::VT_NT, nt, 0);
   }
+  void add_bitrange(fbs::BitRange bitrange) {
+    fbb_.AddElement<int32_t>(Array3Meta::VT_BITRANGE, static_cast<int32_t>(bitrange), 0);
+  }
+  void add_cmap(fbs::ColorMap cmap) {
+    fbb_.AddElement<int32_t>(Array3Meta::VT_CMAP, static_cast<int32_t>(cmap), 0);
+  }
+  void add_vmin(float vmin) {
+    fbb_.AddElement<float>(Array3Meta::VT_VMIN, vmin, 0.0f);
+  }
+  void add_vmax(float vmax) {
+    fbb_.AddElement<float>(Array3Meta::VT_VMAX, vmax, 0.0f);
+  }
+  void add_opacity(fbs::OpacityFunction opacity) {
+    fbb_.AddElement<int32_t>(Array3Meta::VT_OPACITY, static_cast<int32_t>(opacity), 0);
+  }
   void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(Array3Meta::VT_NAME, name);
+  }
+  void add_parent_name(::flatbuffers::Offset<::flatbuffers::String> parent_name) {
+    fbb_.AddOffset(Array3Meta::VT_PARENT_NAME, parent_name);
   }
   void add_duration(float duration) {
     fbb_.AddElement<float>(Array3Meta::VT_DURATION, duration, 0.0f);
@@ -576,18 +604,6 @@ struct Array3MetaBuilder {
   }
   void add_comment(::flatbuffers::Offset<::flatbuffers::String> comment) {
     fbb_.AddOffset(Array3Meta::VT_COMMENT, comment);
-  }
-  void add_bitrange(fbs::BitRange bitrange) {
-    fbb_.AddElement<int32_t>(Array3Meta::VT_BITRANGE, static_cast<int32_t>(bitrange), 0);
-  }
-  void add_cmap(fbs::ColorMap cmap) {
-    fbb_.AddElement<int32_t>(Array3Meta::VT_CMAP, static_cast<int32_t>(cmap), 0);
-  }
-  void add_parent_name(::flatbuffers::Offset<::flatbuffers::String> parent_name) {
-    fbb_.AddOffset(Array3Meta::VT_PARENT_NAME, parent_name);
-  }
-  void add_opacity(fbs::OpacityFunction opacity) {
-    fbb_.AddElement<int32_t>(Array3Meta::VT_OPACITY, static_cast<int32_t>(opacity), 0);
   }
   void add_metadata(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata) {
     fbb_.AddOffset(Array3Meta::VT_METADATA, metadata);
@@ -609,27 +625,31 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3Meta(
     int32_t nx = 0,
     int32_t ny = 0,
     int32_t nt = 0,
+    fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
+    fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
+    float vmin = 0.0f,
+    float vmax = 0.0f,
+    fbs::OpacityFunction opacity = fbs::OpacityFunction_NONE,
     ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> parent_name = 0,
     float duration = 0.0f,
     float fps = 0.0f,
     ::flatbuffers::Offset<::flatbuffers::String> date = 0,
     ::flatbuffers::Offset<::flatbuffers::String> comment = 0,
-    fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
-    fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
-    ::flatbuffers::Offset<::flatbuffers::String> parent_name = 0,
-    fbs::OpacityFunction opacity = fbs::OpacityFunction_NONE,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata = 0) {
   Array3MetaBuilder builder_(_fbb);
   builder_.add_metadata(metadata);
-  builder_.add_opacity(opacity);
-  builder_.add_parent_name(parent_name);
-  builder_.add_cmap(cmap);
-  builder_.add_bitrange(bitrange);
   builder_.add_comment(comment);
   builder_.add_date(date);
   builder_.add_fps(fps);
   builder_.add_duration(duration);
+  builder_.add_parent_name(parent_name);
   builder_.add_name(name);
+  builder_.add_opacity(opacity);
+  builder_.add_vmax(vmax);
+  builder_.add_vmin(vmin);
+  builder_.add_cmap(cmap);
+  builder_.add_bitrange(bitrange);
   builder_.add_nt(nt);
   builder_.add_ny(ny);
   builder_.add_nx(nx);
@@ -643,20 +663,22 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
     int32_t nx = 0,
     int32_t ny = 0,
     int32_t nt = 0,
+    fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
+    fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
+    float vmin = 0.0f,
+    float vmax = 0.0f,
+    fbs::OpacityFunction opacity = fbs::OpacityFunction_NONE,
     const char *name = nullptr,
+    const char *parent_name = nullptr,
     float duration = 0.0f,
     float fps = 0.0f,
     const char *date = nullptr,
     const char *comment = nullptr,
-    fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
-    fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
-    const char *parent_name = nullptr,
-    fbs::OpacityFunction opacity = fbs::OpacityFunction_NONE,
     const std::vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto parent_name__ = parent_name ? _fbb.CreateString(parent_name) : 0;
   auto date__ = date ? _fbb.CreateString(date) : 0;
   auto comment__ = comment ? _fbb.CreateString(comment) : 0;
-  auto parent_name__ = parent_name ? _fbb.CreateString(parent_name) : 0;
   auto metadata__ = metadata ? _fbb.CreateVector<::flatbuffers::Offset<fbs::DictEntry>>(*metadata) : 0;
   return fbs::CreateArray3Meta(
       _fbb,
@@ -664,15 +686,17 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
       nx,
       ny,
       nt,
+      bitrange,
+      cmap,
+      vmin,
+      vmax,
+      opacity,
       name__,
+      parent_name__,
       duration,
       fps,
       date__,
       comment__,
-      bitrange,
-      cmap,
-      parent_name__,
-      opacity,
       metadata__);
 }
 
