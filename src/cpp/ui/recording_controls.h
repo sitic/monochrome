@@ -81,14 +81,17 @@ void display_recording_buttons(const SharedRecordingPtr &rec) {
 }
 
 void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
-  auto selectable = [rec](const char *label, auto e) {
+  auto selectable_default_fn = [](bool) {};
+  auto selectable            = [rec](const char *label, auto e, auto &&fn) {
     bool is_active = rec->get_transformation() == e;
     if (ImGui::Selectable(label, is_active)) {
 
       if (is_active) {
         rec->set_transformation(Transformations::None);
+        fn(false);
       } else {
         rec->set_transformation(e);
+        fn(true);
       }
 
       rec->reset_traces();
@@ -108,7 +111,7 @@ void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *par
   };
 
   if (ImGui::TreeNode("Transformations")) {
-    if (selectable("Gauss", Transformations::Gauss)) {
+    if (selectable("Gauss", Transformations::Gauss, selectable_default_fn)) {
       ImGui::Indent(10);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
       float sigma = Transformation::GaussFilter::get_sigma();
@@ -118,31 +121,38 @@ void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *par
       }
       ImGui::Unindent(10);
     }
-    if (selectable("Mean", Transformations::Mean)) {
+    if (selectable("Mean", Transformations::Mean, selectable_default_fn)) {
       kernel_size_select(Transformation::MeanFilter::kernel_size,
                          [](RecordingWindow *r) { r->set_transformation(Transformations::Mean); });
     }
-    if (selectable("Median", Transformations::Median)) {
+    if (selectable("Median", Transformations::Median, selectable_default_fn)) {
       kernel_size_select(Transformation::MedianFilter::kernel_size,
                          [](RecordingWindow *r) { r->set_transformation(Transformations::Median); });
     }
-    if (selectable("Frame Difference", Transformations::FrameDiff)) {
+    auto framediff_fn = [rec](bool active) {
+      if (active)
+        rec->histogram.symmetric = true;
+      else
+        rec->histogram.symmetric = false;
+    };
+    if (selectable("Frame Difference", Transformations::FrameDiff, framediff_fn)) {
       ImGui::Indent(10);
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
       ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 100);
       if (!parent && ImGui::Button("Add As Overlays")) {
         auto new_rec = std::make_shared<RecordingWindow>(rec->file(), Transformations::FrameDiff);
         new_rec->set_name(fmt::format("FrameDiff {}", rec->name()));
-        new_rec->as_overlay = true;
+        new_rec->colormap(ColorMap::PRGn);
         new_rec->histogram.symmetric = true;
-        new_rec->get_min() = rec->get_min();
-        new_rec->get_max() = rec->get_max();
+        new_rec->get_min()           = rec->get_min();
+        new_rec->get_max()           = rec->get_max();
         rec->set_transformation(Transformations::None);
         prm::merge_queue.emplace(new_rec, rec, false);
       }
       ImGui::Unindent(10);
     }
-    if (selectable("Optical Mapping Contrast Enhancement", Transformations::ContrastEnhancement)) {
+    if (selectable("Optical Mapping Contrast Enhancement", Transformations::ContrastEnhancement,
+                   selectable_default_fn)) {
       ImGui::Indent(10);
       const int step = 2;
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
@@ -194,7 +204,7 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   }
 
 
-  if (prm::recordings.size() > 1) {
+  if (!parent && prm::recordings.size() > 1) {
     if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP))
       ImGui::OpenPopup("merge_popup");
     if (ImGui::BeginPopup("merge_popup")) {

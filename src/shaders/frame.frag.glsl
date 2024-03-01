@@ -4,8 +4,7 @@ in vec2 Texcoord;
 uniform sampler2D texture0;
 uniform sampler1D textureC;
 uniform vec2 minmax;
-uniform bool use_transfer_fct;
-uniform int transfer_fct_version;
+uniform int opacity_function;
 
 float transfer_fct_linear(float x) {
     return smoothstep(0., 1., x);
@@ -35,21 +34,31 @@ void main() {
         val = (val - minmax.x) / (minmax.y - minmax.x);
         val = clamp(val, 0.0, 1.0);
         FragColor = texture(textureC, val);
-        if (use_transfer_fct) {
-            switch (transfer_fct_version) {
-                case 1:
-                FragColor.a = transfer_fct_diff(val);
-                break;
-                case 2:
-                FragColor.a = transfer_fct_diff_pos(val);
-                break;
-                case 3:
-                FragColor.a = transfer_fct_diff_neg(val);
-                break;
-                default :
+        switch (opacity_function) {
+            case 0: // Linear
                 FragColor.a = transfer_fct_linear(val);
                 break;
-            }
+            case 1: // Linear_r
+                FragColor.a = 1. - transfer_fct_linear(val);
+                break;
+            case 2: // Centered
+                FragColor.a = transfer_fct_diff(val);
+                break;
+            case 3: // 1.0
+                FragColor.a = 1.0;
+                break;
+            case 4: // 0.75
+                FragColor.a = 0.75;
+                break;
+            case 5: // 0.5
+                FragColor.a = 0.5;
+                break;
+            case 6: // 0.25
+                FragColor.a = 0.25;
+                break;
+            default:
+                FragColor.a = 0.0;
+                break;
         }
     }
 }

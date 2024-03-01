@@ -60,41 +60,40 @@ void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
       ImGui::Image((void *)(intptr_t)prm::cmap_texs[current_cmap], i_size);
     }
     if (parent) {
-      ImGui::Checkbox("Overlay", &rec->as_overlay);
-      if (rec->as_overlay) {
-        auto itemwidth = ImGui::GetContentRegionAvail().x * 0.5f;
-        ImGui::SetNextItemWidth(itemwidth);
-        ImGui::Combo("Overlay Method", &rec->overlay_method, OverlayMethodNames,
-                     IM_ARRAYSIZE(OverlayMethodNames));
-      }
+      auto itemwidth = ImGui::GetContentRegionAvail().x * 0.5f;
+      ImGui::SetNextItemWidth(itemwidth);
+      int opacity = static_cast<int>(rec->opacity);
+      ImGui::Combo("Opacity", &opacity, OpacityFunctionNames, IM_ARRAYSIZE(OpacityFunctionNames));
+      rec->opacity = static_cast<OpacityFunction>(opacity);
     }
     ImGui::EndGroup();
   }
 
   // Controls for min and max values
-  bool symmetrize_minmax = false;
-  if (ImGui::SliderFloat("min", &rec->get_min(), rec->histogram.min, rec->histogram.max)) {
-    symmetrize_minmax =
-        (rec->histogram.symmetric || rec->get_transformation() == Transformations::FrameDiff);
-  }
+  bool symmetrize_minmax = rec->histogram.symmetric;
+  float old_min          = rec->get_min();
+  float old_max          = rec->get_max();
+  ImGui::SliderFloat("min", &rec->get_min(), rec->histogram.min, rec->histogram.max);
   if (rec->bitrange != BitRange::NONE) {
     ImGui::SameLine();
     if (ImGui::Button("Auto")) {
       std::tie(rec->get_min(), rec->get_max()) = oportunistic_minmax(rec->file());
     }
   }
-  if (ImGui::SliderFloat("max", &rec->get_max(), rec->histogram.min, rec->histogram.max)) {
-      if (rec->get_transformation() == Transformations::FrameDiff) {
+  ImGui::SliderFloat("max", &rec->get_max(), rec->histogram.min, rec->histogram.max);
+  if (rec->histogram.symmetric || rec->get_min() < 0 || rec->histogram.min < 0) {
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Symmetric", &rec->histogram.symmetric)) {
+      if (rec->histogram.symmetric) { // enabled
         rec->get_min() = -rec->get_max();
       }
     }
-  if (rec->get_min() < 0) {
-    ImGui::SameLine();
-    if (ImGui::Checkbox("Symmetric", &rec->histogram.symmetric)) {
-      symmetrize_minmax = rec->histogram.symmetric;
+
+    if (rec->histogram.symmetric) {
+      if (old_min != rec->get_min())
+        rec->get_max() = -rec->get_min();
+      else if (old_max != rec->get_max())
+        rec->get_min() = -rec->get_max();
     }
-  }
-  if (symmetrize_minmax) {
-    rec->get_max() = -rec->get_min();
   }
 }

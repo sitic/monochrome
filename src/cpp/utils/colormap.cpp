@@ -9,6 +9,8 @@ namespace {
   std::array<float, 3 * 256> diff_colormapdata(float start = 0, float end = 1);
   std::array<float, 3 * 256> hsv_colormapdata();
 
+  std::array<float, 3 * 256> reverse_colormap(const std::array<float, 3 * 256> &data);
+
   std::array<float, 3 * 256> cppcolormap_to_std(const std::string& name) {
     std::array<float, 3 * 256> out{};
     auto data = cppcolormap::colormap(name);
@@ -21,18 +23,20 @@ std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
   switch (cmap) {
     case ColorMap::GRAY:
       return gray_colormapdata();
-    case ColorMap::DIFF:
-      return diff_colormapdata();
     case ColorMap::HSV:
       return hsv_colormapdata();
     case ColorMap::BLACKBODY:
       return black_body_data();
-    case ColorMap::DIFF_POS:
-      return diff_colormapdata(0.5, 1);
-    case ColorMap::DIFF_NEG:
-      return diff_colormapdata(0, 0.5);
     case ColorMap::VIRIDIS:
       return cppcolormap_to_std("viridis");
+    case ColorMap::PRGn:
+      return diff_colormapdata();
+    case ColorMap::PRGn_POS:
+      return diff_colormapdata(0.5, 1);
+    case ColorMap::PRGn_NEG:
+      return diff_colormapdata(0, 0.5);
+    case ColorMap::RdBu:
+      return cppcolormap_to_std("RdBu");
     default:
       throw std::logic_error("Unkown colormap!");
   }
@@ -104,12 +108,22 @@ namespace {
     }
   }  // namespace PRGn
 
+  std::array<float, 3 * 256> reverse_colormap(const std::array<float, 3 * 256> &data) {
+    std::array<float, 3 * 256> reversed = {};
+    for (int i = 0; i < 256; i++) {
+      reversed[i * 3 + 0] = data[(255 - i) * 3 + 0];
+      reversed[i * 3 + 1] = data[(255 - i) * 3 + 1];
+      reversed[i * 3 + 2] = data[(255 - i) * 3 + 2];
+    }
+    return reversed;
+  }
+
   std::array<float, 3 * 256> diff_colormapdata(float start, float end) {
     std::array<float, 3 * 256> data = {};
     for (int i = 0; i < 256; i++) {
       float x = static_cast<float>(i) / 255.f;
-      Vec3f c = PRGn::colormap(0.5);
-      if (x >= start && x <= end) c = PRGn::colormap(x);
+      x = x * (end - start) + start;
+      Vec3f c = PRGn::colormap(x);
       data[i * 3 + 0] = c[0];
       data[i * 3 + 1] = c[1];
       data[i * 3 + 2] = c[2];

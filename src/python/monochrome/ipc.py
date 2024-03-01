@@ -18,7 +18,7 @@ from .fbs.Color import CreateColor
 from .fbs.ColorMap import ColorMap
 from .fbs.DictEntry import (DictEntryAddKey, DictEntryAddVal, DictEntryEnd,
                             DictEntryStart)
-from .fbs.TransferFunction import TransferFunction
+from .fbs.OpacityFunction import OpacityFunction
 
 if sys.platform == 'win32':
     MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome.exe'
@@ -182,7 +182,7 @@ def create_pointsvideo_msg(points_py, name, parent_name=None, color=None, point_
 
 
 def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0., date="", comment="",
-                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parent_name=None, transfer_fct=None,
+                          bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parent_name=None, opacity=None,
                           metadata=None):
     builder = flatbuffers.Builder(1024)
     name_fb = builder.CreateString(name)
@@ -215,8 +215,8 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     Array3Meta.AddCmap(builder, cmap)
     if parent_fb:
         Array3Meta.AddParentName(builder, parent_fb)
-    if transfer_fct:
-        Array3Meta.AddAlphaTransfer(builder, transfer_fct)
+    if opacity:
+        Array3Meta.AddOpacity(builder, opacity)
     if metadata:
         Array3Meta.AddMetadata(builder, metadata)
     d = Array3Meta.End(builder)
@@ -355,7 +355,7 @@ def show_video(array: np.ndarray,
                date: Text = "",
                duration_seconds: float = 0,
                parent: Optional[Text] = None,
-               transfer_fct: Optional[TransferFunction] = None,
+               opacity: Optional[OpacityFunction] = None,
                metadata: Optional[Dict] = None):
     """
     Play a video or open a image in Monochrome.
@@ -369,9 +369,9 @@ def show_video(array: np.ndarray,
     name : str
         Name of the video
     cmap : str or ColorMap
-        'default' (autodetect), 'gray', 'viridis', 'diff', 'hsv', or 'blackbody'
+        Colormap for the video. One of 'default' (autodetect), 'gray', 'hsv', 'blackbody', 'viridis', 'PRGn', 'PRGn_pos', 'PRGn_neg', 'RdBu'.
     bitrange : str or BitRange
-        'autodetect', 'uint8', 'uint10', 'uint12', 'uint16', 'float' (for [0,1]), 'diff', 'phase' (for [-pi, pi]), or 'phase_diff'
+        Valuerange for the video. One of 'autodetect', 'MinMax' 'uint8', 'uint10', 'uint12', 'uint16', 'float' (for [0,1]), 'diff' (for [-1, 1]), 'phase' (for [0, 2*pi]), or 'phase_diff (for [-pi, pi])'. Default is 'autodetect'.
     comment : str
         Comment to be displayed
     fps : float
@@ -382,8 +382,8 @@ def show_video(array: np.ndarray,
         Duration of the video in seconds
     parent : str
         Name of the parent video
-    transfer_fct : TransferFunction
-        Transfer function for alpha blending
+    opacity : OpacityFunction
+        Opacity function for alpha blending if video is a layer. One of 'linear', 'linear_r', 'centered', 1.0, 0.75, 0.5, 0.25, or 0.0. Default is `opacity=1.0`.
     metadata : dict
         Additional metadata
     """
@@ -414,11 +414,29 @@ def show_video(array: np.ndarray,
         cmap = getattr(ColorMap, cmap.upper())
     if isinstance(bitrange, str):
         bitrange = getattr(BitRange, bitrange.upper())
+    if isinstance(opacity, str):
+        try:
+            opacity = float(opacity)
+        except ValueError:
+            pass
+    if isinstance(opacity, (int, float)):
+        if opacity == 1:
+            opacity = OpacityFunction.FIXED_100
+        elif opacity == 0.75:
+            opacity = OpacityFunction.FIXED_75
+        elif opacity == 0.5:
+            opacity = OpacityFunction.FIXED_50
+        elif opacity == 0.25:
+            opacity = OpacityFunction.FIXED_25
+        elif opacity == 0:
+            opacity = OpacityFunction.FIXED_0
+    if isinstance(opacity, str):
+        opacity = getattr(OpacityFunction, opacity.upper())
 
     s = create_socket()
     buf = create_array3meta_msg(dtype, name, array.shape, duration=duration_seconds, fps=fps, date=date,
                                 comment=comment, bitrange=bitrange, cmap=cmap, parent_name=parent,
-                                transfer_fct=transfer_fct, metadata=metadata)
+                                opacity=opacity, metadata=metadata)
     s.sendall(buf)
 
     flat = array.flatten()
@@ -437,7 +455,7 @@ def show_video(array: np.ndarray,
         s.sendall(buf)
 
 
-def show_layer(array: np.ndarray, name: Text = "", parent: Optional[Text] = None, **kwargs):
+def show_layer(array: np.ndarray, name: Text = "", parent: Optional[Text] = None, opacity: Optional[OpacityFunction] = None, **kwargs):
     """
     Add a layer to the parent video in Monochrome.
     
@@ -449,12 +467,14 @@ def show_layer(array: np.ndarray, name: Text = "", parent: Optional[Text] = None
         Name of the layer
     parent : str
         Name of the parent video, if None the last loaded video will be used
+    opacity : OpacityFunction
+        Opacity function for alpha blending. One of 'linear', 'linear_r', 'centered', 1.0, 0.75, 0.5, 0.25, or 0.0. Default is `opacity=1.0`.
     kwargs : dict
         Additional arguments to be passed to :func:`show_video`
     """
     if parent is None:
         parent = ""
-    show_video(array, parent=parent, name=name, **kwargs)
+    show_video(array, name=name, parent=parent, opacity=opacity, **kwargs)
 
 
 def show_flow(flow_uv: np.ndarray, name: Text = "", parent: Optional[Text] = None, color=None):

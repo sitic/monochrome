@@ -28,10 +28,8 @@ void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = 
   ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   auto active                = rec->active;
   bool dont_delete_recording = true;
-  ImGui::PushFont(ImGuiConnector::font_bold);
   if (ImGui::CollapsingHeader(name.c_str(), &dont_delete_recording)) {
     // if (ImGui::TreeNode(name.c_str())) { // ImGuiTreeNodeFlags_DefaultOpen
-    ImGui::PopFont();
     if (!active) {
       ImGui::BeginDisabled();
     }
@@ -89,16 +87,14 @@ void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = 
     rec->children.erase(std::remove_if(rec->children.begin(), rec->children.end(),
                                        [](const auto &r) { return r->glcontext == r->window; }),
                         rec->children.end());
-
-    if (!active) {
-      ImGui::EndDisabled();
-    }
     // ImGui::TreePop();
     ImGui::EndChild();
     ImGui::PopStyleVar();
     ImGui::Unindent();
-  } else {
-    ImGui::PopFont();
+
+    if (!active) {
+      ImGui::EndDisabled();
+    }
   }
 
   if (!dont_delete_recording) {

@@ -8,6 +8,7 @@ class ColorMap(object):
     HSV = 2
     BLACKBODY = 3
     VIRIDIS = 4
-    DIFF = 5
-    DIFF_POS = 6
-    DIFF_NEG = 7
+    PRGn = 5
+    PRGn_POS = 6
+    PRGn_NEG = 7
+    RdBu = 8

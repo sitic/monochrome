@@ -142,7 +142,7 @@ namespace {
       // Just skip alignment check for now, TODO: figure out what's going on
       flatbuffers::Verifier::Options opts;
       opts.check_alignment = false;
-      
+
       auto verifier = flatbuffers::Verifier(body(), body_size(), opts);
       if (fbs::VerifyRootBuffer(verifier)) {
         auto root = fbs::GetRoot(body());
@@ -240,8 +240,8 @@ namespace {
 
       int cmap         = raw->cmap() - 1;
       int bitrange     = raw->bitrange() - 1;
-      int transfer_fct = flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_ALPHA_TRANSFER)
-                             ? raw->alpha_transfer() - 1
+      int opacity_fct = flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_OPACITY)
+                             ? raw->opacity() - 1
                              : -1;
 
       std::vector<std::pair<std::string, std::string>> metaData = {};
@@ -269,9 +269,9 @@ namespace {
           flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_PARENT_NAME)
               ? std::optional<std::string>(raw->parent_name()->str())
               : std::nullopt,
-          transfer_fct < 0
+          opacity_fct < 0
               ? std::nullopt
-              : std::optional<TransferFunction>(static_cast<TransferFunction>(transfer_fct)),
+              : std::optional<OpacityFunction>(static_cast<OpacityFunction>(opacity_fct)),
           metaData};
 
       std::size_t size = static_cast<std::size_t>(meta.nx) * meta.ny * meta.nt;

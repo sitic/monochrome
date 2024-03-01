@@ -83,6 +83,8 @@ namespace Transformation {
     FrameDiff(Recording &rec) : Base() { allocate(rec); }
 
     void allocate(Recording &rec) final {
+      prev_frames = std::queue<QueueEntry>();
+
       rec.load_frame(rec.length() / 2);
       compute(rec.frame, rec.length() / 2);
 

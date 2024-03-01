@@ -93,7 +93,8 @@ namespace {
   }
 }  // namespace
 
-RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_, Transformations transformation_)
+RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_,
+                                 Transformations transformation_)
     : Recording(std::move(file_)), playback(good() ? length() : 0) {
   if (!good()) {
     return;
@@ -186,7 +187,7 @@ void RecordingWindow::set_context(GLFWwindow *new_context) {
   update_gl_texture();
   ColorMap cmap_tmp = cmap_;
   std::swap(ctexture, ctexturediff);
-  colormap(ColorMap::DIFF);
+  colormap(ColorMap::PRGn);
   std::swap(ctexture, ctexturediff);
   colormap(cmap_tmp);
   frame_shader.use();
@@ -316,15 +317,13 @@ void RecordingWindow::display() {
 
   frame_shader.use();
   frame_shader.setVec2("minmax", get_min(), get_max());
-  frame_shader.setBool("use_transfer_fct", as_overlay);
-  frame_shader.setInt("transfer_fct_version", overlay_method);
+  frame_shader.setInt("opacity_function", static_cast<int>(opacity));
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, arr->data());
   glActiveTexture(GL_TEXTURE1);
   GLuint color_tex = ctexture;
-  if (transformation == Transformations::FrameDiff && (cmap_ != ColorMap::DIFF_POS) &&
-      (cmap_ != ColorMap::DIFF_NEG)) {
+  if (transformation == Transformations::FrameDiff && !is_diff_colormap(cmap_)) {
     color_tex = ctexturediff;
   }
   glBindTexture(GL_TEXTURE_1D, color_tex);
@@ -699,6 +698,6 @@ void RecordingWindow::render() {
 }
 
 void RecordingWindow::set_transformation(Transformations type) {
-  transform_ptr = Transformation::factory(type, *this);
+  transform_ptr  = Transformation::factory(type, *this);
   transformation = type;
 }

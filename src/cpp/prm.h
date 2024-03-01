@@ -15,8 +15,6 @@ namespace prm {
   extern int display_fps;
   extern double lastframetime;
 
-  extern const std::array<ColorMap, 7> cmaps;
-
   extern std::map<ColorMap, GLuint> cmap_texs;
 
   // Global singletons

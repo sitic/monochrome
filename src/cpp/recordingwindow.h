@@ -9,9 +9,6 @@
 class RecordingWindow;
 using SharedRecordingPtr = std::shared_ptr<RecordingWindow>;
 
-enum class OverlayMethod : int { Linear, Diff, Positive, Negative };
-inline const char *OverlayMethodNames[4] = {"Linear", "Diff", "Positive", "Negative"};
-
 class RecordingWindow : public Recording {
  public:
   static inline float scale_fct = 1;
@@ -23,25 +20,28 @@ class RecordingWindow : public Recording {
 
   RecordingPlaybackCtrl playback;
   Histogram<float, 256> histogram;
-  BitRange bitrange = BitRange::NONE;
+  BitRange bitrange       = BitRange::NONE;
+  OpacityFunction opacity = OpacityFunction::FIXED_100;
   ExportCtrl export_ctrl;
   std::vector<Trace> traces;
   std::vector<FlowData> flows;                                      // use add_flow() to add members
   std::vector<std::shared_ptr<global::PointsVideo>> points_videos;  // use add_points_video() to add
-  bool as_overlay    = false;
-  int overlay_method = static_cast<int>(OverlayMethod::Linear);
   struct {
     bool show = false;
     std::string comment;
   } comment_edit_ui;
 
   RecordingWindow(const fs::path &path) : RecordingWindow(file_factory(path)){};
-  RecordingWindow(std::shared_ptr<AbstractFile> file_, Transformations transformation_ = Transformations::None);
+  RecordingWindow(std::shared_ptr<AbstractFile> file_,
+                  Transformations transformation_ = Transformations::None);
 
   virtual ~RecordingWindow() {
     if (window != nullptr) {
       clear_gl_memory();
       glfwDestroyWindow(window);
+      for (auto &child : children) {
+        child->glcontext = nullptr;
+      }
     }
   }
 
@@ -54,7 +54,8 @@ class RecordingWindow : public Recording {
   virtual void load_next_frame() { load_frame(playback.step()); }
 
   virtual float &get_min(bool base = false) {
-    base = base || (transformation != Transformations::FrameDiff && transformation != Transformations::ContrastEnhancement);
+    base = base || (transformation != Transformations::FrameDiff &&
+                    transformation != Transformations::ContrastEnhancement);
     if (base) {
       return brightness_min;
     } else {
@@ -63,7 +64,8 @@ class RecordingWindow : public Recording {
   }
 
   virtual float &get_max(bool base = false) {
-    base = base || (transformation != Transformations::FrameDiff && transformation != Transformations::ContrastEnhancement);
+    base = base || (transformation != Transformations::FrameDiff &&
+                    transformation != Transformations::ContrastEnhancement);
     if (base) {
       return brightness_max;
     } else {
@@ -92,7 +94,7 @@ class RecordingWindow : public Recording {
   void stop_recording();
 
   void set_transformation(Transformations type);
-  Transformations get_transformation() const { return transformation;}
+  Transformations get_transformation() const { return transformation; }
 
   void add_flow(std::shared_ptr<Recording> flow);
   void add_points_video(std::shared_ptr<global::PointsVideo> pv);
@@ -115,9 +117,9 @@ class RecordingWindow : public Recording {
     bool pressing_left = false;
   } mousebutton;
 
-  float brightness_min = std::numeric_limits<float>::lowest();
-  float brightness_max = std::numeric_limits<float>::max();
-  Transformations transformation = Transformations::None;
+  float brightness_min                                = std::numeric_limits<float>::lowest();
+  float brightness_max                                = std::numeric_limits<float>::max();
+  Transformations transformation                      = Transformations::None;
   std::shared_ptr<Transformation::Base> transform_ptr = nullptr;
 
   ColorMap cmap_      = ColorMap::GRAY;

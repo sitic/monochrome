@@ -208,16 +208,18 @@ void display_loop() {
     glfwPollEvents();
 
     // Check if recording window should close
-    prm::recordings.erase(
-        std::remove_if(prm::recordings.begin(), prm::recordings.end(),
-                       [](const auto &r) -> bool { return r->window && glfwWindowShouldClose(r->window); }),
-        prm::recordings.end());
+    prm::recordings.erase(std::remove_if(prm::recordings.begin(), prm::recordings.end(),
+                                         [](const auto &r) -> bool {
+                                           return r->window && glfwWindowShouldClose(r->window);
+                                         }),
+                          prm::recordings.end());
 
     // Show ImGui windows
     ImGuiConnector::NewFrame();
     show_main_imgui_window();
     show_messages();
-    ImGui::ShowDemoWindow();
+
+    // ImGui::ShowDemoWindow();
 
     // Rendering
     for (const auto &recording : prm::recordings) {
@@ -280,7 +282,9 @@ void open_main_window(float font_scale = 0) {
   ImGuiConnector::Init(prm::main_window, primary_monitor, font_scale, key_callback);
 
   // Initialize colormap textures
-  for (auto cmap : prm::cmaps) {
+  int num_cmaps = sizeof(ColorMapsNames) / sizeof(ColorMapsNames[0]);
+  for (int i = 0; i < num_cmaps; i++) {
+    ColorMap cmap = static_cast<ColorMap>(i);
     GLuint tex = GL_FALSE;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);

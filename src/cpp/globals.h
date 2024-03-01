@@ -62,7 +62,7 @@ namespace global {
     std::optional<BitRange> bitrange                          = std::nullopt;
     std::optional<ColorMap> cmap                              = std::nullopt;
     std::optional<std::string> parentName                     = std::nullopt;
-    std::optional<TransferFunction> transfer_fct              = std::nullopt;
+    std::optional<OpacityFunction> opacity                    = std::nullopt;
     std::vector<std::pair<std::string, std::string>> metaData = {};
     std::optional<Vec4f> color                                = std::nullopt;
 

@@ -8,9 +8,6 @@ namespace prm {
   int display_fps        = 60;
   double lastframetime   = 0;
 
-  const std::array<ColorMap, 7> cmaps = {ColorMap::GRAY,      ColorMap::DIFF,     ColorMap::HSV,
-                                         ColorMap::BLACKBODY, ColorMap::DIFF_POS, ColorMap::DIFF_NEG,
-                                         ColorMap::VIRIDIS};
   std::map<ColorMap, GLuint> cmap_texs;
 
   PlaybackCtrl playbackCtrl = {};

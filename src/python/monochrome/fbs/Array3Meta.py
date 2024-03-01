@@ -109,7 +109,7 @@ class Array3Meta(object):
         return None
 
     # Array3Meta
-    def AlphaTransfer(self):
+    def Opacity(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
@@ -218,11 +218,11 @@ def Array3MetaAddParentName(builder, parentName):
 def AddParentName(builder, parentName):
     Array3MetaAddParentName(builder, parentName)
 
-def Array3MetaAddAlphaTransfer(builder, alphaTransfer):
-    builder.PrependInt32Slot(12, alphaTransfer, 0)
+def Array3MetaAddOpacity(builder, opacity):
+    builder.PrependInt32Slot(12, opacity, 0)
 
-def AddAlphaTransfer(builder, alphaTransfer):
-    Array3MetaAddAlphaTransfer(builder, alphaTransfer)
+def AddOpacity(builder, opacity):
+    Array3MetaAddOpacity(builder, opacity)
 
 def Array3MetaAddMetadata(builder, metadata):
     builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(metadata), 0)

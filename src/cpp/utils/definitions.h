@@ -7,12 +7,21 @@
 #include "utils/colormap.h"
 
 enum class BitRange : int { NONE, U8, U10, U12, U16, FLOAT, DIFF, PHASE, PHASE_DIFF, I8 };
-inline const char *BitRangeNames[10] = {"MinMax", "uint8",   "uint10",  "uint12",  "uint16", "[0, 1]",
-                                       "[-1, 1]", "[0, 2π]", "[-π, π]", "int8"};
+inline const char *BitRangeNames[] = {"MinMax", "uint8",   "uint10",  "uint12",  "uint16",
+                                      "[0, 1]", "[-1, 1]", "[0, 2π]", "[-π, π]", "int8"};
 
-enum class TransferFunction : int { LINEAR, DIFF, DIFF_POS, DIFF_NEG };
-inline const char *TransferFunctionNames[4] = {"Linear", "Difference", "Difference Positive",
-                                               "Difference Negative"};
+enum class OpacityFunction : int {
+  LINEAR,
+  LINEAR_R,
+  CENTERED,
+  FIXED_100,
+  FIXED_75,
+  FIXED_50,
+  FIXED_25,
+  FIXED_0
+};
+inline const char *OpacityFunctionNames[] = {"Linear", "Linear_r", "Centered", "1.0",
+                                             "0.75",   "0.5",      "0.25",     "0.0"};
 
 namespace utils {
   constexpr std::pair<float, float> bitrange_to_float(BitRange br) {

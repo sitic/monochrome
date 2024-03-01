@@ -119,46 +119,100 @@ enum ColorMap : int32_t {
   ColorMap_HSV = 2,
   ColorMap_BLACKBODY = 3,
   ColorMap_VIRIDIS = 4,
-  ColorMap_DIFF = 5,
-  ColorMap_DIFF_POS = 6,
-  ColorMap_DIFF_NEG = 7,
+  ColorMap_PRGn = 5,
+  ColorMap_PRGn_POS = 6,
+  ColorMap_PRGn_NEG = 7,
+  ColorMap_RdBu = 8,
   ColorMap_MIN = ColorMap_DEFAULT,
-  ColorMap_MAX = ColorMap_DIFF_NEG
+  ColorMap_MAX = ColorMap_RdBu
 };
 
-inline const ColorMap (&EnumValuesColorMap())[8] {
+inline const ColorMap (&EnumValuesColorMap())[9] {
   static const ColorMap values[] = {
     ColorMap_DEFAULT,
     ColorMap_GRAY,
     ColorMap_HSV,
     ColorMap_BLACKBODY,
     ColorMap_VIRIDIS,
-    ColorMap_DIFF,
-    ColorMap_DIFF_POS,
-    ColorMap_DIFF_NEG
+    ColorMap_PRGn,
+    ColorMap_PRGn_POS,
+    ColorMap_PRGn_NEG,
+    ColorMap_RdBu
   };
   return values;
 }
 
 inline const char * const *EnumNamesColorMap() {
-  static const char * const names[9] = {
+  static const char * const names[10] = {
     "DEFAULT",
     "GRAY",
     "HSV",
     "BLACKBODY",
     "VIRIDIS",
-    "DIFF",
-    "DIFF_POS",
-    "DIFF_NEG",
+    "PRGn",
+    "PRGn_POS",
+    "PRGn_NEG",
+    "RdBu",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameColorMap(ColorMap e) {
-  if (::flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_DIFF_NEG)) return "";
+  if (::flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_RdBu)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesColorMap()[index];
+}
+
+enum OpacityFunction : int32_t {
+  OpacityFunction_NONE = 0,
+  OpacityFunction_LINEAR = 1,
+  OpacityFunction_LINEAR_R = 2,
+  OpacityFunction_CENTERED = 3,
+  OpacityFunction_FIXED_100 = 4,
+  OpacityFunction_FIXED_75 = 5,
+  OpacityFunction_FIXED_50 = 6,
+  OpacityFunction_FIXED_25 = 7,
+  OpacityFunction_FIXED_0 = 8,
+  OpacityFunction_MIN = OpacityFunction_NONE,
+  OpacityFunction_MAX = OpacityFunction_FIXED_0
+};
+
+inline const OpacityFunction (&EnumValuesOpacityFunction())[9] {
+  static const OpacityFunction values[] = {
+    OpacityFunction_NONE,
+    OpacityFunction_LINEAR,
+    OpacityFunction_LINEAR_R,
+    OpacityFunction_CENTERED,
+    OpacityFunction_FIXED_100,
+    OpacityFunction_FIXED_75,
+    OpacityFunction_FIXED_50,
+    OpacityFunction_FIXED_25,
+    OpacityFunction_FIXED_0
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesOpacityFunction() {
+  static const char * const names[10] = {
+    "NONE",
+    "LINEAR",
+    "LINEAR_R",
+    "CENTERED",
+    "FIXED_100",
+    "FIXED_75",
+    "FIXED_50",
+    "FIXED_25",
+    "FIXED_0",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameOpacityFunction(OpacityFunction e) {
+  if (::flatbuffers::IsOutRange(e, OpacityFunction_NONE, OpacityFunction_FIXED_0)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesOpacityFunction()[index];
 }
 
 enum ArrayDataType : int32_t {
@@ -192,45 +246,6 @@ inline const char *EnumNameArrayDataType(ArrayDataType e) {
   if (::flatbuffers::IsOutRange(e, ArrayDataType_FLOAT, ArrayDataType_UINT16)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesArrayDataType()[index];
-}
-
-enum TransferFunction : int32_t {
-  TransferFunction_NONE = 0,
-  TransferFunction_LINEAR = 1,
-  TransferFunction_DIFF = 2,
-  TransferFunction_DIFF_POS = 3,
-  TransferFunction_DIFF_NEG = 4,
-  TransferFunction_MIN = TransferFunction_NONE,
-  TransferFunction_MAX = TransferFunction_DIFF_NEG
-};
-
-inline const TransferFunction (&EnumValuesTransferFunction())[5] {
-  static const TransferFunction values[] = {
-    TransferFunction_NONE,
-    TransferFunction_LINEAR,
-    TransferFunction_DIFF,
-    TransferFunction_DIFF_POS,
-    TransferFunction_DIFF_NEG
-  };
-  return values;
-}
-
-inline const char * const *EnumNamesTransferFunction() {
-  static const char * const names[6] = {
-    "NONE",
-    "LINEAR",
-    "DIFF",
-    "DIFF_POS",
-    "DIFF_NEG",
-    nullptr
-  };
-  return names;
-}
-
-inline const char *EnumNameTransferFunction(TransferFunction e) {
-  if (::flatbuffers::IsOutRange(e, TransferFunction_NONE, TransferFunction_DIFF_NEG)) return "";
-  const size_t index = static_cast<size_t>(e);
-  return EnumNamesTransferFunction()[index];
 }
 
 enum RequestType : int32_t {
@@ -460,7 +475,7 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_BITRANGE = 22,
     VT_CMAP = 24,
     VT_PARENT_NAME = 26,
-    VT_ALPHA_TRANSFER = 28,
+    VT_OPACITY = 28,
     VT_METADATA = 30
   };
   fbs::ArrayDataType type() const {
@@ -499,8 +514,8 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *parent_name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_PARENT_NAME);
   }
-  fbs::TransferFunction alpha_transfer() const {
-    return static_cast<fbs::TransferFunction>(GetField<int32_t>(VT_ALPHA_TRANSFER, 0));
+  fbs::OpacityFunction opacity() const {
+    return static_cast<fbs::OpacityFunction>(GetField<int32_t>(VT_OPACITY, 0));
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>> *>(VT_METADATA);
@@ -523,7 +538,7 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int32_t>(verifier, VT_CMAP, 4) &&
            VerifyOffset(verifier, VT_PARENT_NAME) &&
            verifier.VerifyString(parent_name()) &&
-           VerifyField<int32_t>(verifier, VT_ALPHA_TRANSFER, 4) &&
+           VerifyField<int32_t>(verifier, VT_OPACITY, 4) &&
            VerifyOffset(verifier, VT_METADATA) &&
            verifier.VerifyVector(metadata()) &&
            verifier.VerifyVectorOfTables(metadata()) &&
@@ -571,8 +586,8 @@ struct Array3MetaBuilder {
   void add_parent_name(::flatbuffers::Offset<::flatbuffers::String> parent_name) {
     fbb_.AddOffset(Array3Meta::VT_PARENT_NAME, parent_name);
   }
-  void add_alpha_transfer(fbs::TransferFunction alpha_transfer) {
-    fbb_.AddElement<int32_t>(Array3Meta::VT_ALPHA_TRANSFER, static_cast<int32_t>(alpha_transfer), 0);
+  void add_opacity(fbs::OpacityFunction opacity) {
+    fbb_.AddElement<int32_t>(Array3Meta::VT_OPACITY, static_cast<int32_t>(opacity), 0);
   }
   void add_metadata(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata) {
     fbb_.AddOffset(Array3Meta::VT_METADATA, metadata);
@@ -602,11 +617,11 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3Meta(
     fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
     fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
     ::flatbuffers::Offset<::flatbuffers::String> parent_name = 0,
-    fbs::TransferFunction alpha_transfer = fbs::TransferFunction_NONE,
+    fbs::OpacityFunction opacity = fbs::OpacityFunction_NONE,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata = 0) {
   Array3MetaBuilder builder_(_fbb);
   builder_.add_metadata(metadata);
-  builder_.add_alpha_transfer(alpha_transfer);
+  builder_.add_opacity(opacity);
   builder_.add_parent_name(parent_name);
   builder_.add_cmap(cmap);
   builder_.add_bitrange(bitrange);
@@ -636,7 +651,7 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
     fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
     fbs::ColorMap cmap = fbs::ColorMap_DEFAULT,
     const char *parent_name = nullptr,
-    fbs::TransferFunction alpha_transfer = fbs::TransferFunction_NONE,
+    fbs::OpacityFunction opacity = fbs::OpacityFunction_NONE,
     const std::vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto date__ = date ? _fbb.CreateString(date) : 0;
@@ -657,7 +672,7 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
       bitrange,
       cmap,
       parent_name__,
-      alpha_transfer,
+      opacity,
       metadata__);
 }
 
