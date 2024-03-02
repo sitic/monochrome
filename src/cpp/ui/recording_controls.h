@@ -110,65 +110,62 @@ void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *par
     ImGui::Unindent(10);
   };
 
-  if (ImGui::TreeNode("Transformations")) {
-    if (selectable("Gauss", Transformations::Gauss, selectable_default_fn)) {
-      ImGui::Indent(10);
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-      float sigma = Transformation::GaussFilter::get_sigma();
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
-      if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, u8"σ = %.2f")) {
-        Transformation::GaussFilter::set_sigma(sigma);
-      }
-      ImGui::Unindent(10);
+  if (selectable("Gauss", Transformations::Gauss, selectable_default_fn)) {
+    ImGui::Indent(10);
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    float sigma = Transformation::GaussFilter::get_sigma();
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
+    if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, u8"σ = %.2f")) {
+      Transformation::GaussFilter::set_sigma(sigma);
     }
-    if (selectable("Mean", Transformations::Mean, selectable_default_fn)) {
-      kernel_size_select(Transformation::MeanFilter::kernel_size,
-                         [](RecordingWindow *r) { r->set_transformation(Transformations::Mean); });
+    ImGui::Unindent(10);
+  }
+  if (selectable("Mean", Transformations::Mean, selectable_default_fn)) {
+    kernel_size_select(Transformation::MeanFilter::kernel_size,
+                        [](RecordingWindow *r) { r->set_transformation(Transformations::Mean); });
+  }
+  if (selectable("Median", Transformations::Median, selectable_default_fn)) {
+    kernel_size_select(Transformation::MedianFilter::kernel_size,
+                        [](RecordingWindow *r) { r->set_transformation(Transformations::Median); });
+  }
+  auto framediff_fn = [rec](bool active) {
+    if (active)
+      rec->histogram.symmetric = true;
+    else
+      rec->histogram.symmetric = false;
+  };
+  if (selectable("Frame Difference", Transformations::FrameDiff, framediff_fn)) {
+    ImGui::Indent(10);
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
+    ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 100);
+    if (!parent && ImGui::Button("Add As Overlays")) {
+      auto new_rec = std::make_shared<RecordingWindow>(rec->file(), Transformations::FrameDiff);
+      new_rec->set_name(fmt::format("FrameDiff {}", rec->name()));
+      new_rec->colormap(ColorMap::PRGn);
+      new_rec->histogram.symmetric = true;
+      new_rec->get_min()           = rec->get_min();
+      new_rec->get_max()           = rec->get_max();
+      rec->set_transformation(Transformations::None);
+      prm::merge_queue.emplace(new_rec, rec, false);
     }
-    if (selectable("Median", Transformations::Median, selectable_default_fn)) {
-      kernel_size_select(Transformation::MedianFilter::kernel_size,
-                         [](RecordingWindow *r) { r->set_transformation(Transformations::Median); });
+    ImGui::Unindent(10);
+  }
+  if (selectable("Optical Mapping Contrast Enhancement", Transformations::ContrastEnhancement,
+                  selectable_default_fn)) {
+    ImGui::Indent(10);
+    const int step = 2;
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32,
+                            &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
+                            "%d")) {
+      rec->set_transformation(Transformations::ContrastEnhancement);
     }
-    auto framediff_fn = [rec](bool active) {
-      if (active)
-        rec->histogram.symmetric = true;
-      else
-        rec->histogram.symmetric = false;
-    };
-    if (selectable("Frame Difference", Transformations::FrameDiff, framediff_fn)) {
-      ImGui::Indent(10);
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
-      ImGui::SliderInt("Frames", &Transformation::FrameDiff::n_frame_diff, 1, 100);
-      if (!parent && ImGui::Button("Add As Overlays")) {
-        auto new_rec = std::make_shared<RecordingWindow>(rec->file(), Transformations::FrameDiff);
-        new_rec->set_name(fmt::format("FrameDiff {}", rec->name()));
-        new_rec->colormap(ColorMap::PRGn);
-        new_rec->histogram.symmetric = true;
-        new_rec->get_min()           = rec->get_min();
-        new_rec->get_max()           = rec->get_max();
-        rec->set_transformation(Transformations::None);
-        prm::merge_queue.emplace(new_rec, rec, false);
-      }
-      ImGui::Unindent(10);
-    }
-    if (selectable("Optical Mapping Contrast Enhancement", Transformations::ContrastEnhancement,
-                   selectable_default_fn)) {
-      ImGui::Indent(10);
-      const int step = 2;
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-      if (ImGui::InputScalar("Kernel size", ImGuiDataType_U32,
-                             &Transformation::ContrastEnhancement::kernel_size, &step, nullptr,
-                             "%d")) {
-        rec->set_transformation(Transformations::ContrastEnhancement);
-      }
-      //      ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
-      ImGui::Unindent(10);
-    }
-    ImGui::TreePop();
+    //      ImGui::SliderInt("Mask", &Transformation::ContrastEnhancement::maskVersion, 0, 2);
+    ImGui::Unindent(10);
   }
 }
 
-bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
+void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   ImGui::SeparatorText("General");
   auto rec_name = rec->name();
   if (ImGui::InputText("Name", &rec_name)) {
@@ -178,9 +175,8 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
     if (!parent) {
       glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
     } else {
-      rec->set_context(nullptr);
       // Child will be deleted later, after we have left the loop over all children.
-      return true;
+      rec->set_context(nullptr);
     }
   }
 
@@ -235,6 +231,4 @@ bool show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 
   ImGui::SeparatorText("Transformations");
   show_transformations_ui(rec, parent);
-
-  return false;
 }

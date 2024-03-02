@@ -36,34 +36,10 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
                    std::optional<std::string> parentName = std::nullopt) {
   if (!file || !file->good()) return;
 
-  if (file->is_flow()) {  // Flow array
-    SharedRecordingPtr parent;
-    if (!parentName) {
-      parentName = "";
-    }
-    parent = find_parent_recording(parentName.value());
-    if (!parent) {
-      std::string err_msg =
-          prm::recordings.empty()
-              ? "ERROR: Failed to add flow to recording, no recording with name \"{}\" exists!"
-              : "ERROR: Failed to add flow to recording, you need to load a recording first!";
-      global::new_ui_message(err_msg, parentName.value());
-      return;
-    }
-
-    auto rec = std::make_shared<Recording>(file);
-
-    static int flow_counter = -1;
-    flow_counter++;
-    if (rec->name().empty()) {
-      rec->set_name(fmt::format("Flow {}", flow_counter));
-    }
-
-    parent->add_flow(rec);
-  } else {  // Regular video
+  if (!file->is_flow()) {  // Regular video
     auto rec = std::make_shared<RecordingWindow>(file);
 
-    static int video_counter = -1;
+    static int video_counter = 0;
     video_counter++;
     if (rec->name().empty()) {
       rec->set_name(fmt::format("Video {}", video_counter));
@@ -90,6 +66,30 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
       prm::recordings.push_back(rec);
       rec->open_window();
     }
+  } else {  // Flow array
+    SharedRecordingPtr parent;
+    if (!parentName) {
+      parentName = "";
+    }
+    parent = find_parent_recording(parentName.value());
+    if (!parent) {
+      std::string err_msg =
+          prm::recordings.empty()
+              ? "ERROR: Failed to add flow to recording, no recording with name \"{}\" exists!"
+              : "ERROR: Failed to add flow to recording, you need to load a recording first!";
+      global::new_ui_message(err_msg, parentName.value());
+      return;
+    }
+
+    auto rec = std::make_shared<Recording>(file);
+
+    static int flow_counter = 0;
+    flow_counter++;
+    if (rec->name().empty()) {
+      rec->set_name(fmt::format("Flow {}", flow_counter));
+    }
+
+    parent->add_flow(rec);
   }
 }
 
@@ -113,7 +113,7 @@ void load_new_pointsvideo(std::shared_ptr<global::PointsVideo> pointsvideo) {
     return;
   }
 
-  static int points_video_counter = -1;
+  static int points_video_counter = 0;
   points_video_counter++;
   if (pointsvideo->name.empty()) {
     pointsvideo->name = fmt::format("PointsVideo {}", points_video_counter);
