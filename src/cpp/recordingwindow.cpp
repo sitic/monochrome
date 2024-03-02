@@ -115,10 +115,10 @@ RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_,
   } else {
     std::tie(get_min(true), get_max(true)) = oportunistic_minmax(_file, 25);
   }
-  if (_file->vmin() && std::isnan(_file->vmin().value())) {
+  if (_file->vmin() && !std::isnan(_file->vmin().value())) {
     get_min(true) = _file->vmin().value();
   }
-  if (_file->vmax() && std::isnan(_file->vmax().value())) {
+  if (_file->vmax() && !std::isnan(_file->vmax().value())) {
     get_max(true) = _file->vmax().value();
   }
 
