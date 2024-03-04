@@ -405,14 +405,14 @@ void RecordingWindow::display() {
       }
     }
 
+    glEnable(GL_PROGRAM_POINT_SIZE);
     points_shader.use();
     points_shader.setVec4("color", flow.color);
+    points_shader.setFloat("pointsize", FlowData::pointsize * scale_fct);
     glBindVertexArray(points_vao);
     glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points_vert.size(), points_vert.data(),
                  GL_STREAM_DRAW);
-    glEnable(GL_PROGRAM_POINT_SIZE);
-    glPointSize(FlowData::pointsize * scale_fct);
     glDrawArrays(GL_POINTS, 0, points_vert.size() / 2);
   }
 
@@ -433,14 +433,14 @@ void RecordingWindow::display() {
       points_vert.push_back(y);
     }
 
+    glEnable(GL_PROGRAM_POINT_SIZE);
     points_shader.use();
     points_shader.setVec4("color", vid->color);
+    points_shader.setFloat("pointsize", vid->point_size * scale_fct);
     glBindVertexArray(points_vao);
     glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points_vert.size(), points_vert.data(),
                  GL_STREAM_DRAW);
-    glEnable(GL_PROGRAM_POINT_SIZE);
-    glPointSize(vid->point_size * scale_fct);
     glDrawArrays(GL_POINTS, 0, points_vert.size() / 2);
   }
 
