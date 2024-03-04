@@ -163,7 +163,7 @@ void show_top_ui() {
       ImGui::SameLine();
       if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) RecordingWindow::add_rotation(90);
       ImGui::SameLine();
-      if (ImGui::Button("Reset")) RecordingWindow::set_rotation(0);
+      if (ImGui::Button("Reset##rotation_reset")) RecordingWindow::set_rotation(0);
 
 
       ImGui::AlignTextToFramePadding();
@@ -173,7 +173,7 @@ void show_top_ui() {
       ImGui::SameLine();
       if (ImGui::Button(ICON_MDI_FLIP_HORIZONTAL)) RecordingWindow::flip_lr();
       ImGui::SameLine();
-      if (ImGui::Button("Reset")) RecordingWindow::flip_reset();
+      if (ImGui::Button("Reset##flip_reset")) RecordingWindow::flip_reset();
 
       ImGui::Spacing();
       ImGui::AlignTextToFramePadding();

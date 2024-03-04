@@ -40,19 +40,26 @@ void cli_add_global_options(CLI::App& app) {
   app.add_option("--speed", prm::playbackCtrl.val, "Recording playback speed multiplier")
       ->check(CLI::NonNegativeNumber)
       ->capture_default_str();
-  app.add_flag("--auto_brightness", prm::auto_brightness,
-               "Enable automatic brightness adjustment")
-               ->default_str(prm::auto_brightness ? "true" : "false");
+  app.add_flag("--auto_brightness", prm::auto_brightness, "Enable automatic brightness adjustment")
+      ->default_str(prm::auto_brightness ? "true" : "false");
   app.add_option_function<short>(
          "--rotation", [](const short& rotation) { RecordingWindow::set_rotation(rotation); },
          "Default rotation of videos")
       ->check(CLI::IsMember({0, 90, 180, 270}))
       ->default_str(fmt::format("{}", RecordingWindow::get_rotation()));
   app.add_flag(
-      "--fliph", [](std::int64_t count) { RecordingWindow::flip_lr(); }, "Flip video horizontally")
+         "--fliph",
+         [](std::int64_t count) {
+           if (count >= 1) RecordingWindow::flip_lr();
+         },
+         "Flip video horizontally")
       ->default_str(RecordingWindow::get_flip_lr() ? "true" : "false");
   app.add_flag(
-      "--flipv", [](std::int64_t count) { RecordingWindow::flip_ud(); }, "Flip video vertically")
+         "--flipv",
+         [](std::int64_t count) {
+           if (count >= 1) RecordingWindow::flip_ud();
+         },
+         "Flip video vertically")
       ->default_str(RecordingWindow::get_flip_ud() ? "true" : "false");
   app.add_option("--trace_length", prm::trace_length, "Default length (in frames) for traces")
       ->check(CLI::PositiveNumber)
