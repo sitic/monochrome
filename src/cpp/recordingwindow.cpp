@@ -288,6 +288,13 @@ void RecordingWindow::display() {
       histogram.max = 1;
       break;
     default:  // None, Gauss, Mean, Median
+      if (bitrange != BitRange::NONE) {
+        std::tie(histogram.min, histogram.max) = utils::bitrange_to_float(bitrange);
+        if (histogram.min < get_min() || histogram.max > get_max()) {
+          bitrange = BitRange::NONE;
+        }
+      }
+
       if (bitrange == BitRange::NONE) {
         auto [min, max] = utils::minmax_element_skipNaN(arr->data(), arr->data() + arr->size());
         if (min < histogram.min) {
@@ -296,8 +303,6 @@ void RecordingWindow::display() {
         if (max > histogram.max) {
           histogram.max = max;
         }
-      } else {
-        std::tie(histogram.min, histogram.max) = utils::bitrange_to_float(bitrange);
       }
       break;
   }
