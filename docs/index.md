@@ -1,15 +1,13 @@
 ```{toctree}
-:maxdepth: 3
-:hidden:
-
-Introduction & Installation <self>
-```
-
-```{toctree}
 :maxdepth: 2
 :hidden:
 
-API Reference <api/monochrome>
+Introduction <self>
+installation_standalone
+installation_python
+tutorial
+development
+Python API Reference <api/monochrome>
 ```
 
 % Generate API reference

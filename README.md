@@ -1,4 +1,4 @@
-# Monochrome — Viewer for scientific monochromatic video data
+# Monochrome — Viewer for monochromatic video data
 
 Monochrome is a viewer for scientific monochromatic videos with high-dynamic range.
 
@@ -18,7 +18,7 @@ It is designed to be fast and lightweight, i.e. it uses memory-mapping to load v
 
 Monochrome can be used as a standalone application or as a Python library. The standalone application is a simple video viewer with a minimalistic user interface. The Python library allows to load and play videos from Python scripts and Jupyter notebooks, see the Python Quickstart section below.
 
-For the standalone application, download the latest release from the [releases page](https://github.com/sitic/monochrome/releases) and run the executable. On Winodws you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe).
+For the standalone application, download the latest release from the [releases page](https://github.com/sitic/monochrome/releases/latest) and run the executable. On Winodws you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe).
 
 For the Python library, install it with pip:
 
@@ -104,46 +104,13 @@ mc.show_layer(overlay, "Overlay Name", cmap='hsv', opacity='linear')
 mc.show_layer(overlay, "Phase", parent="Our Test Video", cmap='hsv')
 ```
 
-## Development
+## Links
 
-### Dependencies
+* [GitHub repository](https://github.com/sitic/monochrome)
+* [Documentation](https://monochrome.readthedocs.io)
+* [Python Tutorial](https://monochrome.readthedocs.io/en/latest/quickstart.html)
+* [PyPI package](https://pypi.org/project/monochrome-viewer/)
 
-#### Linux
+## License
 
-Install the following packages:
-```bash
-sudo apt install build-essential cmake mesa-utils xorg-dev
-```
-
-#### MacOS
-
-Download [CMake](https://cmake.org/download/) and Xcode.
-
-#### Windows
-
-Download [CMake](https://cmake.org/) and a C++ compiler like Microsoft Visual C++ or MinGW.
-
-### Compilation
-
-This project uses CMake to generate cross-platform build configurations. Either use cmake-gui or the terminal from the project folder (where CMakeList is located):
-
-```bash
-# Create a subfolder (generally called build)
-mkdir build
-cd build
-
-# Generate a project for the default platform
-cmake ..
-
-# Alternatively display the available platforms and generate the project for the platform of your choice
-cmake --help    # (optional)
-cmake .. -G "Xcode"    # (example)
-cmake .. -G "Unix Makefiles"    # (example)
-cmake .. -G "Visual Studio 15 2017 Win64"   # (example)
-
-# Then use your IDE or use CMake to compile
-cmake --build .
-
-# Linux only: installation
-sudo cmake --build . --target install
-```
+Monochrome is licensed under the MIT License.
