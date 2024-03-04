@@ -98,7 +98,12 @@ void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = 
   }
 
   if (!dont_delete_recording) {
-    glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+    if (parent) {
+      // Child will be deleted later
+      rec->set_context(nullptr);
+    } else {
+      glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+    }
   }
   ImGui::PopID();
 }
