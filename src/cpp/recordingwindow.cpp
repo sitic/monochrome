@@ -618,10 +618,11 @@ void RecordingWindow::start_recording(const fs::path &filename, int fps, std::st
     child->playback.set_next(export_ctrl.video.tstart);
   }
   prm::playbackCtrl.play();
-  export_ctrl.video.videoRecorder.start_recording(filename.string(), window, fps, description);
-  export_ctrl.video.recording = true;
-  export_ctrl.video.progress  = 0;
-  prm::lastframetime          = std::numeric_limits<float>::lowest();
+  if (export_ctrl.video.videoRecorder.start_recording(filename.string(), window, fps, description)) {
+    export_ctrl.video.recording = true;
+    export_ctrl.video.progress  = 0;
+    prm::lastframetime          = std::numeric_limits<float>::lowest();
+  }
 }
 
 void RecordingWindow::stop_recording() {

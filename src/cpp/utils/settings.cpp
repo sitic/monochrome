@@ -7,6 +7,10 @@
 #include "prm.h"
 #include "recordingwindow.h"
 
+#include "videorecorder.h"
+
+std::string VideoRecorder::ffmpeg_path = "ffmpeg";
+
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__)
 #include <unistd.h>
 #include <pwd.h>
@@ -76,6 +80,8 @@ void cli_add_global_options(CLI::App& app) {
       ->capture_default_str();
   app.add_option("--window-height", prm::main_window_height, "Window height of the main window")
       ->check(CLI::PositiveNumber)
+      ->capture_default_str();
+  app.add_option("--ffmpeg", VideoRecorder::ffmpeg_path, "Path to the ffmpeg executable")
       ->capture_default_str();
 }
 

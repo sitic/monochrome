@@ -6,8 +6,8 @@
 
 #include "recordingwindow.h"
 
+// Global singletons and variables
 namespace prm {
-  // Declare global variables and enums
   extern int main_window_width;
   extern int main_window_height;
   extern bool auto_brightness;
@@ -18,7 +18,6 @@ namespace prm {
 
   extern std::map<ColorMap, GLuint> cmap_texs;
 
-  // Global singletons
   extern PlaybackCtrl playbackCtrl;
   extern GLFWwindow *main_window;
   extern std::vector<SharedRecordingPtr> recordings;

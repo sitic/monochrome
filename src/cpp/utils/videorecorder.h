@@ -8,10 +8,10 @@
 #include <string>
 #include <vector>
 
-#include "utils/utils.h"
-
 #include <GLFW/glfw3.h>
 #include <fmt/format.h>
+
+#include "utils/utils.h"
 
 class VideoRecorder {
 
@@ -37,22 +37,53 @@ class VideoRecorder {
     }
   }
 
+#ifdef _WIN32
+  static bool test_ffmpeg() {
+    std::string cmd   = fmt::format("\"{ffmpeg_exe}\" -version", fmt::arg("ffmpeg_exe", ffmpeg_path));
+    FILE *ffmpeg_test = _popen(cmd.c_str(), "r");
+    if (!ffmpeg_test) return false;
+    int status = _pclose(ffmpeg_test);
+    return status == 0;
+  }
+#else
+  static bool test_ffmpeg() {
+    std::string cmd = fmt::format("which \"{ffmpeg_exe}\"", fmt::arg("ffmpeg_exe", ffmpeg_path));
+    fmt::print("{}\n", cmd);
+    FILE *ffmpeg_test = popen(cmd.c_str(), "r");
+    if (!ffmpeg_test) return false;
+
+    // Read from the pipe until the end of the pipe is reached
+    char buf[1024];
+    while (fgets(buf, sizeof(buf), ffmpeg_test)) {}
+
+    int status = pclose(ffmpeg_test);
+    return WIFEXITED(status) && (WEXITSTATUS(status) == 0);
+  }
+#endif
+
  public:
   std::string videotitle = "";
+  static std::string ffmpeg_path;
 
   VideoRecorder() = default;
 
   ~VideoRecorder() { stop_recording(); }
 
-  void start_recording(const std::string &filename,
+  bool start_recording(const std::string &filename,
                        GLFWwindow *window      = nullptr,
                        int fps                 = 30,
                        std::string description = "") {
-    if (ffmpeg) return;  // if already recording, silently return
+    if (ffmpeg) return true;  // if already recording, silently return
 
     if (fps <= 0) {
       global::new_ui_message("FPS has to be >0");
-      return;
+      return false;
+    }
+
+    if (!test_ffmpeg()) {
+      global::new_ui_message(
+          "ERROR: Unable to find ffmpeg, please install it to create a .mp4 file.");
+      return false;
     }
 
     fmt::print("Starting to record movie\n");
@@ -65,15 +96,16 @@ class VideoRecorder {
     buffer = std::vector<GLubyte>(width * height * 3ul);
 
     std::string cmd = fmt::format(
-        "ffmpeg -f rawvideo -pix_fmt rgb24 -framerate {fps:d} -video_size {width}x{height} "
-        "-i - -y -threads 0 {encoder_args} -pix_fmt yuv420p "
+        "\"{ffmpeg_exe}\" -f rawvideo -pix_fmt rgb24 -framerate {fps:d} "
+        "-video_size {width}x{height} -i - -y -threads 0 {encoder_args} -pix_fmt yuv420p "
         // ensure height and width are divisible by 2
         "-vf \"[in]vflip,scale=trunc(iw/2)*2:trunc(ih/2)*2[out]\" "
         "-metadata title=\"{title}\" -metadata description=\"{description}\" "
         "\"{filename}\"",
-        fmt::arg("fps", fps), fmt::arg("width", width), fmt::arg("height", height),
-        fmt::arg("encoder_args", ffmpeg_encoder_args()), fmt::arg("title", videotitle),
-        fmt::arg("description", description), fmt::arg("filename", filename));
+        fmt::arg("ffmpeg_exe", ffmpeg_path), fmt::arg("fps", fps), fmt::arg("width", width),
+        fmt::arg("height", height), fmt::arg("encoder_args", ffmpeg_encoder_args()),
+        fmt::arg("title", videotitle), fmt::arg("description", description),
+        fmt::arg("filename", filename));
 
 #ifdef _WIN32  // Needs to be "wb" for windows
     ffmpeg = _popen(cmd.c_str(), "wb");
@@ -81,9 +113,10 @@ class VideoRecorder {
     ffmpeg = popen(cmd.c_str(), "w");
 #endif
     if (!ffmpeg) {
-      global::new_ui_message(
-          "ERROR: Unable to open ffmpeg, please install it to create a .mp4 file.");
+      global::new_ui_message("ERROR: Unable to open ffmpeg.");
+      return false;
     }
+    return true;
   }
 
   void add_frame() {
