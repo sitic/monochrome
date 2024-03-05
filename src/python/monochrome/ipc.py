@@ -352,6 +352,24 @@ def show_points(points, name: Text = "", parent: Optional[Text] = None, color=No
     s.sendall(buf)
 
 
+def show_image(array: np.ndarray,
+               name: Text = "",
+               cmap: Union[ColorMap, Text] = ColorMap.DEFAULT,
+               vmin: Optional[float] = None,
+               vmax: Optional[float] = None,
+               bitrange: Union[BitRange, Text] = BitRange.AUTODETECT,
+               parent: Optional[Text] = None,
+               opacity: Optional[OpacityFunction] = None,
+               comment: Text = "",
+               metadata: Optional[Dict] = None):
+    """
+    Show an image in Monochrome.
+    
+    Alias for :func:`show_video`.
+    """
+    return show_video(array, name=name, cmap=cmap, vmin=vmin, vmax=vmax, bitrange=bitrange, parent=parent, opacity=opacity, comment=comment, metadata=metadata)
+
+
 def show_video(array: np.ndarray,
                name: Text = "",
                cmap: Union[ColorMap, Text] = ColorMap.DEFAULT,
@@ -518,7 +536,10 @@ def show_flow(flow_uv: np.ndarray, name: Text = "", parent: Optional[Text] = Non
 
 def show(array_or_path: Union[str, Path, np.ndarray], *args, **kwargs):
     if isinstance(array_or_path, np.ndarray):
-        return show_video(array_or_path, *args, **kwargs)
+        if array_or_path.ndim == 4 and array_or_path.shape[3] == 2:
+            return show_flow(array_or_path, *args, **kwargs)
+        else:
+            return show_video(array_or_path, *args, **kwargs)
     elif isinstance(array_or_path, str) or isinstance(array_or_path, Path):
         return show_file(array_or_path)
     else:

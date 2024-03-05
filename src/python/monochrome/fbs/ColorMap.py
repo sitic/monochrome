@@ -9,7 +9,7 @@ class ColorMap(IntEnum):
     HSV = 2
     BLACKBODY = 3
     VIRIDIS = 4
-    PRGn = 5
-    PRGn_POS = 6
-    PRGn_NEG = 7
-    RdBu = 8
+    PRGN = 5
+    PRGN_POS = 6
+    PRGN_NEG = 7
+    RDBU = 8

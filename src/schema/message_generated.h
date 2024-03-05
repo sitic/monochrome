@@ -119,12 +119,12 @@ enum ColorMap : int32_t {
   ColorMap_HSV = 2,
   ColorMap_BLACKBODY = 3,
   ColorMap_VIRIDIS = 4,
-  ColorMap_PRGn = 5,
-  ColorMap_PRGn_POS = 6,
-  ColorMap_PRGn_NEG = 7,
-  ColorMap_RdBu = 8,
+  ColorMap_PRGN = 5,
+  ColorMap_PRGN_POS = 6,
+  ColorMap_PRGN_NEG = 7,
+  ColorMap_RDBU = 8,
   ColorMap_MIN = ColorMap_DEFAULT,
-  ColorMap_MAX = ColorMap_RdBu
+  ColorMap_MAX = ColorMap_RDBU
 };
 
 inline const ColorMap (&EnumValuesColorMap())[9] {
@@ -134,10 +134,10 @@ inline const ColorMap (&EnumValuesColorMap())[9] {
     ColorMap_HSV,
     ColorMap_BLACKBODY,
     ColorMap_VIRIDIS,
-    ColorMap_PRGn,
-    ColorMap_PRGn_POS,
-    ColorMap_PRGn_NEG,
-    ColorMap_RdBu
+    ColorMap_PRGN,
+    ColorMap_PRGN_POS,
+    ColorMap_PRGN_NEG,
+    ColorMap_RDBU
   };
   return values;
 }
@@ -149,17 +149,17 @@ inline const char * const *EnumNamesColorMap() {
     "HSV",
     "BLACKBODY",
     "VIRIDIS",
-    "PRGn",
-    "PRGn_POS",
-    "PRGn_NEG",
-    "RdBu",
+    "PRGN",
+    "PRGN_POS",
+    "PRGN_NEG",
+    "RDBU",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameColorMap(ColorMap e) {
-  if (::flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_RdBu)) return "";
+  if (::flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_RDBU)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesColorMap()[index];
 }
