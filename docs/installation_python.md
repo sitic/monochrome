@@ -1,4 +1,8 @@
-# Installing the Python Version
+# Installing the Python Interface
+
+```{note}
+The installation of the standalone Monochrome application is **not** required, as the Python library includes all necessary files.
+```
 
 Run the following command to install Monochrome with the included Python library:
 
@@ -10,8 +14,6 @@ On Windows you might need to run
 ```bash
 py -m pip install monochrome-viewer
 ```
-
-The installation of the standalone Monochrome application is **not** required, as the Python library includes the same functionality.
 
 Run
 ```bash

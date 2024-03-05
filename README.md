@@ -1,6 +1,6 @@
-# Monochrome — Viewer for monochromatic video data
+# Monochrome: Viewer for Monochromatic Video Data
 
-Monochrome is a viewer for scientific monochromatic videos with high-dynamic range.
+Monochrome is a lightweight and fast video viewer for scientific monochromatic videos with high-dynamic range.
 
 It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our spefic needs for cardiac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
 * Support for high-dynamic range (uint16, 32-bit float)
@@ -14,24 +14,67 @@ It is designed for viewing high-speed monochromatic fluorescence video data from
 
 It is designed to be fast and lightweight, i.e. it uses memory-mapping to load video files to avoid copying the data into RAM. 
 
-## Standalone Application and Python Library
+## Installation
 
-Monochrome can be used as a standalone application or as a Python library. The standalone application is a simple video viewer with a minimalistic user interface. The Python library allows to load and play videos from Python scripts and Jupyter notebooks, see the Python Quickstart section below.
+There are two ways to install Monochrome: as a standalone application and/or with it's Python interface through pip.
 
-For the standalone application, download the latest release from the [releases page](https://github.com/sitic/monochrome/releases/latest) and run the executable. On Winodws you may need to install [Microsoft Visual C++ Redistributable 2019](https://aka.ms/vs/16/release/vc_redist.x86.exe).
+In the standalone application, supported video files can be loaded by drag & drop them into the window or by associating the file extension with Monochrome to open them with a double-click. The Python interface allows to load and play videos from Python scripts and Jupyter notebooks.
 
-For the Python library, install it with pip:
+### Standalone Application
+
+Download the relevant executable (Windows, macOS, or Linux) from the latest [release page](https://github.com/sitic/monochrome/releases/latest), see the [installation instructions](https://monochrome.readthedocs.io/latest/installation_standalone/) for details. 
+
+
+### Python Library
+
+The Python library includes all necessary files and does not require the installation of the standalone Monochrome application. Open a terminal window and run the following command:
 
 ```bash
 python -m pip install monochrome-viewer
 ```
 
-## Native Video File Formats
-Monochrome supports the following video file formats:
+See the [python installation instructions](https://monochrome.readthedocs.io/latest/installation_python/) for further details. To start the viewer in standalone mode, run:
+```bash
+python -m pip -m monochrome
+```
 
-* `.npy` (NumPy array) with shape (time, width, height). The data type can be float, integer (uint8, uint16, etc.), or boolean.
-* `.dat` (binary) with shape (time, width, height) and data type float32
-* `.dat` MultiRecorder format
+See the [tutorial](https://monochrome.readthedocs.io/latest/tutorial/) for an introduction to the Python library, here is a brief overview:
+
+```python
+import monochrome as mc
+import numpy as np
+
+# Create some video with shape (time, height, width) as a numpy array
+video = np.random.rand(500, 256, 256)
+
+# Show the video, see Tutorial for more details and options
+mc.show_video(video, name="First Video", cmap='viridis', vmin=0, vmax=1)
+# Monochrome should automatically start and show the video in a loop
+
+# Several videos can be shown at the same time, they will be played in sync if they have the same length
+video2 = (np.random.rand(500, 256, 256) * 65535).astype(dtype=np.uint16)
+mc.show_video(video2, name="Second Video", comment="Blebbistatin", bitrange="uint16")
+# Monochrome will auto-detect the data type and bitrange of the video and display it accordingly
+
+# Layers can be added on top of video
+overlay = np.random.rand(500, 256, 256)
+overlay[:, 64:192, :] = np.nan # NaN values are not displayed, instead the video below is shown
+mc.show_layer(overlay, parent="Second Video", cmap='PRGn', opacity='centered')
+
+# Additional functions:
+# mc.show() is a shortcut for mc.show_video()/show_layer()/show_image()/show_file(), it will try to auto-detect the input type and call the appropriate function
+# mc.show_image() can be used to show single images
+# mc.show_file() can be used to load videos from file
+# mc.show_points() can be used to visualize point positions over time
+# mc.show_flow() can be used to visualize optical flow fields over time
+```
+
+## Native Video File Formats
+Monochrome supports loading the following video file formats:
+
+* `.npy`, NumPy array with shape (time, width, height). The data type can be float (np.float32, np.float64), integer (uint8, uint16, etc.), or boolean.
+* `.dat`, raw binary file with shape (time, width, height) and data type float32
+* `.dat`, MultiRecorder file format (used in the cardiac optical mapping community)
 
 Drag & drop the file into the window or associate the file extension with Monochrome to open it with a double-click.
 
@@ -60,56 +103,12 @@ Keyboard shortcuts:
 | `p` | Save screenshot of focused recording |
 | `s` | Sync playback of all recordings |
 
-## Python Quickstart
+## Additional Resources
 
-To install Monochrome with Python integration run the following command on Linux or macOS:
-```bash
-python -m pip install monochrome-viewer
-```
-On Windows you might need to run
-```bash
-py -m pip install monochrome-viewer
-```
-The installation of the standalone Monochrome application is *not* required.
-
-
-```python
-import monochrome as mc
-import numpy as np
-
-# Load some video with shape (time, width, height)
-video = np.random.rand((500, 128, 128))
-
-# Play the video in a loop, name it "Our Test Video"
-mc.show(video, "Our Test Video", cmap='viridis')
-
-# The video is copied to Monochrome and will play in a loop.
-# It plays independently from the python process, it does not block it.
-# The playback speed etc. can be controlled in Monochrome, as well as the export as png images or as mp4 video
-
-# Videos of type float or unsigned integer (uint8, uint16 etc.) are natively supported by Monochrome
-video2 = (np.random.rand((500, 128, 128)) * 65535).astype(dtype=np.uint16)
-
-# Several videos can be shown at the same time, they will be played in sync if they have the same length
-mc.show(video2, "Another Video", cmap='gray', comment="Blebbistatin")
-
-# Layers can be added on top of video.
-# Pixels with value NaN are not displayed, instead the layer/video below is shown
-overlay = np.random.rand((500, 128, 128))
-overlay[32:96, 32:96] = np.nan
-
-mc.show_layer(overlay, "Overlay Name", cmap='hsv', opacity='linear')
-
-# By default, layers are added to the last video loaded, unless the parent name is specified.
-mc.show_layer(overlay, "Phase", parent="Our Test Video", cmap='hsv')
-```
-
-## Links
-
-* [GitHub repository](https://github.com/sitic/monochrome)
 * [Documentation](https://monochrome.readthedocs.io)
-* [Python Tutorial](https://monochrome.readthedocs.io/en/latest/quickstart.html)
+* [Python Tutorial](https://monochrome.readthedocs.io/latest/tutorial/)
 * [PyPI package](https://pypi.org/project/monochrome-viewer/)
+* [GitHub repository](https://github.com/sitic/monochrome)
 
 ## License
 
