@@ -4,30 +4,29 @@
 [![PyPI](https://img.shields.io/pypi/v/monochrome-viewer.svg)](https://pypi.org/project/monochrome-viewer/)
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/monochrome-viewer.svg)](https://python.org)
 
-Monochrome is a lightweight and fast video viewer for scientific monochromatic videos with high-dynamic range.
+Monochrome is a lightweight and fast video viewer for scientific monochromatic videos with high-dynamic range (float, uint16, etc.).
 
-It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our spefic needs for cardiac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
-* Support for high-dynamic range (uint16, 32-bit float)
+It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our specific needs for cardiac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
+* Support for high-dynamic range (uint16, 32-bit float) data with sliders to adjust intensity range
 * Playback of multiple videos in sync
 * High-speed playback with precise frame-rate control
 * Viewing of optical traces (average intensity in a region of interest over time)
 * Rendering of layers on top of videos with transparency
 * Rendering of point positions over time (e.g. for tracking or optical flow visualization)
-* Exporting of videos as PNG images or MP4 videos with precise control over the frame rate
+* Exporting videos as a sequence of PNG images or MP4 videos with control over frame rate and frame skipping
 * Cross-platform (Linux, Windows, MacOS)
 
-It is designed to be fast and lightweight, i.e. it uses memory-mapping to load video files to avoid copying the data into RAM. 
+It is designed to be fast and lightweight, i.e. it uses memory-mapping to load video files to avoid copying the data into RAM.
 
 ## Installation
 
-There are two ways to install Monochrome: as a standalone application and/or with it's Python interface through pip.
+There are two ways to install Monochrome: as a standalone application and/or with its Python interface through pip.
 
 In the standalone application, supported video files can be loaded by drag & drop them into the window or by associating the file extension with Monochrome to open them with a double-click. The Python interface allows to load and play videos from Python scripts and Jupyter notebooks.
 
 ### Standalone Application
 
-Download the relevant executable (Windows, macOS, or Linux) from the latest [release page](https://github.com/sitic/monochrome/releases/latest), see the [installation instructions](https://monochrome.readthedocs.io/latest/installation_standalone/) for details. 
-
+Download the relevant executable (Windows, macOS, or Linux) from the latest [release page](https://github.com/sitic/monochrome/releases/latest). See the [installation instructions](https://monochrome.readthedocs.io/latest/installation_standalone/) for details.
 
 ### Python Library
 
@@ -37,9 +36,9 @@ The Python library includes all necessary files and does not require the install
 python -m pip install monochrome-viewer
 ```
 
-See the [python installation instructions](https://monochrome.readthedocs.io/latest/installation_python/) for further details. To start the viewer in standalone mode, run:
+See the [Python installation guide](https://monochrome.readthedocs.io/latest/installation_python/) for further details. To start the viewer in standalone mode, run:
 ```bash
-python -m pip -m monochrome
+python -m monochrome
 ```
 
 See the [tutorial](https://monochrome.readthedocs.io/latest/tutorial/) for an introduction to the Python library, here is a brief overview:
@@ -51,26 +50,30 @@ import numpy as np
 # Create some video with shape (time, height, width) as a numpy array
 video = np.random.rand(500, 256, 256)
 
-# Show the video, see Tutorial for more details and options
+# Display the video, see the tutorial for more details and options.
+# Monochrome should automatically start and show the video in a loop.
 mc.show_video(video, name="First Video", cmap='viridis', vmin=0, vmax=1)
-# Monochrome should automatically start and show the video in a loop
 
-# Several videos can be shown at the same time, they will be played in sync if they have the same length
+# Play second video in sync with the first (note that the videos should have the same length)
 video2 = (np.random.rand(500, 256, 256) * 65535).astype(dtype=np.uint16)
-mc.show_video(video2, name="Second Video", comment="Blebbistatin", bitrange="uint16")
-# Monochrome will auto-detect the data type and bitrange of the video and display it accordingly
+mc.show_video(video2, name="Second Video", comment="This is a uint16 video", bitrange="uint16")
+# `bitrange` argument is optional, Monochrome will auto-detect the data type
 
 # Layers can be added on top of video
 overlay = np.random.rand(500, 256, 256)
-overlay[:, 64:192, :] = np.nan # NaN values are not displayed, instead the video below is shown
+overlay[:, 64:192, :] = np.nan # NaN values will be transparent pixels, see tutorial
 mc.show_layer(overlay, parent="Second Video", cmap='PRGn', opacity='centered')
 
-# Additional functions:
-# mc.show() is a shortcut for mc.show_video()/show_layer()/show_image()/show_file(), it will try to auto-detect the input type and call the appropriate function
-# mc.show_image() can be used to show single images
-# mc.show_file() can be used to load videos from file
-# mc.show_points() can be used to visualize point positions over time
-# mc.show_flow() can be used to visualize optical flow fields over time
+# List of functions:
+# mc.show() is a shortcut for mc.show_video()/show_layer()/show_image()/show_file(),
+#           it will try to auto-detect the input type and call the appropriate function.
+# mc.show_video() to show videos
+# mc.show_image() to show single images
+# mc.show_layer() to show layers on top of videos/images
+# mc.show_points() to visualize point positions over time over videos
+# mc.show_flow() to visualize optical flow fields over time
+# mc.show_file() to load videos from file in Monochrome
+# mc.launch() to start Monochrome from Python
 ```
 
 ## Native Video File Formats
@@ -84,7 +87,7 @@ Drag & drop the file into the window or associate the file extension with Monoch
 
 ## Usage & Key Bindings
 
-Click in a video to view optical traces (average intensity in a region of interest over time). Click and drag to move the region of interest. Right-click to remove the region of interest.
+Adjust settings for each video in the main control window. To view optical traces (average intensity in a region of interest over time), click in a video. Click and drag to move the region of interest. Right-click to remove the region of interest.
 
 Keyboard shortcuts:
 

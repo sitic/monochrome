@@ -79,6 +79,9 @@ struct markdown_cls : public imgui_md {
       ImGui::Unindent();
     }
   }
+
+  // ignore images
+  void SPAN_IMG(const MD_SPAN_IMG_DETAIL *d, bool e) override { m_is_image = e; }
 };
 
 void show_top_ui() {
@@ -154,7 +157,7 @@ void show_top_ui() {
 
     if (ImGui::BeginTabItem("Display Settings")) {
 
-      auto pos_x = ImGui::CalcTextSize("Auto Brightness").x + 2*ImGui::GetStyle().ItemSpacing.x;
+      auto pos_x = ImGui::CalcTextSize("Auto Brightness").x + 2 * ImGui::GetStyle().ItemSpacing.x;
 
       ImGui::AlignTextToFramePadding();
       ImGui::Text("Video Rotation");
