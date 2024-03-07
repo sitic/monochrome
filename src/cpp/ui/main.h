@@ -101,7 +101,7 @@ void show_top_ui() {
       }
       float button_w = ImGui::GetItemRectSize().x;
       ImGui::SameLine();
-      if (ImGui::Button(ICON_FA_REDO_ALT)) {
+      if (ImGui::Button(ICON_FA_FAST_BACKWARD)) {
         prm::do_forall_recordings([](auto &r) { r->playback.restart(); });
       }
       ImGui::SameLine();
