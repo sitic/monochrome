@@ -221,14 +221,14 @@ jobs:
 
       - name: Upload to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
   
   upload_github_release:
     name: Upload to GitHub Releases
     needs: [test_python_wheels, standalone_linux, standalone_windows, standalone_macos]
     runs-on: ubuntu-latest
     environment: release
+    permissions:
+      contents: write
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - name: Download artifacts
