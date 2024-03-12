@@ -96,7 +96,7 @@ class VideoRecorder {
     buffer = std::vector<GLubyte>(width * height * 3ul);
 
     std::string cmd = fmt::format(
-        "\"{ffmpeg_exe}\" -f rawvideo -pix_fmt rgb24 -framerate {fps:d} "
+        "{ffmpeg_exe} -f rawvideo -pix_fmt rgb24 -framerate {fps:d} "
         "-video_size {width}x{height} -i - -y -threads 0 {encoder_args} -pix_fmt yuv420p "
         // ensure height and width are divisible by 2
         "-vf \"[in]vflip,scale=trunc(iw/2)*2:trunc(ih/2)*2[out]\" "
