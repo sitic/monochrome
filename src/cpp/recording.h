@@ -38,6 +38,7 @@ class Recording {
   std::shared_ptr<AbstractFile> _file;
   long t_frame = 0;
   std::string _name;
+  std::string _filepath;
 
   static inline RotationCtrl rotations = {};
 
@@ -52,6 +53,7 @@ class Recording {
       return;
     }
     _name = _file->path().filename().string();
+    _filepath = _file->path().has_parent_path() ? _file->path().string() : "";
     frame.setZero(_file->Nx(), _file->Ny());
     apply_rotation();
   }
@@ -62,6 +64,7 @@ class Recording {
 
   virtual std::string name() const { return _name; }
   virtual void set_name(const std::string &new_name) { _name = new_name; };
+  virtual std::string filepath() const { return _filepath; }
 
   [[nodiscard]] bool good() const { return _file && _file->good(); }
   int Nx() const { return frame.rows(); }

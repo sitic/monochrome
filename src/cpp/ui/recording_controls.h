@@ -171,6 +171,10 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   if (ImGui::InputText("Name", &rec_name)) {
     rec->set_name(rec_name);
   }
+  auto rec_filepath = rec->filepath();
+  if (!rec_filepath.empty()) {
+    ImGui::InputText("Filepath", &rec_filepath, ImGuiInputTextFlags_ReadOnly);
+  }
   if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
     if (!parent) {
       glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
