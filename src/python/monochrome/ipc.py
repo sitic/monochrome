@@ -451,6 +451,8 @@ def show_video(array: np.ndarray,
             opacity = OpacityFunction.FIXED_25
         elif opacity == 0:
             opacity = OpacityFunction.FIXED_0
+        else:
+            raise ValueError("Invalid opacity value")
     if isinstance(opacity, str):
         opacity = getattr(OpacityFunction, opacity.upper())
 
