@@ -52,6 +52,7 @@ class InMemoryFile : public AbstractFile {
   std::optional<ColorMap> cmap() const final { return _data->meta.cmap; }
   std::optional<float> vmin() const final { return _data->meta.vmin; };
   std::optional<float> vmax() const final { return _data->meta.vmax; };
+  std::optional<OpacityFunction> opacity() const final { return _data->meta.opacity; };
 
   Eigen::MatrixXf read_frame(long t) final {
     std::visit(

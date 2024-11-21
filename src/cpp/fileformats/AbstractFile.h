@@ -50,6 +50,7 @@ class AbstractFile {
   virtual std::optional<ColorMap> cmap() const                              = 0;
   virtual std::optional<float> vmin() const { return std::nullopt; };
   virtual std::optional<float> vmax() const { return std::nullopt; };
+  virtual std::optional<OpacityFunction> opacity() const { return std::nullopt; };
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;

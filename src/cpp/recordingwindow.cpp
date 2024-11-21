@@ -128,6 +128,9 @@ RecordingWindow::RecordingWindow(std::shared_ptr<AbstractFile> file_,
     // assume that's its a phase map and the user prefers HSV in this circumstances
     cmap_ = ColorMap::HSV;
   }
+  if (_file->opacity()) {
+    opacity = _file->opacity().value();
+  }
 
   set_transformation(transformation_);
 }
