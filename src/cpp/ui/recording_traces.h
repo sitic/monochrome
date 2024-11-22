@@ -86,6 +86,30 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
         ImGui::ColorEdit3("Color", trace.color.data());
 
         ImGui::Spacing();
+        if (ImGui::Button("Reset data")) {
+          trace.data.clear();
+        }
+        ImGui::Spacing();
+        ImGui::Checkbox("Auto scale x-axis", &trace.scale.scaleX);
+        ImGui::Checkbox("Auto scale y-axis", &trace.scale.scaleY);
+        ImGui::Unindent();
+      }
+      if (!dont_delete_trace) rec->remove_trace(trace.pos);
+      ImGui::PopStyleColor(2);
+      ImGui::PopID();
+    }
+    ImGui::EndTabItem();
+  }
+
+  if (ImGui::BeginTabItem("Export")) {
+    for (auto &trace : rec->traces) {
+      ImGui::PushID(trace.id);
+      auto title = "Pos " + trace.pos.to_string();
+      auto color = ImVec4(trace.color[0], trace.color[1], trace.color[2], trace.color[3]);
+      ImGui::PushStyleColor(ImGuiCol_Header, color);
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, color);
+      if (ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Indent();
         if (ImGui::Button("Export video trace as .txt file")) {
           auto &ctrl         = rec->export_ctrl.trace;
           ctrl.export_window = true;
@@ -99,16 +123,8 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
           ctrl.frames                     = {0, rec->length()};
           ctrl.assign_auto_filename(rec->path());
         }
-        ImGui::Spacing();
-        if (ImGui::Button("Reset data")) {
-          trace.data.clear();
-        }
-        ImGui::Spacing();
-        ImGui::Checkbox("Auto scale x-axis", &trace.scale.scaleX);
-        ImGui::Checkbox("Auto scale y-axis", &trace.scale.scaleY);
         ImGui::Unindent();
       }
-      if (!dont_delete_trace) rec->remove_trace(trace.pos);
       ImGui::PopStyleColor(2);
       ImGui::PopID();
     }
