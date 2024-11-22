@@ -71,6 +71,11 @@ void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = 
         show_controls_ui(rec, parent);
         ImGui::EndTabItem();
       }
+
+      if (!parent && ImGui::BeginTabItem("Export")) {
+        show_export_ui(rec);
+        ImGui::EndTabItem();
+      }
       // ImGui::Unindent();
       ImGui::EndTabBar();
     }

@@ -50,9 +50,9 @@ void display_recording_metadata(const SharedRecordingPtr &rec) {
   ImGui::Columns(1);
 }
 
-void display_recording_buttons(const SharedRecordingPtr &rec) {
+void show_export_ui(const SharedRecordingPtr &rec) {
   ImGui::AlignTextToFramePadding();
-  ImGui::Text("Export to video file: ");
+  ImGui::Text("Export as a video file (.mp4, ...): ");
   ImGui::SameLine();
   if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
     auto &ctrl         = rec->export_ctrl.video;
@@ -227,11 +227,6 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 
   ImGui::SeparatorText("Metadata");
   display_recording_metadata(rec);
-
-  if (!parent) {
-    ImGui::SeparatorText("Export");
-    display_recording_buttons(rec);
-  }
 
   ImGui::SeparatorText("Transformations");
   show_transformations_ui(rec, parent);
