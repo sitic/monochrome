@@ -79,16 +79,14 @@ jobs:
     name: Build standalone on Linux
     runs-on: ubuntu-latest
     container:
-      image: quay.io/pypa/manylinux2014_x86_64
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"  # https://github.com/actions/checkout/issues/1809
+      image: quay.io/pypa/manylinux_2_28_x86_64
     steps:
     - name: Install dependencies
       run: |
         yum install -y libXrandr-devel libXcursor-devel libXinerama-devel libXi-devel mesa-libGL-devel libdwarf-devel binutils-devel cmake ninja-build
 
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -118,7 +116,7 @@ jobs:
         mv Monochrome-*.AppImage ../dist
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: standalone-linux
         path: dist/Monochrome-*.AppImage
