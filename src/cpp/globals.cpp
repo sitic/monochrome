@@ -36,12 +36,6 @@ namespace global {
     add_remote_command(std::make_shared<LoadFileCommand>(file));
   }
 
-  void close_window(const std::string& recording_name) {}
-  void close_all_windows() {}
-  std::vector<std::pair<std::string, std::vector<Vec2i>>> get_trace_pos() {
-    return {};
-  }
-
   void quit(int) {
     if (prm::main_window) {
       glfwSetWindowShouldClose(prm::main_window, GLFW_TRUE);

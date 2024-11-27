@@ -89,6 +89,14 @@ def test_points():
     points = random_points(vid.shape)
     mc.show_points(points, name="Test", color='yellow', point_size=10)
 
+def test_export_video():
+    mc.export_video("test.mp4", fps=15)
+
+def test_close_video():
+    mc.close_video()
+
+def test_quit():
+    mc.quit()
 
 if __name__ == "__main__":
     test_filepaths()
@@ -96,3 +104,6 @@ if __name__ == "__main__":
     test_overlay()
     test_flow()
     test_points()
+    test_export_video()
+    test_close_video()
+    test_quit()

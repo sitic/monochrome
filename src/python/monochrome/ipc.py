@@ -10,12 +10,14 @@ import flatbuffers
 import numpy as np
 
 from .fbs import (Array3DataChunkf, Array3DataChunku8, Array3DataChunku16,
-                  Array3Meta, Array3MetaFlow, Data, Filepaths, PointsVideo,
-                  Root)
+                  Array3Meta, Array3MetaFlow, CloseVideo, Filepaths,
+                  PointsVideo, Root, VideoExport)
 from .fbs.ArrayDataType import ArrayDataType
 from .fbs.BitRange import BitRange
 from .fbs.Color import CreateColor
 from .fbs.ColorMap import ColorMap
+from .fbs.Data import Data
+from .fbs.VideoExportFormat import VideoExportFormat
 from .fbs.DictEntry import (DictEntryAddKey, DictEntryAddVal, DictEntryEnd,
                             DictEntryStart)
 from .fbs.OpacityFunction import OpacityFunction
@@ -144,7 +146,7 @@ def create_filepaths_msg(paths):
     Filepaths.Start(builder)
     Filepaths.AddFile(builder, vec)
     fp = Filepaths.End(builder)
-    root = build_root(builder, Data.Data.Filepaths, fp)
+    root = build_root(builder, Data.Filepaths, fp)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -178,7 +180,7 @@ def create_pointsvideo_msg(points_py, name, parent_name=None, color=None, point_
     PointsVideo.AddPointsData(builder, flat_fb)
     PointsVideo.AddTimeIdxs(builder, indexes_fb)
     fp = PointsVideo.End(builder)
-    root = build_root(builder, Data.Data.PointsVideo, fp)
+    root = build_root(builder, Data.PointsVideo, fp)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -227,7 +229,7 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
         Array3Meta.AddMetadata(builder, metadata)
     d = Array3Meta.End(builder)
 
-    root = build_root(builder, Data.Data.Array3Meta, d)
+    root = build_root(builder, Data.Array3Meta, d)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -249,7 +251,7 @@ def create_array3metaflow_msg(shape, parent_name=None, name="", color=None):
         Array3MetaFlow.AddColor(builder, get_color(builder, color))
     d = Array3MetaFlow.End(builder)
 
-    root = build_root(builder, Data.Data.Array3MetaFlow, d)
+    root = build_root(builder, Data.Array3MetaFlow, d)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -263,7 +265,7 @@ def create_array3dataf_msg(array, idx=0):
     Array3DataChunkf.AddData(builder, data)
     d = Array3DataChunkf.End(builder)
 
-    root = build_root(builder, Data.Data.Array3DataChunkf, d)
+    root = build_root(builder, Data.Array3DataChunkf, d)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -277,7 +279,7 @@ def create_array3datau8_msg(array, idx=0):
     Array3DataChunku8.AddData(builder, data)
     d = Array3DataChunku8.End(builder)
 
-    root = build_root(builder, Data.Data.Array3DataChunku8, d)
+    root = build_root(builder, Data.Array3DataChunku8, d)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -291,7 +293,7 @@ def create_array3datau16_msg(array, idx=0):
     Array3DataChunku16.AddData(builder, data)
     d = Array3DataChunku16.End(builder)
 
-    root = build_root(builder, Data.Data.Array3DataChunku16, d)
+    root = build_root(builder, Data.Array3DataChunku16, d)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     return buf
@@ -537,6 +539,7 @@ def show_flow(flow_uv: np.ndarray, name: Text = "", parent: Optional[Text] = Non
 
 
 def show(array_or_path: Union[str, Path, np.ndarray], *args, **kwargs):
+    """Autodetect the type of the input and show it in Monochrome."""
     if isinstance(array_or_path, np.ndarray):
         if array_or_path.ndim == 4 and array_or_path.shape[3] == 2:
             return show_flow(array_or_path, *args, **kwargs)
@@ -546,3 +549,73 @@ def show(array_or_path: Union[str, Path, np.ndarray], *args, **kwargs):
         return show_file(array_or_path)
     else:
         raise ValueError("array_or_path has to be numpy array or string")
+
+def export_video(filepath, name="", fps=30, t_start=0, t_end=-1, description="", close_after_completion=False):
+    """Export a video displayed in Monochrome to a .mp4 file.
+    
+    Parameters
+    ----------
+    filepath : str
+        Path to the output .mp4 file
+    name : str
+        Name of the video to be exported
+    fps : int
+        Frames per second of the output video
+    t_start : int
+        Start frame of the output video
+    t_end : int
+        End frame of the output video, -1 for the last frame
+    description : str
+        Description of the video to embed in the .mp4 file
+    close_after_completion : bool
+        Close the video in Monochrome after the export is completed
+    """
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+    name_fb = builder.CreateString(name)
+    filepath_fb = builder.CreateString(str(Path(filepath).absolute()))
+    description_fb = builder.CreateString(description)
+
+    VideoExport.Start(builder)
+    VideoExport.AddRecording(builder, name_fb)
+    VideoExport.AddFilepath(builder, filepath_fb)
+    VideoExport.AddDescription(builder, description_fb)
+    VideoExport.AddFormat(builder, VideoExportFormat.FFMPEG)
+    VideoExport.AddFps(builder, fps)
+    VideoExport.AddTStart(builder, t_start)
+    VideoExport.AddTEnd(builder, t_end)
+    VideoExport.AddCloseAfterCompletion(builder, close_after_completion)
+    fp = VideoExport.End(builder)
+    root = build_root(builder, Data.VideoExport, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+def close_video(name):
+    """Close a video in Monochrome.
+    
+    Parameters
+    ----------
+    name : str
+        Name of the video to be closed
+    """
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+    name_fb = builder.CreateString(name)
+
+    CloseVideo.Start(builder)
+    CloseVideo.AddName(builder, name_fb)
+    fp = CloseVideo.End(builder)
+    root = build_root(builder, Data.CloseVideo, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+def quit():
+    """Quit Monochrome, terminating the process."""
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+    root = build_root(builder, Data.Quit, 0)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)

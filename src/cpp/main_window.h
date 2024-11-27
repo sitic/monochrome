@@ -133,12 +133,18 @@ void load_from_queue() {
     } else if (auto obj = std::dynamic_pointer_cast<global::PointsVideo>(cmd)) { // Load PointsVideo
       load_new_pointsvideo(obj);
     } else if (auto obj = std::dynamic_pointer_cast<global::ExportVideoCommand>(cmd)) { // Export video
-     auto rec = find_parent_recording(obj->recording);
-      if (!rec) {
-        global::new_ui_message("ERROR: Export requested for recording \"{}\", but no such recording exists!", obj->recording);
-        return;
+      if (auto rec = find_parent_recording(obj->recording)) {
+        rec->start_recording(*obj);
+      } else {
+        global::new_ui_message("ERROR: Export requested for recording \"{}\", but no such recording exists!",
+                               obj->recording);
       }
-      rec->start_recording(*obj);
+    } else if (auto obj = std::dynamic_pointer_cast<global::CloseVideoCommand>(cmd)) { // Close video
+      if (auto rec = find_parent_recording(obj->recording)) {
+        glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+      } else {
+        global::new_ui_message("ERROR: Close requested for recording \"{}\", but no such recording exists!", obj->recording);
+      }
     } else {
       global::new_ui_message("ERROR: Unknown remote command");
     }

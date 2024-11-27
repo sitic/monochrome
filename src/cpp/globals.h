@@ -127,6 +127,7 @@ namespace global {
       color = cycle_list.at(color_count);
     }
   };
+
   struct ExportVideoCommand : RemoteCommand {
     std::string recording;
     std::string filename;
@@ -137,13 +138,14 @@ namespace global {
     bool close_after_completion = false;
   };
 
+  struct CloseVideoCommand : RemoteCommand {
+    std::string recording;
+    CloseVideoCommand(std::string recording_) : recording(recording_) {}
+  };
+
   // special case for file loading to allow for double-clicking files in the file browser
   void add_file_to_load(const std::string &filename);
 
-  void close_window(const std::string &recording_name);
-  void close_all_windows();
-
-  std::vector<std::pair<std::string, std::vector<Vec2i>>> get_trace_pos();
-
+  // Initiate shutdown of the application
   void quit(int code = 0);
 }  // namespace global

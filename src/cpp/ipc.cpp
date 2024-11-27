@@ -173,7 +173,9 @@ namespace {
             break;
           case fbs::Data_CloseVideo:
             handle_datachunk_message(root->data_as_CloseVideo());
+            break;
           case fbs::Data_Quit:
+            fmt::print("Received quit command. Initiating shutdown sequence...\n");
             global::quit();
             break;
           default:
@@ -372,11 +374,13 @@ namespace {
     }
 
     void handle_datachunk_message(const fbs::CloseVideo* raw) {
-      // TODO: implement
       if (!raw) {
         fmt::print("Error parsing flatbuffer\n");
         return;
       }
+
+      auto obj = std::make_shared<global::CloseVideoCommand>(raw->name()->str());
+      global::add_remote_command(obj);
     }
 
    private:
