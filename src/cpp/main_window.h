@@ -121,25 +121,27 @@ void load_new_pointsvideo(std::shared_ptr<global::PointsVideo> pointsvideo) {
   parent->add_points_video(pointsvideo);
 }
 
+/* Check all our queues for new elements */
 void load_from_queue() {
-  /* Check all our queues for new elements */
-
-  /* File paths */
-  if (auto filepath = global::get_file_to_load()) {
-    load_new_file(filepath.value());
-    // return;  // there might be some order of operations issues for IPC if we don't return here
-  }
-
-  /* InMemory Arrays */
-  if (auto arr = global::get_rawarray3_to_load()) {
-    auto file = std::make_shared<InMemoryFile>(arr.value());
-    load_new_file(file, arr.value()->meta.parentName);
-    // return;  // there might be some order of operations issues for IPC if we don't return here
-  }
-
-  /* Point Videos */
-  if (auto pointsvideo = global::get_pointsvideo_to_load()) {
-    load_new_pointsvideo(pointsvideo.value());
+  /* Remote Commands */
+  if (auto command = global::get_remote_command(); command && command.value()) {
+    std::shared_ptr<global::RemoteCommand> cmd = command.value();
+    if (auto obj = std::dynamic_pointer_cast<global::LoadFileCommand>(cmd)) { // Load file
+      load_new_file(obj->filename);
+    } else if (auto obj = std::dynamic_pointer_cast<global::RawArray3>(cmd)) { // Load InMemory array
+      load_new_file(std::make_shared<InMemoryFile>(obj), obj->meta.parentName);
+    } else if (auto obj = std::dynamic_pointer_cast<global::PointsVideo>(cmd)) { // Load PointsVideo
+      load_new_pointsvideo(obj);
+    } else if (auto obj = std::dynamic_pointer_cast<global::ExportVideoCommand>(cmd)) { // Export video
+     auto rec = find_parent_recording(obj->recording);
+      if (!rec) {
+        global::new_ui_message("ERROR: Export requested for recording \"{}\", but no such recording exists!", obj->recording);
+        return;
+      }
+      rec->start_recording(*obj);
+    } else {
+      global::new_ui_message("ERROR: Unknown remote command");
+    }
   }
 
   /* Global merge queue */

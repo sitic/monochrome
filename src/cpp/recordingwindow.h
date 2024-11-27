@@ -94,6 +94,7 @@ class RecordingWindow : public Recording {
   void set_name(const std::string &new_name) override;
   void resize_window();
   fs::path save_snapshot(std::string output_png_path_template = "");
+  void start_recording(const global::ExportVideoCommand &cmd);
   void start_recording(const fs::path &filename, int fps = 30, std::string description = "");
   void stop_recording();
 

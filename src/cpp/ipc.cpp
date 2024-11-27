@@ -165,14 +165,19 @@ namespace {
           case fbs::Data_Array3DataChunku16:
             handle_datachunk_message(root->data_as_Array3DataChunku16());
             break;
-          case fbs::Data_Request:
-            handle_datachunk_message(root->data_as_Request());
+          case fbs::Data_VideoExport:
+            handle_datachunk_message(root->data_as_VideoExport());
             break;
           case fbs::Data_PointsVideo:
             handle_datachunk_message(root->data_as_PointsVideo());
             break;
+          case fbs::Data_CloseVideo:
+            handle_datachunk_message(root->data_as_CloseVideo());
+          case fbs::Data_Quit:
+            global::quit();
+            break;
           default:
-            throw std::runtime_error("Unknown message body type");
+            fmt::print("ERROR: unknown IPC message type\n");
         }
       } else {
         fmt::print("ERROR: flatbuffers verifier failed\n");
@@ -224,7 +229,7 @@ namespace {
 
         last_idx = t;
       }
-      global::add_PointsVideo_to_load(pv);
+      global::add_remote_command(pv);
     }
 
     void handle_message(const fbs::Array3Meta* raw) {
@@ -338,24 +343,39 @@ namespace {
                  array_msg_.array->data);
       array_msg_.counter += data->size();
       if (array_msg_.complete()) {
-        global::add_RawArray3_to_load(array_msg_.array);
+        global::add_remote_command(array_msg_.array);
         array_msg_.clear();
       }
     }
 
-    void handle_datachunk_message(const fbs::Request* raw) {
-      // TODO: implement
+    void handle_datachunk_message(const fbs::VideoExport* raw) {
       if (!raw) {
         fmt::print("Error parsing flatbuffer\n");
         return;
       }
-      auto type = raw->type();
-      if (type == fbs::RequestType::RequestType_CLOSE) {
-        auto recording_name = raw->arg()->str();
-      } else if (type == fbs::RequestType::RequestType_CLOSE_ALL) {
 
-      } else if (type == fbs::RequestType_TRACE_POS) {
-        auto recording_name = raw->arg()->str();
+      auto obj = std::make_shared<global::ExportVideoCommand>();
+      obj->recording = raw->recording()->str();
+      obj->filename = raw->filepath()->str();
+      obj->description = raw->description()->str();
+      obj->t_start = raw->t_start();
+      obj->t_end = raw->t_end();
+      obj->fps = raw->fps();
+      obj->close_after_completion = raw->close_after_completion();
+
+      // TODO: implement other formats
+      if (raw->format() != fbs::VideoExportFormat::VideoExportFormat_FFMPEG) {
+        fmt::print("Error: unsupported video format, not implemented yet!\n");
+        return;
+      }
+      global::add_remote_command(obj);
+    }
+
+    void handle_datachunk_message(const fbs::CloseVideo* raw) {
+      // TODO: implement
+      if (!raw) {
+        fmt::print("Error parsing flatbuffer\n");
+        return;
       }
     }
 

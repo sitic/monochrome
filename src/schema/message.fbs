@@ -4,7 +4,6 @@ enum BitRange : int { AUTODETECT = 0, MINMAX, UINT8, UINT10, UINT12, UINT16, FLO
 enum ColorMap : int { DEFAULT = 0, GRAY, HSV, BLACKBODY, VIRIDIS, PRGN, PRGN_POS, PRGN_NEG, RDBU }
 enum OpacityFunction : int { NONE = 0, LINEAR, LINEAR_R, CENTERED, FIXED_100, FIXED_75, FIXED_50, FIXED_25, FIXED_0 }
 enum ArrayDataType : int { FLOAT = 0, UINT8, UINT16 }
-enum RequestType : int { CLOSE = 0, CLOSE_ALL, TRACE_POS }
 
 table DictEntry {
   key: string;
@@ -63,20 +62,40 @@ table Filepaths {
   file:[string];
 }
 
-table Request {
-  type:RequestType;
-  arg:string;
+
+enum VideoExportFormat : int { FFMPEG = 0, PNG }
+table VideoExport {
+  recording:string;
+  filepath:string;
+  description:string;
+  format:VideoExportFormat;
+  fps:float;
+  t_start:int;
+  t_end:int;
+  close_after_completion:bool;
 }
 
-table RecordingTracePos {
+table CloseVideo {
   name:string;
-  posx:[uint];
-  posy:[uint];
 }
 
-table ResponseTracePos {
-  recordings:[RecordingTracePos];
+table Quit {
 }
+
+//table VideoID {
+//  id:string;
+//  error:string;
+//}
+//
+//table RecordingTracePos {
+//  name:string;
+//  posx:[uint];
+//  posy:[uint];
+//}
+//
+//table ResponseTracePos {
+//  recordings:[RecordingTracePos];
+//}
 
 table PointsVideo {
   name:string;
@@ -87,12 +106,7 @@ table PointsVideo {
   point_size:float;
 }
 
-table VideoID {
-  id:string;
-  error:string;
-}
-
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, Request, PointsVideo, VideoID }
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit }
 
 table Root {
     data:Data;

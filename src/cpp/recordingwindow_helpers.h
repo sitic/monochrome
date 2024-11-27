@@ -91,6 +91,7 @@ struct ExportCtrl {
     VideoRecorder videoRecorder;
     int tstart = 0;
     int tend   = -1;
+    bool close_after_completion = false;
 
     void assign_auto_filename(const fs::path &path) {
       videoRecorder.videotitle = path.filename().string();

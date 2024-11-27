@@ -71,7 +71,17 @@ namespace global {
     bool is_flowfield = false;
   };
 
-  class RawArray3 {
+  struct RemoteCommand {
+    virtual ~RemoteCommand() = default;
+  };
+  void add_remote_command(std::shared_ptr<RemoteCommand> cmd);
+  std::optional<std::shared_ptr<RemoteCommand>> get_remote_command();
+
+  struct LoadFileCommand : RemoteCommand {
+    LoadFileCommand(const std::string &filename_) : filename(filename_) {}
+    std::string filename;
+  };
+  class RawArray3 : public RemoteCommand {
    private:
     RawArray3() = default;
 
@@ -90,18 +100,9 @@ namespace global {
     std::size_t size() const {
       return std::visit([](auto &v) { return v.size(); }, data);
     }
-  };  // namespace global
+  };
 
-  void add_RawArray3_to_load(std::shared_ptr<RawArray3> arr);
-
-  std::optional<std::shared_ptr<RawArray3>> get_rawarray3_to_load();
-
-  void close_window(const std::string &recording_name);
-  void close_all_windows();
-
-  std::vector<std::pair<std::string, std::vector<Vec2i>>> get_trace_pos();
-
-  struct PointsVideo {
+  struct PointsVideo : RemoteCommand {
     std::string name;
     std::string parent_name;
     std::vector<std::vector<float>> data;
@@ -126,9 +127,23 @@ namespace global {
       color = cycle_list.at(color_count);
     }
   };
+  struct ExportVideoCommand : RemoteCommand {
+    std::string recording;
+    std::string filename;
+    std::string description;
+    int t_start = 0;
+    int t_end   = -1;
+    int fps     = 30;
+    bool close_after_completion = false;
+  };
 
-  void add_PointsVideo_to_load(std::shared_ptr<PointsVideo> obj);
-  std::optional<std::shared_ptr<PointsVideo>> get_pointsvideo_to_load();
+  // special case for file loading to allow for double-clicking files in the file browser
+  void add_file_to_load(const std::string &filename);
+
+  void close_window(const std::string &recording_name);
+  void close_all_windows();
+
+  std::vector<std::pair<std::string, std::vector<Vec2i>>> get_trace_pos();
 
   void quit(int code = 0);
 }  // namespace global

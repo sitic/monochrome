@@ -38,20 +38,17 @@ struct Array3DataChunku16Builder;
 struct Filepaths;
 struct FilepathsBuilder;
 
-struct Request;
-struct RequestBuilder;
+struct VideoExport;
+struct VideoExportBuilder;
 
-struct RecordingTracePos;
-struct RecordingTracePosBuilder;
+struct CloseVideo;
+struct CloseVideoBuilder;
 
-struct ResponseTracePos;
-struct ResponseTracePosBuilder;
+struct Quit;
+struct QuitBuilder;
 
 struct PointsVideo;
 struct PointsVideoBuilder;
-
-struct VideoID;
-struct VideoIDBuilder;
 
 struct Root;
 struct RootBuilder;
@@ -248,37 +245,34 @@ inline const char *EnumNameArrayDataType(ArrayDataType e) {
   return EnumNamesArrayDataType()[index];
 }
 
-enum RequestType : int32_t {
-  RequestType_CLOSE = 0,
-  RequestType_CLOSE_ALL = 1,
-  RequestType_TRACE_POS = 2,
-  RequestType_MIN = RequestType_CLOSE,
-  RequestType_MAX = RequestType_TRACE_POS
+enum VideoExportFormat : int32_t {
+  VideoExportFormat_FFMPEG = 0,
+  VideoExportFormat_PNG = 1,
+  VideoExportFormat_MIN = VideoExportFormat_FFMPEG,
+  VideoExportFormat_MAX = VideoExportFormat_PNG
 };
 
-inline const RequestType (&EnumValuesRequestType())[3] {
-  static const RequestType values[] = {
-    RequestType_CLOSE,
-    RequestType_CLOSE_ALL,
-    RequestType_TRACE_POS
+inline const VideoExportFormat (&EnumValuesVideoExportFormat())[2] {
+  static const VideoExportFormat values[] = {
+    VideoExportFormat_FFMPEG,
+    VideoExportFormat_PNG
   };
   return values;
 }
 
-inline const char * const *EnumNamesRequestType() {
-  static const char * const names[4] = {
-    "CLOSE",
-    "CLOSE_ALL",
-    "TRACE_POS",
+inline const char * const *EnumNamesVideoExportFormat() {
+  static const char * const names[3] = {
+    "FFMPEG",
+    "PNG",
     nullptr
   };
   return names;
 }
 
-inline const char *EnumNameRequestType(RequestType e) {
-  if (::flatbuffers::IsOutRange(e, RequestType_CLOSE, RequestType_TRACE_POS)) return "";
+inline const char *EnumNameVideoExportFormat(VideoExportFormat e) {
+  if (::flatbuffers::IsOutRange(e, VideoExportFormat_FFMPEG, VideoExportFormat_PNG)) return "";
   const size_t index = static_cast<size_t>(e);
-  return EnumNamesRequestType()[index];
+  return EnumNamesVideoExportFormat()[index];
 }
 
 enum Data : uint8_t {
@@ -289,14 +283,15 @@ enum Data : uint8_t {
   Data_Array3DataChunkf = 4,
   Data_Array3DataChunku8 = 5,
   Data_Array3DataChunku16 = 6,
-  Data_Request = 7,
+  Data_VideoExport = 7,
   Data_PointsVideo = 8,
-  Data_VideoID = 9,
+  Data_CloseVideo = 9,
+  Data_Quit = 10,
   Data_MIN = Data_NONE,
-  Data_MAX = Data_VideoID
+  Data_MAX = Data_Quit
 };
 
-inline const Data (&EnumValuesData())[10] {
+inline const Data (&EnumValuesData())[11] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
@@ -305,15 +300,16 @@ inline const Data (&EnumValuesData())[10] {
     Data_Array3DataChunkf,
     Data_Array3DataChunku8,
     Data_Array3DataChunku16,
-    Data_Request,
+    Data_VideoExport,
     Data_PointsVideo,
-    Data_VideoID
+    Data_CloseVideo,
+    Data_Quit
   };
   return values;
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[11] = {
+  static const char * const names[12] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
@@ -321,16 +317,17 @@ inline const char * const *EnumNamesData() {
     "Array3DataChunkf",
     "Array3DataChunku8",
     "Array3DataChunku16",
-    "Request",
+    "VideoExport",
     "PointsVideo",
-    "VideoID",
+    "CloseVideo",
+    "Quit",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameData(Data e) {
-  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_VideoID)) return "";
+  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_Quit)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesData()[index];
 }
@@ -363,16 +360,20 @@ template<> struct DataTraits<fbs::Array3DataChunku16> {
   static const Data enum_value = Data_Array3DataChunku16;
 };
 
-template<> struct DataTraits<fbs::Request> {
-  static const Data enum_value = Data_Request;
+template<> struct DataTraits<fbs::VideoExport> {
+  static const Data enum_value = Data_VideoExport;
 };
 
 template<> struct DataTraits<fbs::PointsVideo> {
   static const Data enum_value = Data_PointsVideo;
 };
 
-template<> struct DataTraits<fbs::VideoID> {
-  static const Data enum_value = Data_VideoID;
+template<> struct DataTraits<fbs::CloseVideo> {
+  static const Data enum_value = Data_CloseVideo;
+};
+
+template<> struct DataTraits<fbs::Quit> {
+  static const Data enum_value = Data_Quit;
 };
 
 bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data type);
@@ -1054,198 +1055,223 @@ inline ::flatbuffers::Offset<Filepaths> CreateFilepathsDirect(
       file__);
 }
 
-struct Request FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef RequestBuilder Builder;
+struct VideoExport FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef VideoExportBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_TYPE = 4,
-    VT_ARG = 6
+    VT_RECORDING = 4,
+    VT_FILEPATH = 6,
+    VT_DESCRIPTION = 8,
+    VT_FORMAT = 10,
+    VT_FPS = 12,
+    VT_T_START = 14,
+    VT_T_END = 16,
+    VT_CLOSE_AFTER_COMPLETION = 18
   };
-  fbs::RequestType type() const {
-    return static_cast<fbs::RequestType>(GetField<int32_t>(VT_TYPE, 0));
+  const ::flatbuffers::String *recording() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_RECORDING);
   }
-  const ::flatbuffers::String *arg() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_ARG);
+  const ::flatbuffers::String *filepath() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_FILEPATH);
+  }
+  const ::flatbuffers::String *description() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_DESCRIPTION);
+  }
+  fbs::VideoExportFormat format() const {
+    return static_cast<fbs::VideoExportFormat>(GetField<int32_t>(VT_FORMAT, 0));
+  }
+  float fps() const {
+    return GetField<float>(VT_FPS, 0.0f);
+  }
+  int32_t t_start() const {
+    return GetField<int32_t>(VT_T_START, 0);
+  }
+  int32_t t_end() const {
+    return GetField<int32_t>(VT_T_END, 0);
+  }
+  bool close_after_completion() const {
+    return GetField<uint8_t>(VT_CLOSE_AFTER_COMPLETION, 0) != 0;
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_TYPE, 4) &&
-           VerifyOffset(verifier, VT_ARG) &&
-           verifier.VerifyString(arg()) &&
+           VerifyOffset(verifier, VT_RECORDING) &&
+           verifier.VerifyString(recording()) &&
+           VerifyOffset(verifier, VT_FILEPATH) &&
+           verifier.VerifyString(filepath()) &&
+           VerifyOffset(verifier, VT_DESCRIPTION) &&
+           verifier.VerifyString(description()) &&
+           VerifyField<int32_t>(verifier, VT_FORMAT, 4) &&
+           VerifyField<float>(verifier, VT_FPS, 4) &&
+           VerifyField<int32_t>(verifier, VT_T_START, 4) &&
+           VerifyField<int32_t>(verifier, VT_T_END, 4) &&
+           VerifyField<uint8_t>(verifier, VT_CLOSE_AFTER_COMPLETION, 1) &&
            verifier.EndTable();
   }
 };
 
-struct RequestBuilder {
-  typedef Request Table;
+struct VideoExportBuilder {
+  typedef VideoExport Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_type(fbs::RequestType type) {
-    fbb_.AddElement<int32_t>(Request::VT_TYPE, static_cast<int32_t>(type), 0);
+  void add_recording(::flatbuffers::Offset<::flatbuffers::String> recording) {
+    fbb_.AddOffset(VideoExport::VT_RECORDING, recording);
   }
-  void add_arg(::flatbuffers::Offset<::flatbuffers::String> arg) {
-    fbb_.AddOffset(Request::VT_ARG, arg);
+  void add_filepath(::flatbuffers::Offset<::flatbuffers::String> filepath) {
+    fbb_.AddOffset(VideoExport::VT_FILEPATH, filepath);
   }
-  explicit RequestBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  void add_description(::flatbuffers::Offset<::flatbuffers::String> description) {
+    fbb_.AddOffset(VideoExport::VT_DESCRIPTION, description);
+  }
+  void add_format(fbs::VideoExportFormat format) {
+    fbb_.AddElement<int32_t>(VideoExport::VT_FORMAT, static_cast<int32_t>(format), 0);
+  }
+  void add_fps(float fps) {
+    fbb_.AddElement<float>(VideoExport::VT_FPS, fps, 0.0f);
+  }
+  void add_t_start(int32_t t_start) {
+    fbb_.AddElement<int32_t>(VideoExport::VT_T_START, t_start, 0);
+  }
+  void add_t_end(int32_t t_end) {
+    fbb_.AddElement<int32_t>(VideoExport::VT_T_END, t_end, 0);
+  }
+  void add_close_after_completion(bool close_after_completion) {
+    fbb_.AddElement<uint8_t>(VideoExport::VT_CLOSE_AFTER_COMPLETION, static_cast<uint8_t>(close_after_completion), 0);
+  }
+  explicit VideoExportBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<Request> Finish() {
+  ::flatbuffers::Offset<VideoExport> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<Request>(end);
+    auto o = ::flatbuffers::Offset<VideoExport>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<Request> CreateRequest(
+inline ::flatbuffers::Offset<VideoExport> CreateVideoExport(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    fbs::RequestType type = fbs::RequestType_CLOSE,
-    ::flatbuffers::Offset<::flatbuffers::String> arg = 0) {
-  RequestBuilder builder_(_fbb);
-  builder_.add_arg(arg);
-  builder_.add_type(type);
+    ::flatbuffers::Offset<::flatbuffers::String> recording = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> filepath = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> description = 0,
+    fbs::VideoExportFormat format = fbs::VideoExportFormat_FFMPEG,
+    float fps = 0.0f,
+    int32_t t_start = 0,
+    int32_t t_end = 0,
+    bool close_after_completion = false) {
+  VideoExportBuilder builder_(_fbb);
+  builder_.add_t_end(t_end);
+  builder_.add_t_start(t_start);
+  builder_.add_fps(fps);
+  builder_.add_format(format);
+  builder_.add_description(description);
+  builder_.add_filepath(filepath);
+  builder_.add_recording(recording);
+  builder_.add_close_after_completion(close_after_completion);
   return builder_.Finish();
 }
 
-inline ::flatbuffers::Offset<Request> CreateRequestDirect(
+inline ::flatbuffers::Offset<VideoExport> CreateVideoExportDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    fbs::RequestType type = fbs::RequestType_CLOSE,
-    const char *arg = nullptr) {
-  auto arg__ = arg ? _fbb.CreateString(arg) : 0;
-  return fbs::CreateRequest(
+    const char *recording = nullptr,
+    const char *filepath = nullptr,
+    const char *description = nullptr,
+    fbs::VideoExportFormat format = fbs::VideoExportFormat_FFMPEG,
+    float fps = 0.0f,
+    int32_t t_start = 0,
+    int32_t t_end = 0,
+    bool close_after_completion = false) {
+  auto recording__ = recording ? _fbb.CreateString(recording) : 0;
+  auto filepath__ = filepath ? _fbb.CreateString(filepath) : 0;
+  auto description__ = description ? _fbb.CreateString(description) : 0;
+  return fbs::CreateVideoExport(
       _fbb,
-      type,
-      arg__);
+      recording__,
+      filepath__,
+      description__,
+      format,
+      fps,
+      t_start,
+      t_end,
+      close_after_completion);
 }
 
-struct RecordingTracePos FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef RecordingTracePosBuilder Builder;
+struct CloseVideo FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef CloseVideoBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_NAME = 4,
-    VT_POSX = 6,
-    VT_POSY = 8
+    VT_NAME = 4
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
-  }
-  const ::flatbuffers::Vector<uint32_t> *posx() const {
-    return GetPointer<const ::flatbuffers::Vector<uint32_t> *>(VT_POSX);
-  }
-  const ::flatbuffers::Vector<uint32_t> *posy() const {
-    return GetPointer<const ::flatbuffers::Vector<uint32_t> *>(VT_POSY);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
-           VerifyOffset(verifier, VT_POSX) &&
-           verifier.VerifyVector(posx()) &&
-           VerifyOffset(verifier, VT_POSY) &&
-           verifier.VerifyVector(posy()) &&
            verifier.EndTable();
   }
 };
 
-struct RecordingTracePosBuilder {
-  typedef RecordingTracePos Table;
+struct CloseVideoBuilder {
+  typedef CloseVideo Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
   void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
-    fbb_.AddOffset(RecordingTracePos::VT_NAME, name);
+    fbb_.AddOffset(CloseVideo::VT_NAME, name);
   }
-  void add_posx(::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> posx) {
-    fbb_.AddOffset(RecordingTracePos::VT_POSX, posx);
-  }
-  void add_posy(::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> posy) {
-    fbb_.AddOffset(RecordingTracePos::VT_POSY, posy);
-  }
-  explicit RecordingTracePosBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit CloseVideoBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<RecordingTracePos> Finish() {
+  ::flatbuffers::Offset<CloseVideo> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<RecordingTracePos>(end);
+    auto o = ::flatbuffers::Offset<CloseVideo>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<RecordingTracePos> CreateRecordingTracePos(
+inline ::flatbuffers::Offset<CloseVideo> CreateCloseVideo(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> posx = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> posy = 0) {
-  RecordingTracePosBuilder builder_(_fbb);
-  builder_.add_posy(posy);
-  builder_.add_posx(posx);
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
+  CloseVideoBuilder builder_(_fbb);
   builder_.add_name(name);
   return builder_.Finish();
 }
 
-inline ::flatbuffers::Offset<RecordingTracePos> CreateRecordingTracePosDirect(
+inline ::flatbuffers::Offset<CloseVideo> CreateCloseVideoDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    const char *name = nullptr,
-    const std::vector<uint32_t> *posx = nullptr,
-    const std::vector<uint32_t> *posy = nullptr) {
+    const char *name = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
-  auto posx__ = posx ? _fbb.CreateVector<uint32_t>(*posx) : 0;
-  auto posy__ = posy ? _fbb.CreateVector<uint32_t>(*posy) : 0;
-  return fbs::CreateRecordingTracePos(
+  return fbs::CreateCloseVideo(
       _fbb,
-      name__,
-      posx__,
-      posy__);
+      name__);
 }
 
-struct ResponseTracePos FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef ResponseTracePosBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_RECORDINGS = 4
-  };
-  const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::RecordingTracePos>> *recordings() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::RecordingTracePos>> *>(VT_RECORDINGS);
-  }
+struct Quit FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef QuitBuilder Builder;
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_RECORDINGS) &&
-           verifier.VerifyVector(recordings()) &&
-           verifier.VerifyVectorOfTables(recordings()) &&
            verifier.EndTable();
   }
 };
 
-struct ResponseTracePosBuilder {
-  typedef ResponseTracePos Table;
+struct QuitBuilder {
+  typedef Quit Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_recordings(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::RecordingTracePos>>> recordings) {
-    fbb_.AddOffset(ResponseTracePos::VT_RECORDINGS, recordings);
-  }
-  explicit ResponseTracePosBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit QuitBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<ResponseTracePos> Finish() {
+  ::flatbuffers::Offset<Quit> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<ResponseTracePos>(end);
+    auto o = ::flatbuffers::Offset<Quit>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<ResponseTracePos> CreateResponseTracePos(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::RecordingTracePos>>> recordings = 0) {
-  ResponseTracePosBuilder builder_(_fbb);
-  builder_.add_recordings(recordings);
+inline ::flatbuffers::Offset<Quit> CreateQuit(
+    ::flatbuffers::FlatBufferBuilder &_fbb) {
+  QuitBuilder builder_(_fbb);
   return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<ResponseTracePos> CreateResponseTracePosDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<::flatbuffers::Offset<fbs::RecordingTracePos>> *recordings = nullptr) {
-  auto recordings__ = recordings ? _fbb.CreateVector<::flatbuffers::Offset<fbs::RecordingTracePos>>(*recordings) : 0;
-  return fbs::CreateResponseTracePos(
-      _fbb,
-      recordings__);
 }
 
 struct PointsVideo FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -1365,71 +1391,6 @@ inline ::flatbuffers::Offset<PointsVideo> CreatePointsVideoDirect(
       point_size);
 }
 
-struct VideoID FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef VideoIDBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ID = 4,
-    VT_ERROR = 6
-  };
-  const ::flatbuffers::String *id() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_ID);
-  }
-  const ::flatbuffers::String *error() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_ERROR);
-  }
-  bool Verify(::flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_ID) &&
-           verifier.VerifyString(id()) &&
-           VerifyOffset(verifier, VT_ERROR) &&
-           verifier.VerifyString(error()) &&
-           verifier.EndTable();
-  }
-};
-
-struct VideoIDBuilder {
-  typedef VideoID Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_id(::flatbuffers::Offset<::flatbuffers::String> id) {
-    fbb_.AddOffset(VideoID::VT_ID, id);
-  }
-  void add_error(::flatbuffers::Offset<::flatbuffers::String> error) {
-    fbb_.AddOffset(VideoID::VT_ERROR, error);
-  }
-  explicit VideoIDBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<VideoID> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<VideoID>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<VideoID> CreateVideoID(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::String> id = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> error = 0) {
-  VideoIDBuilder builder_(_fbb);
-  builder_.add_error(error);
-  builder_.add_id(id);
-  return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<VideoID> CreateVideoIDDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    const char *id = nullptr,
-    const char *error = nullptr) {
-  auto id__ = id ? _fbb.CreateString(id) : 0;
-  auto error__ = error ? _fbb.CreateString(error) : 0;
-  return fbs::CreateVideoID(
-      _fbb,
-      id__,
-      error__);
-}
-
 struct Root FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef RootBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -1461,14 +1422,17 @@ struct Root FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::Array3DataChunku16 *data_as_Array3DataChunku16() const {
     return data_type() == fbs::Data_Array3DataChunku16 ? static_cast<const fbs::Array3DataChunku16 *>(data()) : nullptr;
   }
-  const fbs::Request *data_as_Request() const {
-    return data_type() == fbs::Data_Request ? static_cast<const fbs::Request *>(data()) : nullptr;
+  const fbs::VideoExport *data_as_VideoExport() const {
+    return data_type() == fbs::Data_VideoExport ? static_cast<const fbs::VideoExport *>(data()) : nullptr;
   }
   const fbs::PointsVideo *data_as_PointsVideo() const {
     return data_type() == fbs::Data_PointsVideo ? static_cast<const fbs::PointsVideo *>(data()) : nullptr;
   }
-  const fbs::VideoID *data_as_VideoID() const {
-    return data_type() == fbs::Data_VideoID ? static_cast<const fbs::VideoID *>(data()) : nullptr;
+  const fbs::CloseVideo *data_as_CloseVideo() const {
+    return data_type() == fbs::Data_CloseVideo ? static_cast<const fbs::CloseVideo *>(data()) : nullptr;
+  }
+  const fbs::Quit *data_as_Quit() const {
+    return data_type() == fbs::Data_Quit ? static_cast<const fbs::Quit *>(data()) : nullptr;
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1503,16 +1467,20 @@ template<> inline const fbs::Array3DataChunku16 *Root::data_as<fbs::Array3DataCh
   return data_as_Array3DataChunku16();
 }
 
-template<> inline const fbs::Request *Root::data_as<fbs::Request>() const {
-  return data_as_Request();
+template<> inline const fbs::VideoExport *Root::data_as<fbs::VideoExport>() const {
+  return data_as_VideoExport();
 }
 
 template<> inline const fbs::PointsVideo *Root::data_as<fbs::PointsVideo>() const {
   return data_as_PointsVideo();
 }
 
-template<> inline const fbs::VideoID *Root::data_as<fbs::VideoID>() const {
-  return data_as_VideoID();
+template<> inline const fbs::CloseVideo *Root::data_as<fbs::CloseVideo>() const {
+  return data_as_CloseVideo();
+}
+
+template<> inline const fbs::Quit *Root::data_as<fbs::Quit>() const {
+  return data_as_Quit();
 }
 
 struct RootBuilder {
@@ -1575,16 +1543,20 @@ inline bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data 
       auto ptr = reinterpret_cast<const fbs::Array3DataChunku16 *>(obj);
       return verifier.VerifyTable(ptr);
     }
-    case Data_Request: {
-      auto ptr = reinterpret_cast<const fbs::Request *>(obj);
+    case Data_VideoExport: {
+      auto ptr = reinterpret_cast<const fbs::VideoExport *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case Data_PointsVideo: {
       auto ptr = reinterpret_cast<const fbs::PointsVideo *>(obj);
       return verifier.VerifyTable(ptr);
     }
-    case Data_VideoID: {
-      auto ptr = reinterpret_cast<const fbs::VideoID *>(obj);
+    case Data_CloseVideo: {
+      auto ptr = reinterpret_cast<const fbs::CloseVideo *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_Quit: {
+      auto ptr = reinterpret_cast<const fbs::Quit *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;

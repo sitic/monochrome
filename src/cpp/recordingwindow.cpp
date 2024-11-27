@@ -615,6 +615,13 @@ void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, in
   global::common_key_callback(window, key, scancode, action, mods, rec_from_window_ptr(window));
 }
 
+void RecordingWindow::start_recording(const global::ExportVideoCommand &cmd) {
+  this->export_ctrl.video.export_window = true; 
+  this->export_ctrl.video.tstart = cmd.t_start;
+  this->export_ctrl.video.tend = cmd.t_end == -1 ? this->length() : cmd.t_end;
+  this->export_ctrl.video.close_after_completion = cmd.close_after_completion;
+  this->start_recording(cmd.filename, cmd.fps, cmd.description);
+}
 void RecordingWindow::start_recording(const fs::path &filename, int fps, std::string description) {
   playback.set_next(export_ctrl.video.tstart);
   for (auto &child : children) {
@@ -634,6 +641,9 @@ void RecordingWindow::stop_recording() {
   export_ctrl.video.progress      = 0;
   export_ctrl.video.export_window = false;
   prm::lastframetime              = glfwGetTime();
+  if (export_ctrl.video.close_after_completion) {
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+  }
 }
 
 void RecordingWindow::set_rotation(short rotation) {
