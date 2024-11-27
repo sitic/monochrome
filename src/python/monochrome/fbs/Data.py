@@ -11,6 +11,7 @@ class Data(IntEnum):
     Array3DataChunkf = 4
     Array3DataChunku8 = 5
     Array3DataChunku16 = 6
-    Request = 7
+    VideoExport = 7
     PointsVideo = 8
-    VideoID = 9
+    CloseVideo = 9
+    Quit = 10
