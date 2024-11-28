@@ -90,13 +90,27 @@ def test_points():
     mc.show_points(points, name="Test", color='yellow', point_size=10)
 
 def test_export_video():
-    mc.export_video("test.mp4", fps=15)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        shape = (30, 48, 48)
+        array = np.random.rand(*shape).astype(dtype=np.float32)
+        mc.show(array, 'TestArray')
+        mc.export_video(Path(tmpdir) / "test.mp4", name='TestArray', fps=15, description="Test Description")
+
+        if not HEADLESS_TEST:
+            sleep(5)
+            assert os.path.exists(tmpdir + "/test.mp4")
 
 def test_close_video():
+    array = np.random.rand(*(1, 48, 48)).astype(dtype=np.float32)
+    mc.show(array, 'CloseArray')
     mc.close_video()
+    mc.show(array, 'CloseArray2')
+    mc.close_video('CloseArray2')
 
 def test_quit():
     mc.quit()
+    if not HEADLESS_TEST:
+        sleep(3)
 
 if __name__ == "__main__":
     test_filepaths()

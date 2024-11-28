@@ -591,13 +591,13 @@ def export_video(filepath, name="", fps=30, t_start=0, t_end=-1, description="",
     buf = builder.Output()
     s.sendall(buf)
 
-def close_video(name):
+def close_video(name=""):
     """Close a video in Monochrome.
     
     Parameters
     ----------
     name : str
-        Name of the video to be closed
+        Name of the video to be closed. If empty, the last loaded video will be closed.
     """
     s = create_socket()
     builder = flatbuffers.Builder(512)
