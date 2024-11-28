@@ -73,7 +73,10 @@ mc.show_layer(overlay, parent="Second Video", cmap='PRGn', opacity='centered')
 # mc.show_points() to visualize point positions over time over videos
 # mc.show_flow() to visualize optical flow fields over time
 # mc.show_file() to load videos from file in Monochrome
+# mc.close_video() to close a video/layer/image
+# mc.export_video() export a window (video+layers+...) as a MP4 video
 # mc.launch() to start Monochrome from Python
+# mc.quit() to close Monochrome
 ```
 
 ## Native Video File Formats
