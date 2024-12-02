@@ -94,11 +94,12 @@ def test_export_video():
         shape = (30, 48, 48)
         array = np.random.rand(*shape).astype(dtype=np.float32)
         mc.show(array, 'TestArray')
-        mc.export_video(Path(tmpdir) / "test.mp4", name='TestArray', fps=15, description="Test Description")
+        filename = Path(tmpdir) / "test.mp4"
+        mc.export_video(filename, name='TestArray', fps=15, description="Test Description")
 
         if not HEADLESS_TEST:
             sleep(5)
-            assert os.path.exists(tmpdir + "/test.mp4")
+            assert os.path.exists(filename)
 
 def test_close_video():
     array = np.random.rand(*(1, 48, 48)).astype(dtype=np.float32)
@@ -120,4 +121,6 @@ if __name__ == "__main__":
     test_points()
     test_export_video()
     test_close_video()
+    if not HEADLESS_TEST:
+        input("\n\n\nPress ENTER to quit Monochrome...\n")
     test_quit()

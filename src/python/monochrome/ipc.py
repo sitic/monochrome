@@ -552,6 +552,9 @@ def show(array_or_path: Union[str, Path, np.ndarray], *args, **kwargs):
 
 def export_video(filepath, name="", fps=30, t_start=0, t_end=-1, description="", close_after_completion=False):
     """Export a video displayed in Monochrome to a .mp4 file.
+
+    NOTE: Monochrome exports the video as rendered in the window, i.e. the video will have the same resolution as
+    the video window and all the layers/points/... will be merged into a single video.
     
     Parameters
     ----------
