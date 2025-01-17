@@ -6,7 +6,7 @@ requires = [
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "monochrome-viewer"
+name = "monochrome"
 dynamic = ["version"]
 description="Viewer for monochromatic video data"
 readme = "README.md"

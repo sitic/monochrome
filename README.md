@@ -1,8 +1,8 @@
 # Monochrome: Viewer for Monochromatic Video Data
 [![docs](https://readthedocs.org/projects/monochrome/badge/?version=latest&style=)](https://monochrome.readthedocs.org)
 [![tests](https://github.com/sitic/monochrome/actions/workflows/build.yml/badge.svg)](https://github.com/sitic/monochrome/actions/workflows/build.yml)
-[![PyPI](https://img.shields.io/pypi/v/monochrome-viewer.svg)](https://pypi.org/project/monochrome-viewer/)
-[![Supported Python versions](https://img.shields.io/pypi/pyversions/monochrome-viewer.svg)](https://python.org)
+[![PyPI](https://img.shields.io/pypi/v/monochrome.svg)](https://pypi.org/project/monochrome/)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/monochrome.svg)](https://python.org)
 
 Monochrome is a lightweight and fast video viewer for scientific monochromatic videos with high-dynamic range (float, uint16, etc.).
 
@@ -33,7 +33,7 @@ Download the relevant executable (Windows, macOS, or Linux) from the latest [rel
 The Python library includes all necessary files and does not require the installation of the standalone Monochrome application. Open a terminal window and run the following command:
 
 ```bash
-python -m pip install monochrome-viewer
+python -m pip install monochrome
 ```
 
 See the [Python installation guide](https://monochrome.readthedocs.io/latest/installation_python/) for further details. To start the viewer in standalone mode, run:
@@ -117,7 +117,7 @@ Keyboard shortcuts:
 
 * [Documentation](https://monochrome.readthedocs.io)
 * [Python Tutorial](https://monochrome.readthedocs.io/latest/tutorial/)
-* [PyPI package](https://pypi.org/project/monochrome-viewer/)
+* [PyPI package](https://pypi.org/project/monochrome/)
 * [GitHub repository](https://github.com/sitic/monochrome)
 
 ## License

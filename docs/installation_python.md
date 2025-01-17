@@ -7,12 +7,12 @@ The installation of the standalone Monochrome application is **not** required, a
 Run the following command to install Monochrome with the included Python library:
 
 ```bash
-python -m pip install monochrome-viewer
+python -m pip install monochrome
 ```
 
 On Windows you might need to run
 ```bash
-py -m pip install monochrome-viewer
+py -m pip install monochrome
 ```
 
 Run
