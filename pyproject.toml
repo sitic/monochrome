@@ -1,0 +1,16 @@
+[project]
+name = "monochrome"
+version = "2025.1.17"
+description="Deprecated. Please use the 'monochrome' package instead."
+readme = "README.md"
+requires-python = ">=3.6"
+authors = [
+    {name = "Jan Lebert", email = "mail@janlebert.com" }
+]
+dependencies = [
+    "monochrome>=2025.1.17"
+]
+
+[project.urls]
+Documentation = "https://monochrome.readthedocs.io"
+Repository = "https://github.com/sitic/monochrome"
