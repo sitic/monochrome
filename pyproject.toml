@@ -1,5 +1,5 @@
 [project]
-name = "monochrome"
+name = "monochrome-viewer"
 version = "2025.1.17"
 description="Deprecated. Please use the 'monochrome' package instead."
 readme = "README.md"
