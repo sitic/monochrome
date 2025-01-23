@@ -5,8 +5,17 @@
 #include "AbstractFile.h"
 
 class NpyFile : public AbstractFile {
+  enum class PixelDataFormat : int { BOOL, UINT8, INT8, UINT16, INT16, FLOAT, DOUBLE };
   // WARNING: bool isn't well defined as numpy stores it as a byte, but C++ doesn't guarantee that sizeof(bool) == 1
-  enum class PixelDataFormat : int { UINT8 = 1, UINT16 = 2, FLOAT = 4, DOUBLE = 8, BOOL = -1 };
+  std::unordered_map<PixelDataFormat, int> pixel_size = {
+      {PixelDataFormat::BOOL, 1},
+      {PixelDataFormat::UINT8, 1},
+      {PixelDataFormat::INT8, 1},
+      {PixelDataFormat::UINT16, 2},
+      {PixelDataFormat::INT16, 2},
+      {PixelDataFormat::FLOAT, 4},
+      {PixelDataFormat::DOUBLE, 8}
+  };
 
   mio::mmap_source _mmap;
   int _nx       = 0;
@@ -67,6 +76,10 @@ class NpyFile : public AbstractFile {
         dataType = PixelDataFormat::UINT8;
       } else if (get_dtype<uint16_t>().str() == header.dtype.str()) {
         dataType = PixelDataFormat::UINT16;
+      } else if (get_dtype<int8_t>().str() == header.dtype.str()) {
+        dataType = PixelDataFormat::INT8;
+      } else if (get_dtype<int16_t>().str() == header.dtype.str()) {
+        dataType = PixelDataFormat::INT16;
       } else if (get_dtype<float>().str() == header.dtype.str()) {
         dataType = PixelDataFormat::FLOAT;
       } else if (get_dtype<double>().str() == header.dtype.str()) {
@@ -75,7 +88,7 @@ class NpyFile : public AbstractFile {
         dataType = PixelDataFormat::BOOL;
       } else {
         _error_msg = fmt::format(
-            "numpy dtype {} is unsupported, only bool, uint8, uint16 and float32 are supported",
+            "numpy dtype {} is unsupported. Supported datatypes are: bool, uint8, int8, uint16, int16, float32 and float64",
             header.dtype.str());
         return;
       }
@@ -112,7 +125,7 @@ class NpyFile : public AbstractFile {
       }
 
       auto l               = _mmap.length();
-      auto bytes_per_frame = _frame_size * std::abs(static_cast<int>(dataType));
+      auto bytes_per_frame = _frame_size * pixel_size[dataType];
       if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
         _error_msg = "File size does not match expected dimensions";
         return;
@@ -138,6 +151,12 @@ class NpyFile : public AbstractFile {
             break;
           case PixelDataFormat::UINT16:
             _bitrange = utils::detect_bitrange(get_data_ptr<uint16_t>(0), get_data_ptr<uint16_t>(1));
+            break;
+          case PixelDataFormat::INT8:
+            _bitrange = utils::detect_bitrange(get_data_ptr<int8_t>(0), get_data_ptr<int8_t>(1));
+            break;
+          case PixelDataFormat::INT16:
+            _bitrange = utils::detect_bitrange(get_data_ptr<int16_t>(0), get_data_ptr<int16_t>(1));
             break;
           case PixelDataFormat::FLOAT:
             _bitrange = utils::detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
@@ -189,8 +208,14 @@ class NpyFile : public AbstractFile {
       case PixelDataFormat::UINT16:
         copy_frame<uint16_t>(t);
         break;
+      case PixelDataFormat::INT16:
+        copy_frame<int16_t>(t);
+        break;
       case PixelDataFormat::UINT8:
         copy_frame<uint8_t>(t);
+        break;
+      case PixelDataFormat::INT8:
+        copy_frame<int8_t>(t);
         break;
       case PixelDataFormat::BOOL:
         copy_frame<bool>(t);
@@ -211,6 +236,10 @@ class NpyFile : public AbstractFile {
         return get_data_ptr<uint16_t>(t)[y * Nx() + x];
       case PixelDataFormat::UINT8:
         return get_data_ptr<uint8_t>(t)[y * Nx() + x];
+      case PixelDataFormat::INT16:
+        return get_data_ptr<int16_t>(t)[y * Nx() + x];
+      case PixelDataFormat::INT8:
+        return get_data_ptr<int8_t>(t)[y * Nx() + x];
       case PixelDataFormat::BOOL:
         return get_data_ptr<bool>(t)[y * Nx() + x];
       default:
