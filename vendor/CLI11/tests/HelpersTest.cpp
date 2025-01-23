@@ -522,7 +522,7 @@ TEST_CASE("Validators: FileIsDir", "[helpers]") {
 }
 
 TEST_CASE("Validators: DirectoryExists", "[helpers]") {
-    std::string mydir{"../tests"};
+    std::string mydir{"tests"};
     CHECK(CLI::ExistingDirectory(mydir).empty());
 }
 
@@ -543,7 +543,7 @@ TEST_CASE("Validators: DirectoryIsFile", "[helpers]") {
 }
 
 TEST_CASE("Validators: PathExistsDir", "[helpers]") {
-    std::string mydir{"../tests"};
+    std::string mydir{"tests"};
     CHECK(CLI::ExistingPath(mydir).empty());
 }
 
@@ -665,7 +665,7 @@ TEST_CASE("Validators: CombinedPaths", "[helpers]") {
     bool ok = static_cast<bool>(std::ofstream(myfile.c_str()).put('a'));  // create file
     CHECK(ok);
 
-    std::string dir{"../tests"};
+    std::string dir{"tests"};
     std::string notpath{"nondirectory"};
 
     auto path_or_dir = CLI::ExistingPath | CLI::ExistingDirectory;
@@ -1058,11 +1058,8 @@ TEST_CASE("RegEx: SplittingNew", "[helpers]") {
     CHECK_THROWS_AS([&]() { std::tie(shorts, longs, pname) = CLI::detail::get_names({"-hi"}); }(), CLI::BadNameString);
     CHECK_THROWS_AS([&]() { std::tie(shorts, longs, pname) = CLI::detail::get_names({"---hi"}); }(),
                     CLI::BadNameString);
-    CHECK_THROWS_AS(
-        [&]() {
-            std::tie(shorts, longs, pname) = CLI::detail::get_names({"one", "two"});
-        }(),
-        CLI::BadNameString);
+    CHECK_THROWS_AS([&]() { std::tie(shorts, longs, pname) = CLI::detail::get_names({"one", "two"}); }(),
+                    CLI::BadNameString);
 }
 
 TEST_CASE("String: ToLower", "[helpers]") { CHECK("one and two" == CLI::detail::to_lower("one And TWO")); }
