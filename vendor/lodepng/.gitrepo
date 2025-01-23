@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/lvandeve/lodepng.git
 	branch = master
-	commit = d398e0f10d152a5d17fa30463474dc9f56523f9c
-	parent = b503935d7e6620e2a5d9a042b79474edf49f721e
+	commit = 0b1d9ccfc2093e5d6620cd9a11d03ee6ff6705f5
+	parent = 63684b57843d937c4fae2fffbe2c963a1f3c2176
 	method = merge
-	cmdver = 0.4.6
+	cmdver = 0.4.3
