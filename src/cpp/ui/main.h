@@ -106,7 +106,8 @@ void show_top_ui() {
       }
       ImGui::SameLine();
 
-      float total_w          = ImGui::GetContentRegionMaxAbs().x;
+      // Calculate the space for the playback speed controls based on available space
+      float total_w          = (ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x - ImGui::GetWindowPos().x);
       float size_slider      = total_w / 4;
       float size_firstgroup  = button_w * 2 + 2 * ImGui::GetStyle().ItemSpacing.x;
       float size_secondgroup = button_w * 2 + size_slider + 3 * ImGui::GetStyle().ItemSpacing.x;
