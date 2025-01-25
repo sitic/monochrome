@@ -43,7 +43,7 @@ void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
             rec->colormap(cmap);
           }
           ImGui::SameLine();
-          ImGui::Image((void *)(intptr_t)tex_id, ImVec2(80, ImGui::GetTextLineHeight()));
+          ImGui::Image(tex_id, ImVec2(80, ImGui::GetTextLineHeight()));
           ImGui::SameLine();
           ImGui::Text("%s", l);
           ImGui::SameLine();
@@ -57,7 +57,7 @@ void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
           ImVec2(combo_pos.x + style.FramePadding.x, combo_pos.y + style.FramePadding.y));
       const ImVec2 i_size = {itemwidth - ImGui::GetFrameHeight() - 2.5f * style.FramePadding.x,
                              ImGui::GetTextLineHeight()};
-      ImGui::Image((void *)(intptr_t)prm::cmap_texs[current_cmap], i_size);
+      ImGui::Image(prm::cmap_texs[current_cmap], i_size);
     }
     if (parent) {
       auto itemwidth = ImGui::GetContentRegionAvail().x * 0.5f;
