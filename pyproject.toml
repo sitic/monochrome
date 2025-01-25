@@ -97,4 +97,4 @@ archs = ["universal2"]
 test-skip = ["*_arm64", "*_universal2:arm64"]
 
 [tool.cibuildwheel.linux]
-before-all = "yum install -y libXrandr-devel libXcursor-devel libXinerama-devel libXi-devel mesa-libGL-devel libdwarf-devel binutils-devel"
+before-all = "yum install -y wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel mesa-libGL-devel libdwarf-devel binutils-devel"
