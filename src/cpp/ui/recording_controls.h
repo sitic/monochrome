@@ -145,6 +145,7 @@ void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *par
       new_rec->histogram.symmetric = true;
       new_rec->get_min()           = rec->get_min();
       new_rec->get_max()           = rec->get_max();
+      new_rec->opacity             = OpacityFunction::Centered;
       rec->set_transformation(Transformations::None);
       prm::merge_queue.emplace(new_rec, rec, false);
     }
