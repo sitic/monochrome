@@ -65,13 +65,6 @@ void cli_add_global_options(CLI::App& app) {
          },
          "Flip video vertically")
       ->default_str(RecordingWindow::get_flip_ud() ? "true" : "false");
-  app.add_option("--trace_length", prm::trace_length, "Default length (in frames) for traces")
-      ->check(CLI::PositiveNumber)
-      ->capture_default_str();
-  app.add_option("--max_trace_length", prm::max_trace_length,
-                 "Maximum length (in frames) for traces")
-      ->check(CLI::PositiveNumber)
-      ->capture_default_str();
   app.add_option("--display_fps", prm::display_fps, "Default display framerate")
       ->check(CLI::PositiveNumber)
       ->capture_default_str();
