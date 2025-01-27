@@ -56,75 +56,6 @@ class RecordingPlaybackCtrl {
   void restart();
 };
 
-struct ExportCtrl {
-  struct {
-    bool export_window = false;
-    Vec2i start;
-    Vec2i size;
-    Vec2i frames;
-    std::string filename;
-    ExportFileType type = ExportFileType::Npy;
-
-    void assign_auto_filename(const fs::path &file_path) {
-      auto fn = file_path.stem().string();
-
-      if (frames[0] != 0) {
-        fn += "_o"s + std::to_string(frames[0]);
-      }
-
-      std::string extension;
-      if (type == ExportFileType::Binary)
-        filename = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1], frames[1] - frames[0]);
-      else if (type == ExportFileType::Npy)
-        filename = fn + ".npy";
-      else
-        throw std::logic_error("Unkown ExportFileType type");
-    }
-  } raw;
-
-  struct {
-    bool export_window = false;
-    bool recording     = false;
-    float progress     = 0;
-    std::string filename;
-    std::string description;
-    VideoRecorder videoRecorder;
-    int tstart = 0;
-    int tend   = -1;
-    bool close_after_completion = false;
-
-    void assign_auto_filename(const fs::path &path) {
-      videoRecorder.videotitle = path.filename().string();
-      filename                 = path.filename().stem().string() + ".mp4";
-    }
-  } video;
-
-  struct {
-    bool export_window = false;
-    bool save_pngs     = false;
-    std::string filename;
-
-    void assign_auto_filename(const fs::path &path) {
-      filename = path.filename().stem().string() + "_{t}.png";
-    }
-  } png;
-
-  struct {
-    bool export_window = false;
-    Vec2i pos;
-    std::string filename;
-    int tstart = 0;
-    int tend   = -1;
-
-    void assign_auto_filename(const fs::path &path, const Vec2i &pos_, int width) {
-      pos      = pos_;
-      filename = path.filename().stem().string();
-      filename += fmt::format("_{}_{}_size{}.txt", pos_[0], pos_[1], width);
-    }
-
-  } trace;
-};
-
 class SmoothScaler {
   inline static const float autoScaleFrequency = 20;
 
@@ -255,6 +186,74 @@ class FlowData {
       : data(std::move(data_)), color(next_color(color_count)) {}
   FlowData(std::shared_ptr<Recording> data_, Vec4f color_) : data(std::move(data_)), color(color_) {}
   Vec4f next_color(unsigned color_count);
+};
+
+struct ExportCtrl {
+  struct {
+    bool export_window = false;
+    Vec2i start;
+    Vec2i size;
+    Vec2i frames;
+    std::string filename;
+    ExportFileType type = ExportFileType::Npy;
+
+    void assign_auto_filename(const fs::path &file_path) {
+      auto fn = file_path.stem().string();
+
+      if (frames[0] != 0) {
+        fn += "_o"s + std::to_string(frames[0]);
+      }
+
+      std::string extension;
+      if (type == ExportFileType::Binary)
+        filename = fmt::format("{}_{}x{}x{}f.dat", fn, size[0], size[1], frames[1] - frames[0]);
+      else if (type == ExportFileType::Npy)
+        filename = fn + ".npy";
+      else
+        throw std::logic_error("Unkown ExportFileType type");
+    }
+  } raw;
+
+  struct {
+    bool export_window = false;
+    bool recording     = false;
+    float progress     = 0;
+    std::string filename;
+    std::string description;
+    VideoRecorder videoRecorder;
+    int tstart = 0;
+    int tend   = -1;
+    bool close_after_completion = false;
+
+    void assign_auto_filename(const fs::path &path) {
+      videoRecorder.videotitle = path.filename().string();
+      filename                 = path.filename().stem().string() + ".mp4";
+    }
+  } video;
+
+  struct {
+    bool export_window = false;
+    bool save_pngs     = false;
+    std::string filename;
+
+    void assign_auto_filename(const fs::path &path) {
+      filename = path.filename().stem().string() + "_{t}.png";
+    }
+  } png;
+
+  struct {
+    bool export_window = false;
+    std::string filename;
+    Trace trace;
+
+    void assign_auto_filename(const fs::path &path, const Trace &_trace, int width) {
+      trace      = _trace;
+      filename = path.filename().stem().string();
+      auto pos = trace.original_position;
+      filename += fmt::format("_{}_{}_size{}.txt", pos[0], pos[1], width);
+    }
+
+  } trace;
 };
 
 std::pair<float, float> oportunistic_minmax(std::shared_ptr<AbstractFile> file,

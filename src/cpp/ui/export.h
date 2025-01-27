@@ -154,11 +154,8 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::Begin("Save Trace", &ctrl.export_window);
     ImGui::InputText("Directory", &export_dir);
     ImGui::InputText("Filename", &ctrl.filename);
-    ImGui::InputInt("t start", &ctrl.tstart);
-    ImGui::InputInt("t end", &ctrl.tend);
     if (ImGui::Button("Export") && create_directory(export_dir)) {
-      recording->save_trace(ctrl.pos, fs::path(export_dir) / ctrl.filename,
-                            {ctrl.tstart, ctrl.tend});
+      ctrl.trace.save(fs::path(export_dir) / ctrl.filename);
       ctrl.export_window = false;
       global::new_ui_message("Saved trace to {}", (fs::path(export_dir) / ctrl.filename).string());
     }

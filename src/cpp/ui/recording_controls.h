@@ -93,8 +93,6 @@ void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *par
         rec->set_transformation(e);
         fn(true);
       }
-
-      rec->reset_traces();
     }
 
     return is_active;
