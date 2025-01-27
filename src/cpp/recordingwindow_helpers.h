@@ -185,20 +185,62 @@ class SmoothScaler {
   }
 };
 
-struct Trace {
-  int id;
-  Vec2i pos;
+class Trace {
+ private:
+  int _data_width = 0; // Tracks the width of the data when it was last updated
+  void update_data(Recording& rec) {
+    _data_width = Trace::width();
+    Vec2i dims = {rec.file()->Nx(), rec.file()->Ny()};
+    auto [start, size] = clamp(original_position, dims);
+    data = rec.file()->get_trace(start, size);
+    has_new_data = true;
+  }
+
+ public:
+  int id = -1;
+  int t = 0;
+  Vec2i pos; // Position in the transformed image
+  Vec2i original_position;  // Original position before rotations and flips
   Vec4f color;
   SmoothScaler scale;
   std::vector<float> data;
-
-  void set_pos(const Vec2i &npos);
+  bool has_new_data = true;
+  
+  Trace(const Vec2i &_pos, Recording& rec) : id(std::rand()), color(next_color()) {
+    set_pos(_pos, rec);
+  }
+  Trace() = default;
+  void set_pos(const Vec2i &npos, Recording &rec);
   void clear() { data.clear(); }
   bool is_near_point(const Vec2i &npos) const;
+  void tick(Recording& rec) {
+    if (rec.apply_transformation(original_position) != pos) {
+      // Rotation or flip has changed the position
+      fmt::print("Trace {}: position changed from {} to {}\n", id, pos, rec.apply_transformation(original_position));
+      set_pos(rec.apply_transformation(original_position), rec);
+      fmt::print("Trace {}: position changed to {}\n", id, pos);
+    }
+    if (data.empty() || Trace::width() != _data_width) {
+      update_data(rec);
+    }
+  }
   static Vec4f next_color();
   static int width(int new_width = 0);
   // get valid starting position and size based on the position of center and max size
   static std::pair<Vec2i, Vec2i> clamp(const Vec2i &pos, const Vec2i &max_size);
+  void save(fs::path path) {
+    if (data.empty()) {
+      global::new_ui_message("ERROR: Trace is empty, cannot save");
+      return;
+    }
+    fs::remove(path);
+    std::ofstream file(path.string(), std::ios::out);
+    fmt::print(file, "Frame\tValue\n");
+    for (int t = 0; t < data.size(); t++) {
+      fmt::print(file, "{}\t{}\n", t, data[t]);
+    }
+    fmt::print("Saved trace to {}\n", path.string()); 
+  }
 };
 
 class FlowData {

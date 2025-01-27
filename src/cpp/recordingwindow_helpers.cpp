@@ -65,9 +65,11 @@ bool RecordingPlaybackCtrl::is_last() const {
   return tf_ + prm::playbackCtrl.val >= length_;
 }
 
-void Trace::set_pos(const Vec2i &npos) {
-  clear();
-  pos = npos;
+void Trace::set_pos(const Vec2i &npos, Recording &rec) {
+  pos[0] = std::clamp(npos[0], 0, rec.Nx() - 1);
+  pos[1] = std::clamp(npos[1], 0, rec.Ny() - 1);
+  original_position = rec.inverse_transformation(pos);
+  data.clear();
 }
 
 bool Trace::is_near_point(const Vec2i &npos) const {

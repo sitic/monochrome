@@ -312,18 +312,6 @@ void RecordingWindow::display() {
 
   histogram.compute(arr->reshaped());
 
-  // update traces
-  if (playback.next_t() != playback.current_t()) {
-    for (auto &trace : traces) {
-      auto [start, size] = Trace::clamp(trace.pos, {Nx(), Ny()});
-      if (size[0] > 0 && size[1] > 0) {
-        auto block = arr->block(start[0], start[1], size[0], size[1]);
-        trace.data.push_back(block.mean());
-        //block.setConstant(0);  // for testing
-      }
-    }
-  }
-
   /* render code */
   glfwMakeContextCurrent(window);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -463,7 +451,7 @@ void RecordingWindow::reset_traces() {
   }
 }
 void RecordingWindow::add_trace(const Vec2i &pos) {
-  traces.push_back({std::rand(), pos, Trace::next_color()});
+  traces.emplace_back(pos, *this);
 }
 void RecordingWindow::remove_trace(const Vec2i &pos) {
   const auto pred = [pos](const auto &trace) { return trace.is_near_point(pos); };
@@ -550,14 +538,14 @@ void RecordingWindow::cursor_position_callback(GLFWwindow *window, double xpos, 
     // if any trace point is nearby, move it to the new position
     for (auto &t : rec->traces) {
       if (t.is_near_point(pos)) {
-        t.set_pos(pos);
+        t.set_pos(pos, *rec);
         return;
       }
     }
 
     // only add trace points on mouse press
     if (rec->mousebutton.pressing_left) {
-      rec->add_trace({x, y});
+      rec->add_trace(pos);
       rec->mousebutton.pressing_left = false;
     }
   }
