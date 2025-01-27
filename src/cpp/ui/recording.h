@@ -61,14 +61,14 @@ void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = 
         ImGui::EndTabItem();
       }
 
-      // Plot traces and show their controls
-      if (!rec->traces.empty() && ImGui::BeginTabItem("Traces")) {
-        show_traces_ui(rec);
+      if (ImGui::BeginTabItem("Metadata & Controls")) {
+        show_controls_ui(rec, parent);
         ImGui::EndTabItem();
       }
 
-      if (ImGui::BeginTabItem("Metadata & Controls")) {
-        show_controls_ui(rec, parent);
+      // Plot traces and show their controls
+      if (!rec->traces.empty() && ImGui::BeginTabItem("Traces")) {
+        show_traces_ui(rec);
         ImGui::EndTabItem();
       }
 
