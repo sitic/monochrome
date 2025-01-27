@@ -10,6 +10,7 @@
 
 #include "utils/definitions.h"
 #include "utils/iterators.h"
+#include "utils/vectors.h"
 // only use std filesystem on msvc for now, as gcc / clang sometimes require link options
 #if defined(__cplusplus) && _MSC_VER >= 1920
 #include <filesystem>
@@ -53,7 +54,22 @@ class AbstractFile {
   virtual std::optional<OpacityFunction> opacity() const { return std::nullopt; };
 
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
+  // Get pixel value at position (x, y) in frame t
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
+  // Get a trace of the data, averaged over a region of interest
+  [[nodiscard]] virtual std::vector<float> get_trace(Vec2i start, Vec2i size) {
+    std::vector<float> trace(length());
+    for (int t = 0; t < length(); t++) {
+      float sum = 0;
+      for (int y = start[1]; y < start[1] + size[1]; ++y) {
+        for (int x = start[0]; x < start[0] + size[0]; ++x) {
+          sum += get_pixel(t, x, y);
+        }
+      }
+      trace[t] = sum / (size[0] * size[1]);
+    }
+    return trace;
+  }
 
   // List capabilities
   virtual flag_set<FileCapabilities> capabilities() const = 0;

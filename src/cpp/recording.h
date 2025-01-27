@@ -28,6 +28,7 @@ struct RotationCtrl {
   bool get_flip_ud() { return _flipud; }
 
   void apply(Eigen::MatrixXf &arr);
+  Vec2i inverse_transformation(Vec2i pos, Vec2i dims);
 
   // get flow signs based on current rotation and flip
   std::pair<float, float> flow_signs();
@@ -88,4 +89,10 @@ class Recording {
                   Vec2i t0tmax,
                   ExportFileType exportType,
                   Vec2f minmax = {0, 0});
+  
+  Vec2i inverse_transformation(Vec2i pos) {
+    // Transform a position to the original position before rotation and flip
+    Vec2i dims = {_file->Nx(), _file->Ny()};
+    return rotations.inverse_transformation(pos, dims);
+  }
 };
