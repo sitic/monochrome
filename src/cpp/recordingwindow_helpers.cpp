@@ -74,7 +74,7 @@ void Trace::set_pos(const Vec2i &npos, Recording &rec) {
 
 bool Trace::is_near_point(const Vec2i &npos) const {
   const auto d        = npos - pos;
-  const auto max_dist = Trace::width() / 2 + 1;
+  const auto max_dist = Trace::width();
   return (std::abs(d[0]) < max_dist && std::abs(d[1]) < max_dist);
 }
 
