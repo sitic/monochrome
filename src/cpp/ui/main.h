@@ -201,7 +201,7 @@ void show_top_ui() {
 
 
       ImGui::Spacing();
-      if (ImGui::Button(u8"Save all settings " ICON_FA_SAVE)) {
+      if (ImGui::Button("Save all settings " ICON_FA_SAVE)) {
         auto filepath = save_current_settings();
         global::new_ui_message("Settings saved to {}", filepath);
       }
