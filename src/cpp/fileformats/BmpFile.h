@@ -56,4 +56,14 @@ class BmpFile : public AbstractFile {
   };
 
   float get_pixel(long t, long x, long y) final { return file.get_pixel(t, x, y); }
+
+  float get_block(long t, const Vec2i& start, const Vec2i& size) final {
+    return std::visit(
+        [this, t, &start, &size](auto data_ptr) -> float {
+          using T = std::remove_const_t<std::remove_pointer_t<decltype(data_ptr)>>;
+          Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> frame(data_ptr, Nx(), Ny());
+          return frame.block(start[0], start[1], size[0], size[1]).template cast<float>().mean();
+        },
+        file.get_frame_ptr(t));
+  }
 };

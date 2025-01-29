@@ -181,6 +181,17 @@ class BmpFileParser {
     }
   }
 
+  std::variant<const uint8 *, const uint16 *> get_frame_ptr(long t) const {
+    switch (dataType) {
+      case PixelDataFormat::UINT16:
+        return get_data_ptr<uint16>(t);
+      case PixelDataFormat::UINT8:
+        return get_data_ptr<uint8>(t);
+      default:
+        throw std::logic_error("This line should never be reached");
+    }
+  }
+
  private:
   std::ifstream _in;
   mio::mmap_source _mmap;
