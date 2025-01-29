@@ -246,4 +246,32 @@ class NpyFile : public AbstractFile {
         throw std::logic_error("This line should never be reached");
     }
   }
+
+  template <typename T>
+  float compute_mean(long t, const Vec2i &start, const Vec2i &size) {
+    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> frame(get_data_ptr<T>(t), Nx(), Ny());
+    auto block = frame.block(start[0], start[1], size[0], size[1]);
+    return static_cast<float>(block.template cast<float>().mean());
+  }
+
+  float get_block(long t, const Vec2i& start, const Vec2i& size) final {
+    switch (dataType) {
+      case PixelDataFormat::FLOAT:
+        return compute_mean<float>(t, start, size);
+      case PixelDataFormat::DOUBLE:
+        return compute_mean<double>(t, start, size);
+      case PixelDataFormat::UINT16:
+        return compute_mean<uint16_t>(t, start, size);
+      case PixelDataFormat::INT16:
+        return compute_mean<int16_t>(t, start, size);
+      case PixelDataFormat::UINT8:
+        return compute_mean<uint8_t>(t, start, size);
+      case PixelDataFormat::INT8:
+        return compute_mean<int8_t>(t, start, size);
+      case PixelDataFormat::BOOL:
+        return compute_mean<bool>(t, start, size);
+      default:
+        throw std::logic_error("This line should never be reached");
+    }
+  }
 };

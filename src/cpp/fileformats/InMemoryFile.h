@@ -81,6 +81,18 @@ class InMemoryFile : public AbstractFile {
         _data->data);
   }
 
+  float get_block(long t, const Vec2i& start, const Vec2i& size) final {
+      return std::visit(
+        [this, t, &start, &size](auto& data) {
+            using T = typename std::remove_reference<decltype(data)>::type::value_type;
+            Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> frame_map(
+                data.data() + _frame_size * t, Nx(), Ny());
+            auto block_map = frame_map.block(start[0], start[1], size[0], size[1]);
+            return static_cast<float>(block_map.template cast<float>().mean());
+        },
+        _data->data);
+  }
+
   bool is_flow() const final { return _data->meta.is_flowfield; };
   bool set_flow(bool _is_flow) final {
     _data->meta.is_flowfield = _is_flow;
