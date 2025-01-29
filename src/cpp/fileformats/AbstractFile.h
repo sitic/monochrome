@@ -58,20 +58,7 @@ class AbstractFile {
   [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
   // Get pixel value at position (x, y) in frame t
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
-  // Get a trace of the data, averaged over a region of interest
-  [[nodiscard]] virtual std::vector<float> get_trace(Vec2i start, Vec2i size) {
-    std::vector<float> trace(length());
-    for (int t = 0; t < length(); t++) {
-      float sum = 0;
-      for (int y = start[1]; y < start[1] + size[1]; ++y) {
-        for (int x = start[0]; x < start[0] + size[0]; ++x) {
-          sum += get_pixel(t, x, y);
-        }
-      }
-      trace[t] = sum / (size[0] * size[1]);
-    }
-    return trace;
-  }
+  // Get the average value in a 2D image block
   [[nodiscard]] virtual float get_block(long t, const Vec2i& start, const Vec2i& size) {
     float sum = 0;
     for (int y = start[1]; y < start[1] + size[1]; ++y) {
@@ -81,13 +68,19 @@ class AbstractFile {
     }
     return sum / (size[0] * size[1]);
   }
-
+  // Get a trace of the data, averaged over a region of interest
+  [[nodiscard]] virtual std::vector<float> get_trace(Vec2i start, Vec2i size) {
+    std::vector<float> trace(length());
+    for (int t = 0; t < length(); t++) {
+      trace[t] = trace[t] = get_block(t, start, size);
+    }
+    return trace;
+  }
   [[nodiscard]] virtual std::future<std::vector<float>> get_trace_async(Vec2i start, Vec2i size, std::atomic<bool>& cancelled) {
     return std::async(std::launch::async, [this, start, size, &cancelled]() {
       std::vector<float> trace(length());
       for (int t = 0; t < length(); t++) {
         if (cancelled) { // We are no longer interested in the result
-          fmt::print("Async trace cancelled\n");
           return std::vector<float>();
         }
         trace[t] = get_block(t, start, size);

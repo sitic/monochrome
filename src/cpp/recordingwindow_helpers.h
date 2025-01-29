@@ -258,7 +258,7 @@ struct ExportCtrl {
     Trace trace;
 
     void assign_auto_filename(const fs::path &path, const Trace &_trace, int width) {
-      // trace      = _trace; // TODO
+      trace      = _trace;
       filename = path.filename().stem().string();
       auto pos = trace.original_position;
       filename += fmt::format("_{}_{}_size{}.txt", pos[0], pos[1], width);

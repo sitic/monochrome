@@ -28,24 +28,12 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
         }
       }
 
-      int size = trace.data.size();
-      if (size > 0) {
-        auto data  = trace.data.data();
-        trace.scale.left  = 0;
-        trace.scale.right = trace.data.size() - 1;
-        trace.scale.scale(data, data + size);
-      }
-
-      auto label = trace.original_position.to_string();
       if (trace.has_new_data) {
-        ImPlot::SetNextAxisToFit(ImAxis_X1);
         ImPlot::SetNextAxisToFit(ImAxis_Y1);
         trace.has_new_data = false;
       }
-      // ImPlot::SetNextAxisLinks(ImAxis_X1, trace.scale.scaleX ? &trace.scale.left : nullptr,
-      //                          trace.scale.scaleX ? &trace.scale.right : nullptr);
-      // ImPlot::SetNextAxisLinks(ImAxis_Y1, trace.scale.scaleY ? &trace.scale.lower : nullptr,
-      //                          trace.scale.scaleY ? &trace.scale.upper : nullptr);
+      ImPlot::SetNextAxisLimits(ImAxis_X1, 0, rec->length() - 1, ImGuiCond_Once);
+      auto label = trace.original_position.to_string();
       auto ptitle    = fmt::format("Pos {}, width {}###trace", label, Trace::width());
       auto plot_size = ImVec2(ImGui::GetContentRegionAvail().x, 180);
       if (ImPlot::BeginPlot(ptitle.c_str(), plot_size)) {
@@ -54,6 +42,23 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
         auto title = "###ttrace" + label;
         ImPlot::PlotLine(title.c_str(), trace.data.data(), trace.data.size());
         ImPlotUtils::draw_liney({rec->current_frame()});
+
+        if (trace.future_data_ptr) {
+          auto limits = ImPlot::GetPlotLimits();
+          ImVec2 text_size = ImGui::CalcTextSize("LOADING...");
+          ImVec2 center_screen = ImPlot::PlotToPixels(ImPlotPoint((limits.X.Max + limits.X.Min) / 2, (limits.Y.Max + limits.Y.Min) / 2));
+          ImVec2 text_pos = {center_screen.x - text_size.x * 0.5f, center_screen.y - text_size.y * 0.5f};
+
+          float padding = 5.0f; // Padding around the text
+          ImU32 rect_color = ImGui::ColorConvertFloat4ToU32(ImVec4(0.2f, 0.2f, 0.2f, 0.8f));
+          ImDrawList* draw_list = ImPlot::GetPlotDrawList();
+          ImPlot::GetPlotDrawList()->AddRectFilled(
+            ImVec2(text_pos.x - padding, text_pos.y - padding),
+            ImVec2(text_pos.x + text_size.x + padding, text_pos.y + text_size.y + padding),
+            rect_color
+          );
+          ImPlot::GetPlotDrawList()->AddText(text_pos, IM_COL32_WHITE, "LOADING...");
+        }
         ImPlot::EndPlot();
       }
       ImGui::PopID();
