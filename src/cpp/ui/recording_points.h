@@ -11,10 +11,10 @@ void show_flow_ui(const SharedRecordingPtr &rec) {
         flow.data->set_name(flow_name);
       }
       if (flow.show)
-        flow.show = !ImGui::Button("Hide " ICON_FA_EYE_SLASH);
+        flow.show = !ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH);
       else
-        flow.show = ImGui::Button("Show " ICON_FA_EYE);
-      if (ImGui::Button("Delete " ICON_FA_TRASH_ALT)) {
+        flow.show = ImGui::Button(u8"Show " ICON_FA_EYE);
+      if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
         flow.data = nullptr;
       }
       ImGui::ColorEdit4("Color", flow.color.data());
@@ -39,9 +39,9 @@ void show_points_ui(const SharedRecordingPtr &rec) {
         rec->set_name(rec_name);
       }
       if (vid->show)
-        vid->show = !ImGui::Button("Hide " ICON_FA_EYE_SLASH);
+        vid->show = !ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH);
       else
-        vid->show = ImGui::Button("Show " ICON_FA_EYE);
+        vid->show = ImGui::Button(u8"Show " ICON_FA_EYE);
       ImGui::ColorEdit4("Color", vid->color.data());
       ImGui::SliderFloat("Point size", &vid->point_size, 0, 10);
 

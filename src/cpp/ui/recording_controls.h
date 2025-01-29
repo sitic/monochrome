@@ -54,7 +54,7 @@ void show_export_ui(const SharedRecordingPtr &rec) {
   ImGui::AlignTextToFramePadding();
   ImGui::Text("Export as a video file (.mp4, ...): ");
   ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT " " ICON_FA_VIDEO)) {
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
     auto &ctrl         = rec->export_ctrl.video;
     ctrl.export_window = true;
     ctrl.assign_auto_filename(rec->path());
@@ -63,14 +63,14 @@ void show_export_ui(const SharedRecordingPtr &rec) {
   }
   ImGui::Text("Export as image sequence: ");
   ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT " " ICON_FA_FILE_IMAGE)) {
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
     auto &ctrl         = rec->export_ctrl.png;
     ctrl.export_window = true;
     ctrl.assign_auto_filename(rec->path());
   }
   ImGui::Text("Export as raw video: ");
   ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT " raw")) {
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
     auto &ctrl         = rec->export_ctrl.raw;
     ctrl.export_window = true;
     ctrl.start         = {0, 0};
@@ -113,7 +113,7 @@ void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *par
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
     float sigma = Transformation::GaussFilter::get_sigma();
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 1.f);
-    if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, "σ = %.2f")) {
+    if (ImGui::DragFloat("##sigma", &sigma, 0.01, 0, 5, u8"σ = %.2f")) {
       Transformation::GaussFilter::set_sigma(sigma);
     }
     ImGui::Unindent(10);
@@ -174,7 +174,7 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   if (!rec_filepath.empty()) {
     ImGui::InputText("Filepath", &rec_filepath, ImGuiInputTextFlags_ReadOnly);
   }
-  if (ImGui::Button("Delete " ICON_FA_TRASH_ALT)) {
+  if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
     if (!parent) {
       glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
     } else {
@@ -185,13 +185,13 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 
   {
     if (rec->active) {
-      if (ImGui::Button("Hide " ICON_FA_EYE_SLASH)) {
+      if (ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH)) {
         if (!parent) glfwHideWindow(rec->window);
         rec->active = false;
       }
     } else {
       ImGui::EndDisabled();
-      if (ImGui::Button("Show " ICON_FA_EYE)) {
+      if (ImGui::Button(u8"Show " ICON_FA_EYE)) {
         rec->active = true;
         if (!parent)
           glfwShowWindow(rec->window);
@@ -204,7 +204,7 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 
 
   if (!parent && prm::recordings.size() > 1) {
-    if (ImGui::Button("Add as layer onto other recording " ICON_FA_LAYER_GROUP))
+    if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP))
       ImGui::OpenPopup("merge_popup");
     if (ImGui::BeginPopup("merge_popup")) {
       for (auto &r : prm::recordings) {

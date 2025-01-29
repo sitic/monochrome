@@ -131,7 +131,7 @@ namespace ImGuiConnector {
     // literal you need to write a double backslash \\ !
     //io.Fonts->AddFontDefault();
     ImFontGlyphRangesBuilder builder;
-    builder.AddText("σπ—");
+    builder.AddText(u8"σπ—");
     builder.AddRanges(io->Fonts->GetGlyphRangesDefault());
     static ImVector<ImWchar> ranges;
     builder.BuildRanges(&ranges);
