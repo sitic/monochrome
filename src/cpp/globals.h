@@ -7,9 +7,9 @@
 #include <variant>
 #include <vector>
 
-#include <fmt/format.h>
 #include <asio.hpp>
 #include <asio/thread_pool.hpp>
+#include <fmt/format.h>
 
 #include "utils/vectors.h"
 #include "utils/definitions.h"

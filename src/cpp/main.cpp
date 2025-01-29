@@ -1,6 +1,9 @@
 #include <CLI/CLI.hpp>
 #include <fmt/format.h>
 
+// asio needs to be imported before windows.h
+#include <asio.hpp>
+
 #ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
 #include <shellapi.h>

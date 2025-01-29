@@ -1,6 +1,9 @@
 #include <string>
 #include <sstream>
 
+// Asio needs to be imported before windows.h
+#include <asio.hpp>
+
 #include "BmpFile.h"
 #include "RawFile.h"
 #include "NpyFile.h"
