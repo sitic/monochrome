@@ -8,6 +8,8 @@
 #include <vector>
 
 #include <fmt/format.h>
+#include <asio.hpp>
+#include <asio/thread_pool.hpp>
 
 #include "utils/vectors.h"
 #include "utils/definitions.h"
@@ -18,6 +20,7 @@ namespace global {
   extern std::vector<Message> messages;
   extern std::string tcp_host;
   extern short tcp_port;
+  extern asio::thread_pool thread_pool;
 
   class Message {
    public:

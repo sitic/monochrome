@@ -115,6 +115,8 @@ int main(int argc, char **argv) {
 
   // Cleanup
   ipc::stop_server();
+  global::thread_pool.stop();
+  global::thread_pool.join();
   for (auto [cmap, tex] : prm::cmap_texs) {
     glDeleteTextures(1, &tex);
   }
