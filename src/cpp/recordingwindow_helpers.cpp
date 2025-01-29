@@ -115,6 +115,19 @@ std::pair<Vec2i, Vec2i> Trace::clamp(const Vec2i &pos, const Vec2i &max_size) {
   }
   return {start, size};
 }
+void Trace::save(fs::path path) {
+  if (data.empty()) {
+    global::new_ui_message("ERROR: Trace is empty, cannot save");
+    return;
+  }
+  fs::remove(path);
+  std::ofstream file(path.string(), std::ios::out);
+  fmt::print(file, "Frame\tValue\n");
+  for (int t = 0; t < data.size(); t++) {
+    fmt::print(file, "{}\t{}\n", t, data[t]);
+  }
+  fmt::print("Saved trace to {}\n", path.string()); 
+}
 
 Vec4f FlowData::next_color(unsigned color_count) {
   // List of colors to cycle through

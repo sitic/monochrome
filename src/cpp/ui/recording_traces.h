@@ -22,16 +22,12 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
             trace.data.clear();
           } else{
             trace.data = fdata->future.get();
-            trace.has_new_data = true;
             trace.future_data_ptr = nullptr;
+            ImPlot::SetNextAxisToFit(ImAxis_Y1);
           }
         }
       }
 
-      if (trace.has_new_data) {
-        ImPlot::SetNextAxisToFit(ImAxis_Y1);
-        trace.has_new_data = false;
-      }
       ImPlot::SetNextAxisLimits(ImAxis_X1, 0, rec->length() - 1, ImGuiCond_Once);
       auto label = trace.original_position.to_string();
       auto ptitle    = fmt::format("Pos {}, width {}###trace", label, Trace::width());

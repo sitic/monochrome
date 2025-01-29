@@ -1,11 +1,9 @@
 #pragma once
 
-#include <atomic>
 #include <chrono>
 #include <optional>
 #include <string>
 #include <utility>
-#include <future>
 
 #include <Eigen/Dense>
 #include <flag_set.hpp>
@@ -75,18 +73,6 @@ class AbstractFile {
       trace[t] = trace[t] = get_block(t, start, size);
     }
     return trace;
-  }
-  [[nodiscard]] virtual std::future<std::vector<float>> get_trace_async(Vec2i start, Vec2i size, std::atomic<bool>& cancelled) {
-    return std::async(std::launch::async, [this, start, size, &cancelled]() {
-      std::vector<float> trace(length());
-      for (int t = 0; t < length(); t++) {
-        if (cancelled) { // We are no longer interested in the result
-          return std::vector<float>();
-        }
-        trace[t] = get_block(t, start, size);
-      }
-      return trace;
-    });
   }
 
   // List capabilities

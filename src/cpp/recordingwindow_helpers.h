@@ -1,6 +1,8 @@
 #pragma once
 
+#include <atomic>
 #include <utility>
+#include <future>
 
 #include "recording.h"
 #include "transformations.h"
@@ -60,7 +62,28 @@ class Trace {
  private:
   int _data_width = 0; // Tracks the width of the data when it was last updated
   Vec2i _data_imgpos; // Tracks the position of the data when it was last updated
-  
+
+  struct FutureData {
+    std::future<std::vector<float>> future;
+    std::atomic<bool> cancelled = false;
+  };
+  static std::vector<float> compute_trace(std::shared_ptr<AbstractFile> file,
+                                          const Vec2i &start,
+                                          const Vec2i &size,
+                                          std::shared_ptr<FutureData> future_data) {
+    if (!file || !file->good() || !future_data) {
+      return {};
+    }
+    std::vector<float> trace(file->length());
+    for (int t = 0; t < file->length(); t++) {
+      if (future_data->cancelled) {  // We are no longer interested in the result
+        return {};
+      }
+      trace[t] = file->get_block(t, start, size);
+    }
+    return trace;
+  }
+
  public:
   int id = -1;
   int t = 0;
@@ -68,12 +91,6 @@ class Trace {
   Vec2i original_position;  // Original position before rotations and flips
   Vec4f color;
   std::vector<float> data;
-  bool has_new_data = true;
-
-  struct FutureData {
-    std::future<std::vector<float>> future;
-    std::atomic<bool> cancelled = false;
-  };
   std::shared_ptr<FutureData> future_data_ptr = nullptr;
   
   Trace(const Vec2i &_pos, Recording& rec) : id(std::rand()), color(next_color()) {
@@ -102,26 +119,15 @@ class Trace {
       _data_imgpos = original_position;
       Vec2i dims = {rec.file()->Nx(), rec.file()->Ny()};
       auto [start, size] = clamp(original_position, dims);
-      future_data_ptr->future = rec.file()->get_trace_async(start, size, future_data_ptr->cancelled);
+      future_data_ptr->future = std::async(std::launch::async, Trace::compute_trace, rec.file(), start, size,
+                                          future_data_ptr);
     }
   }
   static Vec4f next_color();
   static int width(int new_width = 0);
   // get valid starting position and size based on the position of center and max size
   static std::pair<Vec2i, Vec2i> clamp(const Vec2i &pos, const Vec2i &max_size);
-  void save(fs::path path) {
-    if (data.empty()) {
-      global::new_ui_message("ERROR: Trace is empty, cannot save");
-      return;
-    }
-    fs::remove(path);
-    std::ofstream file(path.string(), std::ios::out);
-    fmt::print(file, "Frame\tValue\n");
-    for (int t = 0; t < data.size(); t++) {
-      fmt::print(file, "{}\t{}\n", t, data[t]);
-    }
-    fmt::print("Saved trace to {}\n", path.string()); 
-  }
+  void save(fs::path path);
 };
 
 class FlowData {
