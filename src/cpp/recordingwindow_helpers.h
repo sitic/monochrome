@@ -63,25 +63,33 @@ class Trace {
   int _data_width = 0; // Tracks the width of the data when it was last updated
   Vec2i _data_imgpos; // Tracks the position of the data when it was last updated
 
-  struct FutureData {
-    std::future<std::vector<float>> future;
+  struct FutureTraceData {
+    std::atomic<bool> ready = false;
     std::atomic<bool> cancelled = false;
+    std::vector<float> data;
+    std::atomic<long> progress_t = 0;
   };
-  static std::vector<float> compute_trace(std::shared_ptr<AbstractFile> file,
-                                          const Vec2i &start,
-                                          const Vec2i &size,
-                                          std::shared_ptr<FutureData> future_data) {
+
+  static void compute_trace(std::shared_ptr<AbstractFile> file,
+                            const Vec2i &start,
+                            const Vec2i &size,
+                            std::shared_ptr<FutureTraceData> future_data) {
     if (!file || !file->good() || !future_data) {
-      return {};
+      return;
     }
-    std::vector<float> trace(file->length());
+    long CHUNK_SIZE = 50;
+    future_data->data.resize(file->length());
     for (int t = 0; t < file->length(); t++) {
       if (future_data->cancelled) {  // We are no longer interested in the result
-        return {};
+        return;
       }
-      trace[t] = file->get_block(t, start, size);
+      future_data->data[t] = file->get_block(t, start, size);
+      if (t % CHUNK_SIZE == 0 && t > 0) {
+        future_data->progress_t = t;
+      }
     }
-    return trace;
+    future_data->progress_t = future_data->data.size();
+    future_data->ready = true;
   }
 
  public:
@@ -91,7 +99,7 @@ class Trace {
   Vec2i original_position;  // Original position before rotations and flips
   Vec4f color;
   std::vector<float> data;
-  std::shared_ptr<FutureData> future_data_ptr = nullptr;
+  std::shared_ptr<FutureTraceData> future_data_ptr = nullptr;
   
   Trace(const Vec2i &_pos, Recording& rec) : id(std::rand()), color(next_color()) {
     set_pos(_pos, rec);
@@ -116,14 +124,19 @@ class Trace {
       if (future_data_ptr) {
         future_data_ptr->cancelled = true;
       }
-      future_data_ptr = std::make_shared<FutureData>();
+      // Add compute trace job to thread pool
+      future_data_ptr = std::make_shared<FutureTraceData>();
       future_data_ptr->cancelled = false;
       _data_width = Trace::width();
       _data_imgpos = original_position;
       Vec2i dims = {rec.file()->Nx(), rec.file()->Ny()};
-      auto [start, size] = clamp(original_position, dims);
-      future_data_ptr->future = std::async(std::launch::async, Trace::compute_trace, rec.file(), start, size,
-                                          future_data_ptr);
+      Vec2i start, size;
+      std::tie(start, size) = clamp(original_position, dims);
+      auto file = rec.file();
+      auto future_data = future_data_ptr;
+      asio::post(global::thread_pool, [file, start, size, future_data]() {
+        Trace::compute_trace(file, start, size, future_data);
+      });
     }
   }
   static Vec4f next_color();

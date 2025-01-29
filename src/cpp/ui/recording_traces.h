@@ -11,21 +11,32 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
     for (auto &trace : rec->traces) {
       ImGui::PushID(trace.id);
 
-      // Update trace if needed
+      // Submit trace update job if needed
       trace.tick(*rec);
-      if (trace.future_data_ptr && trace.future_data_ptr->future.valid()) {
+      // Data to plot
+      std::vector<float> *data_ptr = nullptr;
+      std::size_t data_size = 0;
+      // Check if we have intermediate data to plot and finish update job if needed
+      if (trace.future_data_ptr) {
         auto fdata = trace.future_data_ptr;
-        using namespace std::chrono_literals;
-        if (fdata->future.wait_for(0ms) == std::future_status::ready) {
-          if (fdata->cancelled) {
-            trace.future_data_ptr = nullptr;
-            trace.data.clear();
-          } else{
-            trace.data = fdata->future.get();
-            trace.future_data_ptr = nullptr;
+        if (fdata->ready) {
+          trace.data = fdata->data;
+          trace.future_data_ptr = nullptr;
+          ImPlot::SetNextAxisToFit(ImAxis_Y1);
+        } else if (!fdata->cancelled && fdata->progress_t > 0) {
+          data_ptr = &fdata->data;
+          data_size = fdata->progress_t;
+          if (trace.data.empty() && data_size > 100) {
             ImPlot::SetNextAxisToFit(ImAxis_Y1);
           }
+        } else if (fdata->cancelled) {
+          trace.future_data_ptr = nullptr;
+          trace.data.clear();
         }
+      }
+      if (!data_ptr) {
+        data_ptr = &trace.data;
+        data_size = trace.data.size();
       }
 
       ImPlot::SetNextAxisLimits(ImAxis_X1, 0, rec->length() - 1, ImGuiCond_Once);
@@ -36,7 +47,7 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
         ImPlot::SetupAxes(nullptr, nullptr);
         ImPlot::SetNextLineStyle({trace.color[0], trace.color[1], trace.color[2], trace.color[3]});
         auto title = "###ttrace" + label;
-        ImPlot::PlotLine(title.c_str(), trace.data.data(), trace.data.size());
+        ImPlot::PlotLine(title.c_str(), data_ptr->data(), data_size);
         ImPlotUtils::draw_liney({rec->current_frame()});
 
         if (trace.future_data_ptr) {
@@ -98,9 +109,9 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
         {
           auto [start, size] = Trace::clamp(trace.original_position, {rec->file()->Nx(), rec->file()->Ny()});
           static std::string str;
-          str = fmt::format("[{0}:{1}, {2}:{3}]", start[0], start[0] + size[0], start[1],
-                               start[1] + size[1]);
-          ImGui::InputText("ROI coordinates###trace_pos", &str, ImGuiInputTextFlags_ReadOnly);
+          // X and Y axis are flipped on purpose for python compatibility
+          str = fmt::format("[{0}:{1}, {2}:{3}]", start[1], start[1] + size[1], start[0], start[0] + size[0]);
+          ImGui::InputText("Python ROI coordinates###trace_pos", &str, ImGuiInputTextFlags_ReadOnly);
         }
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
