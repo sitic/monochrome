@@ -174,7 +174,8 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   if (!rec_filepath.empty()) {
     ImGui::InputText("Filepath", &rec_filepath, ImGuiInputTextFlags_ReadOnly);
   }
-  if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
+  auto text_item_size = ImGui::GetItemRectSize();
+  if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT, ImVec2(text_item_size.x, 0))) {
     if (!parent) {
       glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
     } else {
@@ -185,13 +186,13 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 
   {
     if (rec->active) {
-      if (ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH)) {
+      if (ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH, ImVec2(text_item_size.x, 0))) {
         if (!parent) glfwHideWindow(rec->window);
         rec->active = false;
       }
     } else {
       ImGui::EndDisabled();
-      if (ImGui::Button(u8"Show " ICON_FA_EYE)) {
+      if (ImGui::Button(u8"Show " ICON_FA_EYE, ImVec2(text_item_size.x, 0))) {
         rec->active = true;
         if (!parent)
           glfwShowWindow(rec->window);
@@ -204,7 +205,7 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
 
 
   if (!parent && prm::recordings.size() > 1) {
-    if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP))
+    if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP, ImVec2(text_item_size.x, 0)))
       ImGui::OpenPopup("merge_popup");
     if (ImGui::BeginPopup("merge_popup")) {
       for (auto &r : prm::recordings) {
