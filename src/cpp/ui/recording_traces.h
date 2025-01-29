@@ -109,14 +109,6 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
         ImGui::ColorEdit3("Color", trace.color.data());
-
-        ImGui::Spacing();
-        if (ImGui::Button("Reset data", ImVec2(ImGui::GetContentRegionAvail().x * 0.3f, 0))) {
-          trace.data.clear();
-        }
-        ImGui::Spacing();
-        ImGui::Checkbox("Auto scale x-axis", &trace.scale.scaleX);
-        ImGui::Checkbox("Auto scale y-axis", &trace.scale.scaleY);
         ImGui::Unindent();
       }
       if (!dont_delete_trace) rec->remove_trace(trace.pos);
