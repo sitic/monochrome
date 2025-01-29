@@ -81,14 +81,18 @@ class InMemoryFile : public AbstractFile {
         _data->data);
   }
 
+  // MSVC compiler faults when implementing this function in the lambda with std::remove_reference for some reason
+  template <typename T>
+  Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> get_frame_map(std::vector<T>& data, long t) {
+    return Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>(
+      data.data() + _frame_size * t, Nx(), Ny()
+    );
+  }
   float get_block(long t, const Vec2i& start, const Vec2i& size) final {
       return std::visit(
         [this, t, &start, &size](auto& data) {
-            using T = typename std::remove_reference<decltype(data)>::type::value_type;
-            Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> frame_map(
-                data.data() + _frame_size * t, Nx(), Ny());
-            auto block_map = frame_map.block(start[0], start[1], size[0], size[1]);
-            return static_cast<float>(block_map.template cast<float>().mean());
+            auto map = get_frame_map(data, t);
+            return map.block(start[0], start[1], size[0], size[1]).template cast<float>().mean();
         },
         _data->data);
   }
