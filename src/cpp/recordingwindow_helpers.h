@@ -119,14 +119,8 @@ class SmoothScaler {
 class Trace {
  private:
   int _data_width = 0; // Tracks the width of the data when it was last updated
-  void update_data(Recording& rec) {
-    _data_width = Trace::width();
-    Vec2i dims = {rec.file()->Nx(), rec.file()->Ny()};
-    auto [start, size] = clamp(original_position, dims);
-    data = rec.file()->get_trace(start, size);
-    has_new_data = true;
-  }
-
+  Vec2i _data_imgpos; // Tracks the position of the data when it was last updated
+  
  public:
   int id = -1;
   int t = 0;
@@ -136,6 +130,12 @@ class Trace {
   SmoothScaler scale;
   std::vector<float> data;
   bool has_new_data = true;
+
+  struct FutureData {
+    std::future<std::vector<float>> future;
+    std::atomic<bool> cancelled = false;
+  };
+  std::shared_ptr<FutureData> future_data_ptr = nullptr;
   
   Trace(const Vec2i &_pos, Recording& rec) : id(std::rand()), color(next_color()) {
     set_pos(_pos, rec);
@@ -151,8 +151,19 @@ class Trace {
       set_pos(rec.apply_transformation(original_position), rec);
       fmt::print("Trace {}: position changed to {}\n", id, pos);
     }
-    if (data.empty() || Trace::width() != _data_width) {
-      update_data(rec);
+    if (_data_imgpos != original_position || _data_width != Trace::width() ||
+        (data.empty() && !future_data_ptr)) {
+      // Cancel existing future if it exists
+      if (future_data_ptr) {
+        future_data_ptr->cancelled = true;
+      }
+      future_data_ptr = std::make_shared<FutureData>();
+      future_data_ptr->cancelled = false;
+      _data_width = Trace::width();
+      _data_imgpos = original_position;
+      Vec2i dims = {rec.file()->Nx(), rec.file()->Ny()};
+      auto [start, size] = clamp(original_position, dims);
+      future_data_ptr->future = rec.file()->get_trace_async(start, size, future_data_ptr->cancelled);
     }
   }
   static Vec4f next_color();
@@ -247,7 +258,7 @@ struct ExportCtrl {
     Trace trace;
 
     void assign_auto_filename(const fs::path &path, const Trace &_trace, int width) {
-      trace      = _trace;
+      // trace      = _trace; // TODO
       filename = path.filename().stem().string();
       auto pos = trace.original_position;
       filename += fmt::format("_{}_{}_size{}.txt", pos[0], pos[1], width);

@@ -11,8 +11,22 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
     for (auto &trace : rec->traces) {
       ImGui::PushID(trace.id);
 
-      // update trace if necessary
+      // Update trace if needed
       trace.tick(*rec);
+      if (trace.future_data_ptr && trace.future_data_ptr->future.valid()) {
+        auto fdata = trace.future_data_ptr;
+        using namespace std::chrono_literals;
+        if (fdata->future.wait_for(0ms) == std::future_status::ready) {
+          if (fdata->cancelled) {
+            trace.future_data_ptr = nullptr;
+            trace.data.clear();
+          } else{
+            trace.data = fdata->future.get();
+            trace.has_new_data = true;
+            trace.future_data_ptr = nullptr;
+          }
+        }
+      }
 
       int size = trace.data.size();
       if (size > 0) {
@@ -24,6 +38,7 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
 
       auto label = trace.original_position.to_string();
       if (trace.has_new_data) {
+        ImPlot::SetNextAxisToFit(ImAxis_X1);
         ImPlot::SetNextAxisToFit(ImAxis_Y1);
         trace.has_new_data = false;
       }
