@@ -97,19 +97,22 @@ class Trace {
     set_pos(_pos, rec);
   }
   Trace() = default;
+  ~Trace() {
+      if (future_data_ptr) {
+          future_data_ptr->cancelled = true;
+      }
+  }
   void set_pos(const Vec2i &npos, Recording &rec);
   void clear() { data.clear(); }
   bool is_near_point(const Vec2i &npos) const;
   void tick(Recording& rec) {
     if (rec.apply_transformation(original_position) != pos) {
       // Rotation or flip has changed the position
-      fmt::print("Trace {}: position changed from {} to {}\n", id, pos, rec.apply_transformation(original_position));
       set_pos(rec.apply_transformation(original_position), rec);
-      fmt::print("Trace {}: position changed to {}\n", id, pos);
     }
     if (_data_imgpos != original_position || _data_width != Trace::width() ||
         (data.empty() && !future_data_ptr)) {
-      // Cancel existing future if it exists
+      // Data is not up to date, cancel existing future if it exists
       if (future_data_ptr) {
         future_data_ptr->cancelled = true;
       }

@@ -75,24 +75,23 @@ void RotationCtrl::apply(Eigen::MatrixXf &arr) {
   }
 }
 Vec2i RotationCtrl::apply(Vec2i pos, Vec2i dims)  {
-  Vec2i transformed_pos = pos;
   switch (_rotation) {
     case 0:
       // No rotation, do nothing
       break;
     case 90:
-      std::swap(transformed_pos[0], transformed_pos[1]);
-      transformed_pos[0] = dims[1] - 1 - transformed_pos[0];
+      std::swap(pos[0], pos[1]);
+      pos[0] = dims[1] - 1 - pos[0];
       std::swap(dims[0], dims[1]);
       break;
     case 180:
       // 180-degree rotation: reverse x and y
-      transformed_pos[0] = dims[0] - 1 - transformed_pos[0];
-      transformed_pos[1] = dims[1] - 1 - transformed_pos[1];
+      pos[0] = dims[0] - 1 - pos[0];
+      pos[1] = dims[1] - 1 - pos[1];
       break;
     case 270:
-      std::swap(transformed_pos[0], transformed_pos[1]);
-      transformed_pos[1] = dims[0] - 1 - transformed_pos[1];
+      std::swap(pos[0], pos[1]);
+      pos[1] = dims[0] - 1 - pos[1];
       std::swap(dims[0], dims[1]);
       break;
     default:
@@ -101,28 +100,30 @@ Vec2i RotationCtrl::apply(Vec2i pos, Vec2i dims)  {
   
   // Reverse the flips
   if (_fliplr && _flipud) {
-    transformed_pos[0] = dims[0] - 1 - transformed_pos[0];
-    transformed_pos[1] = dims[1] - 1 - transformed_pos[1];
+    pos[0] = dims[0] - 1 - pos[0];
+    pos[1] = dims[1] - 1 - pos[1];
   } else if (_fliplr) {
-    transformed_pos[1] = dims[1] - 1 - transformed_pos[1];
+    pos[1] = dims[1] - 1 - pos[1];
   } else if (_flipud) {
-    transformed_pos[0] = dims[0] - 1 - transformed_pos[0];
+    pos[0] = dims[0] - 1 - pos[0];
   }
   
-  return transformed_pos;
+  return pos;
 }
 // Transform a position to the original position before rotation and flip
 Vec2i RotationCtrl::inverse_transformation(Vec2i pos, Vec2i dims)  {
-  Vec2i transformed_pos = pos;
-
   // Reverse the flips
+  Vec2i rotated_dims = dims;
+  if (_rotation == 90 || _rotation == 270) {
+    std::swap(rotated_dims[0], rotated_dims[1]);
+  }
   if (_fliplr && _flipud) {
-    transformed_pos[0] = dims[0] - 1 - transformed_pos[0];
-    transformed_pos[1] = dims[1] - 1 - transformed_pos[1];
+    pos[0] = rotated_dims[0] - 1 - pos[0];
+    pos[1] = rotated_dims[1] - 1 - pos[1];
   } else if (_fliplr) {
-    transformed_pos[1] = dims[1] - 1 - transformed_pos[1];
+    pos[1] = rotated_dims[1] - 1 - pos[1];
   } else if (_flipud) {
-    transformed_pos[0] = dims[0] - 1 - transformed_pos[0];
+    pos[0] = rotated_dims[0] - 1 - pos[0];
   }
 
   // Reverse the rotation
@@ -131,22 +132,22 @@ Vec2i RotationCtrl::inverse_transformation(Vec2i pos, Vec2i dims)  {
       // No rotation, do nothing
       break;
     case 90:
-      std::swap(transformed_pos[0], transformed_pos[1]);
-      transformed_pos[1] = dims[1] - 1 - transformed_pos[1];
+      std::swap(pos[0], pos[1]);
+      pos[1] = dims[1] - 1 - pos[1];
       break;
     case 180:
-      transformed_pos[0] = dims[0] - 1 - transformed_pos[0];
-      transformed_pos[1] = dims[1] - 1 - transformed_pos[1];
+      pos[0] = dims[0] - 1 - pos[0];
+      pos[1] = dims[1] - 1 - pos[1];
       break;
     case 270:
-      std::swap(transformed_pos[0], transformed_pos[1]);
-      transformed_pos[0] = dims[0] - 1 - transformed_pos[0];
+      std::swap(pos[0], pos[1]);
+      pos[0] = dims[0] - 1 - pos[0];
       break;
     default:
       throw std::logic_error("Invalid rotation value! (Should be 0, 90, 180, or 270)");
   }
 
-  return transformed_pos;
+  return pos;
 }
 std::pair<float, float> RotationCtrl::flow_signs() {
   float signx = +1;
