@@ -31,6 +31,7 @@ namespace Eigen {
 
 namespace internal {
 
+#ifndef EIGEN_NO_DEBUG
 template <int MaxSizeAtCompileTime, int MaxRowsAtCompileTime, int MaxColsAtCompileTime>
 struct check_rows_cols_for_overflow {
   EIGEN_STATIC_ASSERT(MaxRowsAtCompileTime* MaxColsAtCompileTime == MaxSizeAtCompileTime,
@@ -44,7 +45,7 @@ struct check_rows_cols_for_overflow<Dynamic, MaxRowsAtCompileTime, Dynamic> {
   template <typename Index>
   EIGEN_DEVICE_FUNC static EIGEN_ALWAYS_INLINE constexpr void run(Index, Index cols) {
     constexpr Index MaxIndex = NumTraits<Index>::highest();
-    bool error = cols > MaxIndex / MaxRowsAtCompileTime;
+    bool error = cols > (MaxIndex / MaxRowsAtCompileTime);
     if (error) throw_std_bad_alloc();
   }
 };
@@ -54,7 +55,7 @@ struct check_rows_cols_for_overflow<Dynamic, Dynamic, MaxColsAtCompileTime> {
   template <typename Index>
   EIGEN_DEVICE_FUNC static EIGEN_ALWAYS_INLINE constexpr void run(Index rows, Index) {
     constexpr Index MaxIndex = NumTraits<Index>::highest();
-    bool error = rows > MaxIndex / MaxColsAtCompileTime;
+    bool error = rows > (MaxIndex / MaxColsAtCompileTime);
     if (error) throw_std_bad_alloc();
   }
 };
@@ -64,10 +65,11 @@ struct check_rows_cols_for_overflow<Dynamic, Dynamic, Dynamic> {
   template <typename Index>
   EIGEN_DEVICE_FUNC static EIGEN_ALWAYS_INLINE constexpr void run(Index rows, Index cols) {
     constexpr Index MaxIndex = NumTraits<Index>::highest();
-    bool error = cols == 0 ? false : (rows > MaxIndex / cols);
+    bool error = cols == 0 ? false : (rows > (MaxIndex / cols));
     if (error) throw_std_bad_alloc();
   }
 };
+#endif
 
 template <typename Derived, typename OtherDerived = Derived,
           bool IsVector = bool(Derived::IsVectorAtCompileTime) && bool(OtherDerived::IsVectorAtCompileTime)>
@@ -268,10 +270,10 @@ class PlainObjectBase : public internal::dense_xpr_base<Derived>::type
   }
 
   /** \returns a const pointer to the data array of this matrix */
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Scalar* data() const { return m_storage.data(); }
+  EIGEN_DEVICE_FUNC constexpr const Scalar* data() const { return m_storage.data(); }
 
   /** \returns a pointer to the data array of this matrix */
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Scalar* data() { return m_storage.data(); }
+  EIGEN_DEVICE_FUNC constexpr Scalar* data() { return m_storage.data(); }
 
   /** Resizes \c *this to a \a rows x \a cols matrix.
    *
@@ -297,8 +299,10 @@ class PlainObjectBase : public internal::dense_xpr_base<Derived>::type
                  internal::check_implication(ColsAtCompileTime == Dynamic && MaxColsAtCompileTime != Dynamic,
                                              cols <= MaxColsAtCompileTime) &&
                  rows >= 0 && cols >= 0 && "Invalid sizes when resizing a matrix or array.");
+#ifndef EIGEN_NO_DEBUG
     internal::check_rows_cols_for_overflow<MaxSizeAtCompileTime, MaxRowsAtCompileTime, MaxColsAtCompileTime>::run(rows,
                                                                                                                   cols);
+#endif
 #ifdef EIGEN_INITIALIZE_COEFFS
     Index size = rows * cols;
     bool size_changed = size != this->size();
@@ -367,8 +371,10 @@ class PlainObjectBase : public internal::dense_xpr_base<Derived>::type
   template <typename OtherDerived>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void resizeLike(const EigenBase<OtherDerived>& _other) {
     const OtherDerived& other = _other.derived();
+#ifndef EIGEN_NO_DEBUG
     internal::check_rows_cols_for_overflow<MaxSizeAtCompileTime, MaxRowsAtCompileTime, MaxColsAtCompileTime>::run(
         other.rows(), other.cols());
+#endif
     const Index othersize = other.rows() * other.cols();
     if (RowsAtCompileTime == 1) {
       eigen_assert(other.rows() == 1 || other.cols() == 1);
@@ -446,7 +452,9 @@ class PlainObjectBase : public internal::dense_xpr_base<Derived>::type
   /** This is a special case of the templated operator=. Its purpose is to
    * prevent a default operator= from hiding the templated operator=.
    */
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Derived& operator=(const PlainObjectBase& other) { return _set(other); }
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE constexpr Derived& operator=(const PlainObjectBase& other) {
+    return _set(other);
+  }
 
   /** \sa MatrixBase::lazyAssign() */
   template <typename OtherDerived>
@@ -464,33 +472,19 @@ class PlainObjectBase : public internal::dense_xpr_base<Derived>::type
   // Prevent user from trying to instantiate PlainObjectBase objects
   // by making all its constructor protected. See bug 1074.
  protected:
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PlainObjectBase() : m_storage() {
-    //       EIGEN_INITIALIZE_COEFFS_IF_THAT_OPTION_IS_ENABLED
-  }
-
-#ifndef EIGEN_PARSED_BY_DOXYGEN
-  // FIXME is it still needed ?
-  /** \internal */
-  EIGEN_DEVICE_FUNC explicit PlainObjectBase(internal::constructor_without_unaligned_array_assert)
-      : m_storage(internal::constructor_without_unaligned_array_assert()) {
-    // EIGEN_INITIALIZE_COEFFS_IF_THAT_OPTION_IS_ENABLED
-  }
-#endif
-
-  EIGEN_DEVICE_FUNC PlainObjectBase(PlainObjectBase&& other) EIGEN_NOEXCEPT : m_storage(std::move(other.m_storage)) {}
-
-  EIGEN_DEVICE_FUNC PlainObjectBase& operator=(PlainObjectBase&& other) EIGEN_NOEXCEPT {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE constexpr PlainObjectBase() = default;
+  /** \brief Move constructor */
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE constexpr PlainObjectBase(PlainObjectBase&&) = default;
+  /** \brief Move assignment operator */
+  EIGEN_DEVICE_FUNC constexpr PlainObjectBase& operator=(PlainObjectBase&& other) EIGEN_NOEXCEPT {
     m_storage = std::move(other.m_storage);
     return *this;
   }
 
   /** Copy constructor */
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PlainObjectBase(const PlainObjectBase& other)
-      : Base(), m_storage(other.m_storage) {}
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE constexpr PlainObjectBase(const PlainObjectBase&) = default;
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PlainObjectBase(Index size, Index rows, Index cols)
-      : m_storage(size, rows, cols) {
-    //       EIGEN_INITIALIZE_COEFFS_IF_THAT_OPTION_IS_ENABLED
-  }
+      : m_storage(size, rows, cols) {}
 
   /** \brief Construct a row of column vector with fixed size from an arbitrary number of coefficients.
    *
@@ -531,7 +525,10 @@ class PlainObjectBase : public internal::dense_xpr_base<Derived>::type
       eigen_assert(list_size == static_cast<size_t>(RowsAtCompileTime) || RowsAtCompileTime == Dynamic);
       resize(list_size, ColsAtCompileTime);
       if (list.begin()->begin() != nullptr) {
-        std::copy(list.begin()->begin(), list.begin()->end(), m_storage.data());
+        Index index = 0;
+        for (const Scalar& e : *list.begin()) {
+          coeffRef(index++) = e;
+        }
       }
     } else {
       eigen_assert(list.size() == static_cast<size_t>(RowsAtCompileTime) || RowsAtCompileTime == Dynamic);
@@ -743,7 +740,7 @@ class PlainObjectBase : public internal::dense_xpr_base<Derived>::type
   // aliasing is dealt once in internal::call_assignment
   // so at this stage we have to assume aliasing... and resising has to be done later.
   template <typename OtherDerived>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Derived& _set(const DenseBase<OtherDerived>& other) {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE constexpr Derived& _set(const DenseBase<OtherDerived>& other) {
     internal::call_assignment(this->derived(), other.derived());
     return this->derived();
   }
@@ -754,7 +751,7 @@ class PlainObjectBase : public internal::dense_xpr_base<Derived>::type
    * \sa operator=(const MatrixBase<OtherDerived>&), _set()
    */
   template <typename OtherDerived>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Derived& _set_noalias(const DenseBase<OtherDerived>& other) {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE constexpr Derived& _set_noalias(const DenseBase<OtherDerived>& other) {
     // I don't think we need this resize call since the lazyAssign will anyways resize
     // and lazyAssign will be called by the assign selector.
     //_resize_to_match(other);
@@ -941,8 +938,10 @@ struct conservative_resize_like_impl {
         ((Derived::IsRowMajor && _this.cols() == cols) ||  // row-major and we change only the number of rows
          (!Derived::IsRowMajor && _this.rows() == rows)))  // column-major and we change only the number of columns
     {
+#ifndef EIGEN_NO_DEBUG
       internal::check_rows_cols_for_overflow<Derived::MaxSizeAtCompileTime, Derived::MaxRowsAtCompileTime,
                                              Derived::MaxColsAtCompileTime>::run(rows, cols);
+#endif
       _this.derived().m_storage.conservativeResize(rows * cols, rows, cols);
     } else {
       // The storage order does not allow us to use reallocation.

@@ -78,8 +78,10 @@ struct cross_impl<Derived, OtherDerived, 2> {
  * spanned by the two vectors.
  *
  * \note With complex numbers, the cross product is implemented as
- * \f$ (\mathbf{a}+i\mathbf{b}) \times (\mathbf{c}+i\mathbf{d}) = (\mathbf{a} \times \mathbf{c} - \mathbf{b} \times
- * \mathbf{d}) - i(\mathbf{a} \times \mathbf{d} + \mathbf{b} \times \mathbf{c})\f$
+ * \f[ (\mathbf{a}+i\mathbf{b}) \times (\mathbf{c}+i\mathbf{d}) = (\mathbf{a} \times \mathbf{c} - \mathbf{b} \times
+ * \mathbf{d}) - i(\mathbf{a} \times \mathbf{d} + \mathbf{b} \times \mathbf{c}).\f]
+ * This definition preserves the orthogonality condition that \f$\mathbf{u} \cdot (\mathbf{u} \times \mathbf{v}) =
+ * \mathbf{v} \cdot (\mathbf{u} \times \mathbf{v}) = 0\f$.
  *
  * \sa MatrixBase::cross3()
  */
@@ -98,7 +100,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
 namespace internal {
 
 template <int Arch, typename VectorLhs, typename VectorRhs, typename Scalar = typename VectorLhs::Scalar,
-          bool Vectorizable = bool((VectorLhs::Flags & VectorRhs::Flags) & PacketAccessBit)>
+          bool Vectorizable = bool((evaluator<VectorLhs>::Flags & evaluator<VectorRhs>::Flags) & PacketAccessBit)>
 struct cross3_impl {
   EIGEN_DEVICE_FUNC static inline typename internal::plain_matrix_type<VectorLhs>::type run(const VectorLhs& lhs,
                                                                                             const VectorRhs& rhs) {

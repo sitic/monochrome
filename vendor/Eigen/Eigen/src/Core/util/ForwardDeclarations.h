@@ -91,6 +91,8 @@ template <typename XprType, typename RowIndices, typename ColIndices>
 class IndexedView;
 template <typename XprType, int Rows = Dynamic, int Cols = Dynamic, int Order = 0>
 class Reshaped;
+template <typename FirstType, typename SizeType, typename IncrType>
+class ArithmeticSequence;
 
 template <typename MatrixType, int Size = Dynamic>
 class VectorBlock;
@@ -498,6 +500,20 @@ struct stem_function {
   typedef std::complex<typename NumTraits<Scalar>::Real> ComplexScalar;
   typedef ComplexScalar type(ComplexScalar, int);
 };
+}  // namespace internal
+
+template <typename XprType, typename Device>
+struct DeviceWrapper;
+
+namespace internal {
+template <typename Xpr>
+struct eigen_fill_helper;
+template <typename Xpr, bool use_fill = eigen_fill_helper<Xpr>::value>
+struct eigen_fill_impl;
+template <typename Xpr>
+struct eigen_memset_helper;
+template <typename Xpr, bool use_memset = eigen_memset_helper<Xpr>::value>
+struct eigen_zero_impl;
 }  // namespace internal
 
 }  // end namespace Eigen
