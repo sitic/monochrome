@@ -13,3 +13,4 @@ class ColorMap(IntEnum):
     PRGN_POS = 6
     PRGN_NEG = 7
     RDBU = 8
+    TAB10 = 9

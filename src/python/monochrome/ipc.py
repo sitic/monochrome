@@ -394,7 +394,7 @@ def show_video(array: np.ndarray,
     name : str
         Name of the video
     cmap : str or ColorMap
-        Colormap for the video. One of 'default' (autodetect), 'gray', 'hsv', 'blackbody', 'viridis', 'PRGn', 'PRGn_pos', 'PRGn_neg', 'RdBu'.
+        Colormap for the video. One of 'default' (autodetect), 'gray', 'hsv', 'blackbody', 'viridis', 'PRGn', 'PRGn_pos', 'PRGn_neg', 'RdBu', 'tab10'.
     vmin : float
         Minimum value for the colormap. Default is None.
     vmax : float

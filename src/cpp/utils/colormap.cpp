@@ -8,6 +8,7 @@ namespace {
   std::array<float, 3 * 256> cmocean_phasemapdata();
   std::array<float, 3 * 256> diff_colormapdata(float start = 0, float end = 1);
   std::array<float, 3 * 256> hsv_colormapdata();
+  std::array<float, 3 * 256> tab10_colormapdata();
 
   std::array<float, 3 * 256> reverse_colormap(const std::array<float, 3 * 256> &data);
 
@@ -37,6 +38,8 @@ std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
       return diff_colormapdata(0, 0.5);
     case ColorMap::RdBu:
       return cppcolormap_to_std("RdBu");
+    case ColorMap::Tab10:
+      return tab10_colormapdata();
     default:
       throw std::logic_error("Unkown colormap!");
   }
@@ -166,6 +169,31 @@ namespace {
       data[i * 3 + 0] = c[0];
       data[i * 3 + 1] = c[1];
       data[i * 3 + 2] = c[2];
+    }
+    return data;
+  }
+
+  std::array<float, 3 * 256> tab10_colormapdata() {
+    constexpr std::array<std::array<float, 3>, 10> tab10_colors = {
+      {
+        { 0.12156862745098039, 0.4666666666666667, 0.7058823529411765 },
+        { 1.0, 0.4980392156862745, 0.054901960784313725 },
+        { 0.17254901960784313, 0.6274509803921569, 0.17254901960784313 },
+        { 0.8392156862745098, 0.15294117647058825, 0.1568627450980392 },
+        { 0.5803921568627451, 0.403921568627451, 0.7411764705882353 },
+        { 0.5490196078431373, 0.33725490196078434, 0.29411764705882354 },
+        { 0.8901960784313725, 0.4666666666666667, 0.7607843137254902 },
+        { 0.4980392156862745, 0.4980392156862745, 0.4980392156862745 },
+        { 0.7372549019607844, 0.7411764705882353, 0.13333333333333333 },
+        { 0.09019607843137255, 0.7450980392156863, 0.8117647058823529 },
+      }
+    };
+    std::array<float, 3 * 256> data = {};
+    for (int i = 0; i < 256; ++i) {
+      int j = static_cast<int>((10.f * i) / 256.f); // [0, 9] range
+      data[i * 3 + 0] = tab10_colors[j][0];
+      data[i * 3 + 1] = tab10_colors[j][1];
+      data[i * 3 + 2] = tab10_colors[j][2];
     }
     return data;
   }
