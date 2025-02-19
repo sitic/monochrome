@@ -34,10 +34,7 @@ void show_points_ui(const SharedRecordingPtr &rec) {
     ImGui::PushID(vid.get());
     std::string name = fmt::format("{}###{}", vid->name, static_cast<void *>(rec.get()));
     if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-      auto rec_name = rec->name();
-      if (ImGui::InputText("Name", &rec_name)) {
-        rec->set_name(rec_name);
-      }
+      ImGui::InputText("Name", &vid->name);
       if (vid->show)
         vid->show = !ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH);
       else
