@@ -2,11 +2,16 @@
 
 #include <array>
 
-
-enum class ColorMap : int { GRAY, HSV, BLACKBODY, VIRIDIS, PRGn, PRGn_POS, PRGn_NEG, RdBu, Tab10 };
-inline const char *ColorMapsNames[9] = {"Gray", "HSV",           "Black Body",    "Viridis",
-                                        "PRGn", "PRGn Positive", "PRGn Negative", "RdBu",
-                                        "tab10"};
+// All ColorMaps, only append to this list and copy it to the IPC schema!
+enum class ColorMap : int { GRAY, HSV, BLACKBODY, VIRIDIS, PRGn, PRGn_POS, PRGn_NEG, RdBu, Tab10, Turbo };
+// Names of the ColorMaps for UI
+inline const char *ColorMapsNames[10] = {"Gray",  "HSV",           "Black Body",    "Viridis",
+                                         "PRGn",  "PRGn Positive", "PRGn Negative", "RdBu",
+                                         "Tab10", "Turbo"};
+// Order of the ColorMaps in UI
+inline const ColorMap ColorMapDisplayOrder[10] = {
+    ColorMap::GRAY,     ColorMap::BLACKBODY, ColorMap::VIRIDIS, ColorMap::Turbo, ColorMap::PRGn_POS,
+    ColorMap::PRGn_NEG, ColorMap::PRGn,      ColorMap::RdBu,    ColorMap::HSV,   ColorMap::Tab10};
 
 inline bool is_diff_colormap(const ColorMap &cmap) {
   return cmap == ColorMap::PRGn || cmap == ColorMap::PRGn_POS || cmap == ColorMap::PRGn_NEG ||

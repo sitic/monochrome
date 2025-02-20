@@ -14,3 +14,4 @@ class ColorMap(IntEnum):
     PRGN_NEG = 7
     RDBU = 8
     TAB10 = 9
+    TURBO = 10

@@ -35,7 +35,8 @@ void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
       ImGui::SetNextItemWidth(itemwidth);
       ImVec2 combo_pos = ImGui::GetCursorScreenPos();
       if (ImGui::BeginCombo("Colormap", "")) {
-        for (auto [cmap, tex_id] : prm::cmap_texs) {
+        for (auto cmap : ColorMapDisplayOrder) {
+          auto tex_id = prm::cmap_texs[cmap];
           auto l = ColorMapsNames[static_cast<int>(cmap)];
           ImGui::PushID(l);
           bool is_selected = (cmap == current_cmap);
