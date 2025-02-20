@@ -10,8 +10,8 @@ inline const char *ColorMapsNames[10] = {"Gray",  "HSV",           "Black Body",
                                          "Tab10", "Turbo"};
 // Order of the ColorMaps in UI
 inline const ColorMap ColorMapDisplayOrder[10] = {
-    ColorMap::GRAY,     ColorMap::BLACKBODY, ColorMap::VIRIDIS, ColorMap::Turbo, ColorMap::PRGn_POS,
-    ColorMap::PRGn_NEG, ColorMap::PRGn,      ColorMap::RdBu,    ColorMap::HSV,   ColorMap::Tab10};
+    ColorMap::GRAY, ColorMap::BLACKBODY, ColorMap::VIRIDIS,  ColorMap::Turbo, ColorMap::RdBu,
+    ColorMap::PRGn, ColorMap::PRGn_POS,  ColorMap::PRGn_NEG, ColorMap::HSV,   ColorMap::Tab10};
 
 inline bool is_diff_colormap(const ColorMap &cmap) {
   return cmap == ColorMap::PRGn || cmap == ColorMap::PRGn_POS || cmap == ColorMap::PRGn_NEG ||
