@@ -43,6 +43,8 @@ std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
       return turbo_colormapdata();
     case ColorMap::Tab10:
       return tab10_colormapdata();
+    case ColorMap::CMOCEAN_PHASE:
+      return cmocean_phasemapdata();
     default:
       throw std::logic_error("Unkown colormap!");
   }

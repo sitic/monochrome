@@ -15,3 +15,4 @@ class ColorMap(IntEnum):
     RDBU = 8
     TAB10 = 9
     TURBO = 10
+    CMOCEAN_PHASE = 11

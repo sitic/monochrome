@@ -122,11 +122,12 @@ enum ColorMap : int32_t {
   ColorMap_RDBU = 8,
   ColorMap_TAB10 = 9,
   ColorMap_TURBO = 10,
+  ColorMap_CMOCEAN_PHASE = 11,
   ColorMap_MIN = ColorMap_DEFAULT,
-  ColorMap_MAX = ColorMap_TURBO
+  ColorMap_MAX = ColorMap_CMOCEAN_PHASE
 };
 
-inline const ColorMap (&EnumValuesColorMap())[11] {
+inline const ColorMap (&EnumValuesColorMap())[12] {
   static const ColorMap values[] = {
     ColorMap_DEFAULT,
     ColorMap_GRAY,
@@ -138,13 +139,14 @@ inline const ColorMap (&EnumValuesColorMap())[11] {
     ColorMap_PRGN_NEG,
     ColorMap_RDBU,
     ColorMap_TAB10,
-    ColorMap_TURBO
+    ColorMap_TURBO,
+    ColorMap_CMOCEAN_PHASE
   };
   return values;
 }
 
 inline const char * const *EnumNamesColorMap() {
-  static const char * const names[12] = {
+  static const char * const names[13] = {
     "DEFAULT",
     "GRAY",
     "HSV",
@@ -156,13 +158,14 @@ inline const char * const *EnumNamesColorMap() {
     "RDBU",
     "TAB10",
     "TURBO",
+    "CMOCEAN_PHASE",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameColorMap(ColorMap e) {
-  if (::flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_TURBO)) return "";
+  if (::flatbuffers::IsOutRange(e, ColorMap_DEFAULT, ColorMap_CMOCEAN_PHASE)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesColorMap()[index];
 }
