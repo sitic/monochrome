@@ -211,7 +211,7 @@ void show_top_ui() {
     if (ImGui::BeginTabItem("About")) {
       static markdown_cls md;
 
-      static std::string readme = get_rc_text_file("README.md");
+      static std::string readme = fmt::format("Monochrome version {}\n{}",  MONOCHROME_VERSION, get_rc_text_file("README.md"));
       md.print(readme.data(), readme.data() + readme.size());
 
       ImGui::EndTabItem();

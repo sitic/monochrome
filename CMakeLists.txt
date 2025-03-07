@@ -87,6 +87,7 @@ cmrc_add_resource_library(monochrome-resources
                           "vendor/fonts/NotoSansDisplay-Bold.ttf"
                           "vendor/fonts/FiraCode-Regular.ttf"
 )
+add_definitions(-DMONOCHROME_VERSION="${CMAKE_PROJECT_VERSION}")
 
 set(SOURCES
         src/cpp/main.cpp
