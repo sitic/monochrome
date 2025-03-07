@@ -6,6 +6,8 @@
 
 Monochrome is a lightweight and fast video viewer for scientific monochromatic videos with high-dynamic range (float, uint16, etc.).
 
+![Monochrome](https://raw.githubusercontent.com/sitic/monochrome/refs/heads/master/assets/Monochrome-screenshot1.webp)
+
 It is designed for viewing high-speed monochromatic fluorescence video data from scientific cameras and meet our specific needs for cardiac optical mapping data (together with [optimap](https://github.com/cardiacvision/optimap)):
 * Support for high-dynamic range (uint16, 32-bit float) data with sliders to adjust intensity range
 * Playback of multiple videos in sync

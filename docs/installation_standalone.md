@@ -15,7 +15,13 @@ Because Monochrome is not digitally signed, Windows Defender might show a warnin
 
 ## macOS
 
-Download the `.dmg` file from the [latest release](https://github.com/sitic/monochrome/releases/latest) and run it to copy `Monochrome.app` to your Applications folder. When launching Monochrome for the first time, you may need to right-click on the app in Finder and select "Open" to bypass the security warning. For more information, see the "[open a Mac app from an unidentified developer](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac)" guide from Apple.
+Download the `.dmg` file from the [latest release](https://github.com/sitic/monochrome/releases/latest) and run it to copy `Monochrome.app` to your Applications folder. When launching Monochrome for the first time, you may need to right-click on the app in Finder and select "Open" to bypass the security warning. This is because the app is not notarized by Apple, which is a requirement for apps distributed outside of the Mac App Store. If the warning persists, you can remove the quarantine attribute from the app by running the following command in Terminal:
+
+```bash
+xattr -d com.apple.quarantine /Applications/Monochrome.app
+```
+
+For more information, see the "[open a Mac app from an unidentified developer](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac)" guide from Apple.
 
 ## Linux
 
