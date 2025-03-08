@@ -10,27 +10,39 @@ set_target_properties(glfw PROPERTIES FOLDER libs)
 add_library(glad glad/src/glad.c)
 target_include_directories(glad PUBLIC glad/include)
 
-add_library(md4c md4c/md4c.c md4c/md4c.h md4c/md4c-html.c md4c/md4c-html.h md4c/entity.c md4c/entity.h)
+add_library(
+    md4c
+    md4c/md4c.c
+    md4c/md4c.h
+    md4c/md4c-html.c
+    md4c/md4c-html.h
+    md4c/entity.c
+    md4c/entity.h
+)
 target_include_directories(md4c SYSTEM PUBLIC md4c)
 
-add_library(imgui_glfw_gl3
-        imgui/imgui.cpp
-        imgui/imgui_draw.cpp
-        imgui/imgui_widgets.cpp
-        imgui/imgui_tables.cpp
-        imgui/imgui_demo.cpp
-        imgui/backends/imgui_impl_glfw.cpp
-        imgui/backends/imgui_impl_opengl3.cpp
-        imgui/misc/cpp/imgui_stdlib.cpp
-
-        implot/implot.cpp implot/implot_items.cpp
-        
-        fonts/IconsFontAwesome5.cpp
-        fonts/IconsMaterialDesignIcons.cpp
-        
-        imgui_md/imgui_md.cpp imgui_md/imgui_md.h
-        )
-target_include_directories(imgui_glfw_gl3 SYSTEM PUBLIC imgui imgui/backends imgui/misc/cpp implot imgui_md)
+add_library(
+    imgui_glfw_gl3
+    imgui/imgui.cpp
+    imgui/imgui_draw.cpp
+    imgui/imgui_widgets.cpp
+    imgui/imgui_tables.cpp
+    imgui/imgui_demo.cpp
+    imgui/backends/imgui_impl_glfw.cpp
+    imgui/backends/imgui_impl_opengl3.cpp
+    imgui/misc/cpp/imgui_stdlib.cpp
+    implot/implot.cpp
+    implot/implot_items.cpp
+    fonts/IconsFontAwesome5.cpp
+    fonts/IconsMaterialDesignIcons.cpp
+    imgui_md/imgui_md.cpp
+    imgui_md/imgui_md.h
+)
+target_include_directories(
+    imgui_glfw_gl3
+    SYSTEM
+    PUBLIC imgui imgui/backends imgui/misc/cpp implot imgui_md
+)
 target_link_libraries(imgui_glfw_gl3 PUBLIC glad glfw OpenGL::GL md4c)
 set_target_properties(imgui_glfw_gl3 PROPERTIES FOLDER libs)
 
@@ -58,9 +70,9 @@ add_subdirectory(ghc)
 add_library(asio INTERFACE)
 target_include_directories(asio INTERFACE asio/include)
 target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
-if (MSVC)
+if(MSVC)
     target_compile_definitions(asio INTERFACE _WIN32_WINNT=0x0501)
-endif ()
+endif()
 
 add_library(readerwriterqueue INTERFACE)
 target_include_directories(readerwriterqueue INTERFACE readerwriterqueue/include)
@@ -83,4 +95,8 @@ add_subdirectory(CLI11)
 add_library(pugixml pugixml/src/pugixml.cpp pugixml/src/pugixml.hpp pugixml/src/pugiconfig.hpp)
 target_include_directories(pugixml SYSTEM PUBLIC pugixml/src)
 
-set_property(TARGET imgui_glfw_gl3 glad glfw fmt pugixml APPEND_STRING PROPERTY COMPILE_FLAGS " -w")
+set_property(
+    TARGET imgui_glfw_gl3 glad glfw fmt pugixml
+    APPEND_STRING
+    PROPERTY COMPILE_FLAGS " -w"
+)
