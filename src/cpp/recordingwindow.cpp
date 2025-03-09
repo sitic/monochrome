@@ -6,6 +6,7 @@
 #include "keybindings.h"
 #include "prm.h"
 #include "utils/utils.h"
+#include "utils/files.h"
 
 namespace {
   SharedRecordingPtr rec_from_window_ptr(GLFWwindow *_window) {

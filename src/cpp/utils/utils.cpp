@@ -122,9 +122,3 @@ void Shader::checkCompileErrors(GLuint shader, const std::string& type) {
     }
   }
 }
-
-std::string get_rc_text_file(const std::string& filename) {
-  auto fs   = cmrc::rc::get_filesystem();
-  auto file = fs.open(filename);
-  return std::string(file.begin(), file.end());
-}

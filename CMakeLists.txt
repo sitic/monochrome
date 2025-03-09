@@ -146,6 +146,8 @@ set(SOURCES
     src/cpp/utils/videorecorder.h
     src/cpp/utils/settings.h
     src/cpp/utils/settings.cpp
+    src/cpp/utils/files.h
+    src/cpp/utils/files.cpp
 )
 
 if(APPLE)

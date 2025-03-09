@@ -6,6 +6,7 @@
 #include "globals.h"
 #include "prm.h"
 #include "recordingwindow.h"
+#include "utils/files.h"
 
 #include "videorecorder.h"
 
@@ -88,10 +89,7 @@ std::string save_current_settings() {
 
   std::string settings = app.config_to_str(true, true);
 
-  std::ofstream file;
-  file.open(config_path);
-  file << settings;
-  file.close();
+  write_text_file(config_path, settings);
 
   return config_path;
 }

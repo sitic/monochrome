@@ -7,18 +7,11 @@
 
 #include <Eigen/Dense>
 #include <flag_set.hpp>
+#include <ghc/fs_std_fwd.hpp>
 
 #include "utils/definitions.h"
 #include "utils/iterators.h"
 #include "utils/vectors.h"
-// only use std filesystem on msvc for now, as gcc / clang sometimes require link options
-#if defined(__cplusplus) && _MSC_VER >= 1920
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
-#include <ghc/filesystem.hpp>
-namespace fs = ghc::filesystem;
-#endif
 
 using namespace std::chrono_literals;
 

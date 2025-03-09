@@ -8,15 +8,7 @@
 #include <asio/write.hpp>
 #include <asio/ts/internet.hpp>
 #include <asio/local/stream_protocol.hpp>
-
-// only use std filesystem on msvc for now, as gcc / clang sometimes require link options
-#if defined(__cplusplus) && _MSC_VER >= 1920
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
-#include <ghc/filesystem.hpp>
-namespace fs = ghc::filesystem;
-#endif
+#include <ghc/fs_std_fwd.hpp>
 
 #ifndef WIN32
 #include <unistd.h>

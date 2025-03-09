@@ -5,6 +5,7 @@
 #include "globals.h"
 #include "utils/settings.h"
 #include "utils/ImGuiConnector.h"
+#include "utils/files.h"
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 // Following includes for Windows LinkCallback

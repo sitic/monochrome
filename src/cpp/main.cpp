@@ -3,6 +3,7 @@
 
 // asio needs to be imported before windows.h
 #include <asio.hpp>
+#include <ghc/fs_std_impl.hpp>
 
 #ifdef _WIN32  // Windows 32 and 64 bit
 #include <windows.h>
