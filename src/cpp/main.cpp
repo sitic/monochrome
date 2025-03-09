@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   bool send_files_over_wire = false;
   bool disable_ipc          = false;
   float font_scale          = 0;
-  app.add_option("files", files, "List of files to open")->check(CLI::ExistingFile);
+  app.add_option("files", files, "List of files or directories to open")->check(CLI::ExistingPath);
   cli_add_global_options(app);
   app.add_option("--font-scale", font_scale, "Fonts scaling factor");
   app.add_flag(

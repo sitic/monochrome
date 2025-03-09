@@ -86,10 +86,12 @@ if(APPLE)
 endif()
 
 file(GLOB SHADERS "src/shaders/*.glsl")
+file(GLOB MC_FILELOADERS "src/python/embedded_file_loaders/*.py")
 cmrc_add_resource_library(monochrome-resources
                           ALIAS monochrome::rc
                           NAMESPACE rc
                           ${SHADERS}
+                          ${MC_FILELOADERS}
                           "assets/Monochrome_256x256.png"
                           "README.md"
                           "vendor/fonts/NotoSansDisplay-Regular.ttf"
