@@ -194,7 +194,7 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
     date_fb = builder.CreateString(date)
     comment_fb = builder.CreateString(comment)
     if metadata:
-        metadata = [(builder.CreateString(key), builder.CreateString(val)) for key, val in metadata.items()]
+        metadata = [(builder.CreateString(key), builder.CreateString(str(val))) for key, val in metadata.items()]
         metaData_fbs = []
         for key, val in metadata:
             DictEntryStart(builder)
