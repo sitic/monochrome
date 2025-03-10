@@ -204,7 +204,8 @@ void show_subprocesses() {
     p->tick();
     ImGui::SetNextWindowSizeConstraints(ImVec2(0.5f * ImGui::GetMainViewport()->Size[0], 0),
                                          ImVec2(FLT_MAX, FLT_MAX));
-    ImGui::Begin(p->title.c_str(), &(p->show));
+    std::string window_title = fmt::format("{}##{}", p->title, p->id);
+    ImGui::Begin(window_title.c_str(), &(p->show));
 
     ImGui::TextWrapped("%s", p->msg.c_str());
   

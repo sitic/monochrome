@@ -25,5 +25,3 @@ bool write_text_file(const fs::path& path, const std::string& content) {
     file.close();
     return true;
 }
-
-

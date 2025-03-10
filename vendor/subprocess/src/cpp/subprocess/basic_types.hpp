@@ -1,7 +1,9 @@
 #pragma once
 #ifdef _WIN32
 #ifndef __MINGW32__
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #endif
 #include <windows.h>
 #else
