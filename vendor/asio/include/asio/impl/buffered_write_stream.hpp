@@ -2,7 +2,7 @@
 // impl/buffered_write_stream.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -15,10 +15,12 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include "asio/associator.hpp"
+#include "asio/associated_allocator.hpp"
+#include "asio/associated_executor.hpp"
+#include "asio/detail/handler_alloc_helpers.hpp"
 #include "asio/detail/handler_cont_helpers.hpp"
+#include "asio/detail/handler_invoke_helpers.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
-#include "asio/detail/non_const_lvalue.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -52,10 +54,11 @@ namespace detail
     buffered_flush_handler(detail::buffered_stream_storage& storage,
         WriteHandler& handler)
       : storage_(storage),
-        handler_(static_cast<WriteHandler&&>(handler))
+        handler_(ASIO_MOVE_CAST(WriteHandler)(handler))
     {
     }
 
+#if defined(ASIO_HAS_MOVE)
     buffered_flush_handler(const buffered_flush_handler& other)
       : storage_(other.storage_),
         handler_(other.handler_)
@@ -64,21 +67,38 @@ namespace detail
 
     buffered_flush_handler(buffered_flush_handler&& other)
       : storage_(other.storage_),
-        handler_(static_cast<WriteHandler&&>(other.handler_))
+        handler_(ASIO_MOVE_CAST(WriteHandler)(other.handler_))
     {
     }
+#endif // defined(ASIO_HAS_MOVE)
 
     void operator()(const asio::error_code& ec,
         const std::size_t bytes_written)
     {
       storage_.consume(bytes_written);
-      static_cast<WriteHandler&&>(handler_)(ec, bytes_written);
+      handler_(ec, bytes_written);
     }
 
   //private:
     detail::buffered_stream_storage& storage_;
     WriteHandler handler_;
   };
+
+  template <typename WriteHandler>
+  inline void* asio_handler_allocate(std::size_t size,
+      buffered_flush_handler<WriteHandler>* this_handler)
+  {
+    return asio_handler_alloc_helpers::allocate(
+        size, this_handler->handler_);
+  }
+
+  template <typename WriteHandler>
+  inline void asio_handler_deallocate(void* pointer, std::size_t size,
+      buffered_flush_handler<WriteHandler>* this_handler)
+  {
+    asio_handler_alloc_helpers::deallocate(
+        pointer, size, this_handler->handler_);
+  }
 
   template <typename WriteHandler>
   inline bool asio_handler_is_continuation(
@@ -88,83 +108,73 @@ namespace detail
           this_handler->handler_);
   }
 
-  template <typename Stream>
-  class initiate_async_buffered_flush
+  template <typename Function, typename WriteHandler>
+  inline void asio_handler_invoke(Function& function,
+      buffered_flush_handler<WriteHandler>* this_handler)
   {
-  public:
-    typedef typename remove_reference_t<
-      Stream>::lowest_layer_type::executor_type executor_type;
+    asio_handler_invoke_helpers::invoke(
+        function, this_handler->handler_);
+  }
 
-    explicit initiate_async_buffered_flush(
-        remove_reference_t<Stream>& next_layer)
-      : next_layer_(next_layer)
-    {
-    }
-
-    executor_type get_executor() const noexcept
-    {
-      return next_layer_.lowest_layer().get_executor();
-    }
-
-    template <typename WriteHandler>
-    void operator()(WriteHandler&& handler,
-        buffered_stream_storage* storage) const
-    {
-      // If you get an error on the following line it means that your handler
-      // does not meet the documented type requirements for a WriteHandler.
-      ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-      non_const_lvalue<WriteHandler> handler2(handler);
-      async_write(next_layer_, buffer(storage->data(), storage->size()),
-          buffered_flush_handler<decay_t<WriteHandler>>(
-            *storage, handler2.value));
-    }
-
-  private:
-    remove_reference_t<Stream>& next_layer_;
-  };
+  template <typename Function, typename WriteHandler>
+  inline void asio_handler_invoke(const Function& function,
+      buffered_flush_handler<WriteHandler>* this_handler)
+  {
+    asio_handler_invoke_helpers::invoke(
+        function, this_handler->handler_);
+  }
 } // namespace detail
 
 #if !defined(GENERATING_DOCUMENTATION)
 
-template <template <typename, typename> class Associator,
-    typename WriteHandler, typename DefaultCandidate>
-struct associator<Associator,
-    detail::buffered_flush_handler<WriteHandler>,
-    DefaultCandidate>
-  : Associator<WriteHandler, DefaultCandidate>
+template <typename WriteHandler, typename Allocator>
+struct associated_allocator<
+    detail::buffered_flush_handler<WriteHandler>, Allocator>
 {
-  static typename Associator<WriteHandler, DefaultCandidate>::type get(
-      const detail::buffered_flush_handler<WriteHandler>& h) noexcept
-  {
-    return Associator<WriteHandler, DefaultCandidate>::get(h.handler_);
-  }
+  typedef typename associated_allocator<WriteHandler, Allocator>::type type;
 
-  static auto get(const detail::buffered_flush_handler<WriteHandler>& h,
-      const DefaultCandidate& c) noexcept
-    -> decltype(Associator<WriteHandler, DefaultCandidate>::get(h.handler_, c))
+  static type get(const detail::buffered_flush_handler<WriteHandler>& h,
+      const Allocator& a = Allocator()) ASIO_NOEXCEPT
   {
-    return Associator<WriteHandler, DefaultCandidate>::get(h.handler_, c);
+    return associated_allocator<WriteHandler, Allocator>::get(h.handler_, a);
+  }
+};
+
+template <typename WriteHandler, typename Executor>
+struct associated_executor<
+    detail::buffered_flush_handler<WriteHandler>, Executor>
+{
+  typedef typename associated_executor<WriteHandler, Executor>::type type;
+
+  static type get(const detail::buffered_flush_handler<WriteHandler>& h,
+      const Executor& ex = Executor()) ASIO_NOEXCEPT
+  {
+    return associated_executor<WriteHandler, Executor>::get(h.handler_, ex);
   }
 };
 
 #endif // !defined(GENERATING_DOCUMENTATION)
 
 template <typename Stream>
-template <
-    ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-      std::size_t)) WriteHandler>
-inline auto buffered_write_stream<Stream>::async_flush(WriteHandler&& handler)
-  -> decltype(
-    async_initiate<WriteHandler,
-      void (asio::error_code, std::size_t)>(
-        declval<detail::initiate_async_buffered_flush<Stream>>(),
-        handler, declval<detail::buffered_stream_storage*>()))
+template <typename WriteHandler>
+ASIO_INITFN_RESULT_TYPE(WriteHandler,
+    void (asio::error_code, std::size_t))
+buffered_write_stream<Stream>::async_flush(
+    ASIO_MOVE_ARG(WriteHandler) handler)
 {
-  return async_initiate<WriteHandler,
-    void (asio::error_code, std::size_t)>(
-      detail::initiate_async_buffered_flush<Stream>(next_layer_),
-      handler, &storage_);
+  // If you get an error on the following line it means that your handler does
+  // not meet the documented type requirements for a WriteHandler.
+  ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+
+  async_completion<WriteHandler,
+    void (asio::error_code, std::size_t)> init(handler);
+
+  async_write(next_layer_, buffer(storage_.data(), storage_.size()),
+      detail::buffered_flush_handler<ASIO_HANDLER_TYPE(
+        WriteHandler, void (asio::error_code, std::size_t))>(
+        storage_, init.completion_handler));
+
+  return init.result.get();
 }
 
 template <typename Stream>
@@ -209,30 +219,32 @@ namespace detail
         const ConstBufferSequence& buffers, WriteHandler& handler)
       : storage_(storage),
         buffers_(buffers),
-        handler_(static_cast<WriteHandler&&>(handler))
+        handler_(ASIO_MOVE_CAST(WriteHandler)(handler))
     {
     }
 
-    buffered_write_some_handler(const buffered_write_some_handler& other)
-      : storage_(other.storage_),
-        buffers_(other.buffers_),
-        handler_(other.handler_)
-    {
-    }
+#if defined(ASIO_HAS_MOVE)
+      buffered_write_some_handler(const buffered_write_some_handler& other)
+        : storage_(other.storage_),
+          buffers_(other.buffers_),
+          handler_(other.handler_)
+      {
+      }
 
-    buffered_write_some_handler(buffered_write_some_handler&& other)
-      : storage_(other.storage_),
-        buffers_(other.buffers_),
-        handler_(static_cast<WriteHandler&&>(other.handler_))
-    {
-    }
+      buffered_write_some_handler(buffered_write_some_handler&& other)
+        : storage_(other.storage_),
+          buffers_(other.buffers_),
+          handler_(ASIO_MOVE_CAST(WriteHandler)(other.handler_))
+      {
+      }
+#endif // defined(ASIO_HAS_MOVE)
 
     void operator()(const asio::error_code& ec, std::size_t)
     {
       if (ec)
       {
         const std::size_t length = 0;
-        static_cast<WriteHandler&&>(handler_)(ec, length);
+        handler_(ec, length);
       }
       else
       {
@@ -245,7 +257,7 @@ namespace detail
         storage_.resize(orig_size + length);
         const std::size_t bytes_copied = asio::buffer_copy(
             storage_.data() + orig_size, buffers_, length);
-        static_cast<WriteHandler&&>(handler_)(ec, bytes_copied);
+        handler_(ec, bytes_copied);
       }
     }
 
@@ -256,6 +268,24 @@ namespace detail
   };
 
   template <typename ConstBufferSequence, typename WriteHandler>
+  inline void* asio_handler_allocate(std::size_t size,
+      buffered_write_some_handler<
+        ConstBufferSequence, WriteHandler>* this_handler)
+  {
+    return asio_handler_alloc_helpers::allocate(
+        size, this_handler->handler_);
+  }
+
+  template <typename ConstBufferSequence, typename WriteHandler>
+  inline void asio_handler_deallocate(void* pointer, std::size_t size,
+      buffered_write_some_handler<
+        ConstBufferSequence, WriteHandler>* this_handler)
+  {
+    asio_handler_alloc_helpers::deallocate(
+        pointer, size, this_handler->handler_);
+  }
+
+  template <typename ConstBufferSequence, typename WriteHandler>
   inline bool asio_handler_is_continuation(
       buffered_write_some_handler<
         ConstBufferSequence, WriteHandler>* this_handler)
@@ -264,102 +294,99 @@ namespace detail
           this_handler->handler_);
   }
 
-  template <typename Stream>
-  class initiate_async_buffered_write_some
+  template <typename Function, typename ConstBufferSequence,
+      typename WriteHandler>
+  inline void asio_handler_invoke(Function& function,
+      buffered_write_some_handler<
+        ConstBufferSequence, WriteHandler>* this_handler)
   {
-  public:
-    typedef typename remove_reference_t<
-      Stream>::lowest_layer_type::executor_type executor_type;
+    asio_handler_invoke_helpers::invoke(
+        function, this_handler->handler_);
+  }
 
-    explicit initiate_async_buffered_write_some(
-        remove_reference_t<Stream>& next_layer)
-      : next_layer_(next_layer)
-    {
-    }
-
-    executor_type get_executor() const noexcept
-    {
-      return next_layer_.lowest_layer().get_executor();
-    }
-
-    template <typename WriteHandler, typename ConstBufferSequence>
-    void operator()(WriteHandler&& handler,
-        buffered_stream_storage* storage,
-        const ConstBufferSequence& buffers) const
-    {
-      // If you get an error on the following line it means that your handler
-      // does not meet the documented type requirements for a WriteHandler.
-      ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-      using asio::buffer_size;
-      non_const_lvalue<WriteHandler> handler2(handler);
-      if (buffer_size(buffers) == 0 || storage->size() < storage->capacity())
-      {
-        next_layer_.async_write_some(ASIO_CONST_BUFFER(0, 0),
-            buffered_write_some_handler<ConstBufferSequence,
-              decay_t<WriteHandler>>(
-                *storage, buffers, handler2.value));
-      }
-      else
-      {
-        initiate_async_buffered_flush<Stream>(this->next_layer_)(
-            buffered_write_some_handler<ConstBufferSequence,
-              decay_t<WriteHandler>>(
-                *storage, buffers, handler2.value),
-            storage);
-      }
-    }
-
-  private:
-    remove_reference_t<Stream>& next_layer_;
-  };
+  template <typename Function, typename ConstBufferSequence,
+      typename WriteHandler>
+  inline void asio_handler_invoke(const Function& function,
+      buffered_write_some_handler<
+        ConstBufferSequence, WriteHandler>* this_handler)
+  {
+    asio_handler_invoke_helpers::invoke(
+        function, this_handler->handler_);
+  }
 } // namespace detail
 
 #if !defined(GENERATING_DOCUMENTATION)
 
-template <template <typename, typename> class Associator,
-    typename ConstBufferSequence, typename WriteHandler,
-    typename DefaultCandidate>
-struct associator<Associator,
+template <typename ConstBufferSequence,
+    typename WriteHandler, typename Allocator>
+struct associated_allocator<
     detail::buffered_write_some_handler<ConstBufferSequence, WriteHandler>,
-    DefaultCandidate>
-  : Associator<WriteHandler, DefaultCandidate>
+    Allocator>
 {
-  static typename Associator<WriteHandler, DefaultCandidate>::type get(
-      const detail::buffered_write_some_handler<
-        ConstBufferSequence, WriteHandler>& h) noexcept
-  {
-    return Associator<WriteHandler, DefaultCandidate>::get(h.handler_);
-  }
+  typedef typename associated_allocator<WriteHandler, Allocator>::type type;
 
-  static auto get(
+  static type get(
       const detail::buffered_write_some_handler<
         ConstBufferSequence, WriteHandler>& h,
-      const DefaultCandidate& c) noexcept
-    -> decltype(Associator<WriteHandler, DefaultCandidate>::get(h.handler_, c))
+      const Allocator& a = Allocator()) ASIO_NOEXCEPT
   {
-    return Associator<WriteHandler, DefaultCandidate>::get(h.handler_, c);
+    return associated_allocator<WriteHandler, Allocator>::get(h.handler_, a);
+  }
+};
+
+template <typename ConstBufferSequence,
+    typename WriteHandler, typename Executor>
+struct associated_executor<
+    detail::buffered_write_some_handler<ConstBufferSequence, WriteHandler>,
+    Executor>
+{
+  typedef typename associated_executor<WriteHandler, Executor>::type type;
+
+  static type get(
+      const detail::buffered_write_some_handler<
+        ConstBufferSequence, WriteHandler>& h,
+      const Executor& ex = Executor()) ASIO_NOEXCEPT
+  {
+    return associated_executor<WriteHandler, Executor>::get(h.handler_, ex);
   }
 };
 
 #endif // !defined(GENERATING_DOCUMENTATION)
 
 template <typename Stream>
-template <typename ConstBufferSequence,
-    ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-      std::size_t)) WriteHandler>
-inline auto buffered_write_stream<Stream>::async_write_some(
-    const ConstBufferSequence& buffers, WriteHandler&& handler)
-  -> decltype(
-    async_initiate<WriteHandler,
-      void (asio::error_code, std::size_t)>(
-        declval<detail::initiate_async_buffered_write_some<Stream>>(),
-        handler, declval<detail::buffered_stream_storage*>(), buffers))
+template <typename ConstBufferSequence, typename WriteHandler>
+ASIO_INITFN_RESULT_TYPE(WriteHandler,
+    void (asio::error_code, std::size_t))
+buffered_write_stream<Stream>::async_write_some(
+    const ConstBufferSequence& buffers,
+    ASIO_MOVE_ARG(WriteHandler) handler)
 {
-  return async_initiate<WriteHandler,
-    void (asio::error_code, std::size_t)>(
-      detail::initiate_async_buffered_write_some<Stream>(next_layer_),
-      handler, &storage_, buffers);
+  // If you get an error on the following line it means that your handler does
+  // not meet the documented type requirements for a WriteHandler.
+  ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+
+  async_completion<WriteHandler,
+    void (asio::error_code, std::size_t)> init(handler);
+
+  using asio::buffer_size;
+  if (buffer_size(buffers) == 0
+      || storage_.size() < storage_.capacity())
+  {
+    next_layer_.async_write_some(ASIO_CONST_BUFFER(0, 0),
+        detail::buffered_write_some_handler<
+          ConstBufferSequence, ASIO_HANDLER_TYPE(
+            WriteHandler, void (asio::error_code, std::size_t))>(
+            storage_, buffers, init.completion_handler));
+  }
+  else
+  {
+    this->async_flush(detail::buffered_write_some_handler<
+          ConstBufferSequence, ASIO_HANDLER_TYPE(
+            WriteHandler, void (asio::error_code, std::size_t))>(
+            storage_, buffers, init.completion_handler));
+  }
+
+  return init.result.get();
 }
 
 template <typename Stream>

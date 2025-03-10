@@ -2,7 +2,7 @@
 // basic_serial_port.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2008 Rep Invariant Systems, Inc. (info@repinvariant.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -18,26 +18,18 @@
 
 #include "asio/detail/config.hpp"
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
+
 #if defined(ASIO_HAS_SERIAL_PORT) \
   || defined(GENERATING_DOCUMENTATION)
 
 #include <string>
-#include <utility>
-#include "asio/any_io_executor.hpp"
-#include "asio/async_result.hpp"
+#include "asio/basic_io_object.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
-#include "asio/detail/io_object_impl.hpp"
-#include "asio/detail/non_const_lvalue.hpp"
 #include "asio/detail/throw_error.hpp"
-#include "asio/detail/type_traits.hpp"
 #include "asio/error.hpp"
-#include "asio/execution_context.hpp"
 #include "asio/serial_port_base.hpp"
-#if defined(ASIO_HAS_IOCP)
-# include "asio/detail/win_iocp_serial_port_service.hpp"
-#else
-# include "asio/detail/posix_serial_port_service.hpp"
-#endif
+#include "asio/serial_port_service.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -45,75 +37,34 @@ namespace asio {
 
 /// Provides serial port functionality.
 /**
- * The basic_serial_port class provides a wrapper over serial port
- * functionality.
+ * The basic_serial_port class template provides functionality that is common
+ * to all serial ports.
  *
  * @par Thread Safety
  * @e Distinct @e objects: Safe.@n
  * @e Shared @e objects: Unsafe.
  */
-template <typename Executor = any_io_executor>
+template <typename SerialPortService = serial_port_service>
 class basic_serial_port
-  : public serial_port_base
+  : public basic_io_object<SerialPortService>,
+    public serial_port_base
 {
-private:
-  class initiate_async_write_some;
-  class initiate_async_read_some;
-
 public:
-  /// The type of the executor associated with the object.
-  typedef Executor executor_type;
-
-  /// Rebinds the serial port type to another executor.
-  template <typename Executor1>
-  struct rebind_executor
-  {
-    /// The serial port type when rebound to the specified executor.
-    typedef basic_serial_port<Executor1> other;
-  };
-
   /// The native representation of a serial port.
-#if defined(GENERATING_DOCUMENTATION)
-  typedef implementation_defined native_handle_type;
-#elif defined(ASIO_HAS_IOCP)
-  typedef detail::win_iocp_serial_port_service::native_handle_type
-    native_handle_type;
-#else
-  typedef detail::posix_serial_port_service::native_handle_type
-    native_handle_type;
-#endif
+  typedef typename SerialPortService::native_handle_type native_handle_type;
 
-  /// A basic_basic_serial_port is always the lowest layer.
-  typedef basic_serial_port lowest_layer_type;
+  /// A basic_serial_port is always the lowest layer.
+  typedef basic_serial_port<SerialPortService> lowest_layer_type;
 
   /// Construct a basic_serial_port without opening it.
   /**
    * This constructor creates a serial port without opening it.
    *
-   * @param ex The I/O executor that the serial port will use, by default, to
-   * dispatch handlers for any asynchronous operations performed on the
-   * serial port.
+   * @param io_context The io_context object that the serial port will use to
+   * dispatch handlers for any asynchronous operations performed on the port.
    */
-  explicit basic_serial_port(const executor_type& ex)
-    : impl_(0, ex)
-  {
-  }
-
-  /// Construct a basic_serial_port without opening it.
-  /**
-   * This constructor creates a serial port without opening it.
-   *
-   * @param context An execution context which provides the I/O executor that
-   * the serial port will use, by default, to dispatch handlers for any
-   * asynchronous operations performed on the serial port.
-   */
-  template <typename ExecutionContext>
-  explicit basic_serial_port(ExecutionContext& context,
-      constraint_t<
-        is_convertible<ExecutionContext&, execution_context&>::value,
-        defaulted_constraint
-      > = defaulted_constraint())
-    : impl_(0, 0, context)
+  explicit basic_serial_port(asio::io_context& io_context)
+    : basic_io_object<SerialPortService>(io_context)
   {
   }
 
@@ -122,18 +73,18 @@ public:
    * This constructor creates and opens a serial port for the specified device
    * name.
    *
-   * @param ex The I/O executor that the serial port will use, by default, to
-   * dispatch handlers for any asynchronous operations performed on the
-   * serial port.
+   * @param io_context The io_context object that the serial port will use to
+   * dispatch handlers for any asynchronous operations performed on the port.
    *
    * @param device The platform-specific device name for this serial
    * port.
    */
-  basic_serial_port(const executor_type& ex, const char* device)
-    : impl_(0, ex)
+  explicit basic_serial_port(asio::io_context& io_context,
+      const char* device)
+    : basic_io_object<SerialPortService>(io_context)
   {
     asio::error_code ec;
-    impl_.get_service().open(impl_.get_implementation(), device, ec);
+    this->get_service().open(this->get_implementation(), device, ec);
     asio::detail::throw_error(ec, "open");
   }
 
@@ -142,66 +93,18 @@ public:
    * This constructor creates and opens a serial port for the specified device
    * name.
    *
-   * @param context An execution context which provides the I/O executor that
-   * the serial port will use, by default, to dispatch handlers for any
-   * asynchronous operations performed on the serial port.
+   * @param io_context The io_context object that the serial port will use to
+   * dispatch handlers for any asynchronous operations performed on the port.
    *
    * @param device The platform-specific device name for this serial
    * port.
    */
-  template <typename ExecutionContext>
-  basic_serial_port(ExecutionContext& context, const char* device,
-      constraint_t<
-        is_convertible<ExecutionContext&, execution_context&>::value
-      > = 0)
-    : impl_(0, 0, context)
+  explicit basic_serial_port(asio::io_context& io_context,
+      const std::string& device)
+    : basic_io_object<SerialPortService>(io_context)
   {
     asio::error_code ec;
-    impl_.get_service().open(impl_.get_implementation(), device, ec);
-    asio::detail::throw_error(ec, "open");
-  }
-
-  /// Construct and open a basic_serial_port.
-  /**
-   * This constructor creates and opens a serial port for the specified device
-   * name.
-   *
-   * @param ex The I/O executor that the serial port will use, by default, to
-   * dispatch handlers for any asynchronous operations performed on the
-   * serial port.
-   *
-   * @param device The platform-specific device name for this serial
-   * port.
-   */
-  basic_serial_port(const executor_type& ex, const std::string& device)
-    : impl_(0, ex)
-  {
-    asio::error_code ec;
-    impl_.get_service().open(impl_.get_implementation(), device, ec);
-    asio::detail::throw_error(ec, "open");
-  }
-
-  /// Construct and open a basic_serial_port.
-  /**
-   * This constructor creates and opens a serial port for the specified device
-   * name.
-   *
-   * @param context An execution context which provides the I/O executor that
-   * the serial port will use, by default, to dispatch handlers for any
-   * asynchronous operations performed on the serial port.
-   *
-   * @param device The platform-specific device name for this serial
-   * port.
-   */
-  template <typename ExecutionContext>
-  basic_serial_port(ExecutionContext& context, const std::string& device,
-      constraint_t<
-        is_convertible<ExecutionContext&, execution_context&>::value
-      > = 0)
-    : impl_(0, 0, context)
-  {
-    asio::error_code ec;
-    impl_.get_service().open(impl_.get_implementation(), device, ec);
+    this->get_service().open(this->get_implementation(), device, ec);
     asio::detail::throw_error(ec, "open");
   }
 
@@ -210,51 +113,24 @@ public:
    * This constructor creates a serial port object to hold an existing native
    * serial port.
    *
-   * @param ex The I/O executor that the serial port will use, by default, to
-   * dispatch handlers for any asynchronous operations performed on the
-   * serial port.
+   * @param io_context The io_context object that the serial port will use to
+   * dispatch handlers for any asynchronous operations performed on the port.
    *
    * @param native_serial_port A native serial port.
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_serial_port(const executor_type& ex,
+  basic_serial_port(asio::io_context& io_context,
       const native_handle_type& native_serial_port)
-    : impl_(0, ex)
+    : basic_io_object<SerialPortService>(io_context)
   {
     asio::error_code ec;
-    impl_.get_service().assign(impl_.get_implementation(),
+    this->get_service().assign(this->get_implementation(),
         native_serial_port, ec);
     asio::detail::throw_error(ec, "assign");
   }
 
-  /// Construct a basic_serial_port on an existing native serial port.
-  /**
-   * This constructor creates a serial port object to hold an existing native
-   * serial port.
-   *
-   * @param context An execution context which provides the I/O executor that
-   * the serial port will use, by default, to dispatch handlers for any
-   * asynchronous operations performed on the serial port.
-   *
-   * @param native_serial_port A native serial port.
-   *
-   * @throws asio::system_error Thrown on failure.
-   */
-  template <typename ExecutionContext>
-  basic_serial_port(ExecutionContext& context,
-      const native_handle_type& native_serial_port,
-      constraint_t<
-        is_convertible<ExecutionContext&, execution_context&>::value
-      > = 0)
-    : impl_(0, 0, context)
-  {
-    asio::error_code ec;
-    impl_.get_service().assign(impl_.get_implementation(),
-        native_serial_port, ec);
-    asio::detail::throw_error(ec, "assign");
-  }
-
+#if defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
   /// Move-construct a basic_serial_port from another.
   /**
    * This constructor moves a serial port from one object to another.
@@ -263,11 +139,11 @@ public:
    * occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_serial_port(const executor_type&)
-   * constructor.
+   * constructed using the @c basic_serial_port(io_context&) constructor.
    */
   basic_serial_port(basic_serial_port&& other)
-    : impl_(std::move(other.impl_))
+    : basic_io_object<SerialPortService>(
+        ASIO_MOVE_CAST(basic_serial_port)(other))
   {
   }
 
@@ -279,79 +155,15 @@ public:
    * occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_serial_port(const executor_type&)
-   * constructor.
+   * constructed using the @c basic_serial_port(io_context&) constructor.
    */
   basic_serial_port& operator=(basic_serial_port&& other)
   {
-    impl_ = std::move(other.impl_);
+    basic_io_object<SerialPortService>::operator=(
+        ASIO_MOVE_CAST(basic_serial_port)(other));
     return *this;
   }
-
-  // All serial ports have access to each other's implementations.
-  template <typename Executor1>
-  friend class basic_serial_port;
-
-  /// Move-construct a basic_serial_port from a serial port of another executor
-  /// type.
-  /**
-   * This constructor moves a serial port from one object to another.
-   *
-   * @param other The other basic_serial_port object from which the move will
-   * occur.
-   *
-   * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_serial_port(const executor_type&)
-   * constructor.
-   */
-  template <typename Executor1>
-  basic_serial_port(basic_serial_port<Executor1>&& other,
-      constraint_t<
-        is_convertible<Executor1, Executor>::value,
-        defaulted_constraint
-      > = defaulted_constraint())
-    : impl_(std::move(other.impl_))
-  {
-  }
-
-  /// Move-assign a basic_serial_port from a serial port of another executor
-  /// type.
-  /**
-   * This assignment operator moves a serial port from one object to another.
-   *
-   * @param other The other basic_serial_port object from which the move will
-   * occur.
-   *
-   * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_serial_port(const executor_type&)
-   * constructor.
-   */
-  template <typename Executor1>
-  constraint_t<
-    is_convertible<Executor1, Executor>::value,
-    basic_serial_port&
-  > operator=(basic_serial_port<Executor1>&& other)
-  {
-    basic_serial_port tmp(std::move(other));
-    impl_ = std::move(tmp.impl_);
-    return *this;
-  }
-
-  /// Destroys the serial port.
-  /**
-   * This function destroys the serial port, cancelling any outstanding
-   * asynchronous wait operations associated with the serial port as if by
-   * calling @c cancel.
-   */
-  ~basic_serial_port()
-  {
-  }
-
-  /// Get the executor associated with the object.
-  const executor_type& get_executor() noexcept
-  {
-    return impl_.get_executor();
-  }
+#endif // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
 
   /// Get a reference to the lowest layer.
   /**
@@ -392,7 +204,7 @@ public:
   void open(const std::string& device)
   {
     asio::error_code ec;
-    impl_.get_service().open(impl_.get_implementation(), device, ec);
+    this->get_service().open(this->get_implementation(), device, ec);
     asio::detail::throw_error(ec, "open");
   }
 
@@ -408,7 +220,7 @@ public:
   ASIO_SYNC_OP_VOID open(const std::string& device,
       asio::error_code& ec)
   {
-    impl_.get_service().open(impl_.get_implementation(), device, ec);
+    this->get_service().open(this->get_implementation(), device, ec);
     ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
@@ -423,7 +235,7 @@ public:
   void assign(const native_handle_type& native_serial_port)
   {
     asio::error_code ec;
-    impl_.get_service().assign(impl_.get_implementation(),
+    this->get_service().assign(this->get_implementation(),
         native_serial_port, ec);
     asio::detail::throw_error(ec, "assign");
   }
@@ -439,7 +251,7 @@ public:
   ASIO_SYNC_OP_VOID assign(const native_handle_type& native_serial_port,
       asio::error_code& ec)
   {
-    impl_.get_service().assign(impl_.get_implementation(),
+    this->get_service().assign(this->get_implementation(),
         native_serial_port, ec);
     ASIO_SYNC_OP_VOID_RETURN(ec);
   }
@@ -447,7 +259,7 @@ public:
   /// Determine whether the serial port is open.
   bool is_open() const
   {
-    return impl_.get_service().is_open(impl_.get_implementation());
+    return this->get_service().is_open(this->get_implementation());
   }
 
   /// Close the serial port.
@@ -461,7 +273,7 @@ public:
   void close()
   {
     asio::error_code ec;
-    impl_.get_service().close(impl_.get_implementation(), ec);
+    this->get_service().close(this->get_implementation(), ec);
     asio::detail::throw_error(ec, "close");
   }
 
@@ -475,7 +287,7 @@ public:
    */
   ASIO_SYNC_OP_VOID close(asio::error_code& ec)
   {
-    impl_.get_service().close(impl_.get_implementation(), ec);
+    this->get_service().close(this->get_implementation(), ec);
     ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
@@ -487,7 +299,7 @@ public:
    */
   native_handle_type native_handle()
   {
-    return impl_.get_service().native_handle(impl_.get_implementation());
+    return this->get_service().native_handle(this->get_implementation());
   }
 
   /// Cancel all asynchronous operations associated with the serial port.
@@ -501,7 +313,7 @@ public:
   void cancel()
   {
     asio::error_code ec;
-    impl_.get_service().cancel(impl_.get_implementation(), ec);
+    this->get_service().cancel(this->get_implementation(), ec);
     asio::detail::throw_error(ec, "cancel");
   }
 
@@ -515,7 +327,7 @@ public:
    */
   ASIO_SYNC_OP_VOID cancel(asio::error_code& ec)
   {
-    impl_.get_service().cancel(impl_.get_implementation(), ec);
+    this->get_service().cancel(this->get_implementation(), ec);
     ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
@@ -529,7 +341,7 @@ public:
   void send_break()
   {
     asio::error_code ec;
-    impl_.get_service().send_break(impl_.get_implementation(), ec);
+    this->get_service().send_break(this->get_implementation(), ec);
     asio::detail::throw_error(ec, "send_break");
   }
 
@@ -542,7 +354,7 @@ public:
    */
   ASIO_SYNC_OP_VOID send_break(asio::error_code& ec)
   {
-    impl_.get_service().send_break(impl_.get_implementation(), ec);
+    this->get_service().send_break(this->get_implementation(), ec);
     ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
@@ -565,7 +377,7 @@ public:
   void set_option(const SettableSerialPortOption& option)
   {
     asio::error_code ec;
-    impl_.get_service().set_option(impl_.get_implementation(), option, ec);
+    this->get_service().set_option(this->get_implementation(), option, ec);
     asio::detail::throw_error(ec, "set_option");
   }
 
@@ -588,7 +400,7 @@ public:
   ASIO_SYNC_OP_VOID set_option(const SettableSerialPortOption& option,
       asio::error_code& ec)
   {
-    impl_.get_service().set_option(impl_.get_implementation(), option, ec);
+    this->get_service().set_option(this->get_implementation(), option, ec);
     ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
@@ -609,10 +421,10 @@ public:
    * asio::serial_port_base::character_size
    */
   template <typename GettableSerialPortOption>
-  void get_option(GettableSerialPortOption& option) const
+  void get_option(GettableSerialPortOption& option)
   {
     asio::error_code ec;
-    impl_.get_service().get_option(impl_.get_implementation(), option, ec);
+    this->get_service().get_option(this->get_implementation(), option, ec);
     asio::detail::throw_error(ec, "get_option");
   }
 
@@ -634,9 +446,9 @@ public:
    */
   template <typename GettableSerialPortOption>
   ASIO_SYNC_OP_VOID get_option(GettableSerialPortOption& option,
-      asio::error_code& ec) const
+      asio::error_code& ec)
   {
-    impl_.get_service().get_option(impl_.get_implementation(), option, ec);
+    this->get_service().get_option(this->get_implementation(), option, ec);
     ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
@@ -661,7 +473,7 @@ public:
    * @par Example
    * To write a single data buffer use the @ref buffer function as follows:
    * @code
-   * basic_serial_port.write_some(asio::buffer(data, size));
+   * serial_port.write_some(asio::buffer(data, size));
    * @endcode
    * See the @ref buffer documentation for information on writing multiple
    * buffers in one go, and how to use it with arrays, boost::array or
@@ -671,8 +483,8 @@ public:
   std::size_t write_some(const ConstBufferSequence& buffers)
   {
     asio::error_code ec;
-    std::size_t s = impl_.get_service().write_some(
-        impl_.get_implementation(), buffers, ec);
+    std::size_t s = this->get_service().write_some(
+        this->get_implementation(), buffers, ec);
     asio::detail::throw_error(ec, "write_some");
     return s;
   }
@@ -697,37 +509,31 @@ public:
   std::size_t write_some(const ConstBufferSequence& buffers,
       asio::error_code& ec)
   {
-    return impl_.get_service().write_some(
-        impl_.get_implementation(), buffers, ec);
+    return this->get_service().write_some(
+        this->get_implementation(), buffers, ec);
   }
 
   /// Start an asynchronous write.
   /**
    * This function is used to asynchronously write data to the serial port.
-   * It is an initiating function for an @ref asynchronous_operation, and always
-   * returns immediately.
+   * The function call always returns immediately.
    *
    * @param buffers One or more data buffers to be written to the serial port.
    * Although the buffers object may be copied as necessary, ownership of the
    * underlying memory blocks is retained by the caller, which must guarantee
-   * that they remain valid until the completion handler is called.
+   * that they remain valid until the handler is called.
    *
-   * @param token The @ref completion_token that will be used to produce a
-   * completion handler, which will be called when the write completes.
-   * Potential completion tokens include @ref use_future, @ref use_awaitable,
-   * @ref yield_context, or a function object with the correct completion
-   * signature. The function signature of the completion handler must be:
+   * @param handler The handler to be called when the write operation completes.
+   * Copies will be made of the handler as required. The function signature of
+   * the handler must be:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
-   *   std::size_t bytes_transferred // Number of bytes written.
+   *   std::size_t bytes_transferred           // Number of bytes written.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the completion handler will not be invoked from within this function.
-   * On immediate completion, invocation of the handler will be performed in a
-   * manner equivalent to using asio::post().
-   *
-   * @par Completion Signature
-   * @code void(asio::error_code, std::size_t) @endcode
+   * not, the handler will not be invoked from within this function. Invocation
+   * of the handler will be performed in a manner equivalent to using
+   * asio::io_context::post().
    *
    * @note The write operation may not transmit all of the data to the peer.
    * Consider using the @ref async_write function if you need to ensure that all
@@ -736,36 +542,24 @@ public:
    * @par Example
    * To write a single data buffer use the @ref buffer function as follows:
    * @code
-   * basic_serial_port.async_write_some(
-   *     asio::buffer(data, size), handler);
+   * serial_port.async_write_some(asio::buffer(data, size), handler);
    * @endcode
    * See the @ref buffer documentation for information on writing multiple
    * buffers in one go, and how to use it with arrays, boost::array or
    * std::vector.
-   *
-   * @par Per-Operation Cancellation
-   * On POSIX or Windows operating systems, this asynchronous operation supports
-   * cancellation for the following asio::cancellation_type values:
-   *
-   * @li @c cancellation_type::terminal
-   *
-   * @li @c cancellation_type::partial
-   *
-   * @li @c cancellation_type::total
    */
-  template <typename ConstBufferSequence,
-      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t)) WriteToken = default_completion_token_t<executor_type>>
-  auto async_write_some(const ConstBufferSequence& buffers,
-      WriteToken&& token = default_completion_token_t<executor_type>())
-    -> decltype(
-      async_initiate<WriteToken,
-        void (asio::error_code, std::size_t)>(
-          declval<initiate_async_write_some>(), token, buffers))
+  template <typename ConstBufferSequence, typename WriteHandler>
+  ASIO_INITFN_RESULT_TYPE(WriteHandler,
+      void (asio::error_code, std::size_t))
+  async_write_some(const ConstBufferSequence& buffers,
+      ASIO_MOVE_ARG(WriteHandler) handler)
   {
-    return async_initiate<WriteToken,
-      void (asio::error_code, std::size_t)>(
-        initiate_async_write_some(this), token, buffers);
+    // If you get an error on the following line it means that your handler does
+    // not meet the documented type requirements for a WriteHandler.
+    ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+
+    return this->get_service().async_write_some(this->get_implementation(),
+        buffers, ASIO_MOVE_CAST(WriteHandler)(handler));
   }
 
   /// Read some data from the serial port.
@@ -790,7 +584,7 @@ public:
    * @par Example
    * To read into a single data buffer use the @ref buffer function as follows:
    * @code
-   * basic_serial_port.read_some(asio::buffer(data, size));
+   * serial_port.read_some(asio::buffer(data, size));
    * @endcode
    * See the @ref buffer documentation for information on reading into multiple
    * buffers in one go, and how to use it with arrays, boost::array or
@@ -800,8 +594,8 @@ public:
   std::size_t read_some(const MutableBufferSequence& buffers)
   {
     asio::error_code ec;
-    std::size_t s = impl_.get_service().read_some(
-        impl_.get_implementation(), buffers, ec);
+    std::size_t s = this->get_service().read_some(
+        this->get_implementation(), buffers, ec);
     asio::detail::throw_error(ec, "read_some");
     return s;
   }
@@ -827,37 +621,31 @@ public:
   std::size_t read_some(const MutableBufferSequence& buffers,
       asio::error_code& ec)
   {
-    return impl_.get_service().read_some(
-        impl_.get_implementation(), buffers, ec);
+    return this->get_service().read_some(
+        this->get_implementation(), buffers, ec);
   }
 
   /// Start an asynchronous read.
   /**
    * This function is used to asynchronously read data from the serial port.
-   * It is an initiating function for an @ref asynchronous_operation, and always
-   * returns immediately.
+   * The function call always returns immediately.
    *
    * @param buffers One or more buffers into which the data will be read.
    * Although the buffers object may be copied as necessary, ownership of the
    * underlying memory blocks is retained by the caller, which must guarantee
-   * that they remain valid until the completion handler is called.
+   * that they remain valid until the handler is called.
    *
-   * @param token The @ref completion_token that will be used to produce a
-   * completion handler, which will be called when the read completes.
-   * Potential completion tokens include @ref use_future, @ref use_awaitable,
-   * @ref yield_context, or a function object with the correct completion
-   * signature. The function signature of the completion handler must be:
+   * @param handler The handler to be called when the read operation completes.
+   * Copies will be made of the handler as required. The function signature of
+   * the handler must be:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
-   *   std::size_t bytes_transferred // Number of bytes read.
+   *   std::size_t bytes_transferred           // Number of bytes read.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
-   * not, the completion handler will not be invoked from within this function.
-   * On immediate completion, invocation of the handler will be performed in a
-   * manner equivalent to using asio::post().
-   *
-   * @par Completion Signature
-   * @code void(asio::error_code, std::size_t) @endcode
+   * not, the handler will not be invoked from within this function. Invocation
+   * of the handler will be performed in a manner equivalent to using
+   * asio::io_context::post().
    *
    * @note The read operation may not read all of the requested number of bytes.
    * Consider using the @ref async_read function if you need to ensure that the
@@ -867,114 +655,25 @@ public:
    * @par Example
    * To read into a single data buffer use the @ref buffer function as follows:
    * @code
-   * basic_serial_port.async_read_some(
-   *     asio::buffer(data, size), handler);
+   * serial_port.async_read_some(asio::buffer(data, size), handler);
    * @endcode
    * See the @ref buffer documentation for information on reading into multiple
    * buffers in one go, and how to use it with arrays, boost::array or
    * std::vector.
-   *
-   * @par Per-Operation Cancellation
-   * On POSIX or Windows operating systems, this asynchronous operation supports
-   * cancellation for the following asio::cancellation_type values:
-   *
-   * @li @c cancellation_type::terminal
-   *
-   * @li @c cancellation_type::partial
-   *
-   * @li @c cancellation_type::total
    */
-  template <typename MutableBufferSequence,
-      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t)) ReadToken = default_completion_token_t<executor_type>>
-  auto async_read_some(const MutableBufferSequence& buffers,
-      ReadToken&& token = default_completion_token_t<executor_type>())
-    -> decltype(
-      async_initiate<ReadToken,
-        void (asio::error_code, std::size_t)>(
-          declval<initiate_async_read_some>(), token, buffers))
+  template <typename MutableBufferSequence, typename ReadHandler>
+  ASIO_INITFN_RESULT_TYPE(ReadHandler,
+      void (asio::error_code, std::size_t))
+  async_read_some(const MutableBufferSequence& buffers,
+      ASIO_MOVE_ARG(ReadHandler) handler)
   {
-    return async_initiate<ReadToken,
-      void (asio::error_code, std::size_t)>(
-        initiate_async_read_some(this), token, buffers);
+    // If you get an error on the following line it means that your handler does
+    // not meet the documented type requirements for a ReadHandler.
+    ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
+
+    return this->get_service().async_read_some(this->get_implementation(),
+        buffers, ASIO_MOVE_CAST(ReadHandler)(handler));
   }
-
-private:
-  // Disallow copying and assignment.
-  basic_serial_port(const basic_serial_port&) = delete;
-  basic_serial_port& operator=(const basic_serial_port&) = delete;
-
-  class initiate_async_write_some
-  {
-  public:
-    typedef Executor executor_type;
-
-    explicit initiate_async_write_some(basic_serial_port* self)
-      : self_(self)
-    {
-    }
-
-    const executor_type& get_executor() const noexcept
-    {
-      return self_->get_executor();
-    }
-
-    template <typename WriteHandler, typename ConstBufferSequence>
-    void operator()(WriteHandler&& handler,
-        const ConstBufferSequence& buffers) const
-    {
-      // If you get an error on the following line it means that your handler
-      // does not meet the documented type requirements for a WriteHandler.
-      ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-
-      detail::non_const_lvalue<WriteHandler> handler2(handler);
-      self_->impl_.get_service().async_write_some(
-          self_->impl_.get_implementation(), buffers,
-          handler2.value, self_->impl_.get_executor());
-    }
-
-  private:
-    basic_serial_port* self_;
-  };
-
-  class initiate_async_read_some
-  {
-  public:
-    typedef Executor executor_type;
-
-    explicit initiate_async_read_some(basic_serial_port* self)
-      : self_(self)
-    {
-    }
-
-    const executor_type& get_executor() const noexcept
-    {
-      return self_->get_executor();
-    }
-
-    template <typename ReadHandler, typename MutableBufferSequence>
-    void operator()(ReadHandler&& handler,
-        const MutableBufferSequence& buffers) const
-    {
-      // If you get an error on the following line it means that your handler
-      // does not meet the documented type requirements for a ReadHandler.
-      ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
-
-      detail::non_const_lvalue<ReadHandler> handler2(handler);
-      self_->impl_.get_service().async_read_some(
-          self_->impl_.get_implementation(), buffers,
-          handler2.value, self_->impl_.get_executor());
-    }
-
-  private:
-    basic_serial_port* self_;
-  };
-
-#if defined(ASIO_HAS_IOCP)
-  detail::io_object_impl<detail::win_iocp_serial_port_service, Executor> impl_;
-#else
-  detail::io_object_impl<detail::posix_serial_port_service, Executor> impl_;
-#endif
 };
 
 } // namespace asio
@@ -983,5 +682,7 @@ private:
 
 #endif // defined(ASIO_HAS_SERIAL_PORT)
        //   || defined(GENERATING_DOCUMENTATION)
+
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
 
 #endif // ASIO_BASIC_SERIAL_PORT_HPP

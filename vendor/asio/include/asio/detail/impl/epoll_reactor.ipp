@@ -2,7 +2,7 @@
 // detail/impl/epoll_reactor.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -22,7 +22,6 @@
 #include <cstddef>
 #include <sys/epoll.h>
 #include "asio/detail/epoll_reactor.hpp"
-#include "asio/detail/scheduler.hpp"
 #include "asio/detail/throw_error.hpp"
 #include "asio/error.hpp"
 
@@ -229,23 +228,14 @@ void epoll_reactor::move_descriptor(socket_type,
   source_descriptor_data = 0;
 }
 
-void epoll_reactor::call_post_immediate_completion(
-    operation* op, bool is_continuation, const void* self)
-{
-  static_cast<const epoll_reactor*>(self)->post_immediate_completion(
-      op, is_continuation);
-}
-
 void epoll_reactor::start_op(int op_type, socket_type descriptor,
     epoll_reactor::per_descriptor_data& descriptor_data, reactor_op* op,
-    bool is_continuation, bool allow_speculative,
-    void (*on_immediate)(operation*, bool, const void*),
-    const void* immediate_arg)
+    bool is_continuation, bool allow_speculative)
 {
   if (!descriptor_data)
   {
     op->ec_ = asio::error::bad_descriptor;
-    on_immediate(op, is_continuation, immediate_arg);
+    post_immediate_completion(op, is_continuation);
     return;
   }
 
@@ -253,7 +243,7 @@ void epoll_reactor::start_op(int op_type, socket_type descriptor,
 
   if (descriptor_data->shutdown_)
   {
-    on_immediate(op, is_continuation, immediate_arg);
+    post_immediate_completion(op, is_continuation);
     return;
   }
 
@@ -271,7 +261,7 @@ void epoll_reactor::start_op(int op_type, socket_type descriptor,
             if (descriptor_data->registered_events_ != 0)
               descriptor_data->try_speculative_[op_type] = false;
           descriptor_lock.unlock();
-          on_immediate(op, is_continuation, immediate_arg);
+          scheduler_.post_immediate_completion(op, is_continuation);
           return;
         }
       }
@@ -279,7 +269,7 @@ void epoll_reactor::start_op(int op_type, socket_type descriptor,
       if (descriptor_data->registered_events_ == 0)
       {
         op->ec_ = asio::error::operation_not_supported;
-        on_immediate(op, is_continuation, immediate_arg);
+        scheduler_.post_immediate_completion(op, is_continuation);
         return;
       }
 
@@ -298,7 +288,7 @@ void epoll_reactor::start_op(int op_type, socket_type descriptor,
           {
             op->ec_ = asio::error_code(errno,
                 asio::error::get_system_category());
-            on_immediate(op, is_continuation, immediate_arg);
+            scheduler_.post_immediate_completion(op, is_continuation);
             return;
           }
         }
@@ -307,7 +297,7 @@ void epoll_reactor::start_op(int op_type, socket_type descriptor,
     else if (descriptor_data->registered_events_ == 0)
     {
       op->ec_ = asio::error::operation_not_supported;
-      on_immediate(op, is_continuation, immediate_arg);
+      scheduler_.post_immediate_completion(op, is_continuation);
       return;
     }
     else
@@ -346,35 +336,6 @@ void epoll_reactor::cancel_ops(socket_type,
       ops.push(op);
     }
   }
-
-  descriptor_lock.unlock();
-
-  scheduler_.post_deferred_completions(ops);
-}
-
-void epoll_reactor::cancel_ops_by_key(socket_type,
-    epoll_reactor::per_descriptor_data& descriptor_data,
-    int op_type, void* cancellation_key)
-{
-  if (!descriptor_data)
-    return;
-
-  mutex::scoped_lock descriptor_lock(descriptor_data->mutex_);
-
-  op_queue<operation> ops;
-  op_queue<reactor_op> other_ops;
-  while (reactor_op* op = descriptor_data->op_queue_[op_type].front())
-  {
-    descriptor_data->op_queue_[op_type].pop();
-    if (op->cancellation_key_ == cancellation_key)
-    {
-      op->ec_ = asio::error::operation_aborted;
-      ops.push(op);
-    }
-    else
-      other_ops.push(op);
-  }
-  descriptor_data->op_queue_[op_type].push(other_ops);
 
   descriptor_lock.unlock();
 

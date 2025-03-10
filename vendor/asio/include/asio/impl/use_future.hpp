@@ -2,7 +2,7 @@
 // impl/use_future.hpp
 // ~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -19,9 +19,7 @@
 #include <tuple>
 #include "asio/async_result.hpp"
 #include "asio/detail/memory.hpp"
-#include "asio/dispatch.hpp"
 #include "asio/error_code.hpp"
-#include "asio/execution.hpp"
 #include "asio/packaged_task.hpp"
 #include "asio/system_error.hpp"
 #include "asio/system_executor.hpp"
@@ -31,15 +29,17 @@
 namespace asio {
 namespace detail {
 
+#if defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
 template <typename T, typename F, typename... Args>
 inline void promise_invoke_and_set(std::promise<T>& p,
-    F& f, Args&&... args)
+    F& f, ASIO_MOVE_ARG(Args)... args)
 {
 #if !defined(ASIO_NO_EXCEPTIONS)
   try
 #endif // !defined(ASIO_NO_EXCEPTIONS)
   {
-    p.set_value(f(static_cast<Args&&>(args)...));
+    p.set_value(f(ASIO_MOVE_CAST(Args)(args)...));
   }
 #if !defined(ASIO_NO_EXCEPTIONS)
   catch (...)
@@ -51,13 +51,13 @@ inline void promise_invoke_and_set(std::promise<T>& p,
 
 template <typename F, typename... Args>
 inline void promise_invoke_and_set(std::promise<void>& p,
-    F& f, Args&&... args)
+    F& f, ASIO_MOVE_ARG(Args)... args)
 {
 #if !defined(ASIO_NO_EXCEPTIONS)
   try
 #endif // !defined(ASIO_NO_EXCEPTIONS)
   {
-    f(static_cast<Args&&>(args)...);
+    f(ASIO_MOVE_CAST(Args)(args)...);
     p.set_value();
   }
 #if !defined(ASIO_NO_EXCEPTIONS)
@@ -68,15 +68,112 @@ inline void promise_invoke_and_set(std::promise<void>& p,
 #endif // !defined(ASIO_NO_EXCEPTIONS)
 }
 
+#else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
+template <typename T, typename F>
+inline void promise_invoke_and_set(std::promise<T>& p, F& f)
+{
+#if !defined(ASIO_NO_EXCEPTIONS)
+  try
+#endif // !defined(ASIO_NO_EXCEPTIONS)
+  {
+    p.set_value(f());
+  }
+#if !defined(ASIO_NO_EXCEPTIONS)
+  catch (...)
+  {
+    p.set_exception(std::current_exception());
+  }
+#endif // !defined(ASIO_NO_EXCEPTIONS)
+}
+
+template <typename F, typename Args>
+inline void promise_invoke_and_set(std::promise<void>& p, F& f)
+{
+#if !defined(ASIO_NO_EXCEPTIONS)
+  try
+#endif // !defined(ASIO_NO_EXCEPTIONS)
+  {
+    f();
+    p.set_value();
+#if !defined(ASIO_NO_EXCEPTIONS)
+  }
+  catch (...)
+  {
+    p.set_exception(std::current_exception());
+  }
+#endif // !defined(ASIO_NO_EXCEPTIONS)
+}
+
+#if defined(ASIO_NO_EXCEPTIONS)
+
+#define ASIO_PRIVATE_PROMISE_INVOKE_DEF(n) \
+  template <typename T, typename F, ASIO_VARIADIC_TPARAMS(n)> \
+  inline void promise_invoke_and_set(std::promise<T>& p, \
+      F& f, ASIO_VARIADIC_MOVE_PARAMS(n)) \
+  { \
+    p.set_value(f(ASIO_VARIADIC_MOVE_ARGS(n))); \
+  } \
+  \
+  template <typename F, ASIO_VARIADIC_TPARAMS(n)> \
+  inline void promise_invoke_and_set(std::promise<void>& p, \
+      F& f, ASIO_VARIADIC_MOVE_PARAMS(n)) \
+  { \
+    f(ASIO_VARIADIC_MOVE_ARGS(n)); \
+    p.set_value(); \
+  } \
+  /**/
+  ASIO_VARIADIC_GENERATE(ASIO_PRIVATE_PROMISE_INVOKE_DEF)
+#undef ASIO_PRIVATE_PROMISE_INVOKE_DEF
+
+#else // defined(ASIO_NO_EXCEPTIONS)
+
+#define ASIO_PRIVATE_PROMISE_INVOKE_DEF(n) \
+  template <typename T, typename F, ASIO_VARIADIC_TPARAMS(n)> \
+  inline void promise_invoke_and_set(std::promise<T>& p, \
+      F& f, ASIO_VARIADIC_MOVE_PARAMS(n)) \
+  { \
+    try \
+    { \
+      p.set_value(f(ASIO_VARIADIC_MOVE_ARGS(n))); \
+    } \
+    catch (...) \
+    { \
+      p.set_exception(std::current_exception()); \
+    } \
+  } \
+  \
+  template <typename F, ASIO_VARIADIC_TPARAMS(n)> \
+  inline void promise_invoke_and_set(std::promise<void>& p, \
+      F& f, ASIO_VARIADIC_MOVE_PARAMS(n)) \
+  { \
+    try \
+    { \
+      f(ASIO_VARIADIC_MOVE_ARGS(n)); \
+      p.set_value(); \
+    } \
+    catch (...) \
+    { \
+      p.set_exception(std::current_exception()); \
+    } \
+  } \
+  /**/
+  ASIO_VARIADIC_GENERATE(ASIO_PRIVATE_PROMISE_INVOKE_DEF)
+#undef ASIO_PRIVATE_PROMISE_INVOKE_DEF
+
+#endif // defined(ASIO_NO_EXCEPTIONS)
+
+#endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
 // A function object adapter to invoke a nullary function object and capture
 // any exception thrown into a promise.
 template <typename T, typename F>
 class promise_invoker
 {
 public:
-  promise_invoker(const shared_ptr<std::promise<T>>& p,
-      F&& f)
-    : p_(p), f_(static_cast<F&&>(f))
+  promise_invoker(const shared_ptr<std::promise<T> >& p,
+      ASIO_MOVE_ARG(F) f)
+    : p_(p), f_(ASIO_MOVE_CAST(F)(f))
   {
   }
 
@@ -97,94 +194,63 @@ public:
   }
 
 private:
-  shared_ptr<std::promise<T>> p_;
-  decay_t<F> f_;
+  shared_ptr<std::promise<T> > p_;
+  typename decay<F>::type f_;
 };
 
 // An executor that adapts the system_executor to capture any exeption thrown
 // by a submitted function object and save it into a promise.
-template <typename T, typename Blocking = execution::blocking_t::possibly_t>
+template <typename T>
 class promise_executor
 {
 public:
-  explicit promise_executor(const shared_ptr<std::promise<T>>& p)
+  explicit promise_executor(const shared_ptr<std::promise<T> >& p)
     : p_(p)
   {
   }
 
-  execution_context& query(execution::context_t) const noexcept
-  {
-    return asio::query(system_executor(), execution::context);
-  }
-
-  static constexpr Blocking query(execution::blocking_t)
-  {
-    return Blocking();
-  }
-
-  promise_executor<T, execution::blocking_t::possibly_t>
-  require(execution::blocking_t::possibly_t) const
-  {
-    return promise_executor<T, execution::blocking_t::possibly_t>(p_);
-  }
-
-  promise_executor<T, execution::blocking_t::never_t>
-  require(execution::blocking_t::never_t) const
-  {
-    return promise_executor<T, execution::blocking_t::never_t>(p_);
-  }
-
-  template <typename F>
-  void execute(F&& f) const
-  {
-    asio::require(system_executor(), Blocking()).execute(
-        promise_invoker<T, F>(p_, static_cast<F&&>(f)));
-  }
-
-#if !defined(ASIO_NO_TS_EXECUTORS)
-  execution_context& context() const noexcept
+  execution_context& context() const ASIO_NOEXCEPT
   {
     return system_executor().context();
   }
 
-  void on_work_started() const noexcept {}
-  void on_work_finished() const noexcept {}
+  void on_work_started() const ASIO_NOEXCEPT {}
+  void on_work_finished() const ASIO_NOEXCEPT {}
 
   template <typename F, typename A>
-  void dispatch(F&& f, const A&) const
+  void dispatch(ASIO_MOVE_ARG(F) f, const A&) const
   {
-    promise_invoker<T, F>(p_, static_cast<F&&>(f))();
+    promise_invoker<T, F>(p_, ASIO_MOVE_CAST(F)(f))();
   }
 
   template <typename F, typename A>
-  void post(F&& f, const A& a) const
+  void post(ASIO_MOVE_ARG(F) f, const A& a) const
   {
     system_executor().post(
-        promise_invoker<T, F>(p_, static_cast<F&&>(f)), a);
+        promise_invoker<T, F>(p_, ASIO_MOVE_CAST(F)(f)), a);
   }
 
   template <typename F, typename A>
-  void defer(F&& f, const A& a) const
+  void defer(ASIO_MOVE_ARG(F) f, const A& a) const
   {
     system_executor().defer(
-        promise_invoker<T, F>(p_, static_cast<F&&>(f)), a);
+        promise_invoker<T, F>(p_, ASIO_MOVE_CAST(F)(f)), a);
   }
-#endif // !defined(ASIO_NO_TS_EXECUTORS)
 
   friend bool operator==(const promise_executor& a,
-      const promise_executor& b) noexcept
+      const promise_executor& b) ASIO_NOEXCEPT
   {
     return a.p_ == b.p_;
   }
 
   friend bool operator!=(const promise_executor& a,
-      const promise_executor& b) noexcept
+      const promise_executor& b) ASIO_NOEXCEPT
   {
     return a.p_ != b.p_;
   }
 
 private:
-  shared_ptr<std::promise<T>> p_;
+  shared_ptr<std::promise<T> > p_;
 };
 
 // The base class for all completion handlers that create promises.
@@ -194,7 +260,7 @@ class promise_creator
 public:
   typedef promise_executor<T> executor_type;
 
-  executor_type get_executor() const noexcept
+  executor_type get_executor() const ASIO_NOEXCEPT
   {
     return executor_type(p_);
   }
@@ -214,7 +280,7 @@ protected:
     p_ = std::allocate_shared<std::promise<T>>(b, std::allocator_arg, b);
   }
 
-  shared_ptr<std::promise<T>> p_;
+  shared_ptr<std::promise<T> > p_;
 };
 
 // For completion signature void().
@@ -273,9 +339,9 @@ class promise_handler_1
 {
 public:
   template <typename Arg>
-  void operator()(Arg&& arg)
+  void operator()(ASIO_MOVE_ARG(Arg) arg)
   {
-    this->p_->set_value(static_cast<Arg&&>(arg));
+    this->p_->set_value(ASIO_MOVE_CAST(Arg)(arg));
   }
 };
 
@@ -287,7 +353,7 @@ class promise_handler_ec_1
 public:
   template <typename Arg>
   void operator()(const asio::error_code& ec,
-      Arg&& arg)
+      ASIO_MOVE_ARG(Arg) arg)
   {
     if (ec)
     {
@@ -296,7 +362,7 @@ public:
             asio::system_error(ec)));
     }
     else
-      this->p_->set_value(static_cast<Arg&&>(arg));
+      this->p_->set_value(ASIO_MOVE_CAST(Arg)(arg));
   }
 };
 
@@ -308,12 +374,12 @@ class promise_handler_ex_1
 public:
   template <typename Arg>
   void operator()(const std::exception_ptr& ex,
-      Arg&& arg)
+      ASIO_MOVE_ARG(Arg) arg)
   {
     if (ex)
       this->p_->set_exception(ex);
     else
-      this->p_->set_value(static_cast<Arg&&>(arg));
+      this->p_->set_value(ASIO_MOVE_CAST(Arg)(arg));
   }
 };
 
@@ -323,13 +389,31 @@ class promise_handler_n
   : public promise_creator<T>
 {
 public:
+#if defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
   template <typename... Args>
-  void operator()(Args&&... args)
+  void operator()(ASIO_MOVE_ARG(Args)... args)
   {
     this->p_->set_value(
         std::forward_as_tuple(
-          static_cast<Args&&>(args)...));
+          ASIO_MOVE_CAST(Args)(args)...));
   }
+
+#else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
+#define ASIO_PRIVATE_CALL_OP_DEF(n) \
+  template <ASIO_VARIADIC_TPARAMS(n)> \
+  void operator()(ASIO_VARIADIC_MOVE_PARAMS(n)) \
+  {\
+    this->p_->set_value( \
+        std::forward_as_tuple( \
+          ASIO_VARIADIC_MOVE_ARGS(n))); \
+  } \
+  /**/
+  ASIO_VARIADIC_GENERATE(ASIO_PRIVATE_CALL_OP_DEF)
+#undef ASIO_PRIVATE_CALL_OP_DEF
+
+#endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 };
 
 // For completion signature void(error_code, T1, ..., Tn);
@@ -338,8 +422,11 @@ class promise_handler_ec_n
   : public promise_creator<T>
 {
 public:
+#if defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
   template <typename... Args>
-  void operator()(const asio::error_code& ec, Args&&... args)
+  void operator()(const asio::error_code& ec,
+      ASIO_MOVE_ARG(Args)... args)
   {
     if (ec)
     {
@@ -351,9 +438,35 @@ public:
     {
       this->p_->set_value(
           std::forward_as_tuple(
-            static_cast<Args&&>(args)...));
+            ASIO_MOVE_CAST(Args)(args)...));
     }
   }
+
+#else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
+#define ASIO_PRIVATE_CALL_OP_DEF(n) \
+  template <ASIO_VARIADIC_TPARAMS(n)> \
+  void operator()(const asio::error_code& ec, \
+      ASIO_VARIADIC_MOVE_PARAMS(n)) \
+  {\
+    if (ec) \
+    { \
+      this->p_->set_exception( \
+          std::make_exception_ptr( \
+            asio::system_error(ec))); \
+    } \
+    else \
+    { \
+      this->p_->set_value( \
+          std::forward_as_tuple( \
+            ASIO_VARIADIC_MOVE_ARGS(n))); \
+    } \
+  } \
+  /**/
+  ASIO_VARIADIC_GENERATE(ASIO_PRIVATE_CALL_OP_DEF)
+#undef ASIO_PRIVATE_CALL_OP_DEF
+
+#endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 };
 
 // For completion signature void(exception_ptr, T1, ..., Tn);
@@ -362,9 +475,11 @@ class promise_handler_ex_n
   : public promise_creator<T>
 {
 public:
+#if defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
   template <typename... Args>
   void operator()(const std::exception_ptr& ex,
-      Args&&... args)
+      ASIO_MOVE_ARG(Args)... args)
   {
     if (ex)
       this->p_->set_exception(ex);
@@ -372,9 +487,31 @@ public:
     {
       this->p_->set_value(
           std::forward_as_tuple(
-            static_cast<Args&&>(args)...));
+            ASIO_MOVE_CAST(Args)(args)...));
     }
   }
+
+#else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
+#define ASIO_PRIVATE_CALL_OP_DEF(n) \
+  template <ASIO_VARIADIC_TPARAMS(n)> \
+  void operator()(const std::exception_ptr& ex, \
+      ASIO_VARIADIC_MOVE_PARAMS(n)) \
+  {\
+    if (ex) \
+      this->p_->set_exception(ex); \
+    else \
+    { \
+      this->p_->set_value( \
+          std::forward_as_tuple( \
+            ASIO_VARIADIC_MOVE_ARGS(n))); \
+    } \
+  } \
+  /**/
+  ASIO_VARIADIC_GENERATE(ASIO_PRIVATE_CALL_OP_DEF)
+#undef ASIO_PRIVATE_CALL_OP_DEF
+
+#endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 };
 
 // Helper template to choose the appropriate concrete promise handler
@@ -405,17 +542,45 @@ template <typename Arg>
 class promise_handler_selector<void(std::exception_ptr, Arg)>
   : public promise_handler_ex_1<Arg> {};
 
+#if defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
 template <typename... Arg>
 class promise_handler_selector<void(Arg...)>
-  : public promise_handler_n<std::tuple<Arg...>> {};
+  : public promise_handler_n<std::tuple<Arg...> > {};
 
 template <typename... Arg>
 class promise_handler_selector<void(asio::error_code, Arg...)>
-  : public promise_handler_ec_n<std::tuple<Arg...>> {};
+  : public promise_handler_ec_n<std::tuple<Arg...> > {};
 
 template <typename... Arg>
 class promise_handler_selector<void(std::exception_ptr, Arg...)>
-  : public promise_handler_ex_n<std::tuple<Arg...>> {};
+  : public promise_handler_ex_n<std::tuple<Arg...> > {};
+
+#else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
+#define ASIO_PRIVATE_PROMISE_SELECTOR_DEF(n) \
+  template <typename Arg, ASIO_VARIADIC_TPARAMS(n)> \
+  class promise_handler_selector< \
+    void(Arg, ASIO_VARIADIC_TARGS(n))> \
+      : public promise_handler_n< \
+        std::tuple<Arg, ASIO_VARIADIC_TARGS(n)> > {}; \
+  \
+  template <typename Arg, ASIO_VARIADIC_TPARAMS(n)> \
+  class promise_handler_selector< \
+    void(asio::error_code, Arg, ASIO_VARIADIC_TARGS(n))> \
+      : public promise_handler_ec_n< \
+        std::tuple<Arg, ASIO_VARIADIC_TARGS(n)> > {}; \
+  \
+  template <typename Arg, ASIO_VARIADIC_TPARAMS(n)> \
+  class promise_handler_selector< \
+    void(std::exception_ptr, Arg, ASIO_VARIADIC_TARGS(n))> \
+      : public promise_handler_ex_n< \
+        std::tuple<Arg, ASIO_VARIADIC_TARGS(n)> > {}; \
+  /**/
+  ASIO_VARIADIC_GENERATE(ASIO_PRIVATE_PROMISE_SELECTOR_DEF)
+#undef ASIO_PRIVATE_PROMISE_SELECTOR_DEF
+
+#endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
 // Completion handlers produced from the use_future completion token, when not
 // using use_future::operator().
@@ -433,7 +598,7 @@ public:
     this->create_promise(allocator_);
   }
 
-  allocator_type get_allocator() const noexcept
+  allocator_type get_allocator() const ASIO_NOEXCEPT
   {
     return allocator_;
   }
@@ -442,26 +607,23 @@ private:
   Allocator allocator_;
 };
 
-template <typename Function>
-struct promise_function_wrapper
+template <typename Function, typename Signature, typename Allocator>
+inline void asio_handler_invoke(Function& f,
+    promise_handler<Signature, Allocator>* h)
 {
-  explicit promise_function_wrapper(Function& f)
-    : function_(static_cast<Function&&>(f))
-  {
-  }
+  typename promise_handler<Signature, Allocator>::executor_type
+    ex(h->get_executor());
+  ex.dispatch(ASIO_MOVE_CAST(Function)(f), std::allocator<void>());
+}
 
-  explicit promise_function_wrapper(const Function& f)
-    : function_(f)
-  {
-  }
-
-  void operator()()
-  {
-    function_();
-  }
-
-  Function function_;
-};
+template <typename Function, typename Signature, typename Allocator>
+inline void asio_handler_invoke(const Function& f,
+    promise_handler<Signature, Allocator>* h)
+{
+  typename promise_handler<Signature, Allocator>::executor_type
+    ex(h->get_executor());
+  ex.dispatch(f, std::allocator<void>());
+}
 
 // Helper base class for async_result specialisation.
 template <typename Signature, typename Allocator>
@@ -478,7 +640,7 @@ public:
 
   return_type get()
   {
-    return static_cast<return_type&&>(future_);
+    return ASIO_MOVE_CAST(return_type)(future_);
   }
 
 private:
@@ -491,7 +653,7 @@ class packaged_token
 {
 public:
   packaged_token(Function f, const Allocator& a)
-    : function_(static_cast<Function&&>(f)),
+    : function_(ASIO_MOVE_CAST(Function)(f)),
       allocator_(a)
   {
   }
@@ -512,28 +674,70 @@ public:
   typedef void result_type;
 
   packaged_handler(packaged_token<Function, Allocator> t)
-    : function_(static_cast<Function&&>(t.function_)),
+    : function_(ASIO_MOVE_CAST(Function)(t.function_)),
       allocator_(t.allocator_)
   {
     this->create_promise(allocator_);
   }
 
-  allocator_type get_allocator() const noexcept
+  allocator_type get_allocator() const ASIO_NOEXCEPT
   {
     return allocator_;
   }
 
+#if defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
   template <typename... Args>
-  void operator()(Args&&... args)
+  void operator()(ASIO_MOVE_ARG(Args)... args)
   {
     (promise_invoke_and_set)(*this->p_,
-        function_, static_cast<Args&&>(args)...);
+        function_, ASIO_MOVE_CAST(Args)(args)...);
   }
+
+#else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
+  void operator()()
+  {
+    (promise_invoke_and_set)(*this->p_, function_);
+  }
+
+#define ASIO_PRIVATE_CALL_OP_DEF(n) \
+  template <ASIO_VARIADIC_TPARAMS(n)> \
+  void operator()(ASIO_VARIADIC_MOVE_PARAMS(n)) \
+  {\
+    (promise_invoke_and_set)(*this->p_, \
+        function_, ASIO_VARIADIC_MOVE_ARGS(n)); \
+  } \
+  /**/
+  ASIO_VARIADIC_GENERATE(ASIO_PRIVATE_CALL_OP_DEF)
+#undef ASIO_PRIVATE_CALL_OP_DEF
+
+#endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
 private:
   Function function_;
   Allocator allocator_;
 };
+
+template <typename Function,
+    typename Function1, typename Allocator, typename Result>
+inline void asio_handler_invoke(Function& f,
+    packaged_handler<Function1, Allocator, Result>* h)
+{
+  typename packaged_handler<Function1, Allocator, Result>::executor_type
+    ex(h->get_executor());
+  ex.dispatch(ASIO_MOVE_CAST(Function)(f), std::allocator<void>());
+}
+
+template <typename Function,
+    typename Function1, typename Allocator, typename Result>
+inline void asio_handler_invoke(const Function& f,
+    packaged_handler<Function1, Allocator, Result>* h)
+{
+  typename packaged_handler<Function1, Allocator, Result>::executor_type
+    ex(h->get_executor());
+  ex.dispatch(f, std::allocator<void>());
+}
 
 // Helper base class for async_result specialisation.
 template <typename Function, typename Allocator, typename Result>
@@ -550,7 +754,7 @@ public:
 
   return_type get()
   {
-    return static_cast<return_type&&>(future_);
+    return ASIO_MOVE_CAST(return_type)(future_);
   }
 
 private:
@@ -560,26 +764,28 @@ private:
 } // namespace detail
 
 template <typename Allocator> template <typename Function>
-inline detail::packaged_token<decay_t<Function>, Allocator>
-use_future_t<Allocator>::operator()(Function&& f) const
+inline detail::packaged_token<typename decay<Function>::type, Allocator>
+use_future_t<Allocator>::operator()(ASIO_MOVE_ARG(Function) f) const
 {
-  return detail::packaged_token<decay_t<Function>, Allocator>(
-      static_cast<Function&&>(f), allocator_);
+  return detail::packaged_token<typename decay<Function>::type, Allocator>(
+      ASIO_MOVE_CAST(Function)(f), allocator_);
 }
 
 #if !defined(GENERATING_DOCUMENTATION)
 
+#if defined(ASIO_HAS_VARIADIC_TEMPLATES)
+
 template <typename Allocator, typename Result, typename... Args>
 class async_result<use_future_t<Allocator>, Result(Args...)>
   : public detail::promise_async_result<
-      void(decay_t<Args>...), Allocator>
+      void(typename decay<Args>::type...), Allocator>
 {
 public:
   explicit async_result(
-    typename detail::promise_async_result<void(decay_t<Args>...),
+    typename detail::promise_async_result<void(typename decay<Args>::type...),
       Allocator>::completion_handler_type& h)
     : detail::promise_async_result<
-        void(decay_t<Args>...), Allocator>(h)
+        void(typename decay<Args>::type...), Allocator>(h)
   {
   }
 };
@@ -588,115 +794,139 @@ template <typename Function, typename Allocator,
     typename Result, typename... Args>
 class async_result<detail::packaged_token<Function, Allocator>, Result(Args...)>
   : public detail::packaged_async_result<Function, Allocator,
-      result_of_t<Function(Args...)>>
+      typename result_of<Function(Args...)>::type>
 {
 public:
   explicit async_result(
     typename detail::packaged_async_result<Function, Allocator,
-      result_of_t<Function(Args...)>>::completion_handler_type& h)
+      typename result_of<Function(Args...)>::type>::completion_handler_type& h)
     : detail::packaged_async_result<Function, Allocator,
-        result_of_t<Function(Args...)>>(h)
+        typename result_of<Function(Args...)>::type>(h)
   {
   }
 };
 
-namespace traits {
+#else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
-#if !defined(ASIO_HAS_DEDUCED_EQUALITY_COMPARABLE_TRAIT)
-
-template <typename T, typename Blocking>
-struct equality_comparable<
-    asio::detail::promise_executor<T, Blocking>>
+template <typename Allocator, typename Result>
+class async_result<use_future_t<Allocator>, Result()>
+  : public detail::promise_async_result<void(), Allocator>
 {
-  static constexpr bool is_valid = true;
-  static constexpr bool is_noexcept = true;
-};
-
-#endif // !defined(ASIO_HAS_DEDUCED_EQUALITY_COMPARABLE_TRAIT)
-
-#if !defined(ASIO_HAS_DEDUCED_EXECUTE_MEMBER_TRAIT)
-
-template <typename T, typename Blocking, typename Function>
-struct execute_member<
-    asio::detail::promise_executor<T, Blocking>, Function>
-{
-  static constexpr bool is_valid = true;
-  static constexpr bool is_noexcept = false;
-  typedef void result_type;
-};
-
-#endif // !defined(ASIO_HAS_DEDUCED_EXECUTE_MEMBER_TRAIT)
-
-#if !defined(ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
-
-template <typename T, typename Blocking, typename Property>
-struct query_static_constexpr_member<
-    asio::detail::promise_executor<T, Blocking>,
-    Property,
-    typename asio::enable_if<
-      asio::is_convertible<
-        Property,
-        asio::execution::blocking_t
-      >::value
-    >::type
-  >
-{
-  static constexpr bool is_valid = true;
-  static constexpr bool is_noexcept = true;
-  typedef Blocking result_type;
-
-  static constexpr result_type value() noexcept
+public:
+  explicit async_result(
+    typename detail::promise_async_result<
+      void(), Allocator>::completion_handler_type& h)
+    : detail::promise_async_result<void(), Allocator>(h)
   {
-    return Blocking();
   }
 };
 
-#endif // !defined(ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
-
-#if !defined(ASIO_HAS_DEDUCED_QUERY_MEMBER_TRAIT)
-
-template <typename T, typename Blocking>
-struct query_member<
-    asio::detail::promise_executor<T, Blocking>,
-    execution::context_t
-  >
+template <typename Function, typename Allocator, typename Result>
+class async_result<detail::packaged_token<Function, Allocator>, Result()>
+  : public detail::packaged_async_result<Function, Allocator,
+      typename result_of<Function()>::type>
 {
-  static constexpr bool is_valid = true;
-  static constexpr bool is_noexcept = true;
-  typedef asio::system_context& result_type;
+public:
+  explicit async_result(
+    typename detail::packaged_async_result<Function, Allocator,
+      typename result_of<Function()>::type>::completion_handler_type& h)
+    : detail::packaged_async_result<Function, Allocator,
+        typename result_of<Function()>::type>(h)
+  {
+  }
 };
 
-#endif // !defined(ASIO_HAS_DEDUCED_QUERY_MEMBER_TRAIT)
+#define ASIO_PRIVATE_ASYNC_RESULT_DEF(n) \
+  template <typename Allocator, \
+      typename Result, ASIO_VARIADIC_TPARAMS(n)> \
+  class async_result<use_future_t<Allocator>, \
+      Result(ASIO_VARIADIC_TARGS(n))> \
+    : public detail::promise_async_result< \
+        void(ASIO_VARIADIC_DECAY(n)), Allocator> \
+  { \
+  public: \
+    explicit async_result( \
+      typename detail::promise_async_result< \
+        void(ASIO_VARIADIC_DECAY(n)), \
+        Allocator>::completion_handler_type& h) \
+      : detail::promise_async_result< \
+          void(ASIO_VARIADIC_DECAY(n)), Allocator>(h) \
+    { \
+    } \
+  }; \
+  \
+  template <typename Function, typename Allocator, \
+      typename Result, ASIO_VARIADIC_TPARAMS(n)> \
+  class async_result<detail::packaged_token<Function, Allocator>, \
+      Result(ASIO_VARIADIC_TARGS(n))> \
+    : public detail::packaged_async_result<Function, Allocator, \
+        typename result_of<Function(ASIO_VARIADIC_TARGS(n))>::type> \
+  { \
+  public: \
+    explicit async_result( \
+      typename detail::packaged_async_result<Function, Allocator, \
+        typename result_of<Function(ASIO_VARIADIC_TARGS(n))>::type \
+        >::completion_handler_type& h) \
+      : detail::packaged_async_result<Function, Allocator, \
+          typename result_of<Function(ASIO_VARIADIC_TARGS(n))>::type>(h) \
+    { \
+    } \
+  }; \
+  /**/
+  ASIO_VARIADIC_GENERATE(ASIO_PRIVATE_ASYNC_RESULT_DEF)
+#undef ASIO_PRIVATE_ASYNC_RESULT_DEF
 
-#if !defined(ASIO_HAS_DEDUCED_REQUIRE_MEMBER_TRAIT)
+#endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
-template <typename T, typename Blocking>
-struct require_member<
-    asio::detail::promise_executor<T, Blocking>,
-    execution::blocking_t::possibly_t
-  >
+#if !defined(ASIO_NO_DEPRECATED)
+
+template <typename Allocator, typename Signature>
+struct handler_type<use_future_t<Allocator>, Signature>
 {
-  static constexpr bool is_valid = true;
-  static constexpr bool is_noexcept = true;
-  typedef asio::detail::promise_executor<T,
-      execution::blocking_t::possibly_t> result_type;
+  typedef typename async_result<use_future_t<Allocator>,
+    Signature>::completion_handler_type type;
 };
 
-template <typename T, typename Blocking>
-struct require_member<
-    asio::detail::promise_executor<T, Blocking>,
-    execution::blocking_t::never_t
-  >
+template <typename Signature, typename Allocator>
+class async_result<detail::promise_handler<Signature, Allocator> >
+  : public detail::promise_async_result<Signature, Allocator>
 {
-  static constexpr bool is_valid = true;
-  static constexpr bool is_noexcept = true;
-  typedef asio::detail::promise_executor<T,
-      execution::blocking_t::never_t> result_type;
+public:
+  typedef typename detail::promise_async_result<
+    Signature, Allocator>::return_type type;
+
+  explicit async_result(
+    typename detail::promise_async_result<
+      Signature, Allocator>::completion_handler_type& h)
+    : detail::promise_async_result<Signature, Allocator>(h)
+  {
+  }
 };
 
-#endif // !defined(ASIO_HAS_DEDUCED_REQUIRE_MEMBER_TRAIT)
+template <typename Function, typename Allocator, typename Signature>
+struct handler_type<detail::packaged_token<Function, Allocator>, Signature>
+{
+  typedef typename async_result<detail::packaged_token<Function, Allocator>,
+    Signature>::completion_handler_type type;
+};
 
-} // namespace traits
+template <typename Function, typename Allocator, typename Result>
+class async_result<detail::packaged_handler<Function, Allocator, Result> >
+  : public detail::packaged_async_result<Function, Allocator, Result>
+{
+public:
+  typedef typename detail::packaged_async_result<
+    Function, Allocator, Result>::return_type type;
+
+  explicit async_result(
+    typename detail::packaged_async_result<
+      Function, Allocator, Result>::completion_handler_type& h)
+    : detail::packaged_async_result<Function, Allocator, Result>(h)
+  {
+  }
+};
+
+#endif // !defined(ASIO_NO_DEPRECATED)
 
 #endif // !defined(GENERATING_DOCUMENTATION)
 

@@ -2,7 +2,7 @@
 // impl/io_context.ipp
 // ~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -34,14 +34,13 @@
 namespace asio {
 
 io_context::io_context()
-  : impl_(add_impl(new impl_type(*this,
-          ASIO_CONCURRENCY_HINT_DEFAULT, false)))
+  : impl_(add_impl(new impl_type(*this, ASIO_CONCURRENCY_HINT_DEFAULT)))
 {
 }
 
 io_context::io_context(int concurrency_hint)
   : impl_(add_impl(new impl_type(*this, concurrency_hint == 1
-          ? ASIO_CONCURRENCY_HINT_1 : concurrency_hint, false)))
+          ? ASIO_CONCURRENCY_HINT_1 : concurrency_hint)))
 {
 }
 
@@ -54,7 +53,6 @@ io_context::impl_type& io_context::add_impl(io_context::impl_type* impl)
 
 io_context::~io_context()
 {
-  shutdown();
 }
 
 io_context::count_type io_context::run()
