@@ -4,6 +4,7 @@
 #include <variant>
 #include <iostream>
 #include <cstdio>
+#include <stdexcept>
 
 #include "basic_types.hpp"
 
@@ -21,56 +22,55 @@ namespace subprocess {
     typedef std::variant<PipeOption, std::string, PipeHandle,
         std::istream*, std::ostream*, FILE*> PipeVar;
 
-    // Fix for older macOS versions, don't use std::get as upstream does
+    // MacOS 10.9 and earlier do not support std::variant, so we need to use a workaround
+    // Our own exception type instead of std::bad_variant_access
+    class variant_access_error : public std::runtime_error {
+    public:
+        variant_access_error() : std::runtime_error("variant access error") {}
+    };
+
+    // Fix for older macOS versions, avoid std::get and std::visit
     inline PipeOption get_pipe_option_value(const PipeVar& var) {
         if (var.index() == static_cast<size_t>(PipeVarIndex::option)) {
-            return std::visit([](auto&& arg) -> PipeOption {
-                if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, PipeOption>)
-                    return arg;
-                return PipeOption::pipe;
-            }, var);
+            const PipeOption* pOpt = reinterpret_cast<const PipeOption*>(&var);
+            return *pOpt;
         }
         return PipeOption::pipe;
     }
 
     inline std::string& get_string_value(PipeVar& var) {
-        return std::visit([](auto&& arg) -> std::string& {
-            if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, std::string>)
-                return arg;
-            throw std::bad_variant_access();
-        }, var);
+        if (var.index() == static_cast<size_t>(PipeVarIndex::string)) {
+            return *reinterpret_cast<std::string*>(&var);
+        }
+        throw variant_access_error();
     }
 
     inline PipeHandle get_handle_value(PipeVar& var) {
-        return std::visit([](auto&& arg) -> PipeHandle {
-            if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, PipeHandle>)
-                return arg;
-            throw std::bad_variant_access();
-        }, var);
+        if (var.index() == static_cast<size_t>(PipeVarIndex::handle)) {
+            return *reinterpret_cast<PipeHandle*>(&var);
+        }
+        throw variant_access_error();
     }
 
     inline std::istream* get_istream_value(PipeVar& var) {
-        return std::visit([](auto&& arg) -> std::istream* {
-            if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, std::istream*>)
-                return arg;
-            throw std::bad_variant_access();
-        }, var);
+        if (var.index() == static_cast<size_t>(PipeVarIndex::istream)) {
+            return *reinterpret_cast<std::istream**>(&var);
+        }
+        throw variant_access_error();
     }
 
     inline std::ostream* get_ostream_value(PipeVar& var) {
-        return std::visit([](auto&& arg) -> std::ostream* {
-            if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, std::ostream*>)
-                return arg;
-            throw std::bad_variant_access();
-        }, var);
+        if (var.index() == static_cast<size_t>(PipeVarIndex::ostream)) {
+            return *reinterpret_cast<std::ostream**>(&var);
+        }
+        throw variant_access_error();
     }
 
     inline FILE* get_file_value(PipeVar& var) {
-        return std::visit([](auto&& arg) -> FILE* {
-            if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, FILE*>)
-                return arg;
-            throw std::bad_variant_access();
-        }, var);
+        if (var.index() == static_cast<size_t>(PipeVarIndex::file)) {
+            return *reinterpret_cast<FILE**>(&var);
+        }
+        throw variant_access_error();
     }
 
     inline PipeOption get_pipe_option(const PipeVar& option) {
