@@ -18,4 +18,4 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     endif()
 endif()
 
-target_link_libraries(subprocess PUBLIC Threads::Threads)
+target_link_libraries(subprocess PUBLIC Threads::Threads ghcFilesystem::ghc_filesystem)
