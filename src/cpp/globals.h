@@ -6,21 +6,30 @@
 #include <memory>
 #include <variant>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 #include <asio.hpp>
 #include <asio/thread_pool.hpp>
 #include <fmt/format.h>
+#include <subprocess.hpp>
 
 #include "utils/vectors.h"
 #include "utils/definitions.h"
 
 namespace global {
   class Message;
+  class Subprocess;
 
+  // List of messages to be displayed in the UI
   extern std::vector<Message> messages;
+  // List of subprocesses to be managed
+  extern std::vector<std::shared_ptr<Subprocess>> subprocesses;
+  // Thread pool for executing tasks in the background
+  extern asio::thread_pool thread_pool;
+  // IPC server details
   extern std::string tcp_host;
   extern short tcp_port;
-  extern asio::thread_pool thread_pool;
 
   class Message {
    public:
@@ -74,9 +83,11 @@ namespace global {
     bool is_flowfield = false;
   };
 
+  // Command to be executed by the main thread
   struct RemoteCommand {
     virtual ~RemoteCommand() = default;
   };
+  // Add command to the queue of commands to be executed by the main thread
   void add_remote_command(std::shared_ptr<RemoteCommand> cmd);
   std::optional<std::shared_ptr<RemoteCommand>> get_remote_command();
 
@@ -151,4 +162,31 @@ namespace global {
 
   // Initiate shutdown of the application
   void quit(int code = 0);
+
+  class Subprocess {
+    private:
+      std::unique_ptr<subprocess::Popen> popen;
+      std::thread reader_thread;
+      bool running = true;
+      std::mutex _mutex;
+      std::string _cout;
+      std::function<void()> callback;
+
+    public:
+     subprocess::RunBuilder builder;
+
+     int id = 0;
+     bool show = true;
+     bool finished = false;
+     std::string title;
+     std::string msg;
+     std::string cmd;
+     std::string cout;
+ 
+     Subprocess(subprocess::RunBuilder process, std::string title="", std::string msg="", std::function<void()> callback = std::function<void()>());
+     ~Subprocess();
+     // Update cout if new data is available
+     void tick();
+   };
+   void add_subprocess(subprocess::RunBuilder process, std::string title="", std::string msg="", std::function<void()> callback = std::function<void()>());
 }  // namespace global

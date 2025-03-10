@@ -186,6 +186,7 @@ target_link_libraries(
         pugixml
         flagset
         cppcolormap
+        subprocess
         monochrome::rc
 )
 target_include_directories(Monochrome PRIVATE src/cpp src/schema)

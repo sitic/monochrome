@@ -3,6 +3,7 @@
 
 // Asio needs to be imported before windows.h
 #include <asio.hpp>
+#include <subprocess.hpp>
 
 #include "BmpFile.h"
 #include "RawFile.h"
@@ -25,7 +26,7 @@ namespace {
   }
 
   bool match_file_extension(std::vector<fs::path> extensions, const std::string& extension) {
-    return match_file_extension(extensions, fs::path(extension));
+    return match_file_extension(extensions, fs::path("file" + extension));
   }
 }
 
@@ -158,22 +159,16 @@ void ipc_python_load(const fs::path& path, std::string script_name) {
     return;
   }
 
-  auto cmd = fmt::format("{} run '{}'", get_uv_path(), script_fn.string());
-  // global::new_ui_message("Loading tiff file with uv...");
-  asio::system_timer timer(global::thread_pool.get_executor());
-  timer.expires_after(std::chrono::seconds(5));
-  timer.async_wait([&](const asio::error_code& ec) {
-    if (!ec) {
-      global::new_ui_message("ERROR: uv timed out while loading tiff file.");
+  auto builder = subprocess::RunBuilder({get_uv_path(), "run", script_fn.string()});
+  builder.cout(subprocess::PipeOption::pipe);
+  builder.cerr(subprocess::PipeOption::cout);
+  subprocess::cenv["PYTHONUNBUFFERED"] = "1";
+  std::string title = fmt::format("Loading file {}", path.string());
+  std::string msg   = fmt::format("Loading file/folder, please wait ...", path.string());
+  global::add_subprocess(builder, title, msg, [script_fn]() {
+    if (fs::exists(script_fn)) {
+      fs::remove(script_fn);
     }
   });
-  int ret = system(cmd.c_str());
-  if (ret != 0) {
-    global::new_ui_message("ERROR: Failed to load file {}", path.string());
-  }
-  timer.cancel();
-  fs::remove(script_fn);
-  // global::new_ui_message("Done loading tiff file with uv.");
-  // return;
 }
 }

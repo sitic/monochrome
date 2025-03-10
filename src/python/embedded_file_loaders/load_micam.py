@@ -14,6 +14,7 @@ import monochrome as mc
 
 # filepath will be set by Monochrome when the script is run
 filepath = Path(MC_FILEPATH)   # noqa: F821
+print(f"Loading MiCAM recording from '{filepath}' ...")
 
 # Importer classes copied from optimap (https://github.com/cardiacvision/optimap)
 class MiCAM05_Importer:

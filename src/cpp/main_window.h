@@ -192,6 +192,35 @@ void show_messages() {
   }
 }
 
+void show_subprocesses() {
+  // Check if subprocesses should be cleared
+  global::subprocesses.erase(std::remove_if(global::subprocesses.begin(), global::subprocesses.end(),
+                                            [](const auto &p) -> bool { return !p->show; }),
+                             global::subprocesses.end());
+  // Show subprocesses
+  for (auto &p : global::subprocesses) {
+    p->tick();
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.5f * ImGui::GetMainViewport()->Size[0], 0),
+                                         ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::Begin(p->title.c_str(), &(p->show));
+
+    ImGui::TextWrapped("%s", p->msg.c_str());
+  
+    // Display subprocess output in a scrollable, console-like area
+    ImGui::BeginChild("subprocess_output", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
+      // ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f); // flat, console-like appearance
+      ImGui::TextUnformatted(p->cmd.c_str());
+      ImGui::Separator();
+      ImGui::TextUnformatted(p->cout.c_str());
+      // ImGui::PopStyleVar();
+      if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+        ImGui::SetScrollHereY(1.0f);
+    ImGui::EndChild();
+    
+    ImGui::End();
+  }
+}
+
 void display_loop() {
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
   prm::lastframetime = glfwGetTime();

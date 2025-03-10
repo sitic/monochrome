@@ -12,6 +12,7 @@ import skimage.io as sio
 
 # filepath will be set by Monochrome when the script is run
 filepath = Path(MC_FILEPATH)   # noqa: F821
+print(f"Loading image from '{filepath}' ...")
 
 image = sio.imread(filepath, as_gray=True)
 

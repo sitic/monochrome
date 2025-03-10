@@ -1,6 +1,8 @@
 #include <vector>
 #include <string>
 #include <optional>
+#include <thread>
+#include <mutex>
 #include "readerwriterqueue.h"
 
 #include "globals.h"
@@ -16,6 +18,7 @@ namespace global {
   asio::thread_pool thread_pool(2);
   
   std::vector<Message> messages = {};
+  std::vector<std::shared_ptr<Subprocess>> subprocesses = {};
 
   Message::Message(std::string msg) : msg(std::move(msg)) {
     static int _id = -1;
@@ -41,5 +44,65 @@ namespace global {
     if (prm::main_window) {
       glfwSetWindowShouldClose(prm::main_window, GLFW_TRUE);
     }
+  }
+
+  Subprocess::Subprocess(subprocess::RunBuilder _builder, std::string _title, std::string _msg, std::function<void()> _callback) {
+    static int _id = -1;
+    _id += 1;
+    id = _id;
+
+    this->builder = _builder;
+    this->title   = _title.empty() ? fmt::format("Subprocess {}", id) : _title;
+    this->msg     = _msg;
+    this->cmd     = std::accumulate(builder.command.begin(), builder.command.end(), std::string{},
+                                    [](std::string a, std::string b) { return a + " " + b; });
+    this->popen   = std::make_unique<subprocess::Popen>(_builder.command, _builder.options);
+    this->callback = std::move(_callback);
+
+    // Start a thread to continuously read output
+    reader_thread = std::thread([this]() {
+      constexpr int buf_size = 8;
+      uint8_t buf[buf_size];
+      
+      while (running && popen) {
+        auto transferred = subprocess::pipe_read(popen->cout, buf, buf_size);
+        if (transferred > 0) {
+          std::lock_guard<std::mutex> lock(_mutex);
+          _cout.insert(_cout.end(), &buf[0], &buf[transferred]);
+        } else if (transferred == 0) {
+          break;
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+      subprocess::pipe_close(popen->cout);
+      popen->cout = subprocess::kBadPipeValue;
+      popen->wait();
+
+      callback();
+      this->finished = true;
+      if (popen->returncode == 0) {
+        this->show = false;
+      }
+    });
+  }
+  
+  Subprocess::~Subprocess() {
+    running = false;
+    if (reader_thread.joinable()) {
+      reader_thread.join();
+    }
+  }
+
+  void Subprocess::tick() {
+    std::lock_guard<std::mutex> lock(_mutex);
+      if (_cout.length() > cout.length()) {
+        cout = std::string(_cout);
+      }
+  }
+  
+  void add_subprocess(subprocess::RunBuilder process, std::string title, std::string msg, std::function<void()> callback) {
+    auto p = std::make_shared<Subprocess>(process, title, msg, std::move(callback));
+    global::subprocesses.push_back(p);
   }
 }  // namespace global

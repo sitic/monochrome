@@ -14,6 +14,7 @@ import skimage.io as sio
 
 # filepath will be set by Monochrome when the script is run
 filepath = Path(MC_FILEPATH)   # noqa: F821
+print(f"Loading image folder from '{filepath}' ...")
 
 def _natural_sort_path_key(path: Path, _nsre=re.compile("([0-9]+)")):
     return [

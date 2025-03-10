@@ -14,6 +14,7 @@ import pymatreader
 
 # filepath will be set by Monochrome when the script is run
 filepath = Path(MC_FILEPATH)   # noqa: F821
+print(f"Loading MATLAB file from '{filepath}' ...")
 
 def load_MATLAB(filename):
     data = pymatreader.read_mat(filename)

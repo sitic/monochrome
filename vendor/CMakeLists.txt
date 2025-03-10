@@ -95,6 +95,8 @@ add_subdirectory(CLI11)
 add_library(pugixml pugixml/src/pugixml.cpp pugixml/src/pugixml.hpp pugixml/src/pugiconfig.hpp)
 target_include_directories(pugixml SYSTEM PUBLIC pugixml/src)
 
+add_subdirectory(subprocess/src/cpp)
+
 set_property(
     TARGET imgui_glfw_gl3 glad glfw fmt pugixml
     APPEND_STRING

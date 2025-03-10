@@ -14,6 +14,7 @@ import static_ffmpeg.run
 
 # filepath will be set by Monochrome when the script is run
 filepath = Path(MC_FILEPATH)   # noqa: F821
+print(f"Loading video from '{filepath}' ...")
 
 def _fix_ffmpeg_location():
     """Make skvideo use static ffmpeg if system ffmpeg not found."""
