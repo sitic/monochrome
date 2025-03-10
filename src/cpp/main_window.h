@@ -255,6 +255,7 @@ void display_loop() {
     ImGuiConnector::NewFrame();
     show_main_imgui_window();
     show_messages();
+    show_subprocesses();
 
     // ImGui::ShowDemoWindow();
 
