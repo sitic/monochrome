@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <map>
 #include <mutex>
-#include <filesystem>
+#include <ghc/fs_std.hpp>
 #include <iostream>
 #include <sstream>
 
@@ -28,10 +28,10 @@ using std::isspace;
 
 namespace subprocess {
     std::string getcwd() {
-        return std::filesystem::current_path().string();
+        return fs::current_path().string();
     }
     void setcwd(const std::string& path) {
-        std::filesystem::current_path(path);
+        fs::current_path(path);
     }
 }
 namespace {
@@ -41,8 +41,8 @@ namespace {
         try {
             if (path.empty())
                 return false;
-            return std::filesystem::is_regular_file(path);
-        } catch (std::filesystem::filesystem_error&) {
+            return fs::is_regular_file(path);
+        } catch (fs::filesystem_error&) {
             return false;
         }
     }
