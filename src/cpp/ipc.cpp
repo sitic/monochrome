@@ -457,7 +457,7 @@ void ipc::start_server() {
     ipc_server = std::make_unique<IpcServer>();
     std::thread([]() { ipc_server->run(); }).detach();
   } catch (const asio::system_error& error) {
-    fmt::print("Error starting IPC server {}: {}\n", error.code().value(), error.code().message());
+    global::new_ui_message("ERROR: Failed to start IPC server, Python interface might not work. Error code {}: {}", error.code().value(), error.code().message());
   }
 }
 
