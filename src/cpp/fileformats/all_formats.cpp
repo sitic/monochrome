@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <unordered_set>
+#include <random>
 
 // Asio needs to be imported before windows.h
 #include <asio.hpp>
@@ -24,17 +25,19 @@ namespace {
     return true;
   }
   
-  std::string random_alphanumeric_string(size_t length ) {
+  std::string random_alphanumeric_string(size_t length) {
+      thread_local std::mt19937 rng{std::random_device{}()};
       auto randchar = []() -> char {
           const char charset[] =
           "0123456789"
           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
           "abcdefghijklmnopqrstuvwxyz";
           const size_t max_index = (sizeof(charset) - 1);
-          return charset[ rand() % max_index ];
+          std::uniform_int_distribution<size_t> dist(0, max_index - 1);
+          return charset[dist(rng)];
       };
-      std::string str(length,0);
-      std::generate_n( str.begin(), length, randchar );
+      std::string str(length, 0);
+      std::generate_n(str.begin(), length, randchar);
       return str;
   }
 }
@@ -170,8 +173,11 @@ void python_plugin_load(const fs::path& path, std::string script_name) {
     global::new_ui_message("ERROR: Unable format plugin script {}", script_name);
     return;
   }
+#ifdef _WIN32
+  while (substring_replace(script, "\r\n", "\n")) {};
+#endif
   auto script_fn = fs::temp_directory_path() /
-                   fmt::format("__monochrome_{}_{}.py", script_name.substr(0, script_name.find('.')),
+                   fmt::format("monochrome_{}_{}.py", script_name.substr(0, script_name.find('.')),
                                random_alphanumeric_string(5));
   if (!write_text_file(script_fn, script)) {
     return;
