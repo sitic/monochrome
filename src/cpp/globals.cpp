@@ -3,7 +3,8 @@
 #include <optional>
 #include <thread>
 #include <mutex>
-#include "readerwriterqueue.h"
+
+#include <readerwriterqueue.h>
 
 #include "globals.h"
 #include "prm.h"

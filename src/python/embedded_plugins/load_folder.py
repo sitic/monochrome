@@ -1,19 +1,20 @@
 # /// script
 # dependencies = [
-#   "monochrome==MONOCHROME_VERSION",
+#   "monochrome",  # DO NOT MODIFY THIS LINE
 #   "pymatreader",
 #   "scikit-image",
 # ]
 # ///
-from pathlib import Path
 import re
+import sys
+from pathlib import Path
 
 import monochrome as mc
 import numpy as np
 import skimage.io as sio
 
 # filepath will be set by Monochrome when the script is run
-filepath = Path(MC_FILEPATH)   # noqa: F821
+filepath = Path(sys.argv[1])   # DO NOT MODIFY THIS LINE
 print(f"Loading image folder from '{filepath}' ...")
 
 def _natural_sort_path_key(path: Path, _nsre=re.compile("([0-9]+)")):
@@ -36,7 +37,7 @@ def load_image_folder(path):
         raise ValueError(msg)
 
     files = sorted(files, key=_natural_sort_path_key)
-    video = [sio.imread(file) for file in files]
+    video = [sio.imread(file, as_gray=True) for file in files]
     return np.array(video)
 
 video = load_image_folder(filepath)

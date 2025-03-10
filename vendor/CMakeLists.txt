@@ -37,11 +37,12 @@ add_library(
     fonts/IconsMaterialDesignIcons.cpp
     imgui_md/imgui_md.cpp
     imgui_md/imgui_md.h
+    imgui_helpers/imspinner.h
 )
 target_include_directories(
     imgui_glfw_gl3
     SYSTEM
-    PUBLIC imgui imgui/backends imgui/misc/cpp implot imgui_md
+    PUBLIC imgui imgui/backends imgui/misc/cpp implot imgui_md imgui_helpers
 )
 target_link_libraries(imgui_glfw_gl3 PUBLIC glad glfw OpenGL::GL md4c)
 set_target_properties(imgui_glfw_gl3 PROPERTIES FOLDER libs)

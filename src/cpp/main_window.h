@@ -12,6 +12,7 @@
 #include <GLFW/glfw3.h>
 
 #include "utils/ImGuiConnector.h"
+#include "imspinner.h"
 
 #include "globals.h"
 #include "prm.h"
@@ -194,8 +195,9 @@ void show_messages() {
 
 void show_subprocesses() {
   // Check if subprocesses should be cleared
-  global::subprocesses.erase(std::remove_if(global::subprocesses.begin(), global::subprocesses.end(),
-                                            [](const auto &p) -> bool { return !p->show; }),
+  global::subprocesses.erase(
+      std::remove_if(global::subprocesses.begin(), global::subprocesses.end(),
+                     [](const auto &p) -> bool { return !p->show && p->finished; }),
                              global::subprocesses.end());
   // Show subprocesses
   for (auto &p : global::subprocesses) {
@@ -208,15 +210,22 @@ void show_subprocesses() {
   
     // Display subprocess output in a scrollable, console-like area
     ImGui::BeginChild("subprocess_output", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
-      // ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f); // flat, console-like appearance
       ImGui::TextUnformatted(p->cmd.c_str());
       ImGui::Separator();
       ImGui::TextUnformatted(p->cout.c_str());
-      // ImGui::PopStyleVar();
+
+    if (!p->finished) ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
       if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
     ImGui::EndChild();
-    
+
+    if (p->finished) {
+      // Increase 
+      ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error encountered during file loading process!");
+      if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
+        p->show = false;
+      }
+    }
     ImGui::End();
   }
 }

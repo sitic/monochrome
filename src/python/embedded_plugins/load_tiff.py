@@ -1,16 +1,17 @@
 # /// script
 # dependencies = [
-#   "monochrome==MONOCHROME_VERSION",
+#   "monochrome",  # DO NOT MODIFY THIS LINE
 #   "tifffile[all]",
 # ]
 # ///
+import sys
 from pathlib import Path
 
 import monochrome as mc
 from tifffile import imread
 
 # filepath will be set by Monochrome when the script is run
-filepath = Path(MC_FILEPATH)   # noqa: F821
+filepath = Path(sys.argv[1])  # DO NOT MODIFY THIS LINE
 print(f"Loading tiff file '{filepath}' ...")
 
 def sizeof_fmt(num, suffix="B"):

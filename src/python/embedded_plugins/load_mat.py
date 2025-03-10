@@ -1,19 +1,20 @@
 # /// script
 # dependencies = [
-#   "monochrome==MONOCHROME_VERSION",
+#   "monochrome",  # DO NOT MODIFY THIS LINE
 #   "pymatreader",
 #   "numpy",
 # ]
 # ///
-from pathlib import Path
+import sys
 import warnings
+from pathlib import Path
 
 import monochrome as mc
 import numpy as np
 import pymatreader
 
 # filepath will be set by Monochrome when the script is run
-filepath = Path(MC_FILEPATH)   # noqa: F821
+filepath = Path(sys.argv[1])   # DO NOT MODIFY THIS LINE
 print(f"Loading MATLAB file from '{filepath}' ...")
 
 def load_MATLAB(filename):

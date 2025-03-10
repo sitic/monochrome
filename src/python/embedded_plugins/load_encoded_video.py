@@ -1,10 +1,11 @@
 # /// script
 # dependencies = [
-#   "monochrome==MONOCHROME_VERSION",
+#   "monochrome",  # DO NOT MODIFY THIS LINE
 #   "scikit-video @ https://github.com/scikit-video/scikit-video/archive/refs/heads/master.zip",
 #   "static_ffmpeg",
 # ]
 # ///
+import sys
 from pathlib import Path
 
 import monochrome as mc
@@ -13,7 +14,7 @@ import skvideo.io
 import static_ffmpeg.run
 
 # filepath will be set by Monochrome when the script is run
-filepath = Path(MC_FILEPATH)   # noqa: F821
+filepath = Path(sys.argv[1])   # DO NOT MODIFY THIS LINE
 print(f"Loading video from '{filepath}' ...")
 
 def _fix_ffmpeg_location():

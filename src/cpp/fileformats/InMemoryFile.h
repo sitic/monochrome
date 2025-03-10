@@ -2,6 +2,7 @@
 
 #include "AbstractFile.h"
 #include "globals.h"
+#include <algorithm>
 
 class InMemoryFile : public AbstractFile {
   bool _good = false;
@@ -12,9 +13,22 @@ class InMemoryFile : public AbstractFile {
   Eigen::MatrixXf _frame;
   std::size_t _frame_size;
 
+  static fs::path get_filepath(std::shared_ptr<global::RawArray3> data) {
+    if (!data) return fs::path();
+    fs::path path = data->meta.name;
+    // Check if metaData contains a file path, pop it if it does
+    auto pred = [](const auto& entry) { return entry.first == "filepath" && !entry.second.empty(); };
+    auto it = std::find_if(data->meta.metaData.begin(), data->meta.metaData.end(), pred);
+    if (it != data->meta.metaData.end()) {
+      path = it->second;
+      data->meta.metaData.erase(it);
+    }
+    return path;
+  }  
+
  public:
   InMemoryFile(std::shared_ptr<global::RawArray3> data)
-      : AbstractFile(data ? data->meta.name : ""), _data(data) {
+      : AbstractFile(InMemoryFile::get_filepath(data)), _data(data) {
     _good = static_cast<bool>(_data);
     if (!_good) {
       _error_msg = "Empty array loaded";

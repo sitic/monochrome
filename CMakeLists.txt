@@ -86,7 +86,7 @@ if(APPLE)
 endif()
 
 file(GLOB SHADERS "src/shaders/*.glsl")
-file(GLOB MC_FILELOADERS "src/python/embedded_file_loaders/*.py")
+file(GLOB MC_FILELOADERS "src/python/embedded_plugins/*.py")
 cmrc_add_resource_library(monochrome-resources
                           ALIAS monochrome::rc
                           NAMESPACE rc

@@ -1,19 +1,20 @@
 # /// script
 # dependencies = [
-#   "monochrome==MONOCHROME_VERSION",
+#   "monochrome",  # DO NOT MODIFY THIS LINE
 #   "numpy",
 # ]
 # ///
 
+import sys
 import warnings
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
 import monochrome as mc
+import numpy as np
 
 # filepath will be set by Monochrome when the script is run
-filepath = Path(MC_FILEPATH)   # noqa: F821
+filepath = Path(sys.argv[1])   # DO NOT MODIFY THIS LINE
 print(f"Loading MiCAM recording from '{filepath}' ...")
 
 # Importer classes copied from optimap (https://github.com/cardiacvision/optimap)

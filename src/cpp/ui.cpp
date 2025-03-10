@@ -35,8 +35,8 @@ void show_main_imgui_window() {
   }
 
   if (prm::recordings.empty()) {
-    ImGui::Text("Drag and drop a .npy or .dat file here to load it.");
-    ImGui::Text("Or use the python library to load a recording.");
+    ImGui::Text("Drag and drop a file here to load it.");
+    ImGui::Text("Or use the python library to load a video or image.");
   } else {
     for (const auto &rec : prm::recordings) {
       if (rec->active) rec->display();
