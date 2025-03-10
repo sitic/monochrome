@@ -166,7 +166,7 @@ void python_plugin_load(const fs::path& path, std::string script_name) {
   if (!substring_replace(script, "\"monochrome\",",
                          fmt::format("\"monochrome=={}\",", MONOCHROME_VERSION)) ||
       !substring_replace(script, "sys.argv[1]",
-                         fmt::format("\"{}\"", fs::absolute(path).string()))) {
+                         fmt::format("r\"{}\"", fs::absolute(path).string()))) {
     global::new_ui_message("ERROR: Unable format plugin script {}", script_name);
     return;
   }
