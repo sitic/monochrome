@@ -457,6 +457,21 @@ void ipc::start_server() {
     ipc_server = std::make_unique<IpcServer>();
     std::thread([]() { ipc_server->run(); }).detach();
   } catch (const asio::system_error& error) {
+// If we crash on macOS, we use a socket file might be left behind.
+#if defined(MC_USE_LOCAL_SOCKETS)
+#ifdef __APPLE__
+    if (error.code() == asio::error::address_in_use) {
+      auto ep = ipc_client_endpoint();
+      fs::path path = ep.path();
+      try {
+        fs::remove(path);
+      } catch (const std::exception& e) {
+        global::new_ui_message("ERROR: Failed to clean up socket file: {}", e.what());
+      }
+      return start_server();
+    }
+#endif
+#endif
     global::new_ui_message("ERROR: Failed to start IPC server, Python interface might not work. Error code {}: {}", error.code().value(), error.code().message());
   }
 }
