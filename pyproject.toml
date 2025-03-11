@@ -99,3 +99,28 @@ test-skip = ["*_arm64", "*_universal2:arm64"]
 
 [tool.cibuildwheel.linux]
 before-all = "yum install -y wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel mesa-libGL-devel libdwarf-devel binutils-devel"
+
+[tool.ruff]
+line-length = 120
+extend-exclude = [
+    "src/python/monochrome/fbs",
+    "tests"
+]
+
+[tool.ruff.lint]
+exclude = [
+  "docs",
+]
+select = ['E', 'F', 'W', 'A', 'PLC', 'PLE', 'PLW', 'I', 'D', 'Q']
+ignore = [
+    "D103",  # missing docstring in public package
+    "D100",  # missing docstring in public module
+    "E501",  # line too long
+    "PLW2901",  # loop variable overwritten
+    "PLW0603",  # global statement
+    "D401",
+    "D205",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
