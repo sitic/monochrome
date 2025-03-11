@@ -3,6 +3,7 @@
 #include <cmrc/cmrc.hpp>
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_stdlib.h"
@@ -12,29 +13,6 @@
 
 #include "fonts/IconsFontAwesome5.h"
 #include "fonts/IconsMaterialDesignIcons.h"
-
-#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-// Following includes for Windows LinkCallback
-#define WIN32_LEAN_AND_MEAN
-#include <process.h>
-void system_open_url(const std::string &url) {
-  ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
-}
-#elif defined(__APPLE__)
-void system_open_url(const std::string &url) {
-  std::string cmd = "open " + url;
-  system(cmd.c_str());
-}
-#elif defined(__linux__)
-void system_open_url(const std::string &url) {
-  std::string cmd = "xdg-open " + url;
-  system(cmd.c_str());
-}
-#else
-void system_open_url(const std::string &url) {
-  fmt::print("Cannot open url: {}\n", url);
-}
-#endif
 
 CMRC_DECLARE(rc);
 
@@ -220,5 +198,63 @@ namespace ImGuiConnector {
     ImGui_ImplGlfw_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
+  }
+
+  ImFont* markdown::get_font() const {
+    if (m_is_table_header) {
+      return ImGuiConnector::font_bold_large;
+    }
+
+    if (m_is_code) {
+      return ImGuiConnector::font_code;
+    }
+
+    switch (m_hlevel) {
+      case 0:
+        return m_is_strong ? ImGuiConnector::font_bold : ImGuiConnector::font_regular;
+      case 1:
+        return ImGuiConnector::font_bold_large;
+      case 2:
+        return ImGuiConnector::font_bold_large;
+      default:
+        return ImGuiConnector::font_bold;
+    }
+  };
+
+  void markdown::open_url() const {
+    ImGuiContext* g = ImGui::GetCurrentContext();
+    if (g && g->PlatformIO.Platform_OpenInShellFn)
+      g->PlatformIO.Platform_OpenInShellFn(g, m_href.c_str());
+  }
+
+  void markdown::SPAN_CODE(bool e) {
+    if (e) {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8, 0.8, 0.8, 1));
+    } else {
+      ImGui::PopStyleColor();
+    }
+  }
+
+  void markdown::BLOCK_CODE(const MD_BLOCK_CODE_DETAIL*, bool e) {
+    m_is_code = e;
+    if (e) {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8, 0.8, 0.8, 1));
+      ImGui::Indent();
+    } else {
+      ImGui::Unindent();
+      ImGui::PopStyleColor();
+    }
+  }
+
+  void markdown::BLOCK_QUOTE(bool e) {
+    if (e) {
+      ImGui::Indent();
+    } else {
+      ImGui::Unindent();
+    }
+  }
+
+  void markdown::SPAN_IMG(const MD_SPAN_IMG_DETAIL* d, bool e) {
+    m_is_image = e;
   }
 }  // namespace ImGuiConnector

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <regex>
-
 #include "imgui_md.h"
 
 #include "globals.h"
@@ -134,17 +132,23 @@ void show_top_ui() {
     }
 
     if (ImGui::BeginTabItem("About")) {
-      static markdown_cls md;
-
       auto get_readme = []() -> std::string {
         auto readme = utils::get_rc_text_file("README.md");
         readme = fmt::format("Monochrome version {}\n{}", MONOCHROME_VERSION, readme);
         // If line starts with an image ("[!" or "![") remove it
-        std::regex remove_pattern("^(\\[!|!\\[).*$", std::regex::multiline);
-        std::string result = std::regex_replace(readme, remove_pattern, "");
+        std::stringstream ss(readme);
+        std::string line;
+        std::string result;
+        while (std::getline(ss, line)) {
+          if (!(line.size() >= 2 && line.substr(0, 2) == "[!" || 
+                line.size() >= 2 && line.substr(0, 2) == "![")) {
+            result += line + "\n";
+          }
+        }
         return result;
       };
       static std::string readme = get_readme();    
+      static ImGuiConnector::markdown md;
       md.print(readme.data(), readme.data() + readme.size());
 
       ImGui::EndTabItem();
