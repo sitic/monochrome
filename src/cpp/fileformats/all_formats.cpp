@@ -48,7 +48,7 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
   // Directory loaders
   if (fs::is_directory(path)) {
     // Check if path contains .png, .tif, or .tiff files
-    const std::unordered_set<std::string> image_extensions {".png", ".tif", ".tiff", ".PNG", ".TIF", ".TIFF"};
+    const std::unordered_set<std::string> image_extensions {".png", ".tif", ".tiff", ".dcm", ".PNG", ".TIF", ".TIFF", ".DCM"};
     bool has_matching_files = false;
     for (const auto& entry : fs::directory_iterator(path)) {
       if (entry.is_regular_file() && image_extensions.count(entry.path().extension().string()) > 0) {
@@ -72,6 +72,9 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
   std::string extension = path.extension().string();
   std::transform(extension.begin(), extension.end(), extension.begin(),
                  [](unsigned char c) { return std::tolower(c); });
+  std::string subext = path.stem().extension().string();
+  std::transform(subext.begin(), subext.end(), subext.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
 
   // Native file handlers
   if (extension == ".npy") {
@@ -83,11 +86,11 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
     }
   } else {
     // Python-based file handlers
-    static const std::unordered_map<std::string, std::string> python_handlers = {
+    const std::unordered_map<std::string, std::string> python_handlers = {
       {".tif", "load_tiff.py"},
       {".tiff", "load_tiff.py"},
-      {".lsm", "load_tiff.py"},  // TODO: test
-      {".stk", "load_tiff.py"},  // TODO: test
+      {".lsm", "load_tiff.py"},
+      {".stk", "load_tiff.py"},
       {".mat", "load_mat.py"},
       {".png", "load_image.py"},
       {".jpg", "load_image.py"},
@@ -96,9 +99,20 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
       {".bmp", "load_image.py"},
       {".dcm", "load_image_itk.py"},
       {".dicom", "load_image_itk.py"},
+      {".gdcm", "load_image_itk.py"},
+      {".gipl", "load_image_itk.py"},
+      {".hdf5", "load_image_itk.py"},
+      {".hdr", "load_image_itk.py"},
+      {".ipl", "load_image_itk.py"},
       {".img", "load_image_itk.py"},
       {".img.nz", "load_image_itk.py"},
+      {".mgh", "load_image_itk.py"},
+      {".mha", "load_image_itk.py"},
+      {".mhd", "load_image_itk.py"},
+      {".mnc", "load_image_itk.py"},
+      {".mnc2", "load_image_itk.py"},
       {".nhdr", "load_image_itk.py"},
+      {".nia", "load_image_itk.py"},
       {".nii", "load_image_itk.py"},
       {".nii.gz", "load_image_itk.py"},
       {".nrrd", "load_image_itk.py"},
@@ -118,6 +132,9 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
       {".rsd", "load_micam.py"},
     };
     auto it = python_handlers.find(extension);
+    if (it == python_handlers.end()) {
+      it = python_handlers.find(subext + extension);
+    }
     if (it != python_handlers.end()) {
       python_plugin_load(path, it->second);
     return nullptr;

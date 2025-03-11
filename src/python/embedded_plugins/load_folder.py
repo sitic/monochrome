@@ -1,7 +1,6 @@
 # /// script
 # dependencies = [
 #   "monochrome",  # DO NOT MODIFY THIS LINE
-#   "pymatreader",
 #   "scikit-image",
 # ]
 # ///
@@ -28,7 +27,7 @@ def load_image_folder(path):
         raise ValueError(msg)
 
     files = []
-    for extension in [".tif", ".tiff", ".TIF", ".TIFF", ".png", ".PNG"]:
+    for extension in [".tif", ".tiff", ".TIF", ".TIFF", ".png", ".PNG", ".dcm", ".DCM"]:
         files.extend(path.glob(f"*{extension}"))
         if len(files) > 0:
             break
