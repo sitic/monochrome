@@ -22,9 +22,10 @@ def sizeof_fmt(num, suffix="B"):
     return f"{num:.1f}Yi{suffix}"
 
 video = imread(filepath)
-mc.show_video(video, name=filepath.name, metadata={
+metadata = {
     "filepath": str(filepath),
     "shape": str(video.shape),
     "dtype": str(video.dtype),
     "size": sizeof_fmt(video.nbytes),
-})
+}
+mc.show_video(video, name=filepath.name, metadata=metadata)
