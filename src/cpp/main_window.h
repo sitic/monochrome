@@ -19,6 +19,7 @@
 #include "recordingwindow.h"
 #include "ui.h"
 #include "keybindings.h"
+#include "utils/files.h"
 
 SharedRecordingPtr find_parent_recording(const std::string &parent_name) {
   // If the parent_name is empty we default to using the last loaded video
@@ -193,15 +194,40 @@ void show_messages() {
   }
 }
 
+void show_install_uv_dialog() {
+  bool installation_in_progress = utils::uv_install_in_progress();
+  
+  ImGui::SetNextWindowSizeConstraints(ImVec2(400, 0), ImVec2(FLT_MAX, FLT_MAX));
+  ImGui::Begin("Install UV", &installation_in_progress, ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::TextWrapped("UV is required for certain functionality. Would you like to install it now?");
+  
+  if (ImGui::Button("Yes", ImVec2(120, 0))) {
+    utils::install_uv();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("No", ImVec2(120, 0))) {
+    global::subprocesses.clear();
+  }
+  
+  ImGui::End();
+}
+
 void show_subprocesses() {
   // Check if subprocesses should be cleared
   global::subprocesses.erase(
       std::remove_if(global::subprocesses.begin(), global::subprocesses.end(),
                      [](const auto &p) -> bool { return !p->show && !p->is_running(); }),
                              global::subprocesses.end());
+
+  // Do we need to install UV?
+  if (std::any_of(global::subprocesses.begin(), global::subprocesses.end(),
+                [](const auto &p) -> bool { return !p->open(); })) {
+    show_install_uv_dialog();
+  }
+
   // Show subprocesses
   for (auto &p : global::subprocesses) {
-    p->tick();
+    if (!p->tick()) continue;
     ImGui::SetNextWindowSizeConstraints(ImVec2(0.5f * ImGui::GetMainViewport()->Size[0], 0),
                                          ImVec2(FLT_MAX, FLT_MAX));
     std::string window_title = fmt::format("{}##{}", p->title, p->id);
@@ -209,22 +235,31 @@ void show_subprocesses() {
 
     ImGui::TextWrapped("%s", p->msg.c_str());
   
-    // Display subprocess output in a scrollable, console-like area
-    ImGui::BeginChild("subprocess_output", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
-      ImGui::TextUnformatted(p->cmd.c_str());
-      ImGui::Separator();
+    ImGuiTreeNodeFlags header_flags = ImGuiTreeNodeFlags_DefaultOpen;
+    bool is_open = ImGui::CollapsingHeader("Plugin Output", header_flags);
+    if (is_open) {
+      ImGui::BeginChild("subprocess_output", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
+      if (!p->is_running()) {
+        ImGui::TextUnformatted(p->cmd.c_str());
+        ImGui::Separator();
+      }
       ImGui::TextUnformatted(p->cout.c_str());
-
-    if (p->is_running()) ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
       if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
-    ImGui::EndChild();
+      ImGui::EndChild();
+    }
 
     if (!p->is_running()) {
-      ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error encountered during file loading process!");
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+      ImGui::PushFont(ImGuiConnector::font_bold_large);
+      ImGui::TextWrapped("Error encountered during file loading process!");
+      ImGui::PopFont();
+      ImGui::PopStyleColor();
       if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
         p->show = false;
       }
+    } else {
+      ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
     }
     ImGui::End();
   }

@@ -165,7 +165,7 @@ namespace global {
 
   class Subprocess {
     private:
-      std::unique_ptr<subprocess::Popen> popen;
+      std::unique_ptr<subprocess::Popen> popen = nullptr;
       std::thread reader_thread;
       bool running = true;
       std::mutex _mutex;
@@ -184,8 +184,10 @@ namespace global {
  
      Subprocess(subprocess::RunBuilder process, std::string title="", std::string msg="", std::function<void()> callback = std::function<void()>());
      ~Subprocess();
+     // Run the subprocess if it is not already running
+     bool open();
      // Update cout if new data is available
-     void tick();
+     bool tick();
      bool is_running();
    };
    void add_subprocess(subprocess::RunBuilder process, std::string title="", std::string msg="", std::function<void()> callback = std::function<void()>());

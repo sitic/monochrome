@@ -15,8 +15,8 @@ namespace {
   }
 
   Shader create_frame_shader() {
-    return Shader::create(get_rc_text_file("src/shaders/frame.vert.glsl"),
-                          get_rc_text_file("src/shaders/frame.frag.glsl"));
+    return Shader::create(utils::get_rc_text_file("src/shaders/frame.vert.glsl"),
+                          utils::get_rc_text_file("src/shaders/frame.frag.glsl"));
   }
 
   std::tuple<GLuint, GLuint, GLuint> create_frame_vaovboebo() {
@@ -57,9 +57,9 @@ namespace {
   }
 
   Shader create_trace_shader() {
-    return Shader::create(get_rc_text_file("src/shaders/trace.vert.glsl"),
-                          get_rc_text_file("src/shaders/trace.frag.glsl"),
-                          get_rc_text_file("src/shaders/trace.geom.glsl"));
+    return Shader::create(utils::get_rc_text_file("src/shaders/trace.vert.glsl"),
+                          utils::get_rc_text_file("src/shaders/trace.frag.glsl"),
+                          utils::get_rc_text_file("src/shaders/trace.geom.glsl"));
   }
 
   std::pair<GLuint, GLuint> create_trace_vaovbo() {
@@ -77,8 +77,8 @@ namespace {
   }
 
   Shader create_points_shader() {
-    return Shader::create(get_rc_text_file("src/shaders/points.vert.glsl"),
-                          get_rc_text_file("src/shaders/points.frag.glsl"));
+    return Shader::create(utils::get_rc_text_file("src/shaders/points.vert.glsl"),
+                          utils::get_rc_text_file("src/shaders/points.frag.glsl"));
   }
 
   std::pair<GLuint, GLuint> create_points_vaovbo() {

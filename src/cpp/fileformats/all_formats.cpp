@@ -47,13 +47,13 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
 
   // Directory loaders
   if (fs::is_directory(path)) {
-    // Check if path contains .png, .tif, or .tiff files
+    // load_folder.py plugin supports a folder of .png, .tif, .tiff, or .dcm files
     const std::unordered_set<std::string> image_extensions {".png", ".tif", ".tiff", ".dcm", ".PNG", ".TIF", ".TIFF", ".DCM"};
     bool has_matching_files = false;
     for (const auto& entry : fs::directory_iterator(path)) {
       if (entry.is_regular_file() && image_extensions.count(entry.path().extension().string()) > 0) {
-          has_matching_files = true;
-          break;
+        has_matching_files = true;
+        break;
       }
     }
 
@@ -65,7 +65,7 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
         "ERROR: Unable to load directory, no TIFF or PNG files found.\nPath: {}",
         path.string());
       return nullptr;
-  }
+    }
   }
   
   // File loaders
@@ -130,6 +130,7 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
       {".rsh", "load_micam.py"},
       {".rsm", "load_micam.py"},
       {".rsd", "load_micam.py"},
+      {".zzz_test", "load_plugin_test.py"}, // For testing purposes
     };
     auto it = python_handlers.find(extension);
     if (it == python_handlers.end()) {
@@ -137,12 +138,12 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
     }
     if (it != python_handlers.end()) {
       python_plugin_load(path, it->second);
-    return nullptr;
-  } else {
-    global::new_ui_message(
+      return nullptr;
+    } else {
+      global::new_ui_message(
           "ERROR: Unable to load file, it has an unknown extension.\nFile: {}",
-        path.string());
-    return nullptr;
+          path.string());
+      return nullptr;
     }
   }
 
@@ -174,15 +175,9 @@ std::string create_npy_fileheader_float(std::vector<unsigned long> shape) {
 }
 
 namespace {
-
-std::string get_uv_path() {
-  // TODO: download uv if necessary
-  return "uv";
-}
-
 void python_plugin_load(const fs::path& path, std::string script_name) {
   // Load the script template and save it to a temporary file
-  std::string script = get_rc_text_file("src/python/embedded_plugins/" + script_name);
+  std::string script = utils::get_rc_text_file("src/python/embedded_plugins/" + script_name);
   if (!substring_replace(script, "\"monochrome\",",
                          fmt::format("\"monochrome=={}\",", MONOCHROME_VERSION)) ||
       !substring_replace(script, "sys.argv[1]",
@@ -200,12 +195,16 @@ void python_plugin_load(const fs::path& path, std::string script_name) {
     return;
   }
 
-  auto builder = subprocess::RunBuilder({get_uv_path(), "run", script_fn.string()});
-  builder.cout(subprocess::PipeOption::pipe);
-  builder.cerr(subprocess::PipeOption::cout);
-  subprocess::cenv["PYTHONUNBUFFERED"] = "1";
+  auto builder = subprocess::RunBuilder({utils::get_uv_executable(), "run", script_fn.string()});
+  auto env = subprocess::current_env_copy();
+  env["PYTHONUNBUFFERED"] = "1";
+  builder.env(env);
   std::string title = fmt::format("Loading file {}", path.string());
-  std::string msg   = fmt::format("Loading file/folder '{}' ...\n\nMonochrome will download the required dependencies to import this file automatically. This might take a while when you do it for the first time, please wait.", path.filename().string());
+  std::string msg = fmt::format(
+      "Loading '{}'...\n\n"
+      "Required dependencies will be downloaded automatically.\n"
+      "This may take some time on first import.", 
+      path.filename().string());
   global::add_subprocess(builder, title, msg, [script_fn]() {
     if (fs::exists(script_fn)) {
       fs::remove(script_fn);
@@ -213,4 +212,3 @@ void python_plugin_load(const fs::path& path, std::string script_name) {
   });
 }
 }
-
