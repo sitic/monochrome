@@ -210,15 +210,9 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
     if (ImGui::BeginPopup("merge_popup")) {
       for (auto &r : prm::recordings) {
         if (r.get() == rec.get()) continue;
-        auto l = fmt::format("Merge into '{}'", r->name());
+        auto l = fmt::format("Add as layer to '{}'", r->name());
         if (ImGui::Selectable(l.c_str())) {
           prm::merge_queue.emplace(rec, r, false);
-        }
-        if (rec->file()->capabilities()[FileCapabilities::AS_FLOW]) {
-          auto l2 = l + " as flow"s;
-          if (ImGui::Selectable(l2.c_str())) {
-            prm::merge_queue.emplace(rec, r, true);
-          }
         }
       }
       ImGui::EndPopup();
