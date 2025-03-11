@@ -238,6 +238,20 @@ community contributors. If the version is out of date, please
 [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the
 vcpkg repository.
 
+## Installing CLI11 using Conan
+
+You can install pre-built binaries for CLI11 or build it from source using
+[Conan](https://conan.io/). Use the following command:
+
+```bash
+conan install --requires="cli11/[*]" --build=missing
+```
+
+The CLI11 Conan recipe is kept up to date by Conan maintainers and community
+contributors. If the version is out of date, please
+[create an issue or pull request](https://github.com/conan-io/conan-center-index)
+on the ConanCenterIndex repository.
+
 ## Special instructions for GCC 8, Some clang, and WASI
 
 If you are using GCC 8 and using it in C++17 mode with CLI11. CLI11 makes use of
@@ -262,3 +276,32 @@ them are unknown yet.
 If building with WASI it is necessary to add the flag
 `-lc-printscan-long-double` to the build to allow long double support. See #841
 for more details.
+
+## Default system packages on Linux
+
+If you are not worried about latest features or recent bug fixes, you can
+install a stable version of CLI11 using:
+
+`sudo apt install libcli11-dev` for Ubuntu, or: `sudo dnf install cli11-devel`
+on Fedora/Almalinux.
+
+Then, in your CMake project, just call:
+
+```cmake
+find_package(CLI11 CONFIG REQUIRED)
+target_link_libraries(MyTarget PRIVATE CLI11::CLI11)
+```
+
+and in your C++ file:
+
+```cpp
+#include "CLI/App.hpp"
+#include "CLI/Formatter.hpp"
+#include "CLI/Config.hpp"
+
+int main(int argc, char** argv)) {
+    CLI::App app{"MyApp"};
+    // Here your flags / options
+    CLI11_PARSE(app, argc, argv);
+}
+```

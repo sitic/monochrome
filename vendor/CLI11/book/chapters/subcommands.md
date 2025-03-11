@@ -132,7 +132,21 @@ gitbook:code $ ./my_program my_model_1 --model_flag --shared_flag
 ```
 
 Here, `--shared_flag` was set on the main app, and on the command line it "falls
-through" `my_model_1` to match on the main app.
+through" `my_model_1` to match on the main app. This is set through
+`->fallthrough()` on a subcommand.
+
+#### Subcommand fallthrough
+
+Subcommand fallthrough allows additional subcommands to be triggered after the
+first subcommand. By default subcommand fallthrough is enabled, but it can be
+turned off through `->subcommand_fallthrough(false)` on a subcommand. This will
+prevent additional subcommands at the same inheritance level from triggering,
+the strings would then be treated as positional values. As a technical note if
+fallthrough is enabled but subcommand fallthrough disabled (this is not the
+default in both cases), then subcommands on grandparents can still be triggered
+from the grandchild subcommand, unless subcommand fallthrough is also disabled
+on the parent. This is an unusual circumstance but may arise in some very
+particular situations.
 
 ### Prefix command
 
@@ -162,7 +176,7 @@ This would allow calling help such as:
 
 ### Positional Validation
 
-Some arguments supplied on the command line may be legitamately applied to more
+Some arguments supplied on the command line may be legitimately applied to more
 than 1 positional argument. In this context enabling `positional_validation` on
 the application or subcommand will check any validators before applying the
 command line argument to the positional option. It is not an error to fail

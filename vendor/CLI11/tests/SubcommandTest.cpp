@@ -1,10 +1,14 @@
-// Copyright (c) 2017-2024, University of Cincinnati, developed by Henry Schreiner
+// Copyright (c) 2017-2025, University of Cincinnati, developed by Henry Schreiner
 // under NSF AWARD 1414736 and by the respective contributors.
 // All rights reserved.
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "app_helper.hpp"
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 using vs_t = std::vector<std::string>;
 
@@ -719,10 +723,23 @@ TEST_CASE_METHOD(TApp, "Required1SubCom", "[subcom]") {
     CHECK_THROWS_AS(run(), CLI::RequiredError);
 
     args = {"sub1"};
-    run();
+    CHECK_NOTHROW(run());
 
     args = {"sub1", "sub2"};
     CHECK_THROWS_AS(run(), CLI::ExtrasError);
+}
+
+TEST_CASE_METHOD(TApp, "subcomNoSubComfallthrough", "[subcom]") {
+    auto *sub1 = app.add_subcommand("sub1");
+    std::vector<std::string> pos;
+    sub1->add_option("args", pos);
+    app.add_subcommand("sub2");
+    app.add_subcommand("sub3");
+    sub1->subcommand_fallthrough(false);
+    CHECK_FALSE(sub1->get_subcommand_fallthrough());
+    args = {"sub1", "sub2", "sub3"};
+    run();
+    CHECK(pos.size() == 2);
 }
 
 TEST_CASE_METHOD(TApp, "BadSubcommandSearch", "[subcom]") {
@@ -813,6 +830,22 @@ TEST_CASE_METHOD(TApp, "RequiredPosInSubcommand", "[subcom]") {
 
     args = {};
     CHECK_THROWS_AS(run(), CLI::RequiredError);
+}
+
+// from  https://github.com/CLIUtils/CLI11/issues/1002
+TEST_CASE_METHOD(TApp, "ForcedSubcommandExclude", "[subcom]") {
+    auto *subcommand_1 = app.add_subcommand("sub_1");
+    std::string forced;
+    subcommand_1->add_flag_function("-f", [&forced](bool f) { forced = f ? "got true" : "got false"; })
+        ->force_callback();
+
+    auto *subcommand_2 = app.add_subcommand("sub2");
+
+    subcommand_1->excludes(subcommand_2);
+
+    args = {"sub2"};
+    CHECK_NOTHROW(run());
+    CHECK(forced == "got false");
 }
 
 TEST_CASE_METHOD(TApp, "invalidSubcommandName", "[subcom]") {
@@ -1013,18 +1046,18 @@ TEST_CASE_METHOD(SubcommandProgram, "Subcommand Groups", "[subcom]") {
 
     std::string help = app.help();
     CHECK_THAT(help, !Contains("More Commands:"));
-    CHECK_THAT(help, Contains("Subcommands:"));
+    CHECK_THAT(help, Contains("SUBCOMMANDS:"));
 
     start->group("More Commands");
     help = app.help();
     CHECK_THAT(help, Contains("More Commands:"));
-    CHECK_THAT(help, Contains("Subcommands:"));
+    CHECK_THAT(help, Contains("SUBCOMMANDS:"));
 
     // Case is ignored but for the first subcommand in a group.
     stop->group("more commands");
     help = app.help();
     CHECK_THAT(help, Contains("More Commands:"));
-    CHECK_THAT(help, !Contains("Subcommands:"));
+    CHECK_THAT(help, !Contains("SUBCOMMANDS:"));
 }
 
 TEST_CASE_METHOD(SubcommandProgram, "Subcommand ExtrasErrors", "[subcom]") {
@@ -2058,7 +2091,7 @@ TEST_CASE_METHOD(TApp, "DotNotationSubcommandSingleChar", "[subcom]") {
     CHECK(subs.front()->get_name() == "sub2");
 }
 
-TEST_CASE_METHOD(TApp, "DotNotationSubcommandRecusive", "[subcom]") {
+TEST_CASE_METHOD(TApp, "DotNotationSubcommandRecursive", "[subcom]") {
     std::string v1, v2, v3, vbase;
 
     auto *sub1 = app.add_subcommand("sub1");
@@ -2086,7 +2119,7 @@ TEST_CASE_METHOD(TApp, "DotNotationSubcommandRecusive", "[subcom]") {
     CHECK(extras.front() == "--sub1.sub2.bob");
 }
 
-TEST_CASE_METHOD(TApp, "DotNotationSubcommandRecusive2", "[subcom]") {
+TEST_CASE_METHOD(TApp, "DotNotationSubcommandRecursive2", "[subcom]") {
     std::string v1, v2, v3, vbase;
 
     auto *sub1 = app.add_subcommand("sub1");

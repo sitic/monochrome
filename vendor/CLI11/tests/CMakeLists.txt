@@ -4,7 +4,7 @@ if(CLI11_SANITIZERS AND ${CMAKE_VERSION} VERSION_GREATER "3.13.0")
     sanitizers
     GIT_REPOSITORY https://github.com/arsenm/sanitizers-cmake.git
     GIT_SHALLOW 1
-    GIT_TAG 3f0542e)
+    GIT_TAG 0573e2e)
 
   FetchContent_GetProperties(sanitizers)
 
@@ -286,7 +286,7 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL Coverage)
   include(CodeCoverage)
-  setup_target_for_coverage(
+  setup_target_for_coverage_lcov(
     NAME
     CLI11_coverage
     EXECUTABLE

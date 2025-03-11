@@ -124,7 +124,7 @@ Here is an example configuration file, in
 
 ```toml
 # Comments are supported, using a #
-# The default section is [default], case insensitive
+# The default section is [default], case-insensitive
 
 value = 1
 str = "A string"
@@ -141,7 +141,7 @@ Spaces before and after the name and argument are ignored. Multiple arguments
 are separated by spaces. One set of quotes will be removed, preserving spaces
 (the same way the command line works). Boolean options can be `true`, `on`, `1`,
 `y`, `t`, `+`, `yes`, `enable`; or `false`, `off`, `0`, `no`, `n`, `f`, `-`,
-`disable`, (case insensitive). Sections (and `.` separated names) are treated as
+`disable`, (case-insensitive). Sections (and `.` separated names) are treated as
 subcommands (note: this does not necessarily mean that subcommand was passed, it
 just sets the "defaults". If a subcommand is set to `configurable` then passing
 the subcommand using `[sub]` in a configuration file will trigger the
@@ -151,7 +151,7 @@ CLI11 also supports configuration file in INI format.
 
 ```ini
 ; Comments are supported, using a ;
-; The default section is [default], case insensitive
+; The default section is [default], case-insensitive
 
 value = 1
 str = "A string"
@@ -175,7 +175,7 @@ python doc strings.
 
 ```toml
 """
-this is a multine
+this is a multiline
 comment
 """
 
@@ -221,6 +221,63 @@ with the form `\xHH` to the equivalent binary value. The HH are hexadecimal
 characters. Characters not in this form will be translated as given. If argument
 values with unprintable characters are used to generate a config file this
 binary form will be used in the output string.
+
+### vector of vector inputs
+
+It is possible to specify vector of vector inputs in config file. This can be
+done in a couple different ways
+
+```toml
+# Examples of vector of vector inputs in config
+
+# this example is how config_to_str writes it out
+vector1 = [1,2,3,"",4,5,6]
+
+# alternative with vector separator sequence
+vector2 = [1,2,3,"%%",4,5,6]
+
+# multiline format
+vector3 = [1,2,3]
+vector3 = [4,5,6]
+
+```
+
+The `%%` is ignored in multiline format if the inject_separator modifier on the
+option is set to false, thus for vector 3 if the option is storing to a single
+vector all the elements will be in that vector.
+
+For config file multiple sequential duplicate variable names are treated as if
+they are a vector input, with possible separator insertion in the case of
+multiple input vectors.
+
+The config parser has a modifier
+
+```C++
+ app.get_config_formatter_base()->allowDuplicateFields();
+```
+
+This modification will insert the separator between each line even if not
+sequential. This allows an input option to be configured with multiple lines.
+
+```toml
+# Examples of vector of vector inputs in config
+
+# this example is how config_to_str writes it out
+vector1 = [a,v,"[]"]
+```
+
+The field insertion has a special processing for duplicate characters starting
+with "[[" in which case the `"[]"` gets translated to `[[]]` before getting
+passed into the option which converts it back into the correct string. This can
+also be used on the command line to handle unusual parsing situation with
+brackets.
+
+### Argument With Brackets
+
+There is an edge case with actual strings that are surrounded by brackets. For
+example if the string "[]" needed to be passed. this would normally trigger the
+bracket processing and result in an empty vector. In this case it can be
+enclosed in quotes and should be handled correctly.
 
 ## Multiple configuration files
 
@@ -286,6 +343,10 @@ char literalQuote = '\'';
 uint8_t maximumLayers{255};
 /// the separator used to separator parent layers
 char parentSeparatorChar{'.'};
+/// comment default values
+bool commentDefaultsBool = false;
+/// specify the config reader should collapse repeated field names to a single vector
+bool allowMultipleDuplicateFields{false};
 /// Specify the configuration index to use for arrayed sections
 uint16_t configIndex{0};
 /// Specify the configuration section that should be used
@@ -304,6 +365,10 @@ These can be modified via setter functions
   and value
 - `ConfigBase *quoteCharacter(char qString, char literalChar)` :specify the
   characters to use around strings and single characters
+- `ConfigBase *commentDefaults(bool comDef)` : set to true to comment lines with
+  a default value
+- `ConfigBase *allowDuplicateFields(bool value)` :set to true to allow duplicate
+  fields to be merged even if not sequential
 - `ConfigBase *maxLayers(uint8_t layers)` : specify the maximum number of parent
   layers to process. This is useful to limit processing for larger config files
 - `ConfigBase *parentSeparator(char sep)` : specify the character to separate
@@ -413,8 +478,8 @@ positional, or the environment variable name. When generating a config file it
 will create an option name in following priority.
 
 1. First long name
-2. Positional name
-3. First short name
+2. First short name
+3. Positional name
 4. Environment name
 
 In config files the name will be enclosed in quotes if there is any potential
