@@ -1,6 +1,22 @@
+"""Monochrome: Viewer for monochromatic video and image data."""
+
 from ._version import version as __version__
-from .ipc import (BitRange, ColorMap, OpacityFunction, show, show_video, show_file, show_files,
-                  show_flow, show_layer, show_points, show_image, export_video, close_video, quit)
+from .ipc import (
+                  BitRange,
+                  ColorMap,
+                  OpacityFunction,
+                  close_video,
+                  export_video,
+                  quit,
+                  show,
+                  show_file,
+                  show_files,
+                  show_flow,
+                  show_image,
+                  show_layer,
+                  show_points,
+                  show_video,
+)
 from .ipc import start_monochrome as launch
 
 __all__ = [

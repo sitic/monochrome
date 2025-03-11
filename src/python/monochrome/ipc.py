@@ -9,32 +9,40 @@ from typing import Dict, List, Optional, Text, Union
 import flatbuffers
 import numpy as np
 
-from .fbs import (Array3DataChunkf, Array3DataChunku8, Array3DataChunku16,
-                  Array3Meta, Array3MetaFlow, CloseVideo, Filepaths,
-                  PointsVideo, Root, VideoExport)
+from .fbs import (
+    Array3DataChunkf,
+    Array3DataChunku8,
+    Array3DataChunku16,
+    Array3Meta,
+    Array3MetaFlow,
+    CloseVideo,
+    Filepaths,
+    PointsVideo,
+    Root,
+    VideoExport,
+)
 from .fbs.ArrayDataType import ArrayDataType
 from .fbs.BitRange import BitRange
 from .fbs.Color import CreateColor
 from .fbs.ColorMap import ColorMap
 from .fbs.Data import Data
-from .fbs.VideoExportFormat import VideoExportFormat
-from .fbs.DictEntry import (DictEntryAddKey, DictEntryAddVal, DictEntryEnd,
-                            DictEntryStart)
+from .fbs.DictEntry import DictEntryAddKey, DictEntryAddVal, DictEntryEnd, DictEntryStart
 from .fbs.OpacityFunction import OpacityFunction
+from .fbs.VideoExportFormat import VideoExportFormat
 
-if sys.platform == 'win32':
-    MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome.exe'
-elif sys.platform == 'darwin':
-    MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'Monochrome.app'
+if sys.platform == "win32":
+    MONOCHROME_BIN_PATH = Path(__file__).parent / "data" / "bin" / "Monochrome.exe"
+elif sys.platform == "darwin":
+    MONOCHROME_BIN_PATH = Path(__file__).parent / "data" / "Monochrome.app"
 else:
-    MONOCHROME_BIN_PATH = Path(__file__).parent / 'data' / 'bin' / 'Monochrome'
+    MONOCHROME_BIN_PATH = Path(__file__).parent / "data" / "bin" / "Monochrome"
 
-USE_TCP = sys.platform in ['win32', 'cygwin']
-TCP_IP, TCP_PORT = '127.0.0.1', 4864
+USE_TCP = sys.platform in ["win32", "cygwin"]
+TCP_IP, TCP_PORT = "127.0.0.1", 4864
 # OSX doesn't support abstract UNIX domain sockets
-ABSTRACT_DOMAIN_SOCKET_SUPPORTED = sys.platform != 'darwin'
-if sys.platform != 'win32':
-    SOCK_PATH = f'\0Monochrome{os.getuid()}' if ABSTRACT_DOMAIN_SOCKET_SUPPORTED else f'/tmp/Monochrome{os.getuid()}.s'
+ABSTRACT_DOMAIN_SOCKET_SUPPORTED = sys.platform != "darwin"
+if sys.platform != "win32":
+    SOCK_PATH = f"\0Monochrome{os.getuid()}" if ABSTRACT_DOMAIN_SOCKET_SUPPORTED else f"/tmp/Monochrome{os.getuid()}.s"
 else:
     SOCK_PATH = None
 MAX_BUFFER_SIZE = 16352
@@ -46,37 +54,35 @@ def start_monochrome(speed: Optional[float] = None,
                      fliph: bool = False,
                      flipv: bool = False,
                      **kwargs):
-    """
-    Start bundled Monochrome executable with the given settings.
-    """
-    if sys.platform != 'darwin':
+    """Start bundled Monochrome executable with the given settings."""
+    if sys.platform != "darwin":
         args = [str(MONOCHROME_BIN_PATH)]
     else:
-        args = ['open', '-a', str(MONOCHROME_BIN_PATH), '--args']
+        args = ["open", "-a", str(MONOCHROME_BIN_PATH), "--args"]
     if speed:
-        args.append('--speed')
+        args.append("--speed")
         args.append(str(speed))
     if display_fps:
-        args.append('--display_fps')
+        args.append("--display_fps")
         args.append(str(display_fps))
     if scale:
-        args.append('--scale')
+        args.append("--scale")
         args.append(str(scale))
     if fliph:
-        args.append('--fliph')
+        args.append("--fliph")
     if flipv:
-        args.append('--flipv')
+        args.append("--flipv")
     for key, val in kwargs.items():
-        args.append(f'--{key}')
+        args.append(f"--{key}")
         args.append(str(val))
     subprocess.Popen(args, start_new_session=True)
 
 
 def console_entrypoint():
-    if sys.platform != 'darwin':
+    if sys.platform != "darwin":
         args = [str(MONOCHROME_BIN_PATH)]
     else:
-        args = ['open', '-a', str(MONOCHROME_BIN_PATH), '--args']
+        args = ["open", "-a", str(MONOCHROME_BIN_PATH), "--args"]
     args.extend(sys.argv[1:])
     subprocess.Popen(args).wait()
 
@@ -185,7 +191,7 @@ def create_pointsvideo_msg(points_py, name, parent_name=None, color=None, point_
     buf = builder.Output()
     return buf
 
-def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0., date="", comment="",
+def create_array3meta_msg(dtype: ArrayDataType, name, shape, duration=0., fps=0., date="", comment="",
                           bitrange=BitRange.AUTODETECT, cmap=ColorMap.DEFAULT, parent_name=None, opacity=None,
                           metadata=None, vmin=None, vmax=None):
     builder = flatbuffers.Builder(1024)
@@ -206,7 +212,7 @@ def create_array3meta_msg(type: ArrayDataType, name, shape, duration=0., fps=0.,
             builder.PrependUOffsetTRelative(e)
         metadata = builder.EndVector()
     Array3Meta.Start(builder)
-    Array3Meta.AddType(builder, type)
+    Array3Meta.AddType(builder, dtype)
     Array3Meta.AddNx(builder, shape[2])
     Array3Meta.AddNy(builder, shape[1])
     Array3Meta.AddNt(builder, shape[0])
@@ -302,7 +308,7 @@ def create_array3datau16_msg(array, idx=0):
 def show_file(filepath: Union[Text, Path]):
     """
     Load a file in Monochrome.
-    
+
     Parameters
     ----------
     filepath : str or Path
@@ -347,7 +353,6 @@ def show_points(points, name: Text = "", parent: Optional[Text] = None, color=No
     point_size : float
         Size of points in image pixels
     """
-
     name = str(name)
     s = create_socket()
     buf = create_pointsvideo_msg(points, name, parent, color, point_size)
@@ -366,7 +371,7 @@ def show_image(array: np.ndarray,
                metadata: Optional[Dict] = None):
     """
     Show an image in Monochrome.
-    
+
     Alias for :func:`show_video`.
     """
     return show_video(array, name=name, cmap=cmap, vmin=vmin, vmax=vmax, bitrange=bitrange, parent=parent, opacity=opacity, comment=comment, metadata=metadata)
@@ -382,10 +387,10 @@ def show_video(array: np.ndarray,
                opacity: Optional[OpacityFunction] = None,
                comment: Text = "",
                metadata: Optional[Dict] = None):
-    """
-    Play a video or open a image in Monochrome.
+    """Play a video or open a image in Monochrome.
+
     Arrays of dtype np.float, np.uint8, and np.uint16 are natively supported by Monochrome.
-    Arrays with other dtypes will be converted to np.float
+    Arrays with other dtypes will be converted to np.float32.
 
     Parameters
     ----------
@@ -410,7 +415,6 @@ def show_video(array: np.ndarray,
     metadata : dict
         Additional metadata to be displayed
     """
-
     array = np.squeeze(array)
     if array.ndim == 2:
         # assume that it is a 2D image
@@ -483,7 +487,7 @@ def show_video(array: np.ndarray,
 def show_layer(array: np.ndarray, name: Text = "", parent: Optional[Text] = None, opacity: Optional[OpacityFunction] = None, **kwargs):
     """
     Add a layer to the parent video in Monochrome.
-    
+
     Parameters
     ----------
     array : np.ndarray
@@ -554,9 +558,10 @@ def show(array_or_path: Union[str, Path, np.ndarray], *args, **kwargs):
 def export_video(filepath, name="", fps=30, t_start=0, t_end=-1, description="", close_after_completion=False):
     """Export a video displayed in Monochrome to a .mp4 file.
 
-    NOTE: Monochrome exports the video as rendered in the window, i.e. the video will have the same resolution as
-    the video window and all the layers/points/... will be merged into a single video.
-    
+    .. note::
+        Monochrome exports the video as rendered in the window, i.e. the video will have the same resolution as
+        the video window and all the layers/points/... will be merged into a single video.
+
     Parameters
     ----------
     filepath : str
@@ -597,7 +602,7 @@ def export_video(filepath, name="", fps=30, t_start=0, t_end=-1, description="",
 
 def close_video(name=""):
     """Close a video in Monochrome.
-    
+
     Parameters
     ----------
     name : str
@@ -615,7 +620,7 @@ def close_video(name=""):
     buf = builder.Output()
     s.sendall(buf)
 
-def quit():
+def quit():  # noqa: A001
     """Quit Monochrome, terminating the process."""
     s = create_socket()
     builder = flatbuffers.Builder(512)
