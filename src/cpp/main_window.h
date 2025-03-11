@@ -197,7 +197,7 @@ void show_subprocesses() {
   // Check if subprocesses should be cleared
   global::subprocesses.erase(
       std::remove_if(global::subprocesses.begin(), global::subprocesses.end(),
-                     [](const auto &p) -> bool { return !p->show && p->finished; }),
+                     [](const auto &p) -> bool { return !p->show && !p->is_running(); }),
                              global::subprocesses.end());
   // Show subprocesses
   for (auto &p : global::subprocesses) {
@@ -215,13 +215,12 @@ void show_subprocesses() {
       ImGui::Separator();
       ImGui::TextUnformatted(p->cout.c_str());
 
-    if (!p->finished) ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
+    if (p->is_running()) ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
       if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
     ImGui::EndChild();
 
-    if (p->finished) {
-      // Increase 
+    if (!p->is_running()) {
       ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error encountered during file loading process!");
       if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
         p->show = false;

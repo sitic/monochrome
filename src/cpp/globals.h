@@ -177,7 +177,6 @@ namespace global {
 
      int id = 0;
      bool show = true;
-     bool finished = false;
      std::string title;
      std::string msg;
      std::string cmd;
@@ -187,6 +186,7 @@ namespace global {
      ~Subprocess();
      // Update cout if new data is available
      void tick();
+     bool is_running();
    };
    void add_subprocess(subprocess::RunBuilder process, std::string title="", std::string msg="", std::function<void()> callback = std::function<void()>());
 }  // namespace global

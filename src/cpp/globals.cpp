@@ -70,10 +70,10 @@ namespace global {
         if (transferred > 0) {
           std::lock_guard<std::mutex> lock(_mutex);
           _cout.insert(_cout.end(), &buf[0], &buf[transferred]);
-        } else if (transferred == 0) {
+        } else {
           break;
         }
-        
+
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
       }
       subprocess::pipe_close(popen->cout);
@@ -81,7 +81,9 @@ namespace global {
       popen->wait();
 
       callback();
-      this->finished = true;
+
+      std::lock_guard<std::mutex> lock(_mutex);
+      this->running = false;
       if (popen->returncode == 0) {
         this->show = false;
       }
@@ -100,6 +102,10 @@ namespace global {
       if (_cout.length() > cout.length()) {
         cout = std::string(_cout);
       }
+  }
+
+  bool Subprocess::is_running() {
+    return running;
   }
   
   void add_subprocess(subprocess::RunBuilder process, std::string title, std::string msg, std::function<void()> callback) {
