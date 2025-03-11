@@ -191,7 +191,7 @@ void python_plugin_load(const fs::path& path, std::string script_name) {
   auto script_fn = fs::temp_directory_path() /
                    fmt::format("monochrome_{}_{}.py", script_name.substr(0, script_name.find('.')),
                                random_alphanumeric_string(5));
-  if (!write_text_file(script_fn, script)) {
+  if (!utils::write_text_file(script_fn, script)) {
     return;
   }
 

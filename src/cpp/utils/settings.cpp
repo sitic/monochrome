@@ -89,7 +89,7 @@ std::string save_current_settings() {
 
   std::string settings = app.config_to_str(true, true);
 
-  write_text_file(config_path, settings);
+  utils::write_text_file(config_path, settings);
 
   return config_path;
 }
