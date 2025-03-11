@@ -1,8 +1,7 @@
 #include <cmrc/cmrc.hpp>
-#include <subprocess.hpp>
 
-#include "files.h"
 #include "globals.h"
+#include "files.h"
 
 CMRC_DECLARE(rc);
 
