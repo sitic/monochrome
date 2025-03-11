@@ -8,8 +8,8 @@
 import sys
 from pathlib import Path
 
-import monochrome as mc
 import imageio.v3 as iio
+import monochrome as mc
 import numpy as np
 
 # filepath will be set by Monochrome when the script is run

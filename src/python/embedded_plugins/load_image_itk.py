@@ -18,7 +18,7 @@ print(f"Loading image from '{filepath}' ...")
 
 image = iio.imread(filepath, plugin="ITK")
 
-metadata = metadata={
+metadata = {
     "filepath": str(filepath),
     "shape": str(image.shape),
     "dtype": str(image.dtype),

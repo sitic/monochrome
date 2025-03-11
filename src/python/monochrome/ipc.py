@@ -416,7 +416,8 @@ def show_video(array: np.ndarray,
         # assume that it is a 2D image
         array = np.expand_dims(array, 0)
     elif array.ndim != 3:
-        raise ValueError("array is not two- or three-dimensional")
+        msg = f"Array is not two- or three-dimensional: Shape {array.shape}"
+        raise ValueError(msg)
 
     if array.dtype == np.float32:
         dtype = ArrayDataType.FLOAT

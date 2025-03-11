@@ -94,10 +94,10 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
       {".jpeg", "load_image.py"},
       {".webp", "load_image.py"},
       {".bmp", "load_image.py"},
-      {".dcm", "load_image.py"}, // ITK?
+      {".dcm", "load_image_itk.py"},
       {".dicom", "load_image_itk.py"},
-      // {".img", "load_image_itk.py"},
-      // {".img.nz", "load_image_itk.py"},
+      {".img", "load_image_itk.py"},
+      {".img.nz", "load_image_itk.py"},
       {".nhdr", "load_image_itk.py"},
       {".nii", "load_image_itk.py"},
       {".nii.gz", "load_image_itk.py"},
