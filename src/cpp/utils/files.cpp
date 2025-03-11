@@ -62,7 +62,7 @@ void install_uv() {
     };
 #endif
     std::string title = fmt::format("Installing uv ...");
-    std::string msg   = fmt::format("Please wait while the uv dependency is being installed.");
+    std::string msg   = fmt::format("Please wait while the uv is being installed.");
     auto env = subprocess::current_env_copy();
     // env["UV_INSTALL_DIR"] = "";
     builder.env(env);

@@ -198,8 +198,15 @@ void show_install_uv_dialog() {
   bool installation_in_progress = utils::uv_install_in_progress();
   
   ImGui::SetNextWindowSizeConstraints(ImVec2(400, 0), ImVec2(FLT_MAX, FLT_MAX));
-  ImGui::Begin("Install UV", &installation_in_progress, ImGuiWindowFlags_AlwaysAutoResize);
-  ImGui::TextWrapped("UV is required for certain functionality. Would you like to install it now?");
+  ImGui::Begin("Extra Dependencies Required", &installation_in_progress, ImGuiWindowFlags_AlwaysAutoResize);
+  const std::string message = \
+R"(Monochrome requires [`uv`](https://github.com/astral-sh/uv), a fast Python package manager written in Rust, to load certain file formats through plugins.
+
+This is a one-time installation that will enable you to work with more file types. `uv` is lightweight, secure, and can be easily [uninstalled](https://docs.astral.sh/uv/getting-started/installation/#uninstallation) later if needed. [Learn more about `uv`.](https://docs.astral.sh/uv/)
+
+Continue with automatic installation of `uv`?)";
+  static ImGuiConnector::markdown md;
+  md.print(message.data(), message.data() + message.size());
   
   if (ImGui::Button("Yes", ImVec2(120, 0))) {
     utils::install_uv();
@@ -244,6 +251,7 @@ void show_subprocesses() {
         ImGui::Separator();
       }
       ImGui::TextUnformatted(p->cout.c_str());
+      ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
       if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
       ImGui::EndChild();
@@ -258,8 +266,6 @@ void show_subprocesses() {
       if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
         p->show = false;
       }
-    } else {
-      ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
     }
     ImGui::End();
   }

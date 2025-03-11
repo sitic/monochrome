@@ -202,8 +202,8 @@ void python_plugin_load(const fs::path& path, std::string script_name) {
   std::string title = fmt::format("Loading file {}", path.string());
   std::string msg = fmt::format(
       "Loading '{}'...\n\n"
-      "Required dependencies will be downloaded automatically.\n"
-      "This may take some time on first import.", 
+      "Required plugin dependencies will be downloaded automatically."
+      " This may take some time on first import.", 
       path.filename().string());
   global::add_subprocess(builder, title, msg, [script_fn]() {
     if (fs::exists(script_fn)) {
