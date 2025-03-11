@@ -13,6 +13,29 @@
 #include "fonts/IconsFontAwesome5.h"
 #include "fonts/IconsMaterialDesignIcons.h"
 
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+// Following includes for Windows LinkCallback
+#define WIN32_LEAN_AND_MEAN
+#include <process.h>
+void system_open_url(const std::string &url) {
+  ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+#elif defined(__APPLE__)
+void system_open_url(const std::string &url) {
+  std::string cmd = "open " + url;
+  system(cmd.c_str());
+}
+#elif defined(__linux__)
+void system_open_url(const std::string &url) {
+  std::string cmd = "xdg-open " + url;
+  system(cmd.c_str());
+}
+#else
+void system_open_url(const std::string &url) {
+  fmt::print("Cannot open url: {}\n", url);
+}
+#endif
+
 CMRC_DECLARE(rc);
 
 namespace {

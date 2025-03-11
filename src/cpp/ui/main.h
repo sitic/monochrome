@@ -1,89 +1,13 @@
 #pragma once
 
+#include <regex>
+
 #include "imgui_md.h"
 
 #include "globals.h"
 #include "utils/settings.h"
 #include "utils/ImGuiConnector.h"
 #include "utils/files.h"
-
-#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-// Following includes for Windows LinkCallback
-#define WIN32_LEAN_AND_MEAN
-#include <process.h>
-void system_open_url(const std::string &url) {
-  ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
-}
-#elif defined(__APPLE__)
-void system_open_url(const std::string &url) {
-  std::string cmd = "open " + url;
-  system(cmd.c_str());
-}
-#elif defined(__linux__)
-void system_open_url(const std::string &url) {
-  std::string cmd = "xdg-open " + url;
-  system(cmd.c_str());
-}
-#else
-void system_open_url(const std::string &url) {
-  fmt::print("Cannot open url: {}\n", url);
-}
-#endif
-
-struct markdown_cls : public imgui_md {
-  ImFont *get_font() const override {
-    if (m_is_table_header) {
-      return ImGuiConnector::font_bold_large;
-    }
-
-    if (m_is_code) {
-      return ImGuiConnector::font_code;
-    }
-
-    switch (m_hlevel) {
-      case 0:
-        return m_is_strong ? ImGuiConnector::font_bold : ImGuiConnector::font_regular;
-      case 1:
-        return ImGuiConnector::font_bold_large;
-      case 2:
-        return ImGuiConnector::font_bold_large;
-      default:
-        return ImGuiConnector::font_bold;
-    }
-  };
-
-  void open_url() const override { system_open_url(m_href); }
-
-  void SPAN_CODE(bool e) override {
-    if (e) {
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8, 0.8, 0.8, 1));
-    } else {
-      ImGui::PopStyleColor();
-    }
-  }
-
-  void BLOCK_CODE(const MD_BLOCK_CODE_DETAIL *, bool e) override {
-    m_is_code = e;
-    if (e) {
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8, 0.8, 0.8, 1));
-      ImGui::Indent();
-    } else {
-      ImGui::Unindent();
-      ImGui::PopStyleColor();
-    }
-  }
-
-  void BLOCK_QUOTE(bool e) override {
-    if (e) {
-      ImGui::Indent();
-    } else {
-      ImGui::Unindent();
-    }
-  }
-
-  // ignore images
-  void SPAN_IMG(const MD_SPAN_IMG_DETAIL *d, bool e) override { m_is_image = e; }
-};
 
 void show_top_ui() {
   if (ImGui::BeginTabBar("##TopUiTabs")) {
@@ -212,8 +136,15 @@ void show_top_ui() {
     if (ImGui::BeginTabItem("About")) {
       static markdown_cls md;
 
-      static std::string readme = fmt::format("Monochrome version {}\n{}", MONOCHROME_VERSION,
-                                              utils::get_rc_text_file("README.md"));
+      auto get_readme = []() -> std::string {
+        auto readme = utils::get_rc_text_file("README.md");
+        readme = fmt::format("Monochrome version {}\n{}", MONOCHROME_VERSION, readme);
+        // If line starts with an image ("[!" or "![") remove it
+        std::regex remove_pattern("^(\\[!|!\\[).*$", std::regex::multiline);
+        std::string result = std::regex_replace(readme, remove_pattern, "");
+        return result;
+      };
+      static std::string readme = get_readme();    
       md.print(readme.data(), readme.data() + readme.size());
 
       ImGui::EndTabItem();
