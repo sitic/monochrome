@@ -13,6 +13,9 @@ project(
     VERSION ${GITVERSIONDETECT_VERSION_MAJOR}.${GITVERSIONDETECT_VERSION_MINOR}.${GITVERSIONDETECT_VERSION_PATCH}
     LANGUAGES C CXX
 )
+if(APPLE)
+    enable_language(OBJC)
+endif()
 
 option(MC_FORCE_TCP_IPC "Force use of TCP for IPC" OFF)
 option(STATIC_GCC "Build with static libstdc++ when using gcc" OFF)
@@ -194,6 +197,7 @@ target_link_libraries(
         flagset
         cppcolormap
         subprocess
+        nfd
         monochrome::rc
 )
 target_include_directories(Monochrome PRIVATE src/cpp src/schema)

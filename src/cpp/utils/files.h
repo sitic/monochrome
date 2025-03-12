@@ -8,6 +8,9 @@ namespace utils {
 
   bool write_text_file(const fs::path &filepath, const std::string &content);
 
+  void load_file_filepicker();
+  void load_folder_filepicker();
+
   void install_uv();
   bool uv_install_in_progress();
   std::string get_uv_executable();

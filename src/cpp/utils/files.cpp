@@ -1,5 +1,8 @@
 #include <cmrc/cmrc.hpp>
+#include <nfd.hpp>
+#include <nfd_glfw3.h>
 
+#include "prm.h"
 #include "globals.h"
 #include "files.h"
 
@@ -32,6 +35,36 @@ bool write_text_file(const fs::path& path, const std::string& content) {
     }
     file.close();
     return true;
+}
+
+void load_file_filepicker() {
+    NFD::Guard nfdGuard;
+    NFD::UniquePath outPath;
+
+    nfdresult_t result = NFD::OpenDialog(outPath);
+    if (result == NFD_OKAY) {
+        std::string filepath = outPath.get();
+        global::add_file_to_load(filepath);
+    } else if (result == NFD_CANCEL) {
+        /* pass */
+    } else {
+        global::new_ui_message("Error: {}", NFD::GetError());
+    }
+    }
+
+void load_folder_filepicker() {
+    NFD::Guard nfdGuard;
+    NFD::UniquePath outPath;
+
+    nfdresult_t result = NFD::PickFolder(outPath);
+    if (result == NFD_OKAY) {
+        std::string folderpath = outPath.get();
+        global::add_file_to_load(folderpath);
+    } else if (result == NFD_CANCEL) {
+        /* pass */
+    } else {
+        global::new_ui_message("Error: {}", NFD::GetError());
+    }
 }
 
 void install_uv() {

@@ -1,8 +1,8 @@
 #include "keybindings.h"
 
-#include "globals.h"
-#include "recordingwindow.h"
 #include "prm.h"
+#include "globals.h"
+#include "utils/files.h"
 
 namespace global {
   void common_key_callback(GLFWwindow *window,
@@ -20,6 +20,12 @@ namespace global {
       // Don't call RecordingWindow::close_callback() directly here,
       // causes a segfault in glfw
       glfwSetWindowShouldClose(window, GLFW_TRUE);
+    } else if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_O && action == GLFW_PRESS) {
+      // CTRL + O: open file dialog
+      utils::load_file_filepicker();
+    } else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT) && key == GLFW_KEY_O && action == GLFW_PRESS) {
+      // CTRL + SHIFT + O: open folder dialog
+      utils::load_folder_filepicker();
     } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
       // SPACE: toggle play/pause
       if (callback_rec && !callback_rec->active) {

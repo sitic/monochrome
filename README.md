@@ -100,6 +100,8 @@ Keyboard shortcuts:
 | --- | --- |
 | `Ctrl + q` | Quit Monochrome |
 | `Esc` or `q` | Close focused recording |
+| `Ctrl + o` | Open media file |
+| `Ctrl + Shift + o` | Open png/tiff/dcm file folder |
 | `Space` | Play/Pause |
 | `Up` | Increase playback speed (frame skip) |
 | `Down` | Decrease playback speed (frame skip) |

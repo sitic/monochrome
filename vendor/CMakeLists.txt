@@ -98,6 +98,8 @@ target_include_directories(pugixml SYSTEM PUBLIC pugixml/src)
 
 add_subdirectory(subprocess/src/cpp)
 
+add_subdirectory(nativefiledialog-extended)
+
 set_property(
     TARGET imgui_glfw_gl3 glad glfw fmt pugixml
     APPEND_STRING
