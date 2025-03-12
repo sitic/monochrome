@@ -12,7 +12,9 @@ namespace utils {
   /* Write text to file, return false on error */
   bool write_text_file(const fs::path &filepath, const std::string &content);
 
+  /* Load media files with filepicker */
   void load_file_filepicker();
+  /* Load folder of files with filepicker */
   void load_folder_filepicker();
 
   void install_uv();

@@ -54,12 +54,18 @@ bool write_text_file(const fs::path& path, const std::string& content) {
 
 void load_file_filepicker() {
     NFD::Guard nfdGuard;
-    NFD::UniquePath outPath;
+    NFD::UniquePathSet outPaths;
 
-    nfdresult_t result = NFD::OpenDialog(outPath);
+    nfdresult_t result = NFD::OpenDialogMultiple(outPaths);
     if (result == NFD_OKAY) {
-        std::string filepath = outPath.get();
-        global::add_file_to_load(filepath);
+        nfdpathsetsize_t numPaths;
+        NFD::PathSet::Count(outPaths, numPaths);
+
+        for (nfdpathsetsize_t i = 0; i < numPaths; ++i) {
+            NFD::UniquePathSetPath path;
+            NFD::PathSet::GetPath(outPaths, i, path);
+            global::add_file_to_load(path.get());
+        }
     } else if (result == NFD_CANCEL) {
         /* pass */
     } else {
