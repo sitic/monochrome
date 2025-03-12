@@ -161,9 +161,12 @@ if(APPLE)
     set(MONOCHROME_ICONS ${PROJECT_SOURCE_DIR}/assets/Monochrome.icns ${PROJECT_SOURCE_DIR}/assets/npy-logo.icns)
     set_source_files_properties(${MONOCHROME_ICONS} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     add_executable(Monochrome ${MONOCHROME_ICONS} ${SOURCES})
-    set_target_properties(
-        Monochrome
-        PROPERTIES MACOSX_BUNDLE TRUE MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/assets/Info.plist
+    set_target_properties(Monochrome PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_PROJECT_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${CMAKE_PROJECT_VERSION}
+        MACOSX_BUNDLE_LONG_VERSION_STRING ${CMAKE_PROJECT_VERSION}
+        MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/assets/Info.plist.in"
     )
 elseif(MSVC AND NOT SKBUILD)
     add_executable(Monochrome WIN32 ${SOURCES} ${PROJECT_SOURCE_DIR}/assets/Monochrome.rc)
