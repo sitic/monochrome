@@ -6,7 +6,10 @@
 namespace utils {
   std::string get_rc_text_file(const std::string &filename);
 
+  /* Create directory, return false on error */
   bool create_directory(fs::path path);
+
+  /* Write text to file, return false on error */
   bool write_text_file(const fs::path &filepath, const std::string &content);
 
   void load_file_filepicker();

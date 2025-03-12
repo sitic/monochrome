@@ -36,7 +36,7 @@ bool create_directory(fs::path path) {
 }
 
 bool write_text_file(const fs::path& path, const std::string& content) {
-    create_directory(path.parent_path());
+    utils::create_directory(path.parent_path());
 
     std::ofstream file(path, std::ios::out);
     if (!file.is_open()) {

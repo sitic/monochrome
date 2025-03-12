@@ -1,16 +1,5 @@
 #pragma once
 
-/* Create directory, return false on error */
-bool create_directory(std::string path) {
-  std::error_code error;
-  fs::create_directory(path, error);
-  if (error) {
-    global::new_ui_message("Failed to create directory: {}", error.message());
-    return false;
-  }
-  return true;
-}
-
 void show_export_recording_ui(const SharedRecordingPtr &recording) {
   // Use the directory path of the recording as best guest for the
   // export directory, make it static so that it only has to be changed
@@ -52,7 +41,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
 
     ImGui::Spacing();
     if (ImGui::Button("Start Export (freezes everything)", ImVec2(-1.0f, 0.0f)) &&
-        create_directory(export_dir)) {
+        utils::create_directory(export_dir)) {
       fs::path path(export_dir);
       path /= ctrl.filename;
       fmt::print("Exporting ROI to {}\n", path.string());
@@ -94,7 +83,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
       ImGui::InputInt("t start", &ctrl.tstart);
       ImGui::InputInt("t end", &ctrl.tend);
 
-      if (ImGui::Button("Start Export") && create_directory(export_dir)) {
+      if (ImGui::Button("Start Export") && utils::create_directory(export_dir)) {
         recording->start_recording(fs::path(export_dir) / ctrl.filename, fps, ctrl.description);
       }
     } else {
@@ -131,14 +120,14 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     if (!ctrl.save_pngs) {
       if (ImGui::Button(ICON_FA_FILE_IMAGE u8"  Export .png screenshot",
                         ImVec2(text_item_size.x, 0)) &&
-          create_directory(export_dir)) {
+          utils::create_directory(export_dir)) {
         auto fn = make_snapshot();
         global::new_ui_message("Saved screenshot to {}", fn.string());
       }
       ctrl.save_pngs =
           recording->file()->length() > 1 &&
           ImGui::Button(ICON_FA_IMAGES u8"  Start exporting .png series ", ImVec2(text_item_size.x, 0)) &&
-          create_directory(export_dir);
+          utils::create_directory(export_dir);
     } else {
       auto fn = make_snapshot();
       if (ImGui::Button(ICON_FA_STOP_CIRCLE u8"  Stop exporting .png series", ImVec2(text_item_size.x, 0))) {
@@ -159,7 +148,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::Begin("Save Trace", &ctrl.export_window);
     ImGui::InputText("Directory", &export_dir);
     ImGui::InputText("Filename", &ctrl.filename);
-    if (ImGui::Button("Export") && create_directory(export_dir)) {
+    if (ImGui::Button("Export") && utils::create_directory(export_dir)) {
       ctrl.trace.save(fs::path(export_dir) / ctrl.filename);
       ctrl.export_window = false;
       global::new_ui_message("Saved trace to {}", (fs::path(export_dir) / ctrl.filename).string());
