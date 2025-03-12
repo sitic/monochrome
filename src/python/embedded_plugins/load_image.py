@@ -30,4 +30,8 @@ if image.ndim > 2:
         # RGB image, convert to grayscale
         convert = np.array([0.2989, 0.5870, 0.1140], dtype=np.float32)
         image = np.dot(image, convert)
+if (image.ndim not in [2, 3]):
+    msg = f"ERROR: Loaded image/video has unsupported shape {image.shape}. Monochrome only supports 2D or 3D arrays."
+    print(msg)
+    sys.exit(1)
 mc.show_image(image, name=filepath.name, metadata=metadata)

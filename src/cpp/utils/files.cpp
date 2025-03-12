@@ -83,6 +83,11 @@ std::string get_uv_executable() {
     }
     try {
         UV_PATH = subprocess::find_program("uv");
+#ifdef __APPLE__
+        if (UV_PATH.empty() && fs::exists("/opt/homebrew/bin/uv")) {
+            UV_PATH = "/opt/homebrew/bin/uv";
+        }
+#endif
         if (UV_PATH.empty()) {
             return "uv-placeholder";
         } else {
