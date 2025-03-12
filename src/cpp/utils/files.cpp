@@ -53,16 +53,23 @@ bool write_text_file(const fs::path& path, const std::string& content) {
 }
 
 void load_file_filepicker() {
+    NFD::ClearError();
     NFD::Guard nfdGuard;
     NFD::UniquePathSet outPaths;
 
-    nfdresult_t result = NFD::OpenDialogMultiple(outPaths);
+    nfdu8filteritem_t* filterlist = nullptr;
+    nfdfiltersize_t  numfilters = 0;
+    const nfdu8char_t* defaultPath = "";
+    // nfdwindowhandle_t* parentWindow = nullptr;
+    // NFD_GetNativeWindowFromGLFWWindow(prm::main_window, parentWindow);
+
+    nfdresult_t result = NFD::OpenDialogMultiple(outPaths, filterlist, numfilters, defaultPath);
     if (result == NFD_OKAY) {
         nfdpathsetsize_t numPaths;
         NFD::PathSet::Count(outPaths, numPaths);
 
         for (nfdpathsetsize_t i = 0; i < numPaths; ++i) {
-            NFD::UniquePathSetPath path;
+            NFD::UniquePathSetPathU8 path;
             NFD::PathSet::GetPath(outPaths, i, path);
             global::add_file_to_load(path.get());
         }
@@ -71,12 +78,17 @@ void load_file_filepicker() {
     } else {
         global::new_ui_message("Error: {}", NFD::GetError());
     }
-    }
+}
 
 void load_folder_filepicker() {
+    NFD::ClearError();
     NFD::Guard nfdGuard;
-    NFD::UniquePath outPath;
+    NFD::UniquePathU8 outPath;
 
+    // nfdwindowhandle_t* parentWindow = nullptr;
+    // NFD_GetNativeWindowFromGLFWWindow(prm::main_window, parentWindow);
+
+    // nfdresult_t result = NFD::PickFolder(outPath, "", *parentWindow);
     nfdresult_t result = NFD::PickFolder(outPath);
     if (result == NFD_OKAY) {
         std::string folderpath = outPath.get();
