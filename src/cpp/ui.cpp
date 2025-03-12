@@ -87,7 +87,7 @@ void show_display_settings_window(bool* p_open) {
 
     ImGui::Spacing();
     if (ImGui::Button(u8"Save all settings " ICON_FA_SAVE)) {
-      auto filepath = save_current_settings();
+      auto filepath = settings::save_current_settings();
       global::new_ui_message("Settings saved to {}", filepath);
     }
 }
@@ -106,6 +106,38 @@ void show_main_imgui_window_menubar() {
       if (ImGui::MenuItem("Open Folder", "Ctrl+Shift+O")) {
         utils::load_folder_filepicker();
       }
+
+      if (ImGui::BeginMenu("Recent Files")) {
+        auto recent_files = settings::get_recent_files();
+        bool no_recent = recent_files.empty();
+        if (no_recent) {
+          ImGui::MenuItem("(No recent files)", nullptr, false, false);
+        } else {
+          for (const auto& file_path : recent_files) {
+            std::string filename = file_path.filename().string();
+            std::string menu_label = filename;
+            
+            // Truncate very long filenames for display
+            if (menu_label.length() > 40) {
+              menu_label = menu_label.substr(0, 37) + "...";
+            }
+            
+            if (ImGui::MenuItem(menu_label.c_str())) {
+              global::add_file_to_load(file_path);
+            }
+            if (ImGui::IsItemHovered()) {
+              ImGui::SetTooltip("%s", file_path.string().c_str());
+            }
+          }
+          ImGui::Separator();
+          if (ImGui::MenuItem("Clear Recent Files")) {
+            settings::clear_recent_files();
+          }
+        }
+        ImGui::EndMenu();
+      }
+
+      ImGui::Separator();
       if (ImGui::MenuItem("Quit", "Ctrl+Q")) {
         glfwSetWindowShouldClose(prm::main_window, GLFW_TRUE);
       }
@@ -164,8 +196,14 @@ void show_main_imgui_window() {
   ImGui::Begin("Monochrome", nullptr, flags);
   show_main_imgui_window_menubar();
 
+  {
+    ImGui::PushStyleColor(ImGuiCol_Separator, ImGui::GetStyleColorVec4(ImGuiCol_TabActive));
+    ImGui::Separator();
+    ImGui::PopStyleColor();
+    ImGui::Spacing();
+  }
   show_top_ui();
-  ImGui::BeginChild("Recordings", ImGui::GetContentRegionAvail(), ImGuiChildFlags_None);
+  ImGui::BeginChild("Media", ImGui::GetContentRegionAvail(), ImGuiChildFlags_None);
 
   {
     ImGui::Spacing();
@@ -173,7 +211,7 @@ void show_main_imgui_window() {
     ImGui::Separator();
     ImGui::PopStyleColor();
     ImGui::Spacing();
-    ImGui::SeparatorText("Recordings");
+    ImGui::SeparatorText("Media");
   }
 
   if (prm::recordings.empty()) {

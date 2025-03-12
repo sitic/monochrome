@@ -20,6 +20,7 @@
 #include "ui.h"
 #include "keybindings.h"
 #include "utils/files.h"
+#include "utils/settings.h"
 
 SharedRecordingPtr find_parent_recording(const std::string &parent_name) {
   // If the parent_name is empty we default to using the last loaded video
@@ -67,6 +68,7 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
     } else {
       prm::recordings.push_back(rec);
       rec->open_window();
+      settings::add_recent_file(rec->filepath());
     }
   } else {  // Flow array
     SharedRecordingPtr parent;
@@ -215,7 +217,7 @@ Continue with automatic installation of `uv`?)";
   if (ImGui::Button("No", ImVec2(120, 0))) {
     global::subprocesses.clear();
   }
-  
+
   ImGui::End();
 }
 

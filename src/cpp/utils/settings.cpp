@@ -16,6 +16,9 @@ std::string VideoRecorder::ffmpeg_path = "ffmpeg";
 #include <unistd.h>
 #include <pwd.h>
 namespace {
+  std::deque<fs::path> _recent_files;
+  std::mutex _recent_files_mutex;
+
   std::string get_user_homedir() {
     const char* homedir;
 
@@ -24,18 +27,28 @@ namespace {
     }
     return homedir;
   }
+
+  std::string _config_path(std::string filename) {
+    #ifdef _WIN32
+      char* appdata = getenv("APPDATA");
+      return fmt::format("{}\\Monochrome\\{}", appdata, filename);
+    #elif defined(__unix__) || defined(__unix) || defined(__APPLE__)
+      return fmt::format("{}/.config/{}", get_user_homedir(), filename);
+    #else
+      return "";
+    #endif
+  }
+
+  std::string _recent_files_path() {
+    return _config_path("recent_files.ini");
+  }
 }  // namespace
 #endif
 
+namespace settings {
+
 std::string config_file_path() {
-#ifdef _WIN32
-  char* appdata = getenv("APPDATA");
-  return fmt::format("{}\\Monochrome\\Monochrome.ini", appdata);
-#elif defined(__unix__) || defined(__unix) || defined(__APPLE__)
-  return fmt::format("{}/.config/Monochrome.ini", get_user_homedir());
-#else
-  return "";
-#endif
+  return _config_path("Monochrome.ini");
 }
 
 void cli_add_global_options(CLI::App& app) {
@@ -81,11 +94,11 @@ void cli_add_global_options(CLI::App& app) {
 
 std::string save_current_settings() {
   CLI::App app{"Monochrome"};
-  cli_add_global_options(app);
+  settings::cli_add_global_options(app);
   app.set_config("--config");
   app.parse("", false);
 
-  std::string config_path = config_file_path();
+  std::string config_path = settings::config_file_path();
 
   std::string settings = app.config_to_str(true, true);
 
@@ -93,3 +106,63 @@ std::string save_current_settings() {
 
   return config_path;
 }
+
+std::vector<fs::path> get_recent_files() {
+  std::lock_guard<std::mutex> lock(_recent_files_mutex);
+  
+  // If the recent files list is empty, try to load from file
+  if (_recent_files.empty()) {
+    std::string recent_files_path = _recent_files_path();
+    if (!fs::exists(recent_files_path)) {
+      return {};
+    }
+    std::ifstream file(recent_files_path);
+    if (file.is_open()) {
+      std::string line;
+      while (std::getline(file, line)) {
+        if (!line.empty() && fs::exists(line)) {
+          _recent_files.push_back(line);
+        }
+      }
+      file.close();
+    }
+  }
+  return std::vector<fs::path>(_recent_files.begin(), _recent_files.end());
+}
+
+void add_recent_file(const fs::path& file) {
+  std::lock_guard<std::mutex> lock(_recent_files_mutex);
+  if (!fs::exists(file)) {
+    return;
+  }
+  
+  // Remove file if it already exists in the list
+  auto it = std::find(_recent_files.begin(), _recent_files.end(), file);
+  if (it != _recent_files.end()) {
+    _recent_files.erase(it);
+  }
+  
+  // Add file to the front of the list
+  _recent_files.push_front(file);
+  
+  // Keep only the 10 most recent files
+  if (_recent_files.size() > 10) {
+    _recent_files.resize(10);
+  }
+  
+  std::string recent_files_path = _recent_files_path();
+  std::string content;
+  for (const auto& path : _recent_files) {
+    content += path.string() + "\n";
+  }
+  utils::write_text_file(recent_files_path, content);
+}
+
+void clear_recent_files() {
+  std::lock_guard<std::mutex> lock(_recent_files_mutex);
+  _recent_files.clear();
+  
+  std::string recent_files_path = _recent_files_path();
+  utils::write_text_file(recent_files_path, "");
+}
+} // namespace settings

@@ -42,14 +42,14 @@ int main(int argc, char **argv) {
   bool disable_ipc          = false;
   float font_scale          = 0;
   app.add_option("files", files, "List of files or directories to open")->check(CLI::ExistingPath);
-  cli_add_global_options(app);
+  settings::cli_add_global_options(app);
   app.add_option("--font-scale", font_scale, "Fonts scaling factor");
   app.add_flag(
       "--disable-ipc", disable_ipc,
       "Disable the server process which is used for interprocess-communication with python clients");
   app.add_flag("--remote-send", send_files_over_wire,
                "Test option to send file as array instead of the filename to the main process");
-  std::string config_file       = config_file_path();
+  std::string config_file       = settings::config_file_path();
   bool print_config             = false;
   CLI::Option *print_config_opt = nullptr;
   if (!config_file.empty()) {

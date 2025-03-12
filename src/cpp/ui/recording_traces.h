@@ -134,18 +134,20 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
       ImGui::PushStyleColor(ImGuiCol_HeaderHovered, color);
       if (ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
+        ImGui::PushStyleVarX(ImGuiStyleVar_ButtonTextAlign, 0.0);
         if (ImGui::Button("Export video trace as .txt file")) {
           auto &ctrl         = rec->export_ctrl.trace;
           ctrl.export_window = true;
           ctrl.assign_auto_filename(rec->file(), trace, Trace::width());
         }
-        if (ImGui::Button("Export ROI as .npy file")) {
+        if (ImGui::Button("Export ROI as .npy file", ImVec2(ImGui::GetItemRectSize().x, 0))) {
           auto &ctrl                      = rec->export_ctrl.raw;
           ctrl.export_window              = true;
           std::tie(ctrl.start, ctrl.size) = Trace::clamp(trace.pos, {rec->Nx(), rec->Ny()});
           ctrl.frames                     = {0, rec->length()};
           ctrl.assign_auto_filename(rec->file());
         }
+        ImGui::PopStyleVar();
         ImGui::Unindent();
       }
       ImGui::PopStyleColor(2);
