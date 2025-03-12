@@ -131,6 +131,7 @@ namespace subprocess {
         if (this->new_process_group) {
             process_flags |= CREATE_NEW_PROCESS_GROUP;
         }
+        process_flags |= CREATE_NO_WINDOW;
 
         process.cwd = this->cwd;
         // Create the child process.
