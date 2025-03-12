@@ -241,6 +241,14 @@ void show_subprocesses() {
     ImGui::Begin(window_title.c_str(), &(p->show));
 
     ImGui::TextWrapped("%s", p->msg.c_str());
+
+    if (!p->is_running()) {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+      ImGui::PushFont(ImGuiConnector::font_bold);
+      ImGui::TextWrapped("Error encountered during file loading process!");
+      ImGui::PopFont();
+      ImGui::PopStyleColor();
+    }
   
     ImGuiTreeNodeFlags header_flags = ImGuiTreeNodeFlags_DefaultOpen;
     bool is_open = ImGui::CollapsingHeader("Plugin Output", header_flags);
@@ -251,18 +259,13 @@ void show_subprocesses() {
         ImGui::Separator();
       }
       ImGui::TextUnformatted(p->cout.c_str());
-      ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
+      if (p->is_running()) ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
       if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
       ImGui::EndChild();
     }
 
     if (!p->is_running()) {
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-      ImGui::PushFont(ImGuiConnector::font_bold_large);
-      ImGui::TextWrapped("Error encountered during file loading process!");
-      ImGui::PopFont();
-      ImGui::PopStyleColor();
       if (ImGui::Button("Ok", ImVec2(-1.0f, 0.0f))) {
         p->show = false;
       }

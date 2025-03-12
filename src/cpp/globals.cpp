@@ -92,8 +92,10 @@ namespace global {
 
   bool Subprocess::open() {
     if (popen) {
-      return true;
-    } else {
+      return true;  // already running
+    } else if (!running) {
+      return true;  // already finished
+    } else {  // Check if we need to wait for UV install
       if (builder.command[0] == "uv-placeholder") {
         if (auto uv = utils::get_uv_executable(); uv != "uv-placeholder") {
           // UV install complete

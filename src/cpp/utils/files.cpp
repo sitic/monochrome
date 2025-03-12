@@ -36,7 +36,8 @@ bool write_text_file(const fs::path& path, const std::string& content) {
 
 void install_uv() {
     std::lock_guard<std::mutex> lock(UV_PATH_MUTEX);
-
+    
+    if (UV_INSTALL_IN_PROGRESS) return;
     UV_INSTALL_IN_PROGRESS = true;
 #ifdef _WIN32
     auto builder = subprocess::RunBuilder({"powershell", "-ExecutionPolicy", "ByPass", "-c",
@@ -69,15 +70,17 @@ void install_uv() {
 }
 
 bool uv_install_in_progress() {
-    std::lock_guard<std::mutex> lock(UV_PATH_MUTEX);
     return UV_INSTALL_IN_PROGRESS;
 }
 std::string get_uv_executable() {
-    if (UV_INSTALL_IN_PROGRESS) {
+    if (uv_install_in_progress()) {
         return "uv-placeholder";
     }
 
     std::lock_guard<std::mutex> lock(UV_PATH_MUTEX);
+    if (!UV_PATH.empty() && fs::exists(UV_PATH)) {
+        return UV_PATH;
+    }
     try {
         UV_PATH = subprocess::find_program("uv");
         if (UV_PATH.empty()) {
