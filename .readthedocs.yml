@@ -13,6 +13,7 @@ build:
     - libxinerama-dev
     - libgl1-mesa-dev
     - libxkbcommon-dev
+    - libdbus-1-dev
 sphinx:
   configuration: docs/conf.py
   builder: "dirhtml"

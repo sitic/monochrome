@@ -98,6 +98,7 @@ target_include_directories(pugixml SYSTEM PUBLIC pugixml/src)
 
 add_subdirectory(subprocess/src/cpp)
 
+set(NFD_PORTAL ON CACHE BOOL "Use xdg-desktop-portal instead of GTK" FORCE)
 add_subdirectory(nativefiledialog-extended)
 
 set_property(
