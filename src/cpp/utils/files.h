@@ -6,6 +6,7 @@
 namespace utils {
   std::string get_rc_text_file(const std::string &filename);
 
+  bool create_directory(fs::path path);
   bool write_text_file(const fs::path &filepath, const std::string &content);
 
   void load_file_filepicker();

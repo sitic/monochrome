@@ -22,7 +22,22 @@ std::string get_rc_text_file(const std::string& filename) {
     return std::string(file.begin(), file.end());
   }
 
+bool create_directory(fs::path path) {
+    if (fs::exists(path)) {
+        return true;
+    }
+    std::error_code error;
+    fs::create_directory(path, error);
+    if (error) {
+        global::new_ui_message("Failed to create directory: {}", error.message());
+        return false;
+    }
+    return true;
+}
+
 bool write_text_file(const fs::path& path, const std::string& content) {
+    create_directory(path.parent_path());
+
     std::ofstream file(path, std::ios::out);
     if (!file.is_open()) {
         global::new_ui_message("ERROR: Unable to open file for writing: {}", path.string());
