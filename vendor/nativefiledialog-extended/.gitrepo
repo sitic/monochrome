@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/btzy/nativefiledialog-extended.git
+	branch = master
+	commit = a1a401062819beb8c3da84518ab1fe7de88632db
+	parent = 33d5376789a5cf6f729382df6df5cfed55353c14
+	method = merge
+	cmdver = 0.4.6
