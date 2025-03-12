@@ -24,7 +24,7 @@ class AbstractFile {
  public:
   AbstractFile(fs::path path) : _path(std::move(path)){};
   virtual ~AbstractFile() = default;
-  fs::path path() { return _path; };
+  fs::path path() const { return _path; };
 
   // Is the file loaded correctly and no errors so far?
   virtual bool good() const = 0;

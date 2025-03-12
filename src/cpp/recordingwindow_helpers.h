@@ -169,8 +169,8 @@ struct ExportCtrl {
     std::string filename;
     ExportFileType type = ExportFileType::Npy;
 
-    void assign_auto_filename(const fs::path &file_path) {
-      auto fn = file_path.stem().string();
+    void assign_auto_filename(std::shared_ptr<AbstractFile> file) {
+      auto fn = file->path().stem().string();
 
       if (frames[0] != 0) {
         fn += "_o"s + std::to_string(frames[0]);
@@ -197,7 +197,8 @@ struct ExportCtrl {
     int tend   = -1;
     bool close_after_completion = false;
 
-    void assign_auto_filename(const fs::path &path) {
+    void assign_auto_filename(std::shared_ptr<AbstractFile> file){
+      auto path                = file->path();
       videoRecorder.videotitle = path.filename().string();
       filename                 = path.filename().stem().string() + ".mp4";
     }
@@ -208,8 +209,12 @@ struct ExportCtrl {
     bool save_pngs     = false;
     std::string filename;
 
-    void assign_auto_filename(const fs::path &path) {
-      filename = path.filename().stem().string() + "_{t}.png";
+    void assign_auto_filename(std::shared_ptr<AbstractFile> file) {
+      auto path                = file->path();
+      if (file->length() > 1)
+        filename = path.filename().stem().string() + "_{t}.png";
+      else
+        filename = path.filename().stem().string() + ".png";
     }
   } png;
 
@@ -218,10 +223,11 @@ struct ExportCtrl {
     std::string filename;
     Trace trace;
 
-    void assign_auto_filename(const fs::path &path, const Trace &_trace, int width) {
-      trace      = _trace;
-      filename = path.filename().stem().string();
-      auto pos = trace.original_position;
+    void assign_auto_filename(std::shared_ptr<AbstractFile> file, const Trace &_trace, int width) {
+      auto path = file->path();
+      trace     = _trace;
+      filename  = path.filename().stem().string();
+      auto pos  = trace.original_position;
       filename += fmt::format("_{}_{}_size{}.txt", pos[0], pos[1], width);
     }
 

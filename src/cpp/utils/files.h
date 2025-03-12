@@ -1,7 +1,7 @@
+#pragma once
+
 #include <string>
 #include <ghc/fs_std_fwd.hpp>
-
-#pragma once
 
 namespace utils {
   std::string get_rc_text_file(const std::string &filename);

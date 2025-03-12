@@ -1,5 +1,8 @@
 #pragma once
 
+#include "fonts/IconsFontAwesome5.h"
+#include "prm.h"
+
 void display_recording_metadata(const SharedRecordingPtr &rec) {
   if (!rec->date().empty()) ImGui::TextWrapped("Date: %s", rec->date().c_str());
   if (!rec->comment().empty()) {
@@ -52,32 +55,36 @@ void display_recording_metadata(const SharedRecordingPtr &rec) {
 
 void show_export_ui(const SharedRecordingPtr &rec) {
   ImGui::AlignTextToFramePadding();
-  ImGui::Text("Export as a video file (.mp4, ...): ");
-  ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO)) {
+
+  auto longest_button_title = ICON_FA_FILE_EXPORT u8" " ICON_FA_VIDEO u8"  Export video file (.mp4, ...)";
+  auto button_width = ImGui::CalcTextSize(longest_button_title).x + 4 * ImGui::GetStyle().ItemSpacing.x;
+  ImGui::PushStyleVarX(ImGuiStyleVar_ButtonTextAlign, 0.0);
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE u8"   Save screenshot", ImVec2(button_width, 0))) {
+    auto &ctrl         = rec->export_ctrl.png;
+    ctrl.export_window = true;
+    ctrl.assign_auto_filename(rec->file());
+  }
+  if (ImGui::Button(longest_button_title, ImVec2(button_width, 0))) {
     auto &ctrl         = rec->export_ctrl.video;
     ctrl.export_window = true;
-    ctrl.assign_auto_filename(rec->path());
+    ctrl.assign_auto_filename(rec->file());
     ctrl.tend        = rec->length();
     ctrl.description = rec->comment();
   }
-  ImGui::Text("Export as image sequence: ");
-  ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_FILE_IMAGE)) {
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_IMAGES u8"   Export as image sequence", ImVec2(button_width, 0))) {
     auto &ctrl         = rec->export_ctrl.png;
     ctrl.export_window = true;
-    ctrl.assign_auto_filename(rec->path());
+    ctrl.assign_auto_filename(rec->file());
   }
-  ImGui::Text("Export as raw video: ");
-  ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw")) {
+  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw" u8"  Export as raw video", ImVec2(button_width, 0))) {
     auto &ctrl         = rec->export_ctrl.raw;
     ctrl.export_window = true;
     ctrl.start         = {0, 0};
     ctrl.size          = {rec->Nx(), rec->Ny()};
     ctrl.frames        = {0, rec->length()};
-    ctrl.assign_auto_filename(rec->path());
+    ctrl.assign_auto_filename(rec->file());
   }
+  ImGui::PopStyleVar();
 }
 
 void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {

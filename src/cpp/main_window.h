@@ -259,7 +259,7 @@ void show_subprocesses() {
         ImGui::Separator();
       }
       ImGui::TextUnformatted(p->cout.c_str());
-      if (p->is_running()) ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2);
+      if (p->is_running()) ImSpinner::SpinnerFadeDots("SpinnerBounceBall", 16, 2, ImSpinner::white, 5.66);
       if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
       ImGui::EndChild();
@@ -310,6 +310,7 @@ void display_loop() {
     show_messages();
     show_subprocesses();
 
+    // ImSpinner::demoSpinners();
     // ImGui::ShowDemoWindow();
 
     // Rendering

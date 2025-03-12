@@ -40,7 +40,7 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
       refresh   = true;
     }
 
-    if (refresh) ctrl.assign_auto_filename(recording->path());
+    if (refresh) ctrl.assign_auto_filename(recording->file());
     ImGui::InputText("Directory", &export_dir);
     ImGui::InputText("Filename", &ctrl.filename);
 
@@ -120,23 +120,28 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
     ImGui::Begin("Export .png", &ctrl.export_window);
     ImGui::InputText("Directory", &export_dir);
     ImGui::InputText("Filename", &ctrl.filename);
+    auto text_item_size = ImGui::GetItemRectSize();
 
     const auto make_snapshot = [&recording, &ctrl]() {
       fs::path path(export_dir);
       path /= ctrl.filename;
       return recording->save_snapshot(path.string());
     };
-
+    ImGui::Spacing();
     if (!ctrl.save_pngs) {
-      if (ImGui::Button("Single .png") && create_directory(export_dir)) {
+      if (ImGui::Button(ICON_FA_FILE_IMAGE u8"  Export .png screenshot",
+                        ImVec2(text_item_size.x, 0)) &&
+          create_directory(export_dir)) {
         auto fn = make_snapshot();
         global::new_ui_message("Saved screenshot to {}", fn.string());
       }
-
-      ctrl.save_pngs = ImGui::Button("Start exporting .png series") && create_directory(export_dir);
+      ctrl.save_pngs =
+          recording->file()->length() > 1 &&
+          ImGui::Button(ICON_FA_IMAGES u8"  Start exporting .png series ", ImVec2(text_item_size.x, 0)) &&
+          create_directory(export_dir);
     } else {
       auto fn = make_snapshot();
-      if (ImGui::Button("Stop exporting .png series")) {
+      if (ImGui::Button(ICON_FA_STOP_CIRCLE u8"  Stop exporting .png series", ImVec2(text_item_size.x, 0))) {
         ctrl.save_pngs     = false;
         ctrl.export_window = false;
         global::new_ui_message("Stopped exporting .png series, last screenshot {}", fn.string());

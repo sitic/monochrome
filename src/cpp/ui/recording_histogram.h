@@ -1,5 +1,7 @@
 #pragma once
 
+#include "prm.h"
+
 void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   // Histogram and other controls
   ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
