@@ -22,7 +22,7 @@ namespace prm {
   extern PlaybackCtrl playbackCtrl;
   extern GLFWwindow *main_window;
   extern std::vector<SharedRecordingPtr> recordings;
-  extern std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
+  extern std::queue<std::pair<SharedRecordingPtr, SharedRecordingPtr>> merge_queue;
 
   template <typename Func>
   void do_forall_recordings(Func &&f) {

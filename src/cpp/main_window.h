@@ -67,7 +67,7 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
               rec->name(), parentName.value());
         return;
       }
-      prm::merge_queue.emplace(rec, parent, false);
+      prm::merge_queue.emplace(rec, parent);
     } else { // Normal media, no parent
 
       // If the video/image is very large or very small, scale it to something reasonable
@@ -179,18 +179,11 @@ void load_from_queue() {
 
   /* Global merge queue */
   if (!prm::merge_queue.empty()) {
-    auto [child, parent, as_flow] = prm::merge_queue.front();
+    auto [child, parent] = prm::merge_queue.front();
     prm::merge_queue.pop();
-    if (!as_flow) {
-      parent->children.push_back(child);
-      child->set_context(parent->window);
-      child->playback = parent->playback;
-    } else {
-      if (child->file()->set_flow(true)) {
-        child->set_context(parent->window);
-        parent->add_flow(child);
-      }
-    }
+    parent->children.push_back(child);
+    child->set_context(parent->window);
+    child->playback = parent->playback;
     prm::recordings.erase(
         std::remove_if(prm::recordings.begin(), prm::recordings.end(),
                        [ptr = child.get()](const auto &r) -> bool { return r.get() == ptr; }),

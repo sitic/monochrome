@@ -152,7 +152,7 @@ void show_transformations_ui(const SharedRecordingPtr &rec, RecordingWindow *par
       new_rec->get_max()           = rec->get_max();
       new_rec->opacity             = OpacityFunction::CENTERED;
       rec->set_transformation(Transformations::None);
-      prm::merge_queue.emplace(new_rec, rec, false);
+      prm::merge_queue.emplace(new_rec, rec);
     }
     ImGui::Unindent(10);
   }
@@ -219,7 +219,7 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
         if (r.get() == rec.get()) continue;
         auto l = fmt::format("Add as layer to '{}'", r->name());
         if (ImGui::Selectable(l.c_str())) {
-          prm::merge_queue.emplace(rec, r, false);
+          prm::merge_queue.emplace(rec, r);
         }
       }
       ImGui::EndPopup();

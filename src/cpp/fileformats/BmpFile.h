@@ -41,10 +41,6 @@ class BmpFile : public AbstractFile {
     }
   }
   std::optional<ColorMap> cmap() const final { return ColorMap::GRAY; }
-  bool set_flow(bool _is_flow) final {
-    global::new_ui_message("Unable to set BMP recording as flow");
-    return false;
-  }
   void set_comment(const std::string &new_comment) final { file.set_comment(new_comment); }
   flag_set<FileCapabilities> capabilities() const final {
     return flag_set<FileCapabilities>(FileCapabilities::SET_COMMENT);

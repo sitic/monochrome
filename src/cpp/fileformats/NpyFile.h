@@ -193,14 +193,8 @@ class NpyFile : public AbstractFile {
   std::vector<std::pair<std::string, std::string>> metadata() const final { return {}; };
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
-  bool set_flow(bool _flow) final {
-    _nc = 2;
-    return true;
-  }
   void set_comment(const std::string &new_comment) final {}
-  flag_set<FileCapabilities> capabilities() const final {
-    return flag_set<FileCapabilities>(FileCapabilities::AS_FLOW);
-  }
+  flag_set<FileCapabilities> capabilities() const final { return {}; }
 
   Eigen::MatrixXf read_frame(long t) final {
     switch (dataType) {

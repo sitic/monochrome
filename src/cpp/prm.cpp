@@ -13,6 +13,6 @@ namespace prm {
 
   GLFWwindow *main_window                    = nullptr;
   std::vector<SharedRecordingPtr> recordings = {};
-  // Queue Element: [child, parent, as_flow]
-  std::queue<std::tuple<SharedRecordingPtr, SharedRecordingPtr, bool>> merge_queue;
+  // Queue Element: [child, parent]
+  std::queue<std::pair<SharedRecordingPtr, SharedRecordingPtr>> merge_queue;
 }  // namespace prm

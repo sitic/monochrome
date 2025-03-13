@@ -15,7 +15,7 @@
 
 using namespace std::chrono_literals;
 
-enum FileCapabilities : uint8_t { AS_FLOW, SET_COMMENT, _ };
+enum FileCapabilities : uint8_t { SET_COMMENT, _ };
 
 class AbstractFile {
  private:
@@ -71,8 +71,6 @@ class AbstractFile {
 
   // List capabilities
   virtual flag_set<FileCapabilities> capabilities() const = 0;
-  // Mark array as optical flow (only if AS_FLOW capability supported)
-  virtual bool set_flow(bool _is_flow) = 0;
   // Set comment (only if SET_COMMENT capability supported)
   virtual void set_comment(const std::string& new_comment) = 0;
 };

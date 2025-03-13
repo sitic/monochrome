@@ -111,15 +111,8 @@ class InMemoryFile : public AbstractFile {
         _data->data);
   }
 
-  bool set_flow(bool _is_flow) final {
-    _data->meta.nc = 2;
-    return true;
-  }
-
   void set_comment(const std::string& new_comment) final {}
-  flag_set<FileCapabilities> capabilities() const final {
-    return flag_set<FileCapabilities>(FileCapabilities::AS_FLOW);
-  }
+  flag_set<FileCapabilities> capabilities() const final { return {}; }
 
   // color for points if it is a flow array
   std::optional<Vec4f> color() { return _data->meta.color; }

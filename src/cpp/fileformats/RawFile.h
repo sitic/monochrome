@@ -98,7 +98,6 @@ class RawFile : public AbstractFile {
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
   void set_comment(const std::string &new_comment) final {}
-  bool set_flow(bool) final { return false; }
   flag_set<FileCapabilities> capabilities() const final { return {}; }
 
   Eigen::MatrixXf read_frame(long t) final {
