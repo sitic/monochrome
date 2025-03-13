@@ -26,7 +26,7 @@ void RGBRecordingWindow::display() {
   Eigen::MatrixXf g_channel = frame;
   load_frame(t + 2);
   Eigen::MatrixXf b_channel = frame;
-  t_frame                   = t;
+  t_frame                   = t / file()->Nc();
 
   histogram.compute(frame.reshaped());
 

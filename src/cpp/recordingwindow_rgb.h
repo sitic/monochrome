@@ -15,6 +15,8 @@ class RGBRecordingWindow : public RecordingWindow {
 
   void set_context(GLFWwindow *new_context) override;
 
+  void load_next_frame() override { load_frame(playback.step() * file()->Nc()); }
+
   void display() override;
 
  private:

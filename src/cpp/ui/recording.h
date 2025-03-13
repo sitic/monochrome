@@ -45,7 +45,7 @@ void show_recording_ui(const SharedRecordingPtr &rec, RecordingWindow *parent = 
 
     if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_AutoSelectNewTabs)) {
       // ImGui::Indent();
-      if (ImGui::BeginTabItem("Histogram")) {
+      if (!is_rgb_rec(rec) && ImGui::BeginTabItem("Histogram")) {
         show_histogram_ui(rec, parent);
         ImGui::EndTabItem();
       }

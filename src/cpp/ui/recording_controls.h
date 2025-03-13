@@ -229,6 +229,8 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
   ImGui::SeparatorText("Metadata");
   display_recording_metadata(rec);
 
-  ImGui::SeparatorText("Transformations");
-  show_transformations_ui(rec, parent);
+  if (!is_rgb_rec(rec)) {
+    ImGui::SeparatorText("Transformations");
+    show_transformations_ui(rec, parent);
+  }
 }
