@@ -21,8 +21,8 @@ class NpyFile : public AbstractFile {
   int _nx       = 0;
   int _ny       = 0;
   int _nt       = 0;
+  int _nc       = 0;
   bool _good    = false;
-  bool _is_flow = false;
 
   std::size_t _frame_size = 0;
   std::string _error_msg  = "";
@@ -40,14 +40,14 @@ class NpyFile : public AbstractFile {
 
   template <typename T>
   void copy_frame(long t) {
-    if (!is_flow()) {
+    if (Nc() == 1) {
       auto begin = get_data_ptr<T>(t);
       std::copy(begin, begin + _frame_size, _frame.data());
     } else {
-      bool isodd = t % 2;
-      auto begin = get_data_ptr<T>(t - isodd) + isodd;
-      auto end   = begin + 2 * _frame_size;
-      std::copy(StrideIterator(begin, 2), StrideIterator(end, 2), _frame.data());
+      int channel = t % Nc();
+      auto begin = get_data_ptr<T>(t - channel) + channel;
+      auto end = begin + Nc() * _frame_size;
+      std::copy(StrideIterator(begin, Nc()), StrideIterator(end, Nc()), _frame.data());
     }
   }
 
@@ -92,28 +92,30 @@ class NpyFile : public AbstractFile {
             header.dtype.str());
         return;
       }
-
       if (header.shape.size() == 2) {
         _nt      = 1;
         _ny      = header.shape[0];
         _nx      = header.shape[1];
-        _is_flow = false;
+        _nc      = 1;
       } else if (header.shape.size() == 3) {
         _nt      = header.shape[0];
         _ny      = header.shape[1];
         _nx      = header.shape[2];
-        _is_flow = false;
+        _nc      = 1;
       } else if (header.shape.size() == 4) {
-        if (header.shape[3] != 2 || dataType != PixelDataFormat::FLOAT) {
-          _error_msg =
-              fmt::format("Unsupported array dimenensions ({}, {}, {}, {})", header.shape[0],
-                          header.shape[1], header.shape[2], header.shape[3]);
+        if (header.shape[3] == 2 && dataType == PixelDataFormat::FLOAT) {
+          _nt      = header.shape[0];
+          _nc      = 2;
+        } else if (header.shape[3] == 3) {
+          _nt      = header.shape[0];
+          _nc      = 3;
+        } else {
+          _error_msg = fmt::format("Unsupported array dimensions ({}, {}, {}, {})", header.shape[0],
+                                   header.shape[1], header.shape[2], header.shape[3]);
           return;
         }
-        _nt      = 2 * header.shape[1];
-        _ny      = header.shape[2];
-        _nx      = header.shape[3];
-        _is_flow = true;
+        _ny      = header.shape[1];
+        _nx      = header.shape[2];
       } else {
         _error_msg = fmt::format("found {}D array, which are unsupported", header.shape.size());
         return;
@@ -126,13 +128,16 @@ class NpyFile : public AbstractFile {
 
       auto l               = _mmap.length();
       auto bytes_per_frame = _frame_size * pixel_size[dataType];
-      if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
+      if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt * _nc) {
         _error_msg = "File size does not match expected dimensions";
         return;
       }
 
-      if (l / bytes_per_frame > _nt) {
-        if (_nt != 1) {
+      if (l / bytes_per_frame > _nt * _nc) {
+        if (_nt * _nc != _nt) {
+          _error_msg = "File appears to be corrupted";
+          return;
+        } else if (_nt != 1) {
           fmt::print(
               "detected incorrect dimensions (file corrupted?), nt={} was given but based on the "
               "filesize nt has to be {}\n",
@@ -144,7 +149,7 @@ class NpyFile : public AbstractFile {
       _good = true;
 
       _frame.setZero(_nx, _ny);
-      if (!is_flow()) {
+      if (Nc() != 2) {
         switch (dataType) {
           case PixelDataFormat::UINT8:
             _bitrange = utils::detect_bitrange(get_data_ptr<uint8_t>(0), get_data_ptr<uint8_t>(1));
@@ -178,6 +183,7 @@ class NpyFile : public AbstractFile {
   bool good() const final { return _good; };
   int Nx() const final { return _nx; };
   int Ny() const final { return _ny; };
+  int Nc() const final { return _nc; };
   int length() const final { return _nt; };
   std::string error_msg() final { return _error_msg; };
   std::string date() const final { return ""; };
@@ -187,9 +193,8 @@ class NpyFile : public AbstractFile {
   std::vector<std::pair<std::string, std::string>> metadata() const final { return {}; };
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
-  bool is_flow() const final { return _is_flow; };
   bool set_flow(bool _flow) final {
-    _is_flow = _flow;
+    _nc = 2;
     return true;
   }
   void set_comment(const std::string &new_comment) final {}

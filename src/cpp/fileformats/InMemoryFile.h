@@ -38,7 +38,7 @@ class InMemoryFile : public AbstractFile {
     _frame_size = Nx() * Ny();
     _frame.setZero(Nx(), Ny());
 
-    if (!bitrange() && !is_flow()) {
+    if (!bitrange() && Nc() != 2) {
       std::visit(
           [this](const auto& data) {
             _data->meta.bitrange = utils::detect_bitrange(data.begin(), data.begin() + _frame_size);
@@ -52,7 +52,8 @@ class InMemoryFile : public AbstractFile {
 
   int Nx() const final { return _data->meta.nx; };
   int Ny() const final { return _data->meta.ny; };
-  int length() const final { return _data->meta.nt; };
+  int Nc() const final { return _data->meta.nc; };
+  int length() const final { return _data->meta.nt / _data->meta.nc; };
   std::string date() const final { return _data->meta.date; };
   std::string comment() const final { return _data->meta.comment; };
   std::chrono::duration<float> duration() const final {
@@ -71,16 +72,15 @@ class InMemoryFile : public AbstractFile {
   Eigen::MatrixXf read_frame(long t) final {
     std::visit(
         [this, t](const auto& data) {
-          auto data_ptr = data.data() + _frame_size * t;
-          std::copy(data_ptr, data_ptr + _frame_size, _frame.data());
-          if (!is_flow()) {
+          if (Nc() == 1) {
+            // Regular single-channel data
             auto begin = data.data() + _frame_size * t;
             std::copy(begin, begin + _frame_size, _frame.data());
           } else {
-            bool isodd = t % 2;
-            auto begin = data.data() + _frame_size * (t - isodd) + isodd;
-            auto end   = begin + 2 * _frame_size;
-            std::copy(StrideIterator(begin, 2), StrideIterator(end, 2), _frame.data());
+            long channel = t % Nc();
+            auto begin   = data.data() + _frame_size * (t - channel) + channel;
+            auto end     = begin + Nc() * _frame_size;
+            std::copy(StrideIterator(begin, Nc()), StrideIterator(end, Nc()), _frame.data());
           }
         },
         _data->data);
@@ -111,11 +111,11 @@ class InMemoryFile : public AbstractFile {
         _data->data);
   }
 
-  bool is_flow() const final { return _data->meta.is_flowfield; };
   bool set_flow(bool _is_flow) final {
-    _data->meta.is_flowfield = _is_flow;
+    _data->meta.nc = 2;
     return true;
   }
+
   void set_comment(const std::string& new_comment) final {}
   flag_set<FileCapabilities> capabilities() const final {
     return flag_set<FileCapabilities>(FileCapabilities::AS_FLOW);

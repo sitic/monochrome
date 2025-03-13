@@ -122,6 +122,8 @@ set(SOURCES
     src/cpp/recordingwindow.h
     src/cpp/recordingwindow_helpers.cpp
     src/cpp/recordingwindow_helpers.h
+    src/cpp/recordingwindow_rgb.h
+    src/cpp/recordingwindow_rgb.cpp
     src/cpp/transformations.cpp
     src/cpp/transformations.h
     src/cpp/keybindings.cpp

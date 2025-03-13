@@ -34,6 +34,7 @@ class AbstractFile {
   // Metadata
   virtual int Nx() const                                                    = 0;
   virtual int Ny() const                                                    = 0;
+  virtual int Nc() const                                                    = 0;
   virtual int length() const                                                = 0;
   virtual std::string date() const                                          = 0;
   virtual std::string comment() const                                       = 0;
@@ -70,8 +71,6 @@ class AbstractFile {
 
   // List capabilities
   virtual flag_set<FileCapabilities> capabilities() const = 0;
-  // Array is an optical flow
-  virtual bool is_flow() const = 0;
   // Mark array as optical flow (only if AS_FLOW capability supported)
   virtual bool set_flow(bool _is_flow) = 0;
   // Set comment (only if SET_COMMENT capability supported)

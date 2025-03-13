@@ -257,6 +257,7 @@ namespace {
           raw->nx(),
           raw->ny(),
           raw->nt(),
+          flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_NC)? raw->nc() : 1,
           raw->name()->str(),
           raw->duration(),
           raw->fps(),
@@ -301,10 +302,10 @@ namespace {
             "Array3Meta message arrived before previous array was completely loaded");
       }
 
-      global::RawArray3MetaData meta{raw->nx(), raw->ny(), raw->nt(), raw->name()->str()};
+      int nc = 2;
+      global::RawArray3MetaData meta{raw->nx(), raw->ny(), raw->nt(), nc, raw->name()->str()};
       if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_PARENT_NAME))
         meta.parentName = raw->parent_name()->str();
-      meta.is_flowfield = true;
       if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_COLOR)) {
         Vec4f color;
         for (int i = 0; i < 4; i++) color[i] = raw->color()->values()->Get(i);

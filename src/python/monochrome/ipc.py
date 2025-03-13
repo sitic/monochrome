@@ -215,7 +215,7 @@ def create_array3meta_msg(dtype: ArrayDataType, name, shape, duration=0., fps=0.
     Array3Meta.AddType(builder, dtype)
     Array3Meta.AddNx(builder, shape[2])
     Array3Meta.AddNy(builder, shape[1])
-    Array3Meta.AddNt(builder, shape[0])
+    Array3Meta.AddNt(builder, shape[0] * shape[3])
     Array3Meta.AddBitrange(builder, bitrange)
     Array3Meta.AddCmap(builder, cmap)
     if vmin is not None:
@@ -233,6 +233,7 @@ def create_array3meta_msg(dtype: ArrayDataType, name, shape, duration=0., fps=0.
     Array3Meta.AddComment(builder, comment_fb)
     if metadata:
         Array3Meta.AddMetadata(builder, metadata)
+    Array3Meta.AddNc(builder, shape[3])
     d = Array3Meta.End(builder)
 
     root = build_root(builder, Data.Array3Meta, d)
@@ -418,9 +419,18 @@ def show_video(array: np.ndarray,
     array = np.squeeze(array)
     if array.ndim == 2:
         # assume that it is a 2D image
-        array = np.expand_dims(array, 0)
-    elif array.ndim != 3:
-        msg = f"Array is not two- or three-dimensional: Shape {array.shape}"
+        array = array[np.newaxis, :, :, np.newaxis]
+    elif array.ndim == 3:
+        if array.shape[2] == 3:
+            # assume that it is a 3D RGB image
+            array = np.expand_dims(array, 0)
+        else:
+            array = np.expand_dims(array, -1)
+    elif array.ndim == 4 and array.shape[3] != 3:
+        msg = f"Video has an unsupported shape {array.shape}. Four dimensional arrays are only supported if the last dimension is 3 (RGB)."
+        raise ValueError(msg)
+    else:
+        msg = f"Array does not have an image/video shape: Shape {array.shape}"
         raise ValueError(msg)
 
     if array.dtype == np.float32:

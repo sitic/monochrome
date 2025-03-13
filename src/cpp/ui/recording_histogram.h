@@ -3,6 +3,7 @@
 #include "prm.h"
 
 void show_histogram_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
+  if (is_rgb_rec(rec)) return;
   // Histogram and other controls
   ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
   ImGui::PlotHistogram("##histogram", rec->histogram.data.data(), rec->histogram.data.size(), 0,

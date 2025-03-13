@@ -17,6 +17,7 @@ class BmpFile : public AbstractFile {
   bool good() const final { return file.good(); };
   int Nx() const final { return file.Nx(); };
   int Ny() const final { return file.Ny(); };
+  int Nc() const final { return 1; };
   int length() const final { return file.length(); };
   std::string error_msg() final { return file.error_msg(); };
   std::string date() const final { return file.date(); };
@@ -40,7 +41,6 @@ class BmpFile : public AbstractFile {
     }
   }
   std::optional<ColorMap> cmap() const final { return ColorMap::GRAY; }
-  bool is_flow() const final { return false; };
   bool set_flow(bool _is_flow) final {
     global::new_ui_message("Unable to set BMP recording as flow");
     return false;

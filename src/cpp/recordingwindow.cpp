@@ -644,7 +644,7 @@ void RecordingWindow::add_points_video(std::shared_ptr<global::PointsVideo> pv) 
   if (!pv) return;
   if (pv->data.size() != length()) {
     global::new_ui_message(
-        "Failed to add points to recording, number of frames do not match (recording {}, points {}",
+        "Failed to add points to recording, number of frames do not match (recording {}, point list length {})",
         length(), pv->data.size());
     return;
   }

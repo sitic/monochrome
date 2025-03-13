@@ -65,6 +65,7 @@ namespace global {
     int nx = -1;
     int ny = -1;
     int nt = -1;
+    int nc = 1;
 
     std::string name;
     float duration = 0;  // in seconds
@@ -79,8 +80,6 @@ namespace global {
     std::optional<OpacityFunction> opacity                    = std::nullopt;
     std::vector<std::pair<std::string, std::string>> metaData = {};
     std::optional<Vec4f> color                                = std::nullopt;
-
-    bool is_flowfield = false;
   };
 
   // Command to be executed by the main thread

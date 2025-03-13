@@ -16,6 +16,7 @@
 
 #include "globals.h"
 #include "prm.h"
+#include "recordingwindow_rgb.h"
 #include "recordingwindow.h"
 #include "ui.h"
 #include "keybindings.h"
@@ -39,8 +40,10 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
                    std::optional<std::string> parentName = std::nullopt) {
   if (!file || !file->good()) return;
 
-  if (!file->is_flow()) {  // Regular video
-    auto rec = std::make_shared<RecordingWindow>(file);
+  if (file->Nc() != 2) {  // Regular video
+    SharedRecordingPtr rec;
+    rec = file->Nc() == 1? std::make_shared<RecordingWindow>(file): std::make_shared<RGBRecordingWindow>(file);
+                         
 
     static int video_counter = 0;
     video_counter++;

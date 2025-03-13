@@ -12,7 +12,6 @@ class RawFile : public AbstractFile {
   int _ny       = 0;
   int _nt       = 0;
   bool _good    = false;
-  bool _is_flow = false;
 
   std::size_t _frame_size = 0;
   std::string _error_msg  = "";
@@ -88,6 +87,7 @@ class RawFile : public AbstractFile {
   bool good() const final { return _good; };
   int Nx() const final { return _nx; };
   int Ny() const final { return _ny; };
+  int Nc() const final { return 1; };
   int length() const final { return _nt; };
   std::string error_msg() final { return _error_msg; };
   std::string date() const final { return ""; };
@@ -97,26 +97,13 @@ class RawFile : public AbstractFile {
   std::vector<std::pair<std::string, std::string>> metadata() const final { return {}; };
   std::optional<BitRange> bitrange() const final { return _bitrange; }
   std::optional<ColorMap> cmap() const final { return std::nullopt; }
-  bool is_flow() const final { return _is_flow; };
-  bool set_flow(bool _flow) final {
-    _is_flow = _flow;
-    return true;
-  }
   void set_comment(const std::string &new_comment) final {}
-  flag_set<FileCapabilities> capabilities() const final {
-    return flag_set<FileCapabilities>(FileCapabilities::AS_FLOW);
-  }
+  bool set_flow(bool) final { return false; }
+  flag_set<FileCapabilities> capabilities() const final { return {}; }
 
   Eigen::MatrixXf read_frame(long t) final {
-    if (!is_flow()) {
-      auto begin = get_data_ptr(t);
-      std::copy(begin, begin + _frame_size, _frame.data());
-    } else {
-      bool isodd = t % 2;
-      auto begin = get_data_ptr(t - isodd) + isodd;
-      auto end   = begin + 2 * _frame_size;
-      std::copy(StrideIterator(begin, 2), StrideIterator(end, 2), _frame.data());
-    }
+    auto begin = get_data_ptr(t);
+    std::copy(begin, begin + _frame_size, _frame.data());
     return _frame;
   };
 

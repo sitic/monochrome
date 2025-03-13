@@ -156,8 +156,15 @@ class Array3Meta(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         return o == 0
 
+    # Array3Meta
+    def Nc(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(36))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+        return 0
+
 def Array3MetaStart(builder: flatbuffers.Builder):
-    builder.StartObject(16)
+    builder.StartObject(17)
 
 def Start(builder: flatbuffers.Builder):
     Array3MetaStart(builder)
@@ -263,6 +270,12 @@ def Array3MetaStartMetadataVector(builder, numElems: int) -> int:
 
 def StartMetadataVector(builder, numElems: int) -> int:
     return Array3MetaStartMetadataVector(builder, numElems)
+
+def Array3MetaAddNc(builder: flatbuffers.Builder, nc: int):
+    builder.PrependInt32Slot(16, nc, 0)
+
+def AddNc(builder: flatbuffers.Builder, nc: int):
+    Array3MetaAddNc(builder, nc)
 
 def Array3MetaEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()

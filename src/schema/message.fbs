@@ -31,6 +31,7 @@ table Array3Meta {
   date:string; // creation date
   comment:string;
   metadata:[DictEntry];
+  nc:int;
 }
 
 table Array3MetaFlow {

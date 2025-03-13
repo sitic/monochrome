@@ -7,6 +7,7 @@
 #include "utils/colormap.h"
 
 #include "recordingwindow.h"
+#include "recordingwindow_rgb.h"
 
 // Global singletons and variables
 namespace prm {

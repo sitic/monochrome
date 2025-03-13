@@ -488,7 +488,8 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_FPS = 28,
     VT_DATE = 30,
     VT_COMMENT = 32,
-    VT_METADATA = 34
+    VT_METADATA = 34,
+    VT_NC = 36
   };
   fbs::ArrayDataType type() const {
     return static_cast<fbs::ArrayDataType>(GetField<int32_t>(VT_TYPE, 0));
@@ -538,6 +539,9 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>> *>(VT_METADATA);
   }
+  int32_t nc() const {
+    return GetField<int32_t>(VT_NC, 0);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_TYPE, 4) &&
@@ -562,6 +566,7 @@ struct Array3Meta FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_METADATA) &&
            verifier.VerifyVector(metadata()) &&
            verifier.VerifyVectorOfTables(metadata()) &&
+           VerifyField<int32_t>(verifier, VT_NC, 4) &&
            verifier.EndTable();
   }
 };
@@ -618,6 +623,9 @@ struct Array3MetaBuilder {
   void add_metadata(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata) {
     fbb_.AddOffset(Array3Meta::VT_METADATA, metadata);
   }
+  void add_nc(int32_t nc) {
+    fbb_.AddElement<int32_t>(Array3Meta::VT_NC, nc, 0);
+  }
   explicit Array3MetaBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -646,8 +654,10 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3Meta(
     float fps = 0.0f,
     ::flatbuffers::Offset<::flatbuffers::String> date = 0,
     ::flatbuffers::Offset<::flatbuffers::String> comment = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata = 0,
+    int32_t nc = 0) {
   Array3MetaBuilder builder_(_fbb);
+  builder_.add_nc(nc);
   builder_.add_metadata(metadata);
   builder_.add_comment(comment);
   builder_.add_date(date);
@@ -684,7 +694,8 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
     float fps = 0.0f,
     const char *date = nullptr,
     const char *comment = nullptr,
-    const std::vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata = nullptr) {
+    const std::vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata = nullptr,
+    int32_t nc = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parent_name__ = parent_name ? _fbb.CreateString(parent_name) : 0;
   auto date__ = date ? _fbb.CreateString(date) : 0;
@@ -707,7 +718,8 @@ inline ::flatbuffers::Offset<Array3Meta> CreateArray3MetaDirect(
       fps,
       date__,
       comment__,
-      metadata__);
+      metadata__,
+      nc);
 }
 
 struct Array3MetaFlow FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {

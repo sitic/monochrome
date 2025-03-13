@@ -16,7 +16,7 @@ class RecordingWindow : public Recording {
   GLFWwindow *window    = nullptr;
   GLFWwindow *glcontext = nullptr;
   bool active           = true;
-  std::vector<std::shared_ptr<RecordingWindow>> children;
+  std::vector<SharedRecordingPtr> children;
 
   RecordingPlaybackCtrl playback;
   Histogram<float, 256> histogram;
@@ -45,8 +45,8 @@ class RecordingWindow : public Recording {
     }
   }
 
-  void open_window();
-  void set_context(GLFWwindow *new_context);
+  virtual void open_window();
+  virtual void set_context(GLFWwindow *new_context);
 
   virtual void display();
   virtual void render();
@@ -73,8 +73,8 @@ class RecordingWindow : public Recording {
     }
   }
 
-  void add_trace(const Vec2i &pos);
-  void remove_trace(const Vec2i &pos);
+  virtual void add_trace(const Vec2i &pos);
+  virtual void remove_trace(const Vec2i &pos);
 
   static void flip_lr() { rotations.flip_ud(); }
   static void flip_ud() { rotations.flip_lr(); }
@@ -86,7 +86,7 @@ class RecordingWindow : public Recording {
   static bool get_flip_lr() { return rotations.get_flip_lr(); }
   static bool get_flip_ud() { return rotations.get_flip_ud(); }
 
-  void colormap(ColorMap cmap);
+  virtual void colormap(ColorMap cmap);
   ColorMap colormap() const { return cmap_; }
 
   void set_name(const std::string &new_name) override;
@@ -96,7 +96,7 @@ class RecordingWindow : public Recording {
   void start_recording(const fs::path &filename, int fps = 30, std::string description = "");
   void stop_recording();
 
-  void set_transformation(Transformations type);
+  virtual void set_transformation(Transformations type);
   Transformations get_transformation() const { return transformation; }
 
   void add_flow(std::shared_ptr<Recording> flow);
@@ -111,7 +111,7 @@ class RecordingWindow : public Recording {
 
  protected:
   void rotation_was_changed();
-  void update_gl_texture();
+  virtual void update_gl_texture();
   void clear_gl_memory();
 
   Vec2d mousepos;

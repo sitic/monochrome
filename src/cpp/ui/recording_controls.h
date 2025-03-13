@@ -76,7 +76,7 @@ void show_export_ui(const SharedRecordingPtr &rec) {
     ctrl.export_window = true;
     ctrl.assign_auto_filename(rec->file());
   }
-  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" raw" u8"  Export as raw video", ImVec2(button_width, 0))) {
+  if (is_rgb_rec(rec) && ImGui::Button(ICON_FA_FILE_EXPORT u8" raw" u8"  Export as raw video", ImVec2(button_width, 0))) {
     auto &ctrl         = rec->export_ctrl.raw;
     ctrl.export_window = true;
     ctrl.start         = {0, 0};

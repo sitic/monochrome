@@ -45,6 +45,23 @@ namespace {
   std::string _recent_files_path() {
     return _config_path("recent_files.ini");
   }
+
+  void _load_recent_files_from_file() {
+    std::string recent_files_path = _recent_files_path();
+    if (!fs::exists(recent_files_path)) {
+      return;
+    }
+    std::ifstream file(recent_files_path);
+    if (file.is_open()) {
+      std::string line;
+      while (std::getline(file, line)) {
+        if (!line.empty() && fs::exists(line)) {
+          _recent_files.push_back(line);
+        }
+      }
+      file.close();
+    }
+  }
 }  // namespace
 
 namespace settings {
@@ -114,20 +131,7 @@ std::vector<fs::path> get_recent_files() {
   
   // If the recent files list is empty, try to load from file
   if (_recent_files.empty()) {
-    std::string recent_files_path = _recent_files_path();
-    if (!fs::exists(recent_files_path)) {
-      return {};
-    }
-    std::ifstream file(recent_files_path);
-    if (file.is_open()) {
-      std::string line;
-      while (std::getline(file, line)) {
-        if (!line.empty() && fs::exists(line)) {
-          _recent_files.push_back(line);
-        }
-      }
-      file.close();
-    }
+    _load_recent_files_from_file();
   }
   return std::vector<fs::path>(_recent_files.begin(), _recent_files.end());
 }
@@ -136,6 +140,10 @@ void add_recent_file(const fs::path& file) {
   std::lock_guard<std::mutex> lock(_recent_files_mutex);
   if (!fs::exists(file)) {
     return;
+  }
+
+  if (_recent_files.empty()) {
+    _load_recent_files_from_file();
   }
   
   // Remove file if it already exists in the list
