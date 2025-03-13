@@ -421,14 +421,18 @@ def show_video(array: np.ndarray,
         # assume that it is a 2D image
         array = array[np.newaxis, :, :, np.newaxis]
     elif array.ndim == 3:
-        if array.shape[2] == 3:
-            # assume that it is a 3D RGB image
+        if array.shape[2] in (3, 4):
+            # assume that it is an RGB(A) image
+            if array.shape[2] == 4:
+                # alpha channel is not yet supported
+                array = array[..., :3]
             array = np.expand_dims(array, 0)
         else:
             array = np.expand_dims(array, -1)
-    elif array.ndim == 4 and array.shape[3] != 3:
-        msg = f"Video has an unsupported shape {array.shape}. Four dimensional arrays are only supported if the last dimension is 3 (RGB)."
-        raise ValueError(msg)
+    elif array.ndim == 4:
+        if array.shape[3] not in (3, 4):
+            msg = f"Video has an unsupported shape {array.shape}. Four dimensional arrays are only supported if the last dimension is 3 (RGB) or 4 (RGBA)."
+            raise ValueError(msg)
     else:
         msg = f"Array does not have an image/video shape: Shape {array.shape}"
         raise ValueError(msg)

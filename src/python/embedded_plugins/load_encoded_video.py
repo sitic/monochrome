@@ -42,9 +42,10 @@ def load_encoded_video(filename, as_grey=True):
         data = data[..., 0]
     return data
 
-video = load_encoded_video(filepath)
-mc.show_video(video, name=filepath.name, metadata={
+video = load_encoded_video(filepath, as_grey=False)
+metadata = {
     "filepath": str(filepath),
     "shape": str(video.shape),
     "dtype": str(video.dtype),
-})
+}
+mc.show_video(video, name=filepath.name, metadata=metadata)

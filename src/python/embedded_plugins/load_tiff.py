@@ -28,4 +28,8 @@ metadata = {
     "dtype": str(video.dtype),
     "size": sizeof_fmt(video.nbytes),
 }
+if (video.ndim not in [2, 3, 4]) or (video.ndim == 4 and video.shape[3] not in [3, 4]):
+    msg = f"ERROR: Loaded image/video has unsupported shape {video.shape}."
+    print(msg)
+    sys.exit(1)
 mc.show_video(video, name=filepath.name, metadata=metadata)

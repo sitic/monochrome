@@ -10,7 +10,6 @@ from pathlib import Path
 
 import imageio.v3 as iio
 import monochrome as mc
-import numpy as np
 
 # filepath will be set by Monochrome when the script is run
 filepath = Path(sys.argv[1])   # DO NOT MODIFY THIS LINE
@@ -22,16 +21,8 @@ metadata={
     "shape": str(image.shape),
     "dtype": str(image.dtype),
 }
-if image.ndim > 2:
-    if image.shape[-1] == 4:
-        # RGBA image, remove alpha channel
-        image = image[..., :3]
-    if image.shape[-1] == 3:
-        # RGB image, convert to grayscale
-        convert = np.array([0.2989, 0.5870, 0.1140], dtype=np.float32)
-        image = np.dot(image, convert)
-if (image.ndim not in [2, 3]):
-    msg = f"ERROR: Loaded image/video has unsupported shape {image.shape}. Monochrome only supports 2D or 3D arrays."
+if (image.ndim not in [2, 3, 4]) or (image.ndim == 4 and image.shape[3] not in [3, 4]):
+    msg = f"ERROR: Loaded image/video has unsupported shape {image.shape}."
     print(msg)
     sys.exit(1)
 mc.show_image(image, name=filepath.name, metadata=metadata)

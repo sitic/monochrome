@@ -40,8 +40,8 @@ def load_image_folder(path):
     return np.array(video)
 
 video = load_image_folder(filepath)
-if (video.ndim not in [2, 3]):
-    msg = f"ERROR: Loaded video has unsupported shape {video.shape}. Monochrome only supports 2D or 3D arrays."
+if (video.ndim not in [2, 3, 4]) or (video.ndim == 4 and video.shape[3] not in [3, 4]):
+    msg = f"ERROR: Loaded image/video has unsupported shape {video.shape}."
     print(msg)
     sys.exit(1)
 metadata = {
