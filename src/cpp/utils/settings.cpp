@@ -12,23 +12,24 @@
 
 #include "videorecorder.h"
 
-std::string VideoRecorder::ffmpeg_path = "ffmpeg";
-
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__)
 #include <unistd.h>
 #include <pwd.h>
+std::string get_user_homedir() {
+  const char* homedir;
+
+  if ((homedir = getenv("HOME")) == nullptr) {
+    homedir = getpwuid(getuid())->pw_dir;
+  }
+  return homedir;
+}
+#endif
+
+std::string VideoRecorder::ffmpeg_path = "ffmpeg";
+
 namespace {
   std::deque<fs::path> _recent_files;
   std::mutex _recent_files_mutex;
-
-  std::string get_user_homedir() {
-    const char* homedir;
-
-    if ((homedir = getenv("HOME")) == nullptr) {
-      homedir = getpwuid(getuid())->pw_dir;
-    }
-    return homedir;
-  }
 
   std::string _config_path(std::string filename) {
     #ifdef _WIN32
@@ -45,7 +46,6 @@ namespace {
     return _config_path("recent_files.ini");
   }
 }  // namespace
-#endif
 
 namespace settings {
 

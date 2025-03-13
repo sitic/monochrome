@@ -123,7 +123,7 @@ void show_main_imgui_window_menubar() {
             }
             
             if (ImGui::MenuItem(menu_label.c_str())) {
-              global::add_file_to_load(file_path);
+              global::add_file_to_load(file_path.string());
             }
             if (ImGui::IsItemHovered()) {
               ImGui::SetTooltip("%s", file_path.string().c_str());
