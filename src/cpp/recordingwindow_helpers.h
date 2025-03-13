@@ -26,7 +26,7 @@ struct PlaybackCtrl {
 
   void increase_speed() { val *= 2; }
 
-  void deacrease_speed() { val /= 2; }
+  void decrease_speed() { val /= 2; }
 
  private:
   float old_val = 0;

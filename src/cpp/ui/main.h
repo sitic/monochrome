@@ -8,7 +8,7 @@
 #include "utils/files.h"
 
 void show_top_ui() {
-  // Speed controls
+  // For spacing
   ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0);
   ImGui::Dummy(ImVec2(2, 0));
   ImGui::SameLine();
@@ -28,6 +28,9 @@ void show_top_ui() {
   if (ImGui::Button(ICON_FA_FAST_BACKWARD)) {
     prm::do_forall_recordings([](auto &r) { r->playback.restart(); });
   }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Restart playback");
+  }
   ImGui::SameLine();
 
   // Calculate the space for the playback speed controls based on available space
@@ -41,7 +44,10 @@ void show_top_ui() {
   ImGui::SameLine(size_firstgroup + total_space / 2);
   {
     if (ImGui::Button(ICON_FA_BACKWARD)) {
-      prm::playbackCtrl.deacrease_speed();
+      prm::playbackCtrl.decrease_speed();
+    }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Decrease playback speed");
     }
     ImGui::SameLine();
     ImGui::SetNextItemWidth(total_w / 4);
@@ -49,6 +55,9 @@ void show_top_ui() {
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FORWARD)) {
       prm::playbackCtrl.increase_speed();
+    }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Double playback speed");
     }
   }
 
@@ -58,6 +67,9 @@ void show_top_ui() {
     if (ImGui::Button(ICON_FA_SEARCH_MINUS)) {
       RecordingWindow::scale_fct /= 2;
       resize_windows = true;
+    }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Decrease media window size");
     }
     ImGui::SameLine();
     ImGui::SetNextItemWidth(total_w / 4);
@@ -69,6 +81,9 @@ void show_top_ui() {
     if (ImGui::Button(ICON_FA_SEARCH_PLUS)) {
       RecordingWindow::scale_fct *= 2;
       resize_windows = true;
+    }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Increase media window size");
     }
     if (resize_windows && RecordingWindow::scale_fct != 0.f) {
       for (const auto &r : prm::recordings) {

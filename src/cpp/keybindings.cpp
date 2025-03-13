@@ -38,7 +38,7 @@ namespace global {
       prm::playbackCtrl.increase_speed();
     } else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
       // DOWN: decrease playback speed
-      prm::playbackCtrl.deacrease_speed();
+      prm::playbackCtrl.decrease_speed();
     } else if ((key == GLFW_KEY_R || key == GLFW_KEY_0) && action == GLFW_PRESS) {
       // R: reset
       for (const auto &rec : prm::recordings) {
