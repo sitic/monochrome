@@ -42,61 +42,71 @@ void show_about_window(bool* p_open) {
   ImGui::End();
 }
 
-void show_display_settings_window(bool* p_open) {
-  if (ImGui::Begin("Display Settings", p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
-    auto pos_x = ImGui::CalcTextSize("Auto Brightness").x + 2 * ImGui::GetStyle().ItemSpacing.x;
+void show_display_settings() {
+  auto pos_x = ImGui::CalcTextSize("Display Frame Rate").x + 2 * ImGui::GetStyle().ItemSpacing.x;
 
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Video Rotation");
-    ImGui::SameLine(pos_x);
-    if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) RecordingWindow::add_rotation(-90);
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) RecordingWindow::add_rotation(90);
-    ImGui::SameLine();
-    if (ImGui::Button("Reset##rotation_reset")) RecordingWindow::set_rotation(0);
+  ImGui::AlignTextToFramePadding();
+  ImGui::Text("Video Rotation");
+  ImGui::SameLine(pos_x);
+  if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) RecordingWindow::add_rotation(-90);
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_MDI_ROTATE_RIGHT)) RecordingWindow::add_rotation(90);
+  ImGui::SameLine();
+  if (ImGui::Button("Reset##rotation_reset")) RecordingWindow::set_rotation(0);
 
 
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Video Flip");
-    ImGui::SameLine(pos_x);
-    if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) RecordingWindow::flip_ud();
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_MDI_FLIP_HORIZONTAL)) RecordingWindow::flip_lr();
-    ImGui::SameLine();
-    if (ImGui::Button("Reset##flip_reset")) RecordingWindow::flip_reset();
+  ImGui::AlignTextToFramePadding();
+  ImGui::Text("Video Flip");
+  ImGui::SameLine(pos_x);
+  if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) RecordingWindow::flip_ud();
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_MDI_FLIP_HORIZONTAL)) RecordingWindow::flip_lr();
+  ImGui::SameLine();
+  if (ImGui::Button("Reset##flip_reset")) RecordingWindow::flip_reset();
 
-    ImGui::Spacing();
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Auto Brightness");
-    ImGui::SameLine(pos_x);
-    ImGui::Checkbox("##auto_brightness", &prm::auto_brightness);
+  ImGui::Spacing();
+  ImGui::AlignTextToFramePadding();
+  ImGui::Text("Auto Brightness");
+  ImGui::SameLine(pos_x);
+  ImGui::Checkbox("##auto_brightness", &prm::auto_brightness);
 
-    ImGui::Spacing();
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Display FPS");
-    ImGui::SameLine(pos_x);
-    auto label = fmt::format("(current avg: {:.0f} FPS)###dfps", ImGui::GetIO().Framerate);
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
-    int max_display_fps = prm::display_fps;
-    if (ImGui::InputInt(label.c_str(), &max_display_fps)) {
-      if (ImGui::IsItemDeactivated() && max_display_fps > 0) {
-        prm::display_fps   = max_display_fps;
-        prm::lastframetime = glfwGetTime();
-      }
+  ImGui::Spacing();
+  ImGui::AlignTextToFramePadding();
+  ImGui::Text("Display Frame Rate");
+  ImGui::SameLine(pos_x);
+  ImGui::SetNextItemWidth(120);
+  int max_display_fps = prm::display_fps;
+  ImGui::SetNextItemWidth(100);
+  if (ImGui::InputInt("Hz##dfps", &max_display_fps, 10, 30)) {
+    if (max_display_fps > 0) {
+    prm::display_fps = max_display_fps;
+    prm::lastframetime = glfwGetTime();
     }
+  }
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip("Set the maximum frame rate for video display");
+  
+  ImGui::SameLine();
+  if (ImGui::Button("Reset##fps_reset")) {
+    prm::display_fps = 60;
+    prm::lastframetime = glfwGetTime();
+  }
+  
+  ImGui::Indent(pos_x);
+  ImGui::Text("Current: %.1f FPS", ImGui::GetIO().Framerate);
+  ImGui::Unindent(pos_x);
 
-    ImGui::Spacing();
-    if (ImGui::Button(u8"Save all settings " ICON_FA_SAVE)) {
-      auto filepath = settings::save_current_settings();
-      global::new_ui_message("Settings saved to {}", filepath);
-    }
-}
-  ImGui::End();
+  ImGui::Spacing();
+  ImGui::Spacing();
+  if (ImGui::Button(ICON_FA_SAVE u8" Save All Settings to Config File",
+                    ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+    auto filepath = settings::save_current_settings();
+    global::new_ui_message("Settings saved to {}", filepath);
+  }
 }
 
 void show_main_imgui_window_menubar() {
   static bool show_about = false;
-  static bool show_display_settings = false;
   
   if (ImGui::BeginMenuBar()) {
     if (ImGui::BeginMenu("File")) {
@@ -145,26 +155,11 @@ void show_main_imgui_window_menubar() {
     }
 
     if (ImGui::BeginMenu("Display Settings")) {
-      if (ImGui::MenuItem("Video Rotation Left", NULL)) RecordingWindow::add_rotation(-90);
-      if (ImGui::MenuItem("Video Rotation Right", NULL)) RecordingWindow::add_rotation(90);
-      if (ImGui::MenuItem("Reset Rotation", NULL)) RecordingWindow::set_rotation(0);
-      
-      ImGui::Separator();
-      
-      if (ImGui::MenuItem("Flip Vertical", NULL)) RecordingWindow::flip_ud();
-      if (ImGui::MenuItem("Flip Horizontal", NULL)) RecordingWindow::flip_lr();
-      if (ImGui::MenuItem("Reset Flip", NULL)) RecordingWindow::flip_reset();
-      
-      ImGui::Separator();
-      
-      if (ImGui::MenuItem("Auto Brightness", NULL, &prm::auto_brightness)) {}
-      
-      ImGui::Separator();
-      
-      if (ImGui::MenuItem("All Display Settings...", NULL)) {
-        show_display_settings = true;
-      }
-      
+      ImGui::BeginChild("Display Settings", ImVec2(300, 200),
+                        ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeX |
+                            ImGuiChildFlags_AutoResizeY);
+      show_display_settings();
+      ImGui::EndChild();
       ImGui::EndMenu();
     }
 
@@ -182,7 +177,6 @@ void show_main_imgui_window_menubar() {
     ImGui::EndMenuBar();
   }
   if (show_about) show_about_window(&show_about);
-  if (show_display_settings) show_display_settings_window(&show_display_settings);
 }
 
 void show_main_imgui_window() {
