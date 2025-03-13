@@ -94,7 +94,7 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
       if (ImGui::CollapsingHeader(title.c_str(), &dont_delete_trace,
                                   ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
-        if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT, ImVec2(ImGui::GetContentRegionAvail().x * 0.3f, 0))) {
+        if (ImGui::Button(u8"Close " ICON_FA_TRASH_ALT, ImVec2(ImGui::GetContentRegionAvail().x * 0.3f, 0))) {
           rec->remove_trace(trace.pos);
         }
 

@@ -1,7 +1,8 @@
 # /// script
 # dependencies = [
 #   "monochrome",  # DO NOT MODIFY THIS LINE
-#   "scikit-image",
+#   "imageio",
+#   "SimpleITK",
 # ]
 # ///
 import re
@@ -10,7 +11,7 @@ from pathlib import Path
 
 import monochrome as mc
 import numpy as np
-import skimage.io as sio
+import imageio.v3 as iio
 
 # filepath will be set by Monochrome when the script is run
 filepath = Path(sys.argv[1])   # DO NOT MODIFY THIS LINE
@@ -36,8 +37,8 @@ def load_image_folder(path):
         raise ValueError(msg)
 
     files = sorted(files, key=_natural_sort_path_key)
-    video = [sio.imread(file, as_gray=True) for file in files]
-    return np.array(video)
+    video = [iio.imread(file, plugin="ITK") for file in files]
+    return np.squeeze(np.array(video))
 
 video = load_image_folder(filepath)
 if (video.ndim not in [2, 3]):

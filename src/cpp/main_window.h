@@ -65,10 +65,30 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
         return;
       }
       prm::merge_queue.emplace(rec, parent, false);
-    } else {
+    } else { // Normal media, no parent
+
+      // If the video/image is very large or very small, scale it to something reasonable
+      // Only do this if it's the first video and no scaling has been set yet
+      if (prm::recordings.empty() && RecordingWindow::scale_fct == 1.0f) {
+        auto primary_monitor = glfwGetPrimaryMonitor();
+        int x, y, width, height;
+        glfwGetMonitorWorkarea(primary_monitor, &x, &y, &width, &height);
+        auto mode    = glfwGetVideoMode(primary_monitor);
+        auto scale_x = width / static_cast<float>(rec->Nx());
+        auto scale_y = height / static_cast<float>(rec->Ny());
+        if (scale_x < 1 || scale_y < 1) {
+          // Media is very large, scale it down
+          RecordingWindow::scale_fct = std::min(scale_x * 0.9f, scale_y * 0.9f);
+        } else if (scale_x > 10 || scale_y > 10) {
+          // Media is very small, scale it up
+          RecordingWindow::scale_fct = std::min(scale_x * .5f, scale_y * .5f);
+        }
+      }
+
+      // Finally, open the recording
       prm::recordings.push_back(rec);
-      rec->open_window();
       settings::add_recent_file(rec->filepath());
+      rec->open_window();
     }
   } else {  // Flow array
     SharedRecordingPtr parent;

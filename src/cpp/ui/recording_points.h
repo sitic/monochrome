@@ -14,7 +14,7 @@ void show_flow_ui(const SharedRecordingPtr &rec) {
         flow.show = !ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH);
       else
         flow.show = ImGui::Button(u8"Show " ICON_FA_EYE);
-      if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT)) {
+      if (ImGui::Button(u8"Close " ICON_FA_TRASH_ALT)) {
         flow.data = nullptr;
       }
       ImGui::ColorEdit4("Color", flow.color.data());

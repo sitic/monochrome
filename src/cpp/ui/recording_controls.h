@@ -182,7 +182,7 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
     ImGui::InputText("Filepath", &rec_filepath, ImGuiInputTextFlags_ReadOnly);
   }
   auto text_item_size = ImGui::GetItemRectSize();
-  if (ImGui::Button(u8"Delete " ICON_FA_TRASH_ALT, ImVec2(text_item_size.x, 0))) {
+  if (ImGui::Button(u8"Close " ICON_FA_TRASH_ALT, ImVec2(text_item_size.x, 0))) {
     if (!parent) {
       glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
     } else {

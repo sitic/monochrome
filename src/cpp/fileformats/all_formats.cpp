@@ -40,6 +40,15 @@ namespace {
       std::generate_n(str.begin(), length, randchar);
       return str;
   }
+
+  bool directory_has_files_with_extension(const fs::path& path, const std::unordered_set<std::string>& extensions) {
+    for (const auto& entry : fs::directory_iterator(path)) {
+      if (entry.is_regular_file() && extensions.count(entry.path().extension().string()) > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
@@ -47,25 +56,22 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
 
   // Directory loaders
   if (fs::is_directory(path)) {
-    // load_folder.py plugin supports a folder of .png, .tif, .tiff, or .dcm files
-    const std::unordered_set<std::string> image_extensions {".png", ".tif", ".tiff", ".dcm", ".PNG", ".TIF", ".TIFF", ".DCM"};
-    bool has_matching_files = false;
-    for (const auto& entry : fs::directory_iterator(path)) {
-      if (entry.is_regular_file() && image_extensions.count(entry.path().extension().string()) > 0) {
-        has_matching_files = true;
-        break;
+    // Python-based directory handlers
+    using file_extension_vt = std::unordered_set<std::string>;
+    const std::unordered_map<std::string, file_extension_vt> folder_handlers = {
+      {"load_folder.py", {".png", ".tif", ".tiff", ".PNG", ".TIF", ".TIFF"}},
+      {"load_folder_dcm.py", {".dcm", ".DCM"}},
+    };
+    for (const auto& [script_name, extensions] : folder_handlers) {
+      if (directory_has_files_with_extension(path, extensions)) {
+        python_plugin_load(path, script_name);
+        return nullptr;
       }
     }
-
-    if (has_matching_files) {
-      python_plugin_load(path, "load_folder.py");
-      return nullptr;
-    } else {
-      global::new_ui_message(
-        "ERROR: Unable to load directory, no TIFF or PNG files found.\nPath: {}",
-        path.string());
-      return nullptr;
-    }
+    global::new_ui_message(
+      "ERROR: Unable to load directory, no TIFF or PNG files found.\nPath: {}",
+      path.string());
+    return nullptr;
   }
   
   // File loaders
