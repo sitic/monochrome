@@ -71,12 +71,12 @@ void show_export_ui(const SharedRecordingPtr &rec) {
     ctrl.tend        = rec->length();
     ctrl.description = rec->comment();
   }
-  if (ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_IMAGES u8"   Export as image sequence", ImVec2(button_width, 0))) {
+  if (rec->length() > 1 && ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_IMAGES u8"   Export as image sequence", ImVec2(button_width, 0))) {
     auto &ctrl         = rec->export_ctrl.png;
     ctrl.export_window = true;
     ctrl.assign_auto_filename(rec->file());
   }
-  if (is_rgb_rec(rec) && ImGui::Button(ICON_FA_FILE_EXPORT u8" raw" u8"  Export as raw video", ImVec2(button_width, 0))) {
+  if (!is_rgb_rec(rec) && ImGui::Button(ICON_FA_FILE_EXPORT u8" raw" u8"  Export as raw video", ImVec2(button_width, 0))) {
     auto &ctrl         = rec->export_ctrl.raw;
     ctrl.export_window = true;
     ctrl.start         = {0, 0};
