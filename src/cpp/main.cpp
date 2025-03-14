@@ -75,6 +75,10 @@ int main(int argc, char **argv) {
       if (send_files_over_wire) {
         for (const auto &file : files) {
           auto rec              = Recording(fs::path(file));
+          if (rec.file()->Nc() != 1) {
+            fmt::print(stderr, "ERROR: Cannot send file '{}', is has {} channels. Only single-channel files are currently supported.\n");
+            std::exit(EXIT_FAILURE);
+          }
           std::size_t framesize = rec.Nx() * rec.Ny();
           std::size_t size      = framesize * rec.length();
           std::vector<float> data(size);

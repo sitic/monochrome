@@ -80,7 +80,7 @@ class Recording {
   std::optional<BitRange> bitrange() const { return _file->bitrange(); }
   std::optional<ColorMap> cmap() const { return _file->cmap(); }
 
-  void load_frame(long t);
+  void load_frame(long t, long c = 0);
 
   int current_frame() const { return t_frame; }
 

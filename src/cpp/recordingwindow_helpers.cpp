@@ -163,7 +163,7 @@ std::pair<float, float> oportunistic_minmax(std::shared_ptr<AbstractFile> file,
   float max = std::numeric_limits<float>::lowest();
 
   for (auto i : indices) {
-    auto frame = file->read_frame(i);
+    auto frame = file->read_frame(i, 0);
     auto [frame_min, frame_max] =
         utils::minmax_element_skipNaN(frame.data(), frame.data() + frame.size());
     if (frame_min < min) {

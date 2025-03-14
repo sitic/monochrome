@@ -376,9 +376,9 @@ void RecordingWindow::display() {
     if (!flow.show) continue;
     points_vert.clear();
 
-    flow.data->load_frame(2 * t_frame);
+    flow.data->load_frame(t_frame, 0);
     Eigen::MatrixXf u = flow.data->frame;  // force a copy
-    flow.data->load_frame(2 * t_frame + 1);
+    flow.data->load_frame(t_frame, 1);
     auto v  = flow.data->frame;  // don't need to force a copy
     auto nx = flow.data->Nx(), ny = flow.data->Ny();
     // get flow signs based on current rotation and flip

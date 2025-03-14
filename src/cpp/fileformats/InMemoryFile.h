@@ -69,17 +69,15 @@ class InMemoryFile : public AbstractFile {
   std::optional<float> vmax() const final { return _data->meta.vmax; };
   std::optional<OpacityFunction> opacity() const final { return _data->meta.opacity; };
 
-  Eigen::MatrixXf read_frame(long t) final {
+  Eigen::MatrixXf read_frame(long t, long c) final {
     std::visit(
-        [this, t](const auto& data) {
-          if (Nc() == 1) {
-            // Regular single-channel data
+        [this, t, c](const auto& data) {
+          if (Nc() == 1) { // ignore c, since we have only one channel
             auto begin = data.data() + _frame_size * t;
             std::copy(begin, begin + _frame_size, _frame.data());
           } else {
-            long channel = t % Nc();
-            auto begin   = data.data() + _frame_size * (t - channel) + channel;
-            auto end     = begin + Nc() * _frame_size;
+            auto begin   = data.data() + _frame_size * (t * Nc()) + c;
+            auto end     = begin + _frame_size * Nc();
             std::copy(StrideIterator(begin, Nc()), StrideIterator(end, Nc()), _frame.data());
           }
         },

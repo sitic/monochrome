@@ -22,7 +22,7 @@ class AbstractFile {
   fs::path _path;
 
  public:
-  AbstractFile(fs::path path) : _path(std::move(path)){};
+  AbstractFile(fs::path path) : _path(std::move(path)) {};
   virtual ~AbstractFile() = default;
   fs::path path() const { return _path; };
 
@@ -32,10 +32,11 @@ class AbstractFile {
   virtual std::string error_msg() = 0;
 
   // Metadata
-  virtual int Nx() const                                                    = 0;
-  virtual int Ny() const                                                    = 0;
-  virtual int Nc() const                                                    = 0;
-  virtual int length() const                                                = 0;
+  virtual int Nx() const     = 0;  // width
+  virtual int Ny() const     = 0;  // height
+  virtual int Nc() const     = 0;  // number of channels
+  virtual int length() const = 0;  // number of frames
+
   virtual std::string date() const                                          = 0;
   virtual std::string comment() const                                       = 0;
   virtual std::chrono::duration<float> duration() const                     = 0;
@@ -47,7 +48,7 @@ class AbstractFile {
   virtual std::optional<float> vmax() const { return std::nullopt; };
   virtual std::optional<OpacityFunction> opacity() const { return std::nullopt; };
 
-  [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t)      = 0;
+  [[nodiscard]] virtual Eigen::MatrixXf read_frame(long t, long c) = 0;
   // Get pixel value at position (x, y) in frame t
   [[nodiscard]] virtual float get_pixel(long t, long x, long y) = 0;
   // Get the average value in a 2D image block

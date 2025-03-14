@@ -182,8 +182,8 @@ std::pair<float, float> RotationCtrl::flow_signs() {
   return {signx, signy};
 }
 
-void Recording::load_frame(long t) {
-  frame   = _file->read_frame(t);
+void Recording::load_frame(long t, long c) {
+  frame   = _file->read_frame(t, c);
   t_frame = t;
   apply_rotation();
 }

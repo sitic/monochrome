@@ -39,14 +39,13 @@ class NpyFile : public AbstractFile {
   }
 
   template <typename T>
-  void copy_frame(long t) {
-    if (Nc() == 1) {
+  void copy_frame(long t, long c) {
+    if (Nc() == 1) { // ignore c, since we have only one channel
       auto begin = get_data_ptr<T>(t);
       std::copy(begin, begin + _frame_size, _frame.data());
     } else {
-      int channel = t % Nc();
-      auto begin = get_data_ptr<T>(t - channel) + channel;
-      auto end = begin + Nc() * _frame_size;
+      auto begin   = get_data_ptr<T>(t * Nc()) + c;
+      auto end     = begin + _frame_size * Nc();
       std::copy(StrideIterator(begin, Nc()), StrideIterator(end, Nc()), _frame.data());
     }
   }
@@ -196,28 +195,28 @@ class NpyFile : public AbstractFile {
   void set_comment(const std::string &new_comment) final {}
   flag_set<FileCapabilities> capabilities() const final { return {}; }
 
-  Eigen::MatrixXf read_frame(long t) final {
+  Eigen::MatrixXf read_frame(long t, long c) final {
     switch (dataType) {
       case PixelDataFormat::FLOAT:
-        copy_frame<float>(t);
+        copy_frame<float>(t, c);
         break;
       case PixelDataFormat::DOUBLE:
-        copy_frame<double>(t);
+        copy_frame<double>(t, c);
         break;
       case PixelDataFormat::UINT16:
-        copy_frame<uint16_t>(t);
+        copy_frame<uint16_t>(t, c);
         break;
       case PixelDataFormat::INT16:
-        copy_frame<int16_t>(t);
+        copy_frame<int16_t>(t, c);
         break;
       case PixelDataFormat::UINT8:
-        copy_frame<uint8_t>(t);
+        copy_frame<uint8_t>(t, c);
         break;
       case PixelDataFormat::INT8:
-        copy_frame<int8_t>(t);
+        copy_frame<int8_t>(t, c);
         break;
       case PixelDataFormat::BOOL:
-        copy_frame<bool>(t);
+        copy_frame<bool>(t, c);
         break;
       default:
         throw std::logic_error("This line should never be reached");

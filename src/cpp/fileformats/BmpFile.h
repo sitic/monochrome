@@ -46,7 +46,8 @@ class BmpFile : public AbstractFile {
     return flag_set<FileCapabilities>(FileCapabilities::SET_COMMENT);
   }
 
-  Eigen::MatrixXf read_frame(long t) final {
+  Eigen::MatrixXf read_frame(long t, long c) final {
+    (void)c; // only one channel supported
     file.read_frame(t, _frame.data());
     return _frame;
   };

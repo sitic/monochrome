@@ -100,7 +100,8 @@ class RawFile : public AbstractFile {
   void set_comment(const std::string &new_comment) final {}
   flag_set<FileCapabilities> capabilities() const final { return {}; }
 
-  Eigen::MatrixXf read_frame(long t) final {
+  Eigen::MatrixXf read_frame(long t, long c) final {
+    (void)c; // only one channel supported
     auto begin = get_data_ptr(t);
     std::copy(begin, begin + _frame_size, _frame.data());
     return _frame;
