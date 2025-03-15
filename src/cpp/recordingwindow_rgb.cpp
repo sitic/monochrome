@@ -27,15 +27,24 @@ void RGBRecordingWindow::display() {
   load_frame(t, 2);
   Eigen::MatrixXf b_channel = frame;
 
-  histogram.compute(frame.reshaped());
-
   /* render code */
   glfwMakeContextCurrent(window);
   glClear(GL_COLOR_BUFFER_BIT);
   glfwMakeContextCurrent(glcontext);
 
   frame_shader.use();
-  frame_shader.setFloat("norm", (bitrange == BitRange::U8)? 255: 1);
+  float norm = 1;
+  if (bitrange == BitRange::FLOAT) {
+    norm = 1;
+  } else if (bitrange == BitRange::U8) {
+    norm = 255;
+  } else if (bitrange == BitRange::U16) {
+    norm = 1 << 16;
+  }else {
+    auto [min, max] = utils::bitrange_to_float(bitrange);
+    norm           = max;
+  }
+  frame_shader.setFloat("norm", norm);
   // Option 1: Continue using separate textures
   // glActiveTexture(GL_TEXTURE0);
   // glBindTexture(GL_TEXTURE_2D, texture);

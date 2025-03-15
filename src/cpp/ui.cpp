@@ -33,7 +33,10 @@ void show_about_window(bool* p_open) {
     ImGui::TextUnformatted("Monochrome version " MONOCHROME_VERSION);
     ImGui::PopFont();
     ImGui::Spacing();
-    ImGui::TextUnformatted("By Jan Lebert and all Monochrome contributors");
+    ImGui::TextUnformatted("By Jan Lebert and all Monochrome contributors.");
+    ImGui::TextUnformatted("Contact:");
+    ImGui::SameLine();
+    ImGui::TextLinkOpenURL("mail@janlebert.com", "mailto:mail@janlebert.com");
 
     static std::string readme = get_readme();    
     static ImGuiConnector::markdown md;
