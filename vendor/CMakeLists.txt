@@ -101,6 +101,15 @@ add_subdirectory(subprocess/src/cpp)
 set(NFD_PORTAL ON CACHE BOOL "Use xdg-desktop-portal instead of GTK" FORCE)
 add_subdirectory(nativefiledialog-extended)
 
+set(tiff-tools OFF CACHE BOOL "" FORCE)
+set(tiff-tests OFF CACHE BOOL "" FORCE)
+set(tiff-contrib OFF CACHE BOOL "" FORCE)
+set(tiff-docs OFF CACHE BOOL "" FORCE)
+add_subdirectory(libtiff)
+
+add_library(natsort natsort/strnatcmp.c natsort/strnatcmp.h)
+target_include_directories(natsort SYSTEM PUBLIC natsort)
+
 set_property(
     TARGET imgui_glfw_gl3 glad glfw fmt pugixml
     APPEND_STRING

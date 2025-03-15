@@ -200,6 +200,8 @@ target_link_libraries(
         cppcolormap
         subprocess
         nfd
+        TIFF::tiff
+        natsort
         monochrome::rc
 )
 target_include_directories(Monochrome PRIVATE src/cpp src/schema)
