@@ -91,7 +91,10 @@ archs = ["auto64"]  # 64-bit only
 skip = "pp* *musllinux*"  # disable PyPy, musl-based wheels
 test-requires = ["pytest"]
 test-command = "pytest {project}/src/python/tests"
-manylinux-x86_64-image = "quay.io/pypa/manylinux_2_28_x86_64"  # TODO: temporary, remove after upgrade of cibuildwheel
+
+# TODO: temporary, remove after upgrade of cibuildwheel
+manylinux-x86_64-image = "quay.io/pypa/manylinux_2_28_x86_64"
+manylinux-aarch64-image = "quay.io/pypa/manylinux_2_28_aarch64"
 
 [tool.cibuildwheel.linux]
 before-all = "yum install -y wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel mesa-libGL-devel libdwarf-devel binutils-devel dbus-devel curl zip unzip tar"

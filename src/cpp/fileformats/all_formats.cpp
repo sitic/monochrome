@@ -213,11 +213,12 @@ namespace {
   void python_plugin_load(const fs::path& path, std::string script_name) {
     // Load the script template and save it to a temporary file
     std::string script = utils::get_rc_text_file("src/python/embedded_plugins/" + script_name);
-    // auto req_str = fmt::format("\"monochrome=={}\",", MONOCHROME_VERSION);
-    auto req_str = fmt::format(
-        "\"monochrome @ "
-        "/Users/janl/work/software/monochrome/dist/"
-        "monochrome-2025.2.21.dev59+g80f725e8c.d20250314-py3-none-macosx_15_0_arm64.whl\",");
+#ifdef MONOCHROME_PLUGIN_WHL
+    auto req_str = fmt::format("\"monochrome @ {}\",", MONOCHROME_PLUGIN_WHL);
+    fmt::print("req_str: {}\n", req_str);
+#else
+    auto req_str = fmt::format("\"monochrome=={}\",", MONOCHROME_VERSION);
+#endif
     if (!substring_replace(script, "\"monochrome\",", req_str) ||
         !substring_replace(script, "sys.argv[1]",
                            fmt::format("r\"{}\"", fs::absolute(path).string()))) {
