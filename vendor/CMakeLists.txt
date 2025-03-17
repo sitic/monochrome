@@ -101,6 +101,7 @@ add_subdirectory(subprocess/src/cpp)
 set(NFD_PORTAL ON CACHE BOOL "Use xdg-desktop-portal instead of GTK" FORCE)
 add_subdirectory(nativefiledialog-extended)
 
+set(webp OFF CACHE BOOL "Support webp compression in libtiff" FORCE)
 set(tiff-tools OFF CACHE BOOL "" FORCE)
 set(tiff-tests OFF CACHE BOOL "" FORCE)
 set(tiff-contrib OFF CACHE BOOL "" FORCE)

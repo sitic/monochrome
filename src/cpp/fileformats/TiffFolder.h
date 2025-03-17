@@ -25,7 +25,9 @@ class TiffFolder : public AbstractFile {
       }
     }
     std::sort(tiff_files.begin(), tiff_files.end(), [](const fs::path& a, const fs::path& b) {
-      return strnatcmp(a.stem().c_str(), b.stem().c_str()) < 0;
+      std::string a_stem = a.stem().string();
+      std::string b_stem = b.stem().string();
+      return strnatcmp(a_stem.c_str(), b_stem.c_str()) < 0;
     });
     for (const auto& entry : tiff_files) {
       auto file = std::make_shared<TiffFile>(entry, true);
