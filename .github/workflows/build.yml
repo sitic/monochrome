@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-2019, macos-13]
+        os: [ubuntu-20.04, windows-2019, macos-13, macos-14]
 
     steps:
       - name: Checkout
@@ -23,14 +23,14 @@ jobs:
           fetch-depth: 0
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.22
+        uses: pypa/cibuildwheel@v2.23
         env:
           CIBW_BUILD: "cp39-macosx* cp39-manylinux_x86_64 cp39-win_amd64"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: python-wheels-${{ runner.os }}
+          name: python-wheels-${{ runner.os }}-${{ runner.arch }}
           path: ./wheelhouse/*.whl
 
   test_python_wheels:
@@ -83,7 +83,7 @@ jobs:
     steps:
     - name: Install dependencies
       run: |
-        yum install -y wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel libdwarf-devel binutils-devel dbus-devel cmake ninja-build
+        yum install -y wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel libdwarf-devel binutils-devel dbus-devel cmake ninja-build curl zip unzip tar
 
     - name: Checkout code
       uses: actions/checkout@v4
@@ -94,10 +94,15 @@ jobs:
     - name: Fix git safe.directory
       run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
+    
+    - name: Install vcpkg for optional libtiff dependencies
+      run: |
+        git clone --depth 1 https://github.com/microsoft/vcpkg.git /usr/local/vcpkg
+        /usr/local/vcpkg/bootstrap-vcpkg.sh
 
     - name: Configure and build
       run: |
-        cmake -Bbuild -G "Ninja" -Wdev -DSTATIC_GCC=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .
+        cmake -Bbuild -G "Ninja" -Wdev -DSTATIC_GCC=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_TOOLCHAIN_FILE=/usr/local/vcpkg/scripts/buildsystems/vcpkg.cmake -DDVCPKG_TARGET_TRIPLET="x64-linux-release" .
         cd build
         cmake --build . --parallel 4
     
@@ -132,7 +137,7 @@ jobs:
 
     - name: Configure and build
       run: |
-        cmake -Bbuild -G "Visual Studio 17 2022" -DCMAKE_GENERATOR_PLATFORM="x64" -Wdev .
+        cmake -Bbuild -G "Visual Studio 17 2022" -DCMAKE_GENERATOR_PLATFORM="x64" -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET="x64-windows-static-md-release" -Wdev .
         cd build
         cmake --build . --config "Release" --parallel 4
 
@@ -156,7 +161,7 @@ jobs:
 
   standalone_macos:
     name: Build standalone on macOS
-    runs-on: macos-13
+    runs-on: macos-14
 
     steps:
     - name: Checkout code
@@ -164,14 +169,37 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Run vcpkg and fuse libs into universal binaries
+      run: |
+        export VCPKG_OSX_DEPLOYMENT_TARGET="10.13"
+        export MACOSX_DEPLOYMENT_TARGET="10.13" 
+        git clone --depth 1 https://github.com/microsoft/vcpkg.git
+        cd vcpkg
+        ./bootstrap-vcpkg.sh
+        cd ..
+        ./vcpkg/vcpkg install --triplet arm64-osx-release
+        ./vcpkg/vcpkg install --x-install-root vcpkg_installed_x64 --triplet x64-osx-release
+        for lib in $(ls vcpkg_installed_x64/x64-osx-release/lib/*.a); do
+          lib_name=$(basename $lib)
+          echo "Creating universal binary for $lib_name"
+          lipo -create -output vcpkg_installed/arm64-osx-release/lib/$lib_name \
+            vcpkg_installed_x64/x64-osx-release/lib/$lib_name \
+            vcpkg_installed/arm64-osx-release/lib/$lib_name
+        done
+      env:
+        VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
+
     - name: Configure and build
       run: |
         export MACOSX_DEPLOYMENT_TARGET="10.13"
         export CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+        export CMAKE_IGNORE_PATH="/usr/local/Cellar/lib"
         mkdir build dist
+        cmake -DCMAKE_TOOLCHAIN_FILE=$PWD/vcpkg/scripts/buildsystems/vcpkg.cmake  -DVCPKG_TARGET_TRIPLET=arm64-osx-release -DVCPKG_MANIFEST_MODE=OFF -DVCPKG_INSTALLED_DIR=$PWD/vcpkg_installed -Bbuild -Wdev
         cd build
-        cmake .. -Wdev
-        make -j
+        cmake --build . --parallel 4
+      env:
+        VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
 
     - name: Package
       run: |

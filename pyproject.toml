@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "scikit-build-core",
+    "scikit-build-core>=0.11.0",
     "setuptools_scm>=6.2",
 ]
 build-backend = "scikit_build_core.build"
@@ -86,19 +86,33 @@ fallback_version = "0.1"
 testpaths = "src/python/tests"
 
 [tool.cibuildwheel]
+build-frontend = "build"
 archs = ["auto64"]  # 64-bit only
 skip = "pp* *musllinux*"  # disable PyPy, musl-based wheels
 test-requires = ["pytest"]
 test-command = "pytest {project}/src/python/tests"
 manylinux-x86_64-image = "quay.io/pypa/manylinux_2_28_x86_64"  # TODO: temporary, remove after upgrade of cibuildwheel
 
-[tool.cibuildwheel.macos]
-# https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
-archs = ["universal2"]
-test-skip = ["*_arm64", "*_universal2:arm64"]
-
 [tool.cibuildwheel.linux]
-before-all = "yum install -y wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel mesa-libGL-devel libdwarf-devel binutils-devel dbus-devel"
+before-all = "yum install -y wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel mesa-libGL-devel libdwarf-devel binutils-devel dbus-devel curl zip unzip tar"
+before-build = "git clone --depth 1 https://github.com/microsoft/vcpkg.git /tmp/vcpkg && /tmp/vcpkg/bootstrap-vcpkg.sh"
+
+[tool.cibuildwheel.linux.environment]
+VCPKG_ROOT="/tmp/vcpkg"
+CMAKE_TOOLCHAIN_FILE="/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+[tool.cibuildwheel.macos]
+before-build = "git clone --depth 1 https://github.com/microsoft/vcpkg.git /tmp/vcpkg && /tmp/vcpkg/bootstrap-vcpkg.sh"
+
+[tool.cibuildwheel.macos.environment]
+CMAKE_IGNORE_PATH="/opt/homebrew/lib"
+VCPKG_OSX_DEPLOYMENT_TARGET="10.9"
+VCPKG_ROOT="/tmp/vcpkg"
+CMAKE_TOOLCHAIN_FILE="/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+[tool.cibuildwheel.windows.environment]
+VCPKG_TARGET="x64-windows-static-md-release"
+CMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
 [tool.ruff]
 line-length = 120
