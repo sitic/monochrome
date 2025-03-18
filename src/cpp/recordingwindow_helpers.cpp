@@ -132,7 +132,6 @@ void Trace::save(fs::path path) {
 Vec4f FlowData::next_color(unsigned color_count) {
   // List of colors to cycle through
   const std::array<Vec4f, 5> cycle_list = {{
-      {0, 0, 0, 1},
       {228 / 255.f, 26 / 255.f, 28 / 255.f, 1},
       {55 / 255.f, 126 / 255.f, 184 / 255.f, 1},
       {77 / 255.f, 175 / 255.f, 74 / 255.f, 1},
