@@ -45,6 +45,9 @@ namespace global {
   void quit(int) {
     if (prm::main_window) {
       glfwSetWindowShouldClose(prm::main_window, GLFW_TRUE);
+    } else {
+      // Monochrome should be in unit test mode, signal the main thread to exit
+      global::tcp_port = 0;
     }
   }
 

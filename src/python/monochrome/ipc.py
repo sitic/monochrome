@@ -46,6 +46,7 @@ if sys.platform != "win32":
 else:
     SOCK_PATH = None
 MAX_BUFFER_SIZE = 16352
+MONOCHROME_DEFAULT_ARGS = {}
 
 
 def start_monochrome(speed: Optional[float] = None,
@@ -55,10 +56,7 @@ def start_monochrome(speed: Optional[float] = None,
                      flipv: bool = False,
                      **kwargs):
     """Start bundled Monochrome executable with the given settings."""
-    if sys.platform != "darwin":
-        args = [str(MONOCHROME_BIN_PATH)]
-    else:
-        args = ["open", "-a", str(MONOCHROME_BIN_PATH), "--args"]
+    args = []
     if speed:
         args.append("--speed")
         args.append(str(speed))
@@ -72,10 +70,21 @@ def start_monochrome(speed: Optional[float] = None,
         args.append("--fliph")
     if flipv:
         args.append("--flipv")
+    kwargs = {**MONOCHROME_DEFAULT_ARGS, **kwargs}
     for key, val in kwargs.items():
         args.append(f"--{key}")
-        args.append(str(val))
-    subprocess.Popen(args, start_new_session=True)
+        if isinstance(val, bool):
+            pass
+        else:
+            args.append(str(val))
+
+    if sys.platform == "darwin" and '--unit-test-mode' in args:
+        cmd = [str(MONOCHROME_BIN_PATH / 'Contents' / 'MacOS' / 'Monochrome'), ] + args
+    elif sys.platform == "darwin":
+        cmd = ["open", "-a", str(MONOCHROME_BIN_PATH), "--args", ] + args
+    else:
+        cmd = [str(MONOCHROME_BIN_PATH), ] + args
+    subprocess.Popen(cmd, start_new_session=True)
 
 
 def console_entrypoint():

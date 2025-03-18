@@ -1,7 +1,3 @@
-from unittest import mock
-
-patcher = mock.patch('socket.socket')
-
 import os
 import random
 import sys
@@ -12,12 +8,10 @@ from time import sleep
 import numpy as np
 import monochrome as mc
 
-# Do we want to mock the server?
+# Run Monochrome in headless unit test mode
 HEADLESS_TEST = "pytest" in sys.modules or os.getenv('HEADLESS')
-
 if HEADLESS_TEST:
-    patcher.start()
-    mc.ipc.ABSTRACT_DOMAIN_SOCKET_SUPPORTED = True  # Fix for MacOS
+    mc.ipc.MONOCHROME_DEFAULT_ARGS = {'unit-test-mode': True}
 
 def test_filepaths():
     with tempfile.TemporaryDirectory() as tmpdir:
