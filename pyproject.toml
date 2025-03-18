@@ -103,7 +103,7 @@ repair-wheel-command = "auditwheel repair --exclude 'libdbus-1.so*' --exclude 'l
 
 [tool.cibuildwheel.linux.environment]
 VCPKG_ROOT="/tmp/vcpkg"
-VCPKG_TARGET_TRIPLET="x64-linux-release"
+VCPKG_DEFAULT_TRIPLET="x64-linux-release"
 CMAKE_TOOLCHAIN_FILE="/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
 [tool.cibuildwheel.macos]
@@ -115,8 +115,11 @@ VCPKG_OSX_DEPLOYMENT_TARGET="10.9"
 VCPKG_ROOT="/tmp/vcpkg"
 CMAKE_TOOLCHAIN_FILE="/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
+[tool.cibuildwheel.windows]
+test-command = ""
+
 [tool.cibuildwheel.windows.environment]
-VCPKG_TARGET_TRIPLET="x64-windows-static-md-release"
+VCPKG_DEFAULT_TRIPLET="x64-windows-static-md-release"
 CMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
 [tool.ruff]
