@@ -1,9 +1,10 @@
 #include <stdexcept>
 #include <memory>
 #include <utility>
+#include <mutex>
+
 #include <tiffio.h>
 #include <tiffio.hxx>
-
 
 #include "AbstractFile.h"
 #include "utils/iterators.h"
@@ -31,6 +32,7 @@ class TiffFile : public AbstractFile {
  private:
   bool _good = true;
   std::string _error_msg;
+  std::mutex _mutex;
 
   TIFF* tif;
 
@@ -294,6 +296,8 @@ class TiffFile : public AbstractFile {
   }
 
   Eigen::MatrixXf read_frame(long t, long c) final {
+    std::lock_guard<std::mutex> lock(_mutex);
+
     if (t < 0 || t >= length()) {
       _error_msg = "Time index out of range";
       _good      = false;
@@ -349,6 +353,8 @@ class TiffFile : public AbstractFile {
   }
 
   float get_pixel(long t, long x, long y) final {
+    std::lock_guard<std::mutex> lock(_mutex);
+    
     if (!frames_in_cache[t]) {
       add_frame_to_cache(t);
     }
