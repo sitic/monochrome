@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/monochrome.svg)](https://pypi.org/project/monochrome/)
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/monochrome.svg)](https://python.org)
 
-Monochrome is a lightweight and fast video viewer for scientific monochromatic videos with high-dynamic range (float, uint16, etc.).
+Monochrome is a lightweight and fast viewer for scientific imaging and video data with a focus on monochromatic data and high-dynamic range data. It is designed to be fast and lightweight, i.e. it uses memory-mapping to load video files to avoid copying the data into RAM.
 
 ![Monochrome](https://raw.githubusercontent.com/sitic/monochrome/refs/heads/master/assets/Monochrome-screenshot1.webp)
 
@@ -81,14 +81,29 @@ mc.show_layer(overlay, parent="Second Video", cmap='PRGn', opacity='centered')
 # mc.quit() to close Monochrome
 ```
 
-## Native Video File Formats
-Monochrome supports loading the following video file formats:
+## Supported File Formats
 
-* `.npy`, NumPy array with shape (time, width, height). The data type can be float (np.float32, np.float64), integer (uint8, uint16, etc.), or boolean.
-* `.dat`, raw binary file with shape (time, width, height) and data type float32
-* `.dat`, MultiRecorder file format (used in the cardiac optical mapping community)
+Monochrome supports a wide range of file formats through both native handlers and a plugin system.
 
-Drag & drop the file into the window or associate the file extension with Monochrome to open it with a double-click.
+### Native File Handlers
+
+* `.tif`, `.tiff` - TIFF image files (single or multi-page)
+* Directory of TIFF files - Loads a directory containing TIFF images as a single video
+* `.npy` - NumPy array with shape (time, height, width). The data type can be float (np.float32, np.float64), integer (uint8, uint16, etc.), or boolean.
+* `.dat` - Raw binary file with shape (time, height, width) and data type float32 or MultiRecorder file format (used in the cardiac optical mapping community)
+
+### Plugin-Based File Handlers
+
+Monochrome uses a plugin system to support additional file formats:
+
+* **Image Formats**: `.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.pgm` 
+* **TIFF Variants**: `.tf8`, `.ptif`, `.ptiff`, `.lsm` (ZEISS LSM), `.btf`, `.bif` (Roche Digital Pathology), `.gel`, `.ndpi` (Hamamatsu Slide Scanner), `.stk`, `.qptiff` (Perkin Elmer Vectra)
+* **Medical Imaging**: `.dcm`, `.dicom`, `.gdcm`, `.gipl`, `.hdf5`, `.hdr`, `.ipl`, `.img`, `.img.nz`, `.mgh`, `.mha`, `.mhd`, `.mnc`, `.mnc2`, `.nhdr`, `.nia`, `.nii`, `.nii.gz`, `.nrrd`, `.vtk`
+* **Video Formats**: `.mp4`, `.avi`, `.webm`, `.mov`, `.mkv`, `.gif`, `.wmv`, `.m4v`
+* **MATLAB**: `.mat`
+* **MiCAM Formats**: `.gsd`, `.gsh`, `.rsh`, `.rsm`, `.rsd` (MiCAM camera formats)
+
+Drag & drop files into the window or associate the file extension with Monochrome to open them with a double-click. Required plugin dependencies will be downloaded automatically when opening files that need them.
 
 ## Usage & Key Bindings
 
