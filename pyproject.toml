@@ -102,8 +102,8 @@ before-build = "git clone --depth 1 https://github.com/microsoft/vcpkg.git /tmp/
 repair-wheel-command = "auditwheel repair --exclude 'libdbus-1.so*' --exclude 'libGLX.so*' --exclude 'libOpenGL.so*' --lib-sdir . -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.linux.environment]
+SKBUILD_CMAKE_ARGS="-DVCPKG_TARGET_TRIPLET='x64-linux-release';-DSTATIC_GCC:BOOL=ON"
 VCPKG_ROOT="/tmp/vcpkg"
-VCPKG_DEFAULT_TRIPLET="x64-linux-release"
 CMAKE_TOOLCHAIN_FILE="/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
 [tool.cibuildwheel.macos]
@@ -116,10 +116,9 @@ VCPKG_ROOT="/tmp/vcpkg"
 CMAKE_TOOLCHAIN_FILE="/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
 [tool.cibuildwheel.windows]
-test-command = ""
 
 [tool.cibuildwheel.windows.environment]
-VCPKG_DEFAULT_TRIPLET="x64-windows-static-md-release"
+SKBUILD_CMAKE_ARGS="-DVCPKG_TARGET_TRIPLET='x64-windows-static-md-release'"
 CMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
 [tool.ruff]
