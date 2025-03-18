@@ -40,6 +40,7 @@ int main(int argc, char **argv) {
   std::vector<std::string> files;
   bool send_files_over_wire = false;
   bool disable_ipc          = false;
+  bool unit_test_mode       = false;
   float font_scale          = 0;
   app.add_option("files", files, "List of files or directories to open")->check(CLI::ExistingPath);
   settings::cli_add_global_options(app);
@@ -49,6 +50,8 @@ int main(int argc, char **argv) {
       "Disable the server process which is used for interprocess-communication with python clients");
   app.add_flag("--remote-send", send_files_over_wire,
                "Test option to send file as array instead of the filename to the main process");
+  app.add_flag("--unit-test-mode", unit_test_mode,
+               "Developer test option to run Monochrome in unit test mode")->group("");
   std::string config_file       = settings::config_file_path();
   bool print_config             = false;
   CLI::Option *print_config_opt = nullptr;
@@ -100,7 +103,9 @@ int main(int argc, char **argv) {
     }
   }
 
-  open_main_window(font_scale);
+  if (!unit_test_mode) {
+    open_main_window(font_scale);
+  }
 
   // Close window on control-c
 #ifndef _WIN32
@@ -119,7 +124,23 @@ int main(int argc, char **argv) {
     }
   }
 
-  display_loop();
+  if (!unit_test_mode) {
+    display_loop();
+  } else {
+    auto start_time = std::chrono::system_clock::now();
+    // Run only the IPC server for Python unit tests
+    while (global::tcp_port != 0) {
+      auto cmd = global::get_remote_command();
+      if (cmd) {
+        start_time = std::chrono::system_clock::now();
+      }
+      if (std::chrono::duration<double>(std::chrono::system_clock::now() - start_time).count() > 60) {
+        fmt::print("ERROR: IPC server did not process any commands in the last 60 seconds, exiting!\n");
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+  }
 
   // Cleanup
   ipc::stop_server();

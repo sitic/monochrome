@@ -40,27 +40,6 @@ namespace global {
     Message(std::string msg);
   };
 
-  template <typename... Args>
-  inline void new_ui_message(const char *fmt, Args &&...args) {
-    const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
-    messages.emplace_back(msg);
-    std::string prefix("ERROR");
-    if (msg.compare(0, prefix.size(), prefix)) {
-      fmt::print(stderr, msg + "\n");
-    } else {
-      fmt::print(msg + "\n");
-    }
-  }
-
-  template <typename... Args>
-  inline void new_ui_message(const std::string &fmt, Args &&...args) {
-    return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
-  }
-
-  void add_file_to_load(const std::string &file);
-
-  std::optional<std::string> get_file_to_load();
-
   struct RawArray3MetaData {
     int nx = -1;
     int ny = -1;
@@ -86,9 +65,6 @@ namespace global {
   struct RemoteCommand {
     virtual ~RemoteCommand() = default;
   };
-  // Add command to the queue of commands to be executed by the main thread
-  void add_remote_command(std::shared_ptr<RemoteCommand> cmd);
-  std::optional<std::shared_ptr<RemoteCommand>> get_remote_command();
 
   struct LoadFileCommand : RemoteCommand {
     LoadFileCommand(const std::string &filename_) : filename(filename_) {}
@@ -156,12 +132,6 @@ namespace global {
     CloseVideoCommand(std::string recording_) : recording(recording_) {}
   };
 
-  // special case for file loading to allow for double-clicking files in the file browser
-  void add_file_to_load(const std::string &filename);
-
-  // Initiate shutdown of the application
-  void quit(int code = 0);
-
   class Subprocess {
     private:
       std::unique_ptr<subprocess::Popen> popen = nullptr;
@@ -189,5 +159,37 @@ namespace global {
      bool tick();
      bool is_running();
    };
+
+   template <typename... Args>
+   inline void new_ui_message(const char *fmt, Args &&...args) {
+     const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
+     messages.emplace_back(msg);
+     std::string prefix("ERROR");
+     if (msg.compare(0, prefix.size(), prefix)) {
+       fmt::print(stderr, msg + "\n");
+     } else {
+       fmt::print(msg + "\n");
+     }
+   }
+ 
+   template <typename... Args>
+   inline void new_ui_message(const std::string &fmt, Args &&...args) {
+     return new_ui_message(fmt.c_str(), std::forward<Args>(args)...);
+   }
+ 
+   void add_file_to_load(const std::string &file);
+ 
+   std::optional<std::string> get_file_to_load();
+ 
+   // Add command to the queue of commands to be executed by the main thread
+   void add_remote_command(std::shared_ptr<RemoteCommand> cmd);
+   std::optional<std::shared_ptr<RemoteCommand>> get_remote_command();
+   
+   // special case for file loading to allow for double-clicking files in the file browser
+   void add_file_to_load(const std::string &filename);
+
    void add_subprocess(subprocess::RunBuilder process, std::string title="", std::string msg="", std::function<void()> callback = std::function<void()>());
+ 
+   // Initiate shutdown of the application
+   void quit(int code = 0);
 }  // namespace global
