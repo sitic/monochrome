@@ -12,6 +12,8 @@ void gl_save_snapshot(std::string out_png_path, GLFWwindow *window = nullptr);
 
 void add_window_icon(GLFWwindow *window);
 
+GLuint load_icon_image();
+
 void glfw_error_callback(int error, const char *description);
 
 void checkGlError(std::string desc = "");

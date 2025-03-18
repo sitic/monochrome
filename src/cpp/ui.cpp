@@ -12,9 +12,14 @@
 #include "ui/recording.h"
 #include "ui/export.h"
 
-void show_about_window(bool* p_open) {
+namespace {
+  bool about_window_open = false;
+}
+
+void show_about_window() {
   auto flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar;
-  if (ImGui::Begin("About Monochrome", p_open, flags)) {
+  ImGui::SetNextWindowSizeConstraints(ImVec2(2 * ImGui::GetContentRegionAvail().x / 3, 0), ImVec2(FLT_MAX, FLT_MAX));
+  if (ImGui::Begin("About Monochrome", &about_window_open, flags)) {
     auto get_readme = []() -> std::string {
       auto readme = utils::get_rc_text_file("README.md");
       // If line starts with an image ("[!" or "![") remove it
@@ -22,7 +27,7 @@ void show_about_window(bool* p_open) {
       std::string line;
       std::string result;
       while (std::getline(ss, line)) {
-        if (!(line.size() >= 2 && line.substr(0, 2) == "[!" || 
+        if (!(line.size() >= 2 && line.substr(0, 2) == "[!" ||
               line.size() >= 2 && line.substr(0, 2) == "![")) {
           result += line + "\n";
         }
@@ -37,8 +42,11 @@ void show_about_window(bool* p_open) {
     ImGui::TextUnformatted("Contact:");
     ImGui::SameLine();
     ImGui::TextLinkOpenURL("mail@janlebert.com", "mailto:mail@janlebert.com");
+    ImGui::TextUnformatted("Website:");
+    ImGui::SameLine();
+    ImGui::TextLinkOpenURL("https://github.com/sitic/monochrome");
 
-    static std::string readme = get_readme();    
+    static std::string readme = get_readme();
     static ImGuiConnector::markdown md;
     md.print(readme.data(), readme.data() + readme.size());
   }
@@ -82,19 +90,18 @@ void show_display_settings() {
   ImGui::SetNextItemWidth(100);
   if (ImGui::InputInt("Hz##dfps", &max_display_fps, 10, 30)) {
     if (max_display_fps > 0) {
-    prm::display_fps = max_display_fps;
-    prm::lastframetime = glfwGetTime();
+      prm::display_fps   = max_display_fps;
+      prm::lastframetime = glfwGetTime();
     }
   }
-  if (ImGui::IsItemHovered())
-    ImGui::SetTooltip("Set the maximum frame rate for video display");
-  
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set the maximum frame rate for video display");
+
   ImGui::SameLine();
   if (ImGui::Button("Reset##fps_reset")) {
-    prm::display_fps = 60;
+    prm::display_fps   = 60;
     prm::lastframetime = glfwGetTime();
   }
-  
+
   ImGui::Indent(pos_x);
   ImGui::Text("Current: %.1f FPS", ImGui::GetIO().Framerate);
   ImGui::Unindent(pos_x);
@@ -109,8 +116,6 @@ void show_display_settings() {
 }
 
 void show_main_imgui_window_menubar() {
-  static bool show_about = false;
-  
   if (ImGui::BeginMenuBar()) {
     if (ImGui::BeginMenu("File")) {
       if (ImGui::MenuItem("Open File", "Ctrl+O")) {
@@ -122,19 +127,19 @@ void show_main_imgui_window_menubar() {
 
       if (ImGui::BeginMenu("Recent Files")) {
         auto recent_files = settings::get_recent_files();
-        bool no_recent = recent_files.empty();
+        bool no_recent    = recent_files.empty();
         if (no_recent) {
           ImGui::MenuItem("(No recent files)", nullptr, false, false);
         } else {
           for (const auto& file_path : recent_files) {
-            std::string filename = file_path.filename().string();
+            std::string filename   = file_path.filename().string();
             std::string menu_label = filename;
-            
+
             // Truncate very long filenames for display
             if (menu_label.length() > 40) {
               menu_label = menu_label.substr(0, 37) + "...";
             }
-            
+
             if (ImGui::MenuItem(menu_label.c_str())) {
               global::add_file_to_load(file_path.string());
             }
@@ -173,13 +178,13 @@ void show_main_imgui_window_menubar() {
         ImGui::EndMenu();
       }
       if (ImGui::MenuItem("About")) {
-        show_about = !show_about;
+        about_window_open = !about_window_open;
       }
       ImGui::EndMenu();
     }
     ImGui::EndMenuBar();
   }
-  if (show_about) show_about_window(&show_about);
+  if (about_window_open) show_about_window();
 }
 
 void show_main_imgui_window() {
@@ -208,19 +213,94 @@ void show_main_imgui_window() {
     ImGui::Separator();
     ImGui::PopStyleColor();
     ImGui::Spacing();
-    ImGui::SeparatorText("Media");
   }
 
-  if (prm::recordings.empty()) {
-    ImGui::Text("Drag and drop a file here to load it.");
-    ImGui::Text("Or use the python library to load a video or image.");
-  } else {
-    for (const auto &rec : prm::recordings) {
+  if (!prm::recordings.empty()) {
+    ImGui::SeparatorText("Media");
+    for (const auto& rec : prm::recordings) {
       if (rec->active) rec->display();
       show_recording_ui(rec);
       show_export_recording_ui(rec);
       ImGui::Spacing();
     }
+  } else {
+    ImGui::BeginChild("Description", ImVec2(100*4, 0));
+    ImGui::PushFont(ImGuiConnector::font_regular_large);
+    static auto image_tex = load_icon_image();
+    // auto image_width = ImGui::CalcTextSize("Drag and drop a file or image folder to load it.").x / 4.f;
+    auto image_width = 60;
+    // fmt::print("image_width: {}\n", image_width);
+    ImGui::Image(image_tex, ImVec2(4 * image_width, image_width));
+    ImGui::Spacing();
+    ImGui::TextWrapped("Monochrome is a lightweight and fast viewer for scientific imaging and video data with a focus on monochromatic data.");
+    ImGui::Spacing();
+
+    {
+      ImGui::Spacing();
+      ImGui::Spacing();
+      ImGui::PushFont(ImGuiConnector::font_bold_large);
+      ImGui::Text("Start");
+      ImGui::PopFont();
+      ImGui::Spacing();
+
+      ImGui::TextUnformatted(u8" – ");
+      ImGui::SameLine();
+      if (ImGui::Selectable(ICON_FA_FILE_IMPORT " Open Image/Video File")) {
+        utils::load_file_filepicker();
+      }
+
+      ImGui::TextUnformatted(u8" – ");
+      ImGui::SameLine();
+      if (ImGui::Selectable(ICON_FA_FOLDER_OPEN " Open Image Folder")) {
+        utils::load_folder_filepicker();
+      }
+
+      ImGui::TextUnformatted(u8" – ");
+      ImGui::SameLine();
+      ImGui::TextUnformatted(ICON_FA_ANCHOR " Drag & Drop Files/Folders");
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Drag and drop files or image folders into this window to load them");
+      }
+
+      ImGui::TextUnformatted(u8" – ");
+      ImGui::SameLine();
+      if (ImGui::Selectable(ICON_FA_ROCKET " Open Documentation")) {
+        about_window_open = !about_window_open;
+      }
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    {
+      ImGui::PushFont(ImGuiConnector::font_bold_large);
+      ImGui::Text("Recent Files");
+      ImGui::PopFont();
+      ImGui::Spacing();
+      auto recent_files = settings::get_recent_files();
+      if (recent_files.empty()) {
+        ImGui::TextUnformatted(u8" – ");
+        ImGui::SameLine();
+        ImGui::TextUnformatted("(No recent files)");
+      }
+      for (const auto& file_path : recent_files) {
+        std::string filename   = file_path.filename().string();
+        std::string menu_label = filename;
+        if (menu_label.length() > 40) {
+          menu_label = menu_label.substr(0, 37) + "...";
+        }
+        ImGui::TextUnformatted(u8" – ");
+        ImGui::SameLine();
+        if (ImGui::Selectable(menu_label.c_str())) {
+          global::add_file_to_load(file_path.string());
+        }
+        if (ImGui::IsItemHovered()) {
+          ImGui::SetTooltip("%s", file_path.string().c_str());
+        }
+      }
+    }
+    ImGui::PopFont();
+    ImGui::EndChild();
   }
   ImGui::EndChild();
 

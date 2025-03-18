@@ -125,7 +125,6 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
         {".ndpi", "load_tiff.py"}, // Hamamatsu Slide Scanner
         {".stk", "load_tiff.py"},
         {".qptiff", "load_tiff.py"},  // Perkin Elmer Vectra
-        // TODO: https://github.com/cgohlke/liffile
         {".mat", "load_mat.py"},
         {".png", "load_image.py"},
         {".jpg", "load_image.py"},

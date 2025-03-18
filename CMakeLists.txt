@@ -99,6 +99,7 @@ cmrc_add_resource_library(monochrome-resources
                           ${SHADERS}
                           ${MC_FILELOADERS}
                           "assets/Monochrome_256x256.png"
+                          "assets/logo_with_name.png"
                           "assets/install_uv_unix.sh"
                           "README.md"
                           "vendor/fonts/NotoSansDisplay-Regular.ttf"

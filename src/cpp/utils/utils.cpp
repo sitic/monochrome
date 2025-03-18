@@ -38,6 +38,29 @@ void gl_save_snapshot(std::string out_png_path, GLFWwindow* window) {
   glfwMakeContextCurrent(prev_context);
 }
 
+GLuint load_icon_image() {
+  auto fs       = cmrc::rc::get_filesystem();
+  auto icondata = fs.open("assets/logo_with_name.png");
+  unsigned image_width, image_height;
+  std::vector<unsigned char> image_data;
+  auto error = lodepng::decode(image_data, image_width, image_height,
+                               std::vector<unsigned char>(icondata.begin(), icondata.end()));
+  if (error) {
+    fmt::print("lodepng error {}: {}\n", error, lodepng_error_text(error));
+    return -1;
+  }
+
+  GLuint image_texture;
+  glGenTextures(1, &image_texture);
+  glBindTexture(GL_TEXTURE_2D, image_texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data.data());
+
+  return image_texture;
+}
+
 void add_window_icon(GLFWwindow* window) {
   auto fs       = cmrc::rc::get_filesystem();
   auto icondata = fs.open("assets/Monochrome_256x256.png");
