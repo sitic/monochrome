@@ -84,6 +84,7 @@ def start_monochrome(speed: Optional[float] = None,
         cmd = ["open", "-a", str(MONOCHROME_BIN_PATH), "--args", ] + args
     else:
         cmd = [str(MONOCHROME_BIN_PATH), ] + args
+    print(f"Starting Monochrome with command: {cmd} on socket {repr(SOCK_PATH)}")
     subprocess.Popen(cmd, start_new_session=True)
 
 

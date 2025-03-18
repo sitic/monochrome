@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
     display_loop();
   } else {
     auto start_time = std::chrono::system_clock::now();
-    // Run only the IPC server for Python unit tests
+    fmt::print("Running in unit test mode, only the IPC server is running!\n");
     while (global::tcp_port != 0) {
       auto cmd = global::get_remote_command();
       if (cmd) {
