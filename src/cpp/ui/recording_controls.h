@@ -65,11 +65,22 @@ void show_export_ui(const SharedRecordingPtr &rec) {
     ctrl.assign_auto_filename(rec->file());
   }
   if (ImGui::Button(longest_button_title, ImVec2(button_width, 0))) {
-    auto &ctrl         = rec->export_ctrl.video;
-    ctrl.export_window = true;
-    ctrl.assign_auto_filename(rec->file());
-    ctrl.tend        = rec->length();
-    ctrl.description = rec->comment();
+    if (!VideoRecorder::test_ffmpeg() && utils::get_uv_executable() == "uv-placeholder") {
+      // No ffmpeg or uv installed. Need to install uv first
+      auto builder = subprocess::RunBuilder({utils::get_uv_executable(), "tool", "run", "--from",
+                                             "static-ffmpeg", "static_ffmpeg_paths"});
+      std::string title = "Downloading ffmpeg...";
+      std::string msg =
+          "FFmpeg is required to export videos, Monochrome is downloading it now.\n\nPlease click "
+          "export video again after the download is complete.";
+      global::add_subprocess(builder, title, msg);
+    } else {
+      auto &ctrl         = rec->export_ctrl.video;
+      ctrl.export_window = true;
+      ctrl.assign_auto_filename(rec->file());
+      ctrl.tend        = rec->length();
+      ctrl.description = rec->comment();
+    }
   }
   if (rec->length() > 1 && ImGui::Button(ICON_FA_FILE_EXPORT u8" " ICON_FA_IMAGES u8"   Export as image sequence", ImVec2(button_width, 0))) {
     auto &ctrl         = rec->export_ctrl.png;

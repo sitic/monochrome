@@ -12,6 +12,7 @@
 #include <fmt/format.h>
 
 #include "utils/utils.h"
+#include "utils/files.h"
 
 class VideoRecorder {
 
@@ -37,6 +38,14 @@ class VideoRecorder {
     }
   }
 
+ public:
+  std::string videotitle = "";
+  static std::string ffmpeg_path;
+
+  VideoRecorder() = default;
+
+  ~VideoRecorder() { stop_recording(); }
+
 #ifdef _WIN32
   static bool test_ffmpeg() {
     std::string cmd   = fmt::format("\"{ffmpeg_exe}\" -version", fmt::arg("ffmpeg_exe", ffmpeg_path));
@@ -61,14 +70,6 @@ class VideoRecorder {
   }
 #endif
 
- public:
-  std::string videotitle = "";
-  static std::string ffmpeg_path;
-
-  VideoRecorder() = default;
-
-  ~VideoRecorder() { stop_recording(); }
-
   bool start_recording(const std::string &filename,
                        GLFWwindow *window      = nullptr,
                        int fps                 = 30,
@@ -81,9 +82,7 @@ class VideoRecorder {
     }
 
     if (!test_ffmpeg()) {
-      global::new_ui_message(
-          "ERROR: Unable to find ffmpeg, please install it to create a .mp4 file.");
-      return false;
+      ffmpeg_path = fmt::format("{} tool run --from static-ffmpeg static_ffmpeg", utils::get_uv_executable());
     }
 
     fmt::print("Starting to record movie\n");
