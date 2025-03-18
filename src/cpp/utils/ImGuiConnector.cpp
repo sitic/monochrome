@@ -36,10 +36,11 @@ namespace ImGuiConnector {
   GLFWkeyfun user_key_fun       = nullptr;
   GLFWscrollfun user_scroll_fun = nullptr;
 
-  ImFont* font_regular    = nullptr;
-  ImFont* font_bold       = nullptr;
-  ImFont* font_bold_large = nullptr;
-  ImFont* font_code       = nullptr;
+  ImFont* font_regular       = nullptr;
+  ImFont* font_regular_large = nullptr;
+  ImFont* font_bold          = nullptr;
+  ImFont* font_bold_large    = nullptr;
+  ImFont* font_code          = nullptr;
 
   void Init(GLFWwindow* window,
             GLFWmonitor* primary_monitor,
@@ -132,7 +133,7 @@ namespace ImGuiConnector {
     // literal you need to write a double backslash \\ !
     //io.Fonts->AddFontDefault();
     ImFontGlyphRangesBuilder builder;
-    builder.AddText(u8"σπ—");
+    builder.AddText(u8"–σπ—");
     builder.AddRanges(io->Fonts->GetGlyphRangesDefault());
     static ImVector<ImWchar> ranges;
     builder.BuildRanges(&ranges);
@@ -143,27 +144,32 @@ namespace ImGuiConnector {
     //font_config.PixelSnapH = true;
     font_config.FontDataOwnedByAtlas = false;
 
-    // float font_size_regular = std::ceil(14.f * font_scale);
-    // float font_size_large   = std::ceil(18.f * font_scale);
-    // float font_size_icon    = std::ceil(11.f * font_scale);
-    float font_size_regular = 16.f * font_scale;
-    float font_size_large   = 18.f * font_scale;
-    float font_size_icon    = 12.5f * font_scale;
-    font_regular =
-        get_imgui_font("NotoSansDisplay-Regular.ttf", font_size_regular, &font_config, ranges.Data);
-
     ImFontConfig icons_config;
     icons_config.MergeMode                          = true;
     icons_config.PixelSnapH                         = true;
     static const ImWchar fontawesome_icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI, ICON_MAX_MDI, 0};
+
+    float font_size_regular    = 16.f * font_scale;
+    float font_size_large      = 18.f * font_scale;
+    float font_size_icon       = 12.5f * font_scale;
+    float font_size_icon_large = 14.f * font_scale;
+    font_regular =
+        get_imgui_font("NotoSansDisplay-Regular.ttf", font_size_regular, &font_config, ranges.Data);
     io->Fonts->AddFontFromMemoryCompressedTTF(
         fonts::fontawesome5_solid_compressed_data, fonts::fontawesome5_solid_compressed_size,
         font_size_icon, &icons_config, fontawesome_icons_ranges);
-    static const ImWchar materialdesignicons_icons_ranges[] = {ICON_MIN_MDI, ICON_MAX_MDI, 0};
     io->Fonts->AddFontFromMemoryCompressedTTF(
         fonts::materialdesignicons_compressed_data, fonts::materialdesignicons_compressed_size,
         font_size_icon, &icons_config, materialdesignicons_icons_ranges);
-
+    font_regular_large =
+        get_imgui_font("NotoSansDisplay-Regular.ttf", font_size_large, &font_config, ranges.Data);
+        io->Fonts->AddFontFromMemoryCompressedTTF(
+          fonts::fontawesome5_solid_compressed_data, fonts::fontawesome5_solid_compressed_size,
+          font_size_icon_large, &icons_config, fontawesome_icons_ranges);
+      io->Fonts->AddFontFromMemoryCompressedTTF(
+          fonts::materialdesignicons_compressed_data, fonts::materialdesignicons_compressed_size,
+          font_size_icon_large, &icons_config, materialdesignicons_icons_ranges);
     font_bold =
         get_imgui_font("NotoSansDisplay-Bold.ttf", font_size_regular, &font_config, ranges.Data);
     font_bold_large =

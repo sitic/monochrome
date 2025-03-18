@@ -8,6 +8,7 @@ namespace ImGuiConnector {
   extern GLFWscrollfun user_scroll_fun;
 
   extern ImFont *font_regular;
+  extern ImFont *font_regular_large;
   extern ImFont *font_bold;
   extern ImFont *font_bold_large;
   extern ImFont *font_code;
