@@ -145,6 +145,7 @@ set(SOURCES
     src/cpp/fileformats/BmpFileParser.h
     src/cpp/fileformats/InMemoryFile.h
     src/cpp/fileformats/RawFile.h
+    src/cpp/fileformats/SplitFile.h
     src/cpp/utils/colormap.cpp
     src/cpp/utils/colormap.h
     src/cpp/utils/definitions.h
