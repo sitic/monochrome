@@ -88,6 +88,18 @@ class RecordingWindow : public Recording {
 
   virtual void colormap(ColorMap cmap);
   ColorMap colormap() const { return cmap_; }
+  void clear_color(const ImVec4 &color) {
+    if (glcontext != window) return;
+
+    auto w = clear_color_.w;
+    clear_color_ = color;
+    clear_color_.w = w;
+    auto prev_context = glfwGetCurrentContext();
+    glfwMakeContextCurrent(window);
+    glClearColor(color.x, color.y, color.z, color.w);
+    glfwMakeContextCurrent(prev_context);
+  }
+  ImVec4 clear_color() const { return clear_color_; }
 
   void set_name(const std::string &new_name) override;
   void resize_window();
@@ -125,6 +137,7 @@ class RecordingWindow : public Recording {
   Transformations transformation                      = Transformations::None;
   std::shared_ptr<Transformation::Base> transform_ptr = nullptr;
 
+  ImVec4 clear_color_  = {1.f, 1.f, 1.f, 0.f};
   ColorMap cmap_      = ColorMap::GRAY;
   GLuint texture      = GL_FALSE;
   GLuint ctexture     = GL_FALSE;
