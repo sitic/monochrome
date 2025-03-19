@@ -112,7 +112,7 @@ class RecordingWindow : public Recording {
  protected:
   void rotation_was_changed();
   virtual void update_gl_texture();
-  void clear_gl_memory();
+  virtual void clear_gl_memory();
 
   Vec2d mousepos;
   struct {

@@ -214,7 +214,6 @@ namespace {
     std::string script = utils::get_rc_text_file("src/python/embedded_plugins/" + script_name);
 #ifdef MONOCHROME_PLUGIN_WHL
     auto req_str = fmt::format("\"monochrome @ {}\",", MONOCHROME_PLUGIN_WHL);
-    fmt::print("req_str: {}\n", req_str);
 #else
     auto req_str = fmt::format("\"monochrome=={}\",", MONOCHROME_VERSION);
 #endif

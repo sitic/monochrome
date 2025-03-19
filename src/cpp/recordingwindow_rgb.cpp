@@ -10,7 +10,9 @@ void RGBRecordingWindow::set_context(GLFWwindow *new_context) {
   frame_shader = Shader::create(utils::get_rc_text_file("src/shaders/frame.vert.glsl"),
                                 utils::get_rc_text_file("src/shaders/frame_rgb.frag.glsl"));
   frame_shader.use();
-  frame_shader.setInt("texture0", 0);
+  frame_shader.setInt("texture_r", 0);
+  frame_shader.setInt("texture_g", 1);
+  frame_shader.setInt("texture_b", 2);
   frame_shader.setFloat("norm", 1);
   checkGlError("init");
   glfwMakeContextCurrent(prev_window);
@@ -45,30 +47,15 @@ void RGBRecordingWindow::display() {
     norm           = max;
   }
   frame_shader.setFloat("norm", norm);
-  // Option 1: Continue using separate textures
-  // glActiveTexture(GL_TEXTURE0);
-  // glBindTexture(GL_TEXTURE_2D, texture);
-  // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, r_channel.data());
-  // glActiveTexture(GL_TEXTURE1);
-  // glBindTexture(GL_TEXTURE_2D, ctexture);
-  // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, g_channel.data());
-  // glActiveTexture(GL_TEXTURE2);
-  // glBindTexture(GL_TEXTURE_2D, ctexturediff);
-  // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, b_channel.data());
-
-  // Option 2: Create a combined RGB texture
-  const int numPixels = Nx() * Ny();
-  std::vector<float> rgbData(numPixels * 3);
-
-  // Interleave the RGB data
-  for (int i = 0; i < numPixels; i++) {
-    rgbData[i * 3]     = r_channel.data()[i];  // R
-    rgbData[i * 3 + 1] = g_channel.data()[i];  // G
-    rgbData[i * 3 + 2] = b_channel.data()[i];  // B
-  }
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RGB, GL_FLOAT, rgbData.data());
+  glBindTexture(GL_TEXTURE_2D, textures_rgb[0]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, r_channel.data());
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, textures_rgb[1]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, g_channel.data());
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, textures_rgb[2]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, b_channel.data());
 
   // Draw the frame
   glBindVertexArray(frame_vao);
@@ -160,16 +147,31 @@ void RGBRecordingWindow::update_gl_texture() {
   if (!glcontext) return;
   auto *prev_window = glfwGetCurrentContext();
   glfwMakeContextCurrent(glcontext);
-  if (texture) {
-    glDeleteTextures(1, &texture);
+  if (textures_rgb[0]) {
+    glDeleteTextures(3, textures_rgb.data());
   }
+  glGenTextures(3, textures_rgb.data());
 
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, Nx(), Ny(), 0, GL_RGB, GL_FLOAT, nullptr);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // GL_LINEAR
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // GL_LINEAR
+  for (auto tex : textures_rgb) {
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, Nx(), Ny(), 0, GL_RED, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // GL_LINEAR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // GL_LINEAR
+  }
+  RecordingWindow::update_gl_texture();
+  glfwMakeContextCurrent(prev_window);
+}
+
+void RGBRecordingWindow::clear_gl_memory() {
+  if (!glcontext) return;
+  auto *prev_window = glfwGetCurrentContext();
+  glfwMakeContextCurrent(glcontext);
+  if (textures_rgb[0]) {
+    glDeleteTextures(3, textures_rgb.data());
+    textures_rgb = {GL_FALSE, GL_FALSE, GL_FALSE};
+  }
+  RecordingWindow::clear_gl_memory();
   glfwMakeContextCurrent(prev_window);
 }

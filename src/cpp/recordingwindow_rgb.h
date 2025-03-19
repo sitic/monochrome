@@ -19,6 +19,9 @@ class RGBRecordingWindow : public RecordingWindow {
 
  private:
   void update_gl_texture() override;
+  void clear_gl_memory() override;
+
+  std::array<GLuint, 3> textures_rgb = {GL_FALSE, GL_FALSE, GL_FALSE};
 };
 
 inline bool is_rgb_rec(SharedRecordingPtr rec) {
