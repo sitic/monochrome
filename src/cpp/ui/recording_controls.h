@@ -2,6 +2,7 @@
 
 #include "fonts/IconsFontAwesome5.h"
 #include "prm.h"
+#include "fileformats/SplitFile.h"
 
 void display_recording_metadata(const SharedRecordingPtr &rec) {
   if (!rec->date().empty()) ImGui::TextWrapped("Date: %s", rec->date().c_str());
@@ -221,6 +222,18 @@ void show_controls_ui(const SharedRecordingPtr &rec, RecordingWindow *parent) {
     }
   }
 
+  if (!parent && rec->length() > 1 && rec->length() < 15) {
+    if (ImGui::Button("Convert Frames into Image Layers", ImVec2(text_item_size.x, 0))) {
+      rec->playback = RecordingPlaybackCtrl(1);
+      for (int t = 1; t < rec->length(); t++) {
+        auto new_file = std::make_shared<SplitFile>(rec->file(), t);
+        auto new_rec  = std::make_shared<RecordingWindow>(new_file);
+        prm::merge_queue.emplace(new_rec, rec);
+      }
+      auto new_file = std::make_shared<SplitFile>(rec->file(), 0);
+      rec->file(new_file);
+    }
+  }
 
   if (!parent && prm::recordings.size() > 1) {
     if (ImGui::Button(u8"Add as layer onto other recording " ICON_FA_LAYER_GROUP, ImVec2(text_item_size.x, 0)))

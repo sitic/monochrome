@@ -18,6 +18,10 @@ std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
   }
   return {t, tf};
 }
+RecordingPlaybackCtrl &RecordingPlaybackCtrl::operator=(RecordingPlaybackCtrl &&other) {
+  synchronize_with(other, false);
+  return *this;
+}
 RecordingPlaybackCtrl &RecordingPlaybackCtrl::operator=(const RecordingPlaybackCtrl &other) {
   synchronize_with(other, true);
   return *this;

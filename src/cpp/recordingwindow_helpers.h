@@ -42,6 +42,7 @@ class RecordingPlaybackCtrl {
 
  public:
   RecordingPlaybackCtrl(int length) : length_(length) {}
+  RecordingPlaybackCtrl &operator=(RecordingPlaybackCtrl &&other);
   // Copies the current playback position
   RecordingPlaybackCtrl &operator=(const RecordingPlaybackCtrl &other);
   void synchronize_with(const RecordingPlaybackCtrl &other, bool warn = true);
