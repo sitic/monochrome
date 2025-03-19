@@ -57,7 +57,7 @@ void show_display_settings() {
   auto pos_x = ImGui::CalcTextSize("Display Frame Rate").x + 2 * ImGui::GetStyle().ItemSpacing.x;
 
   ImGui::AlignTextToFramePadding();
-  ImGui::Text("Video Rotation");
+  ImGui::Text("Media Rotation");
   ImGui::SameLine(pos_x);
   if (ImGui::Button(ICON_MDI_ROTATE_LEFT)) RecordingWindow::add_rotation(-90);
   ImGui::SameLine();
@@ -67,7 +67,7 @@ void show_display_settings() {
 
 
   ImGui::AlignTextToFramePadding();
-  ImGui::Text("Video Flip");
+  ImGui::Text("Media Image Flip");
   ImGui::SameLine(pos_x);
   if (ImGui::Button(ICON_MDI_FLIP_VERTICAL)) RecordingWindow::flip_ud();
   ImGui::SameLine();
@@ -224,12 +224,10 @@ void show_main_imgui_window() {
       ImGui::Spacing();
     }
   } else {
-    ImGui::BeginChild("Description", ImVec2(100*4, 0));
+    ImGui::BeginChild("Description", ImVec2(400, 0));
     ImGui::PushFont(ImGuiConnector::font_regular_large);
     static auto image_tex = load_icon_image();
-    // auto image_width = ImGui::CalcTextSize("Drag and drop a file or image folder to load it.").x / 4.f;
-    auto image_width = 60;
-    // fmt::print("image_width: {}\n", image_width);
+    auto image_width = 80;
     ImGui::Image(image_tex, ImVec2(4 * image_width, image_width));
     ImGui::Spacing();
     ImGui::TextWrapped("Monochrome is a lightweight and fast viewer for scientific imaging and video data with a focus on monochromatic data.");
@@ -239,7 +237,7 @@ void show_main_imgui_window() {
       ImGui::Spacing();
       ImGui::Spacing();
       ImGui::PushFont(ImGuiConnector::font_bold_large);
-      ImGui::Text("Start");
+      ImGui::SeparatorText("Start");
       ImGui::PopFont();
       ImGui::Spacing();
 
@@ -274,7 +272,7 @@ void show_main_imgui_window() {
 
     {
       ImGui::PushFont(ImGuiConnector::font_bold_large);
-      ImGui::Text("Recent Files");
+      ImGui::SeparatorText("Recent Files");
       ImGui::PopFont();
       ImGui::Spacing();
       auto recent_files = settings::get_recent_files();
