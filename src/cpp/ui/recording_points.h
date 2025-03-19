@@ -1,6 +1,9 @@
 void show_flow_ui(const SharedRecordingPtr &rec) {
+  ImGui::SeparatorText("Global Settings");
   ImGui::SliderInt("Points skip", &FlowData::skip, 1, 25);
   ImGui::SliderFloat("Point size", &FlowData::pointsize, 0, 10);
+  ImGui::Spacing();
+  ImGui::SeparatorText("Individual Settings");
   for (auto &flow : rec->flows) {
     ImGui::PushID(flow.data.get());
 
@@ -10,14 +13,14 @@ void show_flow_ui(const SharedRecordingPtr &rec) {
       if (ImGui::InputText("Name", &flow_name)) {
         flow.data->set_name(flow_name);
       }
+      ImGui::ColorEdit4("Color", flow.color.data());
       if (flow.show)
-        flow.show = !ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH);
+        flow.show = !ImGui::Button(u8"Hide " ICON_FA_EYE_SLASH, ImVec2(ImGui::GetItemRectSize().x, 0));
       else
-        flow.show = ImGui::Button(u8"Show " ICON_FA_EYE);
-      if (ImGui::Button(u8"Close " ICON_FA_TRASH_ALT)) {
+        flow.show = ImGui::Button(u8"Show " ICON_FA_EYE, ImVec2(ImGui::GetItemRectSize().x, 0));
+      if (ImGui::Button(u8"Close " ICON_FA_TRASH_ALT, ImVec2(ImGui::GetItemRectSize().x, 0))) {
         flow.data = nullptr;
       }
-      ImGui::ColorEdit4("Color", flow.color.data());
 
       ImGui::TreePop();
     }

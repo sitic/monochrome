@@ -1,8 +1,9 @@
 #pragma once
 
+#include <algorithm>
+
 #include "AbstractFile.h"
 #include "globals.h"
-#include <algorithm>
 
 class InMemoryFile : public AbstractFile {
   bool _good = false;

@@ -86,6 +86,9 @@ void RGBRecordingWindow::display() {
     auto nx = flow.data->Nx(), ny = flow.data->Ny();
     // get flow signs based on current rotation and flip
     auto [signx, signy] = rotations.flow_signs();
+    if (FlowData::skip == 0) {
+      FlowData::skip = Nx() / 50;
+    }
     for (int x = FlowData::skip / 2; x < nx; x += FlowData::skip) {
       for (int y = FlowData::skip / 2; y < ny; y += FlowData::skip) {
         // calculate screen position of the pixel center

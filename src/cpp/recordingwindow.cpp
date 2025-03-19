@@ -383,6 +383,9 @@ void RecordingWindow::display() {
     auto nx = flow.data->Nx(), ny = flow.data->Ny();
     // get flow signs based on current rotation and flip
     auto [signx, signy] = rotations.flow_signs();
+    if (FlowData::skip == 0) {
+      FlowData::skip = Nx() / 50;
+    }
     for (int x = FlowData::skip / 2; x < nx; x += FlowData::skip) {
       for (int y = FlowData::skip / 2; y < ny; y += FlowData::skip) {
         // calculate screen position of the pixel center
@@ -624,20 +627,22 @@ void RecordingWindow::rotation_was_changed() {
 }
 
 void RecordingWindow::add_flow(std::shared_ptr<Recording> flow) {
-  auto inmemory = dynamic_cast<InMemoryFile *>(flow->file().get());
-  if (inmemory) {
-    auto color = inmemory->color();
-    if (color.has_value()) {
-      flows.emplace_back(flow, color.value());
-      return;
-    }
+  std::optional<Vec4f> color;
+  if (auto inmemory = dynamic_cast<InMemoryFile *>(flow->file().get())) {
+    color = inmemory->color();
   }
 
-  if (flow->length() >= 2 * length())
-    flows.emplace_back(flow, flows.size());
-  else
-    global::new_ui_message("Failed to add '{}' as flow to '{}' because length does not match",
-                           flow->name(), name());
+  if (flow->length() == length()) {
+    if (color.has_value()) {
+      flows.emplace_back(flow, color.value());
+    } else {
+      flows.emplace_back(flow, flows.size());
+    }
+  } else {
+    global::new_ui_message(
+        "Failed to add '{}' as flow to '{}' because length does not match: {} vs {}", flow->name(),
+        name(), flow->length(), length());
+  }
 }
 
 void RecordingWindow::add_points_video(std::shared_ptr<global::PointsVideo> pv) {
