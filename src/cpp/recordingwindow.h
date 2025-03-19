@@ -100,6 +100,12 @@ class RecordingWindow : public Recording {
     glfwMakeContextCurrent(prev_context);
   }
   ImVec4 clear_color() const { return clear_color_; }
+  void fixed_color(const Vec3f &color) {
+    fixed_color_ = color;
+    colormap(cmap_);
+  }
+  Vec3f fixed_color() const { return fixed_color_; }
+
 
   void set_name(const std::string &new_name) override;
   void resize_window();
@@ -139,6 +145,7 @@ class RecordingWindow : public Recording {
 
   ImVec4 clear_color_  = {1.f, 1.f, 1.f, 0.f};
   ColorMap cmap_      = ColorMap::GRAY;
+  Vec3f fixed_color_   = {1.f, 0.f, 0.f};
   GLuint texture      = GL_FALSE;
   GLuint ctexture     = GL_FALSE;
   GLuint ctexturediff = GL_FALSE;

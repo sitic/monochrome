@@ -50,6 +50,21 @@ std::array<float, 3 * 256> get_colormapdata(ColorMap cmap) {
   }
 }
 
+Vec3f get_color(ColorMap cmap) {
+  switch (cmap) {
+    case ColorMap::SOLID:
+      return Vec3f{1.f, 1.f, 1.f};
+    case ColorMap::RED:
+      return Vec3f{1.f, 0.f, 0.f};
+    case ColorMap::GREEN:
+      return Vec3f{0.f, 1.f, 0.f};
+    case ColorMap::BLUE:
+      return Vec3f{0.f, 0.f, 1.f};
+    default:
+      throw std::logic_error("Unkown colormap!");
+  }
+}
+
 /*
  * Implementation
  */

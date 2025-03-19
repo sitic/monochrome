@@ -395,12 +395,17 @@ void open_main_window(float font_scale = 0) {
   int num_cmaps = sizeof(ColorMapsNames) / sizeof(ColorMapsNames[0]);
   for (int i = 0; i < num_cmaps; i++) {
     ColorMap cmap = static_cast<ColorMap>(i);
+    if (cmap == ColorMap::SOLID) continue;  // skip custom solid color map
     GLuint tex = GL_FALSE;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
-    auto cdata = get_colormapdata(cmap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, cdata.size() / 3, 1, 0, GL_RGB, GL_FLOAT,
-                 cdata.data());
+    if (is_solid_colormap(cmap)) {
+      auto color = get_color(cmap);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 1, 1, 0, GL_RGB, GL_FLOAT, color.data());
+    } else {
+      auto cdata = get_colormapdata(cmap);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, cdata.size() / 3, 1, 0, GL_RGB, GL_FLOAT, cdata.data());
+    }
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // GL_LINEAR
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // GL_LINEAR

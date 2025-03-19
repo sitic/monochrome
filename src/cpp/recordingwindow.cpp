@@ -237,8 +237,13 @@ void RecordingWindow::colormap(ColorMap cmap) {
   cmap_ = cmap;
   glGenTextures(1, &ctexture);
   glBindTexture(GL_TEXTURE_1D, ctexture);
-  auto cdata = get_colormapdata(cmap);
-  glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, cdata.size() / 3, 0, GL_RGB, GL_FLOAT, cdata.data());
+  if (is_solid_colormap(cmap)) {
+    Vec3f color = (cmap == ColorMap::SOLID) ? fixed_color_ : get_color(cmap);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, 1, 0, GL_RGB, GL_FLOAT, color.data());
+  } else {
+    auto cdata = get_colormapdata(cmap);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, cdata.size() / 3, 0, GL_RGB, GL_FLOAT, cdata.data());
+  }
   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // GL_LINEAR
   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // GL_LINEAR
@@ -320,7 +325,11 @@ void RecordingWindow::display() {
 
   frame_shader.use();
   frame_shader.setVec2("minmax", get_min(), get_max());
-  frame_shader.setInt("opacity_function", static_cast<int>(opacity));
+  if (is_solid_colormap(cmap_)) {
+    frame_shader.setInt("opacity_function", static_cast<int>(OpacityFunction::LINEAR));
+  } else {
+    frame_shader.setInt("opacity_function", static_cast<int>(opacity));
+  }
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Nx(), Ny(), GL_RED, GL_FLOAT, arr->data());
