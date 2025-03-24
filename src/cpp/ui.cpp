@@ -132,6 +132,7 @@ void show_main_imgui_window_menubar() {
           ImGui::MenuItem("(No recent files)", nullptr, false, false);
         } else {
           for (const auto& file_path : recent_files) {
+            ImGui::PushID(file_path.string().c_str());
             std::string filename   = file_path.filename().string();
             std::string menu_label = filename;
 
@@ -146,6 +147,7 @@ void show_main_imgui_window_menubar() {
             if (ImGui::IsItemHovered()) {
               ImGui::SetTooltip("%s", file_path.string().c_str());
             }
+            ImGui::PopID();
           }
           ImGui::Separator();
           if (ImGui::MenuItem("Clear Recent Files")) {
@@ -282,6 +284,7 @@ void show_main_imgui_window() {
         ImGui::TextUnformatted("(No recent files)");
       }
       for (const auto& file_path : recent_files) {
+        ImGui::PushID(file_path.string().c_str());
         std::string filename   = file_path.filename().string();
         std::string menu_label = filename;
         if (menu_label.length() > 40) {
@@ -295,6 +298,7 @@ void show_main_imgui_window() {
         if (ImGui::IsItemHovered()) {
           ImGui::SetTooltip("%s", file_path.string().c_str());
         }
+        ImGui::PopID();
       }
     }
     ImGui::PopFont();
