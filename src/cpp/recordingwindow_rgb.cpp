@@ -36,6 +36,23 @@ void RGBRecordingWindow::display() {
 
   frame_shader.use();
   float norm = 1;
+  if (bitrange == BitRange::NONE) {
+    auto [rmin, rmax] = utils::minmax_element_skipNaN(r_channel.data(), r_channel.data() + r_channel.size());
+    auto [gmin, gmax] = utils::minmax_element_skipNaN(g_channel.data(), g_channel.data() + g_channel.size());
+    auto [bmin, bmax] = utils::minmax_element_skipNaN(b_channel.data(), b_channel.data() + b_channel.size());
+    auto max_val = std::max({rmax, gmax, bmax});
+    if (max_val <= 1 + 1e-6) {
+      bitrange = BitRange::FLOAT;
+    } else if (max_val <= 255 + 1e-6) {
+      bitrange = BitRange::U8;
+    } else if (max_val <= 4095 + 1e-6) {
+      bitrange = BitRange::U12;
+    } else if (max_val <= 65535 + 1e-6) {
+      bitrange = BitRange::U16;
+    } else {
+      bitrange = BitRange::FLOAT;
+    }
+  }
   if (bitrange == BitRange::FLOAT) {
     norm = 1;
   } else if (bitrange == BitRange::U8) {
