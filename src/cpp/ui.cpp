@@ -138,7 +138,7 @@ void show_main_imgui_window_menubar() {
 
             // Truncate very long filenames for display
             if (menu_label.length() > 40) {
-              menu_label = menu_label.substr(0, 37) + "...";
+              menu_label = fmt::format("{}...##{}", menu_label.substr(0, 37), menu_label.substr(37));
             }
 
             if (ImGui::MenuItem(menu_label.c_str())) {
