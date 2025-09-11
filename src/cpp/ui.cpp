@@ -137,8 +137,8 @@ void show_main_imgui_window_menubar() {
             std::string menu_label = filename;
 
             // Truncate very long filenames for display
-            if (menu_label.length() > 40) {
-              menu_label = fmt::format("{}...##{}", menu_label.substr(0, 37), menu_label.substr(37));
+            if (menu_label.length() > 50) {
+              menu_label = fmt::format("{}...##{}", menu_label.substr(0, 47), menu_label.substr(47));
             }
 
             if (ImGui::MenuItem(menu_label.c_str())) {
@@ -287,8 +287,8 @@ void show_main_imgui_window() {
         ImGui::PushID(file_path.string().c_str());
         std::string filename   = file_path.filename().string();
         std::string menu_label = filename;
-        if (menu_label.length() > 40) {
-          menu_label = menu_label.substr(0, 37) + "...";
+        if (menu_label.length() > 50) {
+          menu_label = fmt::format("{}...##{}", menu_label.substr(0, 47), menu_label.substr(47));
         }
         ImGui::TextUnformatted(u8" – ");
         ImGui::SameLine();
