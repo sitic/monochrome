@@ -116,7 +116,7 @@ def test_speed():
         mc.set_playback_speed(4.0)
         input("Speed set to 4.0. Press ENTER to set speed to 0.5...")
         mc.set_playback_speed(0.5)
-        input("Speed set to 0.5. Press ENTER to set speed to 0.0 (pause)...")
+        input("Speed set to 0.5. Press ENTER to set speed to 1.0...")
         mc.set_playback_speed(1.0)
         input("Speed set to 1.0. Press ENTER to continue...")
     else:

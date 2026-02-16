@@ -43,7 +43,7 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
   if (file->Nc() != 2) {  // Regular video
     SharedRecordingPtr rec;
     rec = file->Nc() == 1? std::make_shared<RecordingWindow>(file): std::make_shared<RGBRecordingWindow>(file);
-                         
+
 
     static int video_counter = 0;
     video_counter++;
@@ -148,39 +148,42 @@ void load_new_pointsvideo(std::shared_ptr<global::PointsVideo> pointsvideo) {
   parent->add_points_video(pointsvideo);
 }
 
+/* Remote IPC commands executed in the main thread */
+namespace global {
+  void LoadFileCommand::execute() { load_new_file(filename); }
+  void RawArray3::execute() {
+    load_new_file(std::make_shared<InMemoryFile>(shared_from_this()), meta.parentName);
+  }
+  void PointsVideo::execute() { load_new_pointsvideo(shared_from_this()); }
+  void ExportVideoCommand::execute() {
+    if (auto rec = find_parent_recording(recording)) {
+      rec->start_recording(*this);
+    } else {
+      global::new_ui_message(
+          "ERROR: Export requested for recording \"{}\", but no such recording exists!", recording);
+    }
+  }
+  void CloseVideoCommand::execute() {
+    if (auto rec = find_parent_recording(recording)) {
+      glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+    } else {
+      global::new_ui_message(
+          "ERROR: Close requested for recording \"{}\", but no such recording exists!", recording);
+    }
+  }
+  void CloseAllVideosCommand::execute() {
+    for (auto &rec : prm::recordings) {
+      glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+    }
+  }
+  void SetPlaybackSpeedCommand::execute() { prm::playbackCtrl.val = speed; }
+} // namespace global
+
 /* Check all our queues for new elements */
 void load_from_queue() {
   /* Remote Commands */
   if (auto command = global::get_remote_command(); command && command.value()) {
-    std::shared_ptr<global::RemoteCommand> cmd = command.value();
-    if (auto obj = std::dynamic_pointer_cast<global::LoadFileCommand>(cmd)) { // Load file
-      load_new_file(obj->filename);
-    } else if (auto obj = std::dynamic_pointer_cast<global::RawArray3>(cmd)) { // Load InMemory array
-      load_new_file(std::make_shared<InMemoryFile>(obj), obj->meta.parentName);
-    } else if (auto obj = std::dynamic_pointer_cast<global::PointsVideo>(cmd)) { // Load PointsVideo
-      load_new_pointsvideo(obj);
-    } else if (auto obj = std::dynamic_pointer_cast<global::ExportVideoCommand>(cmd)) { // Export video
-      if (auto rec = find_parent_recording(obj->recording)) {
-        rec->start_recording(*obj);
-      } else {
-        global::new_ui_message("ERROR: Export requested for recording \"{}\", but no such recording exists!",
-                               obj->recording);
-      }
-    } else if (auto obj = std::dynamic_pointer_cast<global::CloseVideoCommand>(cmd)) { // Close video
-      if (auto rec = find_parent_recording(obj->recording)) {
-        glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
-      } else {
-        global::new_ui_message("ERROR: Close requested for recording \"{}\", but no such recording exists!", obj->recording);
-      }
-    } else if (auto obj = std::dynamic_pointer_cast<global::SetPlaybackSpeedCommand>(cmd)) { // Set speed
-      prm::playbackCtrl.val = obj->speed;
-    } else if (auto obj = std::dynamic_pointer_cast<global::CloseAllVideosCommand>(cmd)) { // Close all
-      for (auto &rec : prm::recordings) {
-        glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
-      }
-    } else {
-      global::new_ui_message("ERROR: Unknown remote command");
-    }
+    command.value()->execute();
   }
 
   /* Global merge queue */

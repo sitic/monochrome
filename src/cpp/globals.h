@@ -64,13 +64,16 @@ namespace global {
   // Command to be executed by the main thread
   struct RemoteCommand {
     virtual ~RemoteCommand() = default;
+    virtual void execute()   = 0;
   };
 
   struct LoadFileCommand : RemoteCommand {
     LoadFileCommand(const std::string &filename_) : filename(filename_) {}
     std::string filename;
+    void execute() override;
   };
-  class RawArray3 : public RemoteCommand {
+
+  class RawArray3 : public RemoteCommand, public std::enable_shared_from_this<RawArray3> {
    private:
     RawArray3() = default;
 
@@ -89,9 +92,11 @@ namespace global {
     std::size_t size() const {
       return std::visit([](auto &v) { return v.size(); }, data);
     }
+
+    void execute() override;
   };
 
-  struct PointsVideo : RemoteCommand {
+  struct PointsVideo : RemoteCommand, public std::enable_shared_from_this<PointsVideo> {
     std::string name;
     std::string parent_name;
     std::vector<std::vector<float>> data;
@@ -115,6 +120,8 @@ namespace global {
       }
       color = cycle_list.at(color_count);
     }
+
+    void execute() override;
   };
 
   struct ExportVideoCommand : RemoteCommand {
@@ -125,18 +132,24 @@ namespace global {
     int t_end   = -1;
     int fps     = 30;
     bool close_after_completion = false;
+
+    void execute() override;
   };
 
   struct CloseVideoCommand : RemoteCommand {
     std::string recording;
     CloseVideoCommand(std::string recording_) : recording(recording_) {}
+    void execute() override;
   };
 
-  struct CloseAllVideosCommand : RemoteCommand {};
+  struct CloseAllVideosCommand : RemoteCommand {
+    void execute() override;
+  };
 
   struct SetPlaybackSpeedCommand : RemoteCommand {
     float speed;
     SetPlaybackSpeedCommand(float speed_) : speed(speed_) {}
+    void execute() override;
   };
 
   class Subprocess {
