@@ -80,6 +80,13 @@ table CloseVideo {
   name:string;
 }
 
+table CloseAllVideos {
+}
+
+table SetPlaybackSpeed {
+  speed:float;
+}
+
 table Quit {
 }
 
@@ -107,7 +114,7 @@ table PointsVideo {
   point_size:float;
 }
 
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit }
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed }
 
 table Root {
     data:Data;

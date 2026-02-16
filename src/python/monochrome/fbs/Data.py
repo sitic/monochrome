@@ -15,3 +15,5 @@ class Data(IntEnum):
     PointsVideo = 8
     CloseVideo = 9
     Quit = 10
+    CloseAllVideos = 11
+    SetPlaybackSpeed = 12

@@ -132,6 +132,13 @@ namespace global {
     CloseVideoCommand(std::string recording_) : recording(recording_) {}
   };
 
+  struct CloseAllVideosCommand : RemoteCommand {};
+
+  struct SetPlaybackSpeedCommand : RemoteCommand {
+    float speed;
+    SetPlaybackSpeedCommand(float speed_) : speed(speed_) {}
+  };
+
   class Subprocess {
     private:
       std::unique_ptr<subprocess::Popen> popen = nullptr;

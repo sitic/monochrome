@@ -98,9 +98,45 @@ def test_export_video():
 def test_close_video():
     array = np.random.rand(*(1, 48, 48)).astype(dtype=np.float32)
     mc.show(array, 'CloseArray')
+    if not HEADLESS_TEST:
+        input("CloseArray loaded. Press ENTER to close it (default to last)...")
     mc.close_video()
     mc.show(array, 'CloseArray2')
+    if not HEADLESS_TEST:
+        input("CloseArray2 loaded. Press ENTER to close it by name...")
     mc.close_video('CloseArray2')
+
+def test_speed():
+    shape = (100, 128, 256)
+    arr = np.random.rand(*shape).astype(dtype=np.float32)
+    mc.show_video(arr, 'TestSpeed')
+    
+    if not HEADLESS_TEST:
+        input("Video loaded. Press ENTER to set speed to 4.0...")
+        mc.set_playback_speed(4.0)
+        input("Speed set to 4.0. Press ENTER to set speed to 0.5...")
+        mc.set_playback_speed(0.5)
+        input("Speed set to 0.5. Press ENTER to set speed to 0.0 (pause)...")
+        mc.set_playback_speed(0.0)
+        input("Speed set to 0.0. Press ENTER to continue...")
+    else:
+        mc.set_playback_speed(4.0)
+        mc.set_playback_speed(0.5)
+        mc.set_playback_speed(0.0)
+
+def test_close_all():
+    array = np.random.rand(*(1, 48, 48)).astype(dtype=np.float32)
+    mc.show(array, 'Array1')
+    mc.show(array, 'Array2')
+    mc.show(array, 'Array3')
+    
+    if not HEADLESS_TEST:
+        input("Three videos loaded. Press ENTER to close all...")
+    
+    mc.close_all_videos()
+    
+    if not HEADLESS_TEST:
+        input("All videos should be closed. Press ENTER to continue...")
 
 def test_quit():
     mc.quit()
@@ -108,13 +144,26 @@ def test_quit():
         sleep(3)
 
 if __name__ == "__main__":
+    print("Testing filepaths...")
     test_filepaths()
+    print("Testing array...")
     test_array()
+    print("Testing overlay...")
     test_overlay()
+    print("Testing flow...")
     test_flow()
+    print("Testing points...")
     test_points()
+    print("Testing export video...")
     test_export_video()
+    print("Testing speed...")
+    test_speed()
+    print("Testing close video...")
     test_close_video()
+    print("Testing close all...")
+    test_close_all()
     if not HEADLESS_TEST:
         input("\n\n\nPress ENTER to quit Monochrome...\n")
+    print("Quitting...")
     test_quit()
+    print("Done.")

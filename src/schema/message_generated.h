@@ -44,6 +44,12 @@ struct VideoExportBuilder;
 struct CloseVideo;
 struct CloseVideoBuilder;
 
+struct CloseAllVideos;
+struct CloseAllVideosBuilder;
+
+struct SetPlaybackSpeed;
+struct SetPlaybackSpeedBuilder;
+
 struct Quit;
 struct QuitBuilder;
 
@@ -296,11 +302,13 @@ enum Data : uint8_t {
   Data_PointsVideo = 8,
   Data_CloseVideo = 9,
   Data_Quit = 10,
+  Data_CloseAllVideos = 11,
+  Data_SetPlaybackSpeed = 12,
   Data_MIN = Data_NONE,
-  Data_MAX = Data_Quit
+  Data_MAX = Data_SetPlaybackSpeed
 };
 
-inline const Data (&EnumValuesData())[11] {
+inline const Data (&EnumValuesData())[13] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
@@ -312,13 +320,15 @@ inline const Data (&EnumValuesData())[11] {
     Data_VideoExport,
     Data_PointsVideo,
     Data_CloseVideo,
-    Data_Quit
+    Data_Quit,
+    Data_CloseAllVideos,
+    Data_SetPlaybackSpeed
   };
   return values;
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[12] = {
+  static const char * const names[14] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
@@ -330,13 +340,15 @@ inline const char * const *EnumNamesData() {
     "PointsVideo",
     "CloseVideo",
     "Quit",
+    "CloseAllVideos",
+    "SetPlaybackSpeed",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameData(Data e) {
-  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_Quit)) return "";
+  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_SetPlaybackSpeed)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesData()[index];
 }
@@ -383,6 +395,14 @@ template<> struct DataTraits<fbs::CloseVideo> {
 
 template<> struct DataTraits<fbs::Quit> {
   static const Data enum_value = Data_Quit;
+};
+
+template<> struct DataTraits<fbs::CloseAllVideos> {
+  static const Data enum_value = Data_CloseAllVideos;
+};
+
+template<> struct DataTraits<fbs::SetPlaybackSpeed> {
+  static const Data enum_value = Data_SetPlaybackSpeed;
 };
 
 bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data type);
@@ -1266,6 +1286,76 @@ inline ::flatbuffers::Offset<CloseVideo> CreateCloseVideoDirect(
       name__);
 }
 
+struct CloseAllVideos FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef CloseAllVideosBuilder Builder;
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           verifier.EndTable();
+  }
+};
+
+struct CloseAllVideosBuilder {
+  typedef CloseAllVideos Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  explicit CloseAllVideosBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<CloseAllVideos> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<CloseAllVideos>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<CloseAllVideos> CreateCloseAllVideos(
+    ::flatbuffers::FlatBufferBuilder &_fbb) {
+  CloseAllVideosBuilder builder_(_fbb);
+  return builder_.Finish();
+}
+
+struct SetPlaybackSpeed FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SetPlaybackSpeedBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_SPEED = 4
+  };
+  float speed() const {
+    return GetField<float>(VT_SPEED, 0.0f);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<float>(verifier, VT_SPEED, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct SetPlaybackSpeedBuilder {
+  typedef SetPlaybackSpeed Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_speed(float speed) {
+    fbb_.AddElement<float>(SetPlaybackSpeed::VT_SPEED, speed, 0.0f);
+  }
+  explicit SetPlaybackSpeedBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<SetPlaybackSpeed> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<SetPlaybackSpeed>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<SetPlaybackSpeed> CreateSetPlaybackSpeed(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    float speed = 0.0f) {
+  SetPlaybackSpeedBuilder builder_(_fbb);
+  builder_.add_speed(speed);
+  return builder_.Finish();
+}
+
 struct Quit FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef QuitBuilder Builder;
   bool Verify(::flatbuffers::Verifier &verifier) const {
@@ -1455,6 +1545,12 @@ struct Root FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::Quit *data_as_Quit() const {
     return data_type() == fbs::Data_Quit ? static_cast<const fbs::Quit *>(data()) : nullptr;
   }
+  const fbs::CloseAllVideos *data_as_CloseAllVideos() const {
+    return data_type() == fbs::Data_CloseAllVideos ? static_cast<const fbs::CloseAllVideos *>(data()) : nullptr;
+  }
+  const fbs::SetPlaybackSpeed *data_as_SetPlaybackSpeed() const {
+    return data_type() == fbs::Data_SetPlaybackSpeed ? static_cast<const fbs::SetPlaybackSpeed *>(data()) : nullptr;
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_DATA_TYPE, 1) &&
@@ -1502,6 +1598,14 @@ template<> inline const fbs::CloseVideo *Root::data_as<fbs::CloseVideo>() const 
 
 template<> inline const fbs::Quit *Root::data_as<fbs::Quit>() const {
   return data_as_Quit();
+}
+
+template<> inline const fbs::CloseAllVideos *Root::data_as<fbs::CloseAllVideos>() const {
+  return data_as_CloseAllVideos();
+}
+
+template<> inline const fbs::SetPlaybackSpeed *Root::data_as<fbs::SetPlaybackSpeed>() const {
+  return data_as_SetPlaybackSpeed();
 }
 
 struct RootBuilder {
@@ -1578,6 +1682,14 @@ inline bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data 
     }
     case Data_Quit: {
       auto ptr = reinterpret_cast<const fbs::Quit *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_CloseAllVideos: {
+      auto ptr = reinterpret_cast<const fbs::CloseAllVideos *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_SetPlaybackSpeed: {
+      auto ptr = reinterpret_cast<const fbs::SetPlaybackSpeed *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;

@@ -172,6 +172,12 @@ void load_from_queue() {
       } else {
         global::new_ui_message("ERROR: Close requested for recording \"{}\", but no such recording exists!", obj->recording);
       }
+    } else if (auto obj = std::dynamic_pointer_cast<global::SetPlaybackSpeedCommand>(cmd)) { // Set speed
+      prm::playbackCtrl.val = obj->speed;
+    } else if (auto obj = std::dynamic_pointer_cast<global::CloseAllVideosCommand>(cmd)) { // Close all
+      for (auto &rec : prm::recordings) {
+        glfwSetWindowShouldClose(rec->window, GLFW_TRUE);
+      }
     } else {
       global::new_ui_message("ERROR: Unknown remote command");
     }

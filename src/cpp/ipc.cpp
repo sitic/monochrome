@@ -166,6 +166,13 @@ namespace {
           case fbs::Data_CloseVideo:
             handle_datachunk_message(root->data_as_CloseVideo());
             break;
+          case fbs::Data_CloseAllVideos:
+            global::add_remote_command(std::make_shared<global::CloseAllVideosCommand>());
+            break;
+          case fbs::Data_SetPlaybackSpeed:
+            global::add_remote_command(
+                std::make_shared<global::SetPlaybackSpeedCommand>(root->data_as_SetPlaybackSpeed()->speed()));
+            break;
           case fbs::Data_Quit:
             fmt::print("Received quit command. Initiating shutdown sequence...\n");
             global::quit();

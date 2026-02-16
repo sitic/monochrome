@@ -16,9 +16,11 @@ from .fbs import (
     Array3Meta,
     Array3MetaFlow,
     CloseVideo,
+    CloseAllVideos,
     Filepaths,
     PointsVideo,
     Root,
+    SetPlaybackSpeed,
     VideoExport,
 )
 from .fbs.ArrayDataType import ArrayDataType
@@ -643,6 +645,37 @@ def close_video(name=""):
     CloseVideo.AddName(builder, name_fb)
     fp = CloseVideo.End(builder)
     root = build_root(builder, Data.CloseVideo, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+def set_playback_speed(speed: float):
+    """Set the playback speed for all videos in Monochrome.
+
+    Parameters
+    ----------
+    speed : float
+        Playback speed. 1.0 is normal speed, 0.0 is paused, 2.0 is double speed, etc.
+    """
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+
+    SetPlaybackSpeed.Start(builder)
+    SetPlaybackSpeed.AddSpeed(builder, float(speed))
+    fp = SetPlaybackSpeed.End(builder)
+    root = build_root(builder, Data.SetPlaybackSpeed, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+def close_all_videos():
+    """Close all videos currently open in Monochrome."""
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+
+    CloseAllVideos.Start(builder)
+    fp = CloseAllVideos.End(builder)
+    root = build_root(builder, Data.CloseAllVideos, fp)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     s.sendall(buf)
