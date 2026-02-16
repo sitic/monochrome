@@ -466,10 +466,13 @@ void ipc::start_server() {
       fs::path path = ep.path();
       try {
         fs::remove(path);
+        // Try again once after removing the socket file
+        ipc_server = std::make_unique<IpcServer>();
+        std::thread([]() { ipc_server->run(); }).detach();
+        return;
       } catch (const std::exception& e) {
         global::new_ui_message("ERROR: Failed to clean up socket file: {}", e.what());
       }
-      return start_server();
     }
 #endif
 #endif
