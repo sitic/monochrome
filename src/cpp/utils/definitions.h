@@ -92,15 +92,17 @@ namespace utils {
     if (min < 0) {
       if (min >= -1.1 && max <= 1.1) {
         return BitRange::DIFF;
-      } else if (min >= -M_PI && max <= M_PI) {
+      } else if (min >= -M_PI && max <= M_PI && (max - min) > 6.0) {
         return BitRange::PHASE_DIFF;
       } else {
         return std::nullopt;
       }
+    } else if (min >= 0 && max <= 2 * M_PI && (max-min) > 6.0) {
+      return BitRange::PHASE;
     } else if (max <= 1.5) {
       return BitRange::FLOAT;
-    } else if (max <= 2 * M_PI) {
-      return BitRange::PHASE;
+    } else if (max <= 100) {
+      return std::nullopt;
     } else if (max < (1 << 8)) {
       return BitRange::U8;
     } else if (max < (1 << 10)) {
