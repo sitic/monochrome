@@ -416,7 +416,7 @@ namespace {
 
   class IpcServer {
    public:
-    IpcServer() : ep_(), acceptor_(io_context_, ep_.get()), socket_(io_context_) {
+    IpcServer() : ep_(), acceptor_(io_context_, ep_.get()) {
       ep_.connected();
       do_accept();
     }
@@ -430,9 +430,9 @@ namespace {
 
    private:
     void do_accept() {
-      acceptor_.async_accept(socket_, [this](std::error_code ec) {
+      acceptor_.async_accept([this](std::error_code ec, IpcProtocol::socket socket) {
         if (!ec) {
-          std::make_shared<IpcSession>(std::move(socket_))->start();
+          std::make_shared<IpcSession>(std::move(socket))->start();
         } else {
           fmt::print("Error {}: {}\n", ec.value(), ec.message());
         }
@@ -444,7 +444,6 @@ namespace {
     IpcHostEndpoint ep_;
     asio::io_context io_context_;
     IpcProtocol::acceptor acceptor_;
-    IpcProtocol::socket socket_;
   };
 
 
