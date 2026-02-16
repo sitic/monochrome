@@ -465,26 +465,30 @@ def show_video(array: np.ndarray,
         cmap = getattr(ColorMap, cmap.upper())
     if isinstance(bitrange, str):
         bitrange = getattr(BitRange, bitrange.upper())
-    if isinstance(opacity, str):
-        try:
-            opacity = float(opacity)
-        except ValueError:
-            pass
-    if isinstance(opacity, (int, float)):
-        if opacity == 1:
-            opacity = OpacityFunction.FIXED_100
-        elif opacity == 0.75:
-            opacity = OpacityFunction.FIXED_75
-        elif opacity == 0.5:
-            opacity = OpacityFunction.FIXED_50
-        elif opacity == 0.25:
-            opacity = OpacityFunction.FIXED_25
-        elif opacity == 0:
-            opacity = OpacityFunction.FIXED_0
-        else:
-            raise ValueError("Invalid opacity value")
-    if isinstance(opacity, str):
-        opacity = getattr(OpacityFunction, opacity.upper())
+
+    if opacity is not None:
+        if isinstance(opacity, str):
+            if opacity.upper() in ("LINEAR", "LINEAR_R", "CENTERED"):
+                opacity = getattr(OpacityFunction, opacity.upper())
+            else:
+                try:
+                    opacity = float(opacity)
+                except ValueError:
+                    raise ValueError(f"Invalid opacity value: '{opacity}'. Supported values are 'linear', 'linear_r', 'centered', or a float between 0.0 and 1.0.")
+        if isinstance(opacity, (int, float)):
+            if not (0.0 <= opacity <= 1.0):
+                 raise ValueError(f"Opacity ({opacity}) must be between 0.0 and 1.0.")
+            # Find the closest supported float value
+            supported_floats = [0.0, 0.25, 0.5, 0.75, 1.0]
+            closest_float = min(supported_floats, key=lambda x: abs(x - opacity))
+            mapping = {
+                1.0: OpacityFunction.FIXED_100,
+                0.75: OpacityFunction.FIXED_75,
+                0.5: OpacityFunction.FIXED_50,
+                0.25: OpacityFunction.FIXED_25,
+                0.0: OpacityFunction.FIXED_0,
+            }
+            opacity = mapping[closest_float]
 
     s = create_socket()
     buf = create_array3meta_msg(dtype, name, array.shape, comment=comment, bitrange=bitrange, cmap=cmap,
