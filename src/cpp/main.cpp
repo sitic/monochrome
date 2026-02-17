@@ -106,6 +106,7 @@ int main(int argc, char **argv) {
   if (!unit_test_mode) {
     open_main_window(font_scale);
   }
+  global::unit_test_mode = unit_test_mode;
 
   // Close window on control-c
 #ifndef _WIN32

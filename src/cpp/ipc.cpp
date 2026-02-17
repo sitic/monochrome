@@ -129,11 +129,13 @@ namespace {
       }
     }
 
-    void verify_and_deliver() {
+    std::vector<uint8_t> verify_and_deliver() {
       // I think our buffers used to be aligned, but not always anymore.
       // Just skip alignment check for now, TODO: figure out what's going on
       flatbuffers::Verifier::Options opts;
       opts.check_alignment = false;
+
+      std::vector<uint8_t> response;
 
       auto verifier = flatbuffers::Verifier(body(), body_size(), opts);
       if (fbs::VerifyRootBuffer(verifier)) {
@@ -185,6 +187,40 @@ namespace {
                 std::make_shared<global::SetFrameCommand>(req->frame(), req->name()->str()));
             break;
           }
+          case fbs::Data_GetTracePos: {
+            auto cmd    = std::make_shared<global::GetTracePosCommand>();
+            auto future = cmd->response_promise->get_future();
+
+            if (global::unit_test_mode) {
+              cmd->response_promise->set_value({});
+            } else {
+              global::add_remote_command(cmd);
+            }
+
+            if (future.wait_for(std::chrono::seconds(2)) == std::future_status::ready) {
+              auto result = future.get();
+
+              flatbuffers::FlatBufferBuilder builder(1024);
+              std::vector<flatbuffers::Offset<fbs::RecordingTracePos>> recordings_fb;
+
+              for (const auto &rec : result) {
+                auto name_fb = builder.CreateString(rec.name);
+                auto posx_fb = builder.CreateVector(rec.posx);
+                auto posy_fb = builder.CreateVector(rec.posy);
+                recordings_fb.push_back(fbs::CreateRecordingTracePos(builder, name_fb, posx_fb, posy_fb));
+              }
+
+              auto recordings_vec_fb = builder.CreateVector(recordings_fb);
+              auto resp              = fbs::CreateTracePosResponse(builder, recordings_vec_fb);
+              auto root_resp         = fbs::CreateRoot(builder, fbs::Data_TracePosResponse, resp.Union());
+              builder.FinishSizePrefixed(root_resp);
+
+              auto buf  = builder.GetBufferPointer();
+              auto size = builder.GetSize();
+              response.assign(buf, buf + size);
+            }
+            break;
+          }
           case fbs::Data_Quit:
             fmt::print("Received quit command. Initiating shutdown sequence...\n");
             global::quit();
@@ -195,6 +231,7 @@ namespace {
       } else {
         fmt::print("ERROR: flatbuffers verifier failed\n");
       }
+      return response;
     }
 
     void handle_message(const fbs::Filepaths* raw) {
@@ -423,8 +460,20 @@ namespace {
       asio::async_read(socket_, asio::buffer(msg_.body(), msg_.body_size()),
                        [this, self](std::error_code ec, std::size_t /*length*/) {
                          if (!ec) {
-                           msg_.verify_and_deliver();
-                           do_read_header();
+                           auto resp = msg_.verify_and_deliver();
+                           if (!resp.empty()) {
+                             auto data_ptr  = resp.data();
+                             auto data_size = resp.size();
+                             asio::async_write(
+                                 socket_, asio::buffer(data_ptr, data_size),
+                                 [this, self, resp](std::error_code ec, std::size_t /*length*/) {
+                                   if (!ec) {
+                                     do_read_header();
+                                   }
+                                 });
+                           } else {
+                             do_read_header();
+                           }
                          }
                        });
     }

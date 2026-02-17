@@ -20,3 +20,5 @@ class Data(IntEnum):
     Play = 13
     Pause = 14
     SetFrame = 15
+    GetTracePos = 16
+    TracePosResponse = 17

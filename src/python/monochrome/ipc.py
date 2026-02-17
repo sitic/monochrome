@@ -1,6 +1,7 @@
 import os
 import socket
 import subprocess
+import struct
 import sys
 import time
 from pathlib import Path
@@ -18,12 +19,15 @@ from .fbs import (
     CloseVideo,
     CloseAllVideos,
     Filepaths,
+    GetTracePos,
     Pause,
     Play,
     PointsVideo,
+    RecordingTracePos,
     Root,
     SetFrame,
     SetPlaybackSpeed,
+    TracePosResponse,
     VideoExport,
 )
 from .fbs.ArrayDataType import ArrayDataType
@@ -729,6 +733,58 @@ def set_frame(frame: int, name: str = ""):
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     s.sendall(buf)
+
+def get_trace_positions() -> Dict[str, List[tuple]]:
+    """Get the current trace positions for all videos in Monochrome.
+
+    Returns
+    -------
+    dict
+        A dictionary where keys are video names and values are lists of (x, y) tuples.
+    """
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+
+    GetTracePos.Start(builder)
+    fp = GetTracePos.End(builder)
+    root = build_root(builder, Data.GetTracePos, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+    # Read response
+    size_data = s.recv(4)
+    if not size_data:
+        return {}
+
+    size = struct.unpack("<I", size_data)[0]
+    data = b""
+    while len(data) < size:
+        chunk = s.recv(size - len(data))
+        if not chunk:
+            break
+        data += chunk
+
+    if len(data) < size:
+        return {}
+
+    # Parse response
+    root = Root.Root.GetRootAsRoot(data, 0)
+    if root.DataType() != Data.TracePosResponse:
+        return {}
+
+    resp = TracePosResponse.TracePosResponse()
+    resp.Init(root.Data().Bytes, root.Data().Pos)
+
+    result = {}
+    for i in range(resp.RecordingsLength()):
+        rec = resp.Recordings(i)
+        name = rec.Name().decode("utf-8")
+        posx = rec.PosxAsNumpy()
+        posy = rec.PosyAsNumpy()
+        result[name] = list(zip(posx, posy))
+
+    return result
 
 def quit():  # noqa: A001
     """Quit Monochrome, terminating the process."""

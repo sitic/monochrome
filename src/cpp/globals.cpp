@@ -17,6 +17,7 @@ namespace {
 namespace global {
   std::string tcp_host = "127.0.0.1";
   short tcp_port       = 4864;
+  bool unit_test_mode  = false;
   asio::thread_pool thread_pool(2);
   
   std::vector<Message> messages = {};

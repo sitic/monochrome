@@ -30,6 +30,7 @@ namespace global {
   // IPC server details
   extern std::string tcp_host;
   extern short tcp_port;
+  extern bool unit_test_mode;
 
   class Message {
    public:
@@ -164,6 +165,19 @@ namespace global {
     int frame;
     std::string name;
     SetFrameCommand(int frame_, std::string name_) : frame(frame_), name(name_) {}
+    void execute() override;
+  };
+
+  struct RecordingTracePosResult {
+    std::string name;
+    std::vector<int> posx;
+    std::vector<int> posy;
+  };
+  using TracePosResult = std::vector<RecordingTracePosResult>;
+
+  struct GetTracePosCommand : RemoteCommand {
+    std::shared_ptr<std::promise<TracePosResult>> response_promise;
+    GetTracePosCommand() : response_promise(std::make_shared<std::promise<TracePosResult>>()) {}
     void execute() override;
   };
 

@@ -191,6 +191,19 @@ namespace global {
                              name);
     }
   }
+  void GetTracePosCommand::execute() {
+    TracePosResult result;
+    for (const auto &rec : prm::recordings) {
+      RecordingTracePosResult r;
+      r.name = rec->name();
+      for (const auto &trace : rec->traces) {
+        r.posx.push_back(trace.pos[0]);
+        r.posy.push_back(trace.pos[1]);
+      }
+      result.push_back(std::move(r));
+    }
+    response_promise->set_value(std::move(result));
+  }
 } // namespace global
 
 /* Check all our queues for new elements */

@@ -59,6 +59,15 @@ struct PauseBuilder;
 struct SetFrame;
 struct SetFrameBuilder;
 
+struct GetTracePos;
+struct GetTracePosBuilder;
+
+struct RecordingTracePos;
+struct RecordingTracePosBuilder;
+
+struct TracePosResponse;
+struct TracePosResponseBuilder;
+
 struct Quit;
 struct QuitBuilder;
 
@@ -316,11 +325,13 @@ enum Data : uint8_t {
   Data_Play = 13,
   Data_Pause = 14,
   Data_SetFrame = 15,
+  Data_GetTracePos = 16,
+  Data_TracePosResponse = 17,
   Data_MIN = Data_NONE,
-  Data_MAX = Data_SetFrame
+  Data_MAX = Data_TracePosResponse
 };
 
-inline const Data (&EnumValuesData())[16] {
+inline const Data (&EnumValuesData())[18] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
@@ -337,13 +348,15 @@ inline const Data (&EnumValuesData())[16] {
     Data_SetPlaybackSpeed,
     Data_Play,
     Data_Pause,
-    Data_SetFrame
+    Data_SetFrame,
+    Data_GetTracePos,
+    Data_TracePosResponse
   };
   return values;
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[17] = {
+  static const char * const names[19] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
@@ -360,13 +373,15 @@ inline const char * const *EnumNamesData() {
     "Play",
     "Pause",
     "SetFrame",
+    "GetTracePos",
+    "TracePosResponse",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameData(Data e) {
-  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_SetFrame)) return "";
+  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_TracePosResponse)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesData()[index];
 }
@@ -433,6 +448,14 @@ template<> struct DataTraits<fbs::Pause> {
 
 template<> struct DataTraits<fbs::SetFrame> {
   static const Data enum_value = Data_SetFrame;
+};
+
+template<> struct DataTraits<fbs::GetTracePos> {
+  static const Data enum_value = Data_GetTracePos;
+};
+
+template<> struct DataTraits<fbs::TracePosResponse> {
+  static const Data enum_value = Data_TracePosResponse;
 };
 
 bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data type);
@@ -1507,6 +1530,166 @@ inline ::flatbuffers::Offset<SetFrame> CreateSetFrameDirect(
       name__);
 }
 
+struct GetTracePos FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef GetTracePosBuilder Builder;
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           verifier.EndTable();
+  }
+};
+
+struct GetTracePosBuilder {
+  typedef GetTracePos Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  explicit GetTracePosBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<GetTracePos> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<GetTracePos>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<GetTracePos> CreateGetTracePos(
+    ::flatbuffers::FlatBufferBuilder &_fbb) {
+  GetTracePosBuilder builder_(_fbb);
+  return builder_.Finish();
+}
+
+struct RecordingTracePos FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef RecordingTracePosBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NAME = 4,
+    VT_POSX = 6,
+    VT_POSY = 8
+  };
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  }
+  const ::flatbuffers::Vector<int32_t> *posx() const {
+    return GetPointer<const ::flatbuffers::Vector<int32_t> *>(VT_POSX);
+  }
+  const ::flatbuffers::Vector<int32_t> *posy() const {
+    return GetPointer<const ::flatbuffers::Vector<int32_t> *>(VT_POSY);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffset(verifier, VT_POSX) &&
+           verifier.VerifyVector(posx()) &&
+           VerifyOffset(verifier, VT_POSY) &&
+           verifier.VerifyVector(posy()) &&
+           verifier.EndTable();
+  }
+};
+
+struct RecordingTracePosBuilder {
+  typedef RecordingTracePos Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
+    fbb_.AddOffset(RecordingTracePos::VT_NAME, name);
+  }
+  void add_posx(::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> posx) {
+    fbb_.AddOffset(RecordingTracePos::VT_POSX, posx);
+  }
+  void add_posy(::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> posy) {
+    fbb_.AddOffset(RecordingTracePos::VT_POSY, posy);
+  }
+  explicit RecordingTracePosBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<RecordingTracePos> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<RecordingTracePos>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<RecordingTracePos> CreateRecordingTracePos(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> posx = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> posy = 0) {
+  RecordingTracePosBuilder builder_(_fbb);
+  builder_.add_posy(posy);
+  builder_.add_posx(posx);
+  builder_.add_name(name);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<RecordingTracePos> CreateRecordingTracePosDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *name = nullptr,
+    const std::vector<int32_t> *posx = nullptr,
+    const std::vector<int32_t> *posy = nullptr) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto posx__ = posx ? _fbb.CreateVector<int32_t>(*posx) : 0;
+  auto posy__ = posy ? _fbb.CreateVector<int32_t>(*posy) : 0;
+  return fbs::CreateRecordingTracePos(
+      _fbb,
+      name__,
+      posx__,
+      posy__);
+}
+
+struct TracePosResponse FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef TracePosResponseBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_RECORDINGS = 4
+  };
+  const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::RecordingTracePos>> *recordings() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::RecordingTracePos>> *>(VT_RECORDINGS);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_RECORDINGS) &&
+           verifier.VerifyVector(recordings()) &&
+           verifier.VerifyVectorOfTables(recordings()) &&
+           verifier.EndTable();
+  }
+};
+
+struct TracePosResponseBuilder {
+  typedef TracePosResponse Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_recordings(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::RecordingTracePos>>> recordings) {
+    fbb_.AddOffset(TracePosResponse::VT_RECORDINGS, recordings);
+  }
+  explicit TracePosResponseBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<TracePosResponse> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<TracePosResponse>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<TracePosResponse> CreateTracePosResponse(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::RecordingTracePos>>> recordings = 0) {
+  TracePosResponseBuilder builder_(_fbb);
+  builder_.add_recordings(recordings);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<TracePosResponse> CreateTracePosResponseDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<::flatbuffers::Offset<fbs::RecordingTracePos>> *recordings = nullptr) {
+  auto recordings__ = recordings ? _fbb.CreateVector<::flatbuffers::Offset<fbs::RecordingTracePos>>(*recordings) : 0;
+  return fbs::CreateTracePosResponse(
+      _fbb,
+      recordings__);
+}
+
 struct Quit FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef QuitBuilder Builder;
   bool Verify(::flatbuffers::Verifier &verifier) const {
@@ -1711,6 +1894,12 @@ struct Root FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::SetFrame *data_as_SetFrame() const {
     return data_type() == fbs::Data_SetFrame ? static_cast<const fbs::SetFrame *>(data()) : nullptr;
   }
+  const fbs::GetTracePos *data_as_GetTracePos() const {
+    return data_type() == fbs::Data_GetTracePos ? static_cast<const fbs::GetTracePos *>(data()) : nullptr;
+  }
+  const fbs::TracePosResponse *data_as_TracePosResponse() const {
+    return data_type() == fbs::Data_TracePosResponse ? static_cast<const fbs::TracePosResponse *>(data()) : nullptr;
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_DATA_TYPE, 1) &&
@@ -1778,6 +1967,14 @@ template<> inline const fbs::Pause *Root::data_as<fbs::Pause>() const {
 
 template<> inline const fbs::SetFrame *Root::data_as<fbs::SetFrame>() const {
   return data_as_SetFrame();
+}
+
+template<> inline const fbs::GetTracePos *Root::data_as<fbs::GetTracePos>() const {
+  return data_as_GetTracePos();
+}
+
+template<> inline const fbs::TracePosResponse *Root::data_as<fbs::TracePosResponse>() const {
+  return data_as_TracePosResponse();
 }
 
 struct RootBuilder {
@@ -1874,6 +2071,14 @@ inline bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data 
     }
     case Data_SetFrame: {
       auto ptr = reinterpret_cast<const fbs::SetFrame *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_GetTracePos: {
+      auto ptr = reinterpret_cast<const fbs::GetTracePos *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_TracePosResponse: {
+      auto ptr = reinterpret_cast<const fbs::TracePosResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;
