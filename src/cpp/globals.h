@@ -152,6 +152,21 @@ namespace global {
     void execute() override;
   };
 
+  struct PlayCommand : RemoteCommand {
+    void execute() override;
+  };
+
+  struct PauseCommand : RemoteCommand {
+    void execute() override;
+  };
+
+  struct SetFrameCommand : RemoteCommand {
+    int frame;
+    std::string name;
+    SetFrameCommand(int frame_, std::string name_) : frame(frame_), name(name_) {}
+    void execute() override;
+  };
+
   class Subprocess {
     private:
       std::unique_ptr<subprocess::Popen> popen = nullptr;

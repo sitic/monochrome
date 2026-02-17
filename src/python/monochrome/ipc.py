@@ -18,8 +18,11 @@ from .fbs import (
     CloseVideo,
     CloseAllVideos,
     Filepaths,
+    Pause,
+    Play,
     PointsVideo,
     Root,
+    SetFrame,
     SetPlaybackSpeed,
     VideoExport,
 )
@@ -676,6 +679,53 @@ def close_all_videos():
     CloseAllVideos.Start(builder)
     fp = CloseAllVideos.End(builder)
     root = build_root(builder, Data.CloseAllVideos, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+def play():
+    """Start playback of all videos in Monochrome."""
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+
+    Play.Start(builder)
+    fp = Play.End(builder)
+    root = build_root(builder, Data.Play, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+def pause():
+    """Pause playback of all videos in Monochrome."""
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+
+    Pause.Start(builder)
+    fp = Pause.End(builder)
+    root = build_root(builder, Data.Pause, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+def set_frame(frame: int, name: str = ""):
+    """Set the current frame for a specific video or all videos.
+
+    Parameters
+    ----------
+    frame : int
+        The frame index to jump to.
+    name : str
+        Name of the video. If empty, the frame is set for all open videos.
+    """
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+    name_fb = builder.CreateString(name)
+
+    SetFrame.Start(builder)
+    SetFrame.AddFrame(builder, int(frame))
+    SetFrame.AddName(builder, name_fb)
+    fp = SetFrame.End(builder)
+    root = build_root(builder, Data.SetFrame, fp)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     s.sendall(buf)

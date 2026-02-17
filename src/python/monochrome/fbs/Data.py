@@ -17,3 +17,6 @@ class Data(IntEnum):
     Quit = 10
     CloseAllVideos = 11
     SetPlaybackSpeed = 12
+    Play = 13
+    Pause = 14
+    SetFrame = 15

@@ -173,6 +173,18 @@ namespace {
             global::add_remote_command(
                 std::make_shared<global::SetPlaybackSpeedCommand>(root->data_as_SetPlaybackSpeed()->speed()));
             break;
+          case fbs::Data_Play:
+            global::add_remote_command(std::make_shared<global::PlayCommand>());
+            break;
+          case fbs::Data_Pause:
+            global::add_remote_command(std::make_shared<global::PauseCommand>());
+            break;
+          case fbs::Data_SetFrame: {
+            auto req = root->data_as_SetFrame();
+            global::add_remote_command(
+                std::make_shared<global::SetFrameCommand>(req->frame(), req->name()->str()));
+            break;
+          }
           case fbs::Data_Quit:
             fmt::print("Received quit command. Initiating shutdown sequence...\n");
             global::quit();

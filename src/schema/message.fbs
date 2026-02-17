@@ -87,6 +87,17 @@ table SetPlaybackSpeed {
   speed:float;
 }
 
+table Play {
+}
+
+table Pause {
+}
+
+table SetFrame {
+  frame:int;
+  name:string;
+}
+
 table Quit {
 }
 
@@ -114,7 +125,7 @@ table PointsVideo {
   point_size:float;
 }
 
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed }
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed, Play, Pause, SetFrame }
 
 table Root {
     data:Data;

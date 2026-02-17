@@ -76,6 +76,9 @@ mc.show_layer(overlay, parent="Second Video", cmap='PRGn', opacity='centered')
 # mc.show_flow() to visualize optical flow fields over time
 # mc.show_file() to load videos from file in Monochrome
 # mc.set_playback_speed() to set the playback speed for all videos
+# mc.play() to start playback
+# mc.pause() to pause playback
+# mc.set_frame() to jump to a specific frame index
 # mc.close_video() to close a video/layer/image
 # mc.close_all_videos() to close all currently open videos
 # mc.export_video() export a window (video+layers+...) as a MP4 video

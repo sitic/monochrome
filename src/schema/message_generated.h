@@ -50,6 +50,15 @@ struct CloseAllVideosBuilder;
 struct SetPlaybackSpeed;
 struct SetPlaybackSpeedBuilder;
 
+struct Play;
+struct PlayBuilder;
+
+struct Pause;
+struct PauseBuilder;
+
+struct SetFrame;
+struct SetFrameBuilder;
+
 struct Quit;
 struct QuitBuilder;
 
@@ -304,11 +313,14 @@ enum Data : uint8_t {
   Data_Quit = 10,
   Data_CloseAllVideos = 11,
   Data_SetPlaybackSpeed = 12,
+  Data_Play = 13,
+  Data_Pause = 14,
+  Data_SetFrame = 15,
   Data_MIN = Data_NONE,
-  Data_MAX = Data_SetPlaybackSpeed
+  Data_MAX = Data_SetFrame
 };
 
-inline const Data (&EnumValuesData())[13] {
+inline const Data (&EnumValuesData())[16] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
@@ -322,13 +334,16 @@ inline const Data (&EnumValuesData())[13] {
     Data_CloseVideo,
     Data_Quit,
     Data_CloseAllVideos,
-    Data_SetPlaybackSpeed
+    Data_SetPlaybackSpeed,
+    Data_Play,
+    Data_Pause,
+    Data_SetFrame
   };
   return values;
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[14] = {
+  static const char * const names[17] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
@@ -342,13 +357,16 @@ inline const char * const *EnumNamesData() {
     "Quit",
     "CloseAllVideos",
     "SetPlaybackSpeed",
+    "Play",
+    "Pause",
+    "SetFrame",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameData(Data e) {
-  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_SetPlaybackSpeed)) return "";
+  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_SetFrame)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesData()[index];
 }
@@ -403,6 +421,18 @@ template<> struct DataTraits<fbs::CloseAllVideos> {
 
 template<> struct DataTraits<fbs::SetPlaybackSpeed> {
   static const Data enum_value = Data_SetPlaybackSpeed;
+};
+
+template<> struct DataTraits<fbs::Play> {
+  static const Data enum_value = Data_Play;
+};
+
+template<> struct DataTraits<fbs::Pause> {
+  static const Data enum_value = Data_Pause;
+};
+
+template<> struct DataTraits<fbs::SetFrame> {
+  static const Data enum_value = Data_SetFrame;
 };
 
 bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data type);
@@ -1356,6 +1386,127 @@ inline ::flatbuffers::Offset<SetPlaybackSpeed> CreateSetPlaybackSpeed(
   return builder_.Finish();
 }
 
+struct Play FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef PlayBuilder Builder;
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           verifier.EndTable();
+  }
+};
+
+struct PlayBuilder {
+  typedef Play Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  explicit PlayBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Play> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Play>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Play> CreatePlay(
+    ::flatbuffers::FlatBufferBuilder &_fbb) {
+  PlayBuilder builder_(_fbb);
+  return builder_.Finish();
+}
+
+struct Pause FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef PauseBuilder Builder;
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           verifier.EndTable();
+  }
+};
+
+struct PauseBuilder {
+  typedef Pause Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  explicit PauseBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Pause> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Pause>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Pause> CreatePause(
+    ::flatbuffers::FlatBufferBuilder &_fbb) {
+  PauseBuilder builder_(_fbb);
+  return builder_.Finish();
+}
+
+struct SetFrame FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SetFrameBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_FRAME = 4,
+    VT_NAME = 6
+  };
+  int32_t frame() const {
+    return GetField<int32_t>(VT_FRAME, 0);
+  }
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_FRAME, 4) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           verifier.EndTable();
+  }
+};
+
+struct SetFrameBuilder {
+  typedef SetFrame Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_frame(int32_t frame) {
+    fbb_.AddElement<int32_t>(SetFrame::VT_FRAME, frame, 0);
+  }
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
+    fbb_.AddOffset(SetFrame::VT_NAME, name);
+  }
+  explicit SetFrameBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<SetFrame> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<SetFrame>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<SetFrame> CreateSetFrame(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t frame = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
+  SetFrameBuilder builder_(_fbb);
+  builder_.add_name(name);
+  builder_.add_frame(frame);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<SetFrame> CreateSetFrameDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t frame = 0,
+    const char *name = nullptr) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  return fbs::CreateSetFrame(
+      _fbb,
+      frame,
+      name__);
+}
+
 struct Quit FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef QuitBuilder Builder;
   bool Verify(::flatbuffers::Verifier &verifier) const {
@@ -1551,6 +1702,15 @@ struct Root FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::SetPlaybackSpeed *data_as_SetPlaybackSpeed() const {
     return data_type() == fbs::Data_SetPlaybackSpeed ? static_cast<const fbs::SetPlaybackSpeed *>(data()) : nullptr;
   }
+  const fbs::Play *data_as_Play() const {
+    return data_type() == fbs::Data_Play ? static_cast<const fbs::Play *>(data()) : nullptr;
+  }
+  const fbs::Pause *data_as_Pause() const {
+    return data_type() == fbs::Data_Pause ? static_cast<const fbs::Pause *>(data()) : nullptr;
+  }
+  const fbs::SetFrame *data_as_SetFrame() const {
+    return data_type() == fbs::Data_SetFrame ? static_cast<const fbs::SetFrame *>(data()) : nullptr;
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_DATA_TYPE, 1) &&
@@ -1606,6 +1766,18 @@ template<> inline const fbs::CloseAllVideos *Root::data_as<fbs::CloseAllVideos>(
 
 template<> inline const fbs::SetPlaybackSpeed *Root::data_as<fbs::SetPlaybackSpeed>() const {
   return data_as_SetPlaybackSpeed();
+}
+
+template<> inline const fbs::Play *Root::data_as<fbs::Play>() const {
+  return data_as_Play();
+}
+
+template<> inline const fbs::Pause *Root::data_as<fbs::Pause>() const {
+  return data_as_Pause();
+}
+
+template<> inline const fbs::SetFrame *Root::data_as<fbs::SetFrame>() const {
+  return data_as_SetFrame();
 }
 
 struct RootBuilder {
@@ -1690,6 +1862,18 @@ inline bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data 
     }
     case Data_SetPlaybackSpeed: {
       auto ptr = reinterpret_cast<const fbs::SetPlaybackSpeed *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_Play: {
+      auto ptr = reinterpret_cast<const fbs::Play *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_Pause: {
+      auto ptr = reinterpret_cast<const fbs::Pause *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_SetFrame: {
+      auto ptr = reinterpret_cast<const fbs::SetFrame *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;

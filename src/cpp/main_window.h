@@ -177,6 +177,20 @@ namespace global {
     }
   }
   void SetPlaybackSpeedCommand::execute() { prm::playbackCtrl.val = speed; }
+  void PlayCommand::execute() { prm::playbackCtrl.play(); }
+  void PauseCommand::execute() { prm::playbackCtrl.pause(); }
+  void SetFrameCommand::execute() {
+    if (name.empty()) {
+      for (auto &rec : prm::recordings) {
+        rec->playback.set(frame);
+      }
+    } else if (auto rec = find_parent_recording(name)) {
+      rec->playback.set(frame);
+    } else {
+      global::new_ui_message("ERROR: SetFrame requested for \"{}\", but no such recording exists!",
+                             name);
+    }
+  }
 } // namespace global
 
 /* Check all our queues for new elements */

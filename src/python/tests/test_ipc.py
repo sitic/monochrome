@@ -138,6 +138,27 @@ def test_close_all():
     if not HEADLESS_TEST:
         input("All videos should be closed. Press ENTER to continue...")
 
+def test_playback():
+    shape = (100, 64, 64)
+    arr = np.random.rand(*shape).astype(dtype=np.float32)
+    mc.show_video(arr, 'TestPlayback')
+    
+    if not HEADLESS_TEST:
+        input("Video loaded. Press ENTER to pause...")
+        mc.pause()
+        input("Paused. Press ENTER to set frame to 50...")
+        mc.set_frame(50)
+        input("Frame set to 50. Press ENTER to set frame to 10...")
+        mc.set_frame(10)
+        input("Frame set to 10. Press ENTER to play...")
+        mc.play()
+        input("Playing. Press ENTER to continue...")
+    else:
+        mc.pause()
+        mc.set_frame(50)
+        mc.set_frame(10)
+        mc.play()
+
 def test_quit():
     mc.quit()
     if not HEADLESS_TEST:
@@ -162,6 +183,8 @@ if __name__ == "__main__":
     test_close_video()
     print("Testing speed...")
     test_speed()
+    print("Testing playback controls...")
+    test_playback()
     print("Quitting...")
     if not HEADLESS_TEST:
         input("\n\n\nPress ENTER to quit Monochrome...\n")
