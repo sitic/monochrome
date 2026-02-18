@@ -208,6 +208,40 @@ namespace global {
     }
     response_promise->set_value(std::move(result));
   }
+
+  void GetMetadataCommand::execute() {
+    MetadataResult result;
+    for (const auto &rec : prm::recordings) {
+      VideoMetadataResult v;
+      v.name          = rec->name();
+      v.nx            = rec->Nx();
+      v.ny            = rec->Ny();
+      v.nt            = rec->length() * rec->file()->Nc(); // nt in schema is total elements
+      v.nc            = rec->file()->Nc();
+      v.current_frame = rec->current_frame();
+      v.vmin          = rec->get_min(true);
+      v.vmax          = rec->get_max(true);
+      v.colormap      = rec->colormap();
+      v.bitrange      = rec->bitrange;
+
+      if (rec->fps() > 0) {
+        v.metadata.push_back({"fps", std::to_string(rec->fps())});
+      }
+      if (rec->duration().count() > 0) {
+        v.metadata.push_back({"duration", std::to_string(rec->duration().count())});
+      }
+      if (!rec->filepath().empty()) {
+        v.metadata.push_back({"filepath", rec->filepath()});
+      }
+
+      for (const auto &entry : rec->file()->metadata()) {
+        v.metadata.push_back(entry);
+      }
+
+      result.push_back(std::move(v));
+    }
+    response_promise->set_value(std::move(result));
+  }
 } // namespace global
 
 /* Check all our queues for new elements */

@@ -22,3 +22,5 @@ class Data(IntEnum):
     SetFrame = 15
     GetTraces = 16
     TracesResponse = 17
+    GetMetadata = 18
+    MetadataResponse = 19

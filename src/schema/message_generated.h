@@ -71,6 +71,15 @@ struct RecordingTracesBuilder;
 struct TracesResponse;
 struct TracesResponseBuilder;
 
+struct GetMetadata;
+struct GetMetadataBuilder;
+
+struct VideoMetadata;
+struct VideoMetadataBuilder;
+
+struct MetadataResponse;
+struct MetadataResponseBuilder;
+
 struct Quit;
 struct QuitBuilder;
 
@@ -330,11 +339,13 @@ enum Data : uint8_t {
   Data_SetFrame = 15,
   Data_GetTraces = 16,
   Data_TracesResponse = 17,
+  Data_GetMetadata = 18,
+  Data_MetadataResponse = 19,
   Data_MIN = Data_NONE,
-  Data_MAX = Data_TracesResponse
+  Data_MAX = Data_MetadataResponse
 };
 
-inline const Data (&EnumValuesData())[18] {
+inline const Data (&EnumValuesData())[20] {
   static const Data values[] = {
     Data_NONE,
     Data_Filepaths,
@@ -353,13 +364,15 @@ inline const Data (&EnumValuesData())[18] {
     Data_Pause,
     Data_SetFrame,
     Data_GetTraces,
-    Data_TracesResponse
+    Data_TracesResponse,
+    Data_GetMetadata,
+    Data_MetadataResponse
   };
   return values;
 }
 
 inline const char * const *EnumNamesData() {
-  static const char * const names[19] = {
+  static const char * const names[21] = {
     "NONE",
     "Filepaths",
     "Array3Meta",
@@ -378,13 +391,15 @@ inline const char * const *EnumNamesData() {
     "SetFrame",
     "GetTraces",
     "TracesResponse",
+    "GetMetadata",
+    "MetadataResponse",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameData(Data e) {
-  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_TracesResponse)) return "";
+  if (::flatbuffers::IsOutRange(e, Data_NONE, Data_MetadataResponse)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesData()[index];
 }
@@ -459,6 +474,14 @@ template<> struct DataTraits<fbs::GetTraces> {
 
 template<> struct DataTraits<fbs::TracesResponse> {
   static const Data enum_value = Data_TracesResponse;
+};
+
+template<> struct DataTraits<fbs::GetMetadata> {
+  static const Data enum_value = Data_GetMetadata;
+};
+
+template<> struct DataTraits<fbs::MetadataResponse> {
+  static const Data enum_value = Data_MetadataResponse;
 };
 
 bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data type);
@@ -1767,6 +1790,261 @@ inline ::flatbuffers::Offset<TracesResponse> CreateTracesResponseDirect(
       recordings__);
 }
 
+struct GetMetadata FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef GetMetadataBuilder Builder;
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           verifier.EndTable();
+  }
+};
+
+struct GetMetadataBuilder {
+  typedef GetMetadata Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  explicit GetMetadataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<GetMetadata> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<GetMetadata>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<GetMetadata> CreateGetMetadata(
+    ::flatbuffers::FlatBufferBuilder &_fbb) {
+  GetMetadataBuilder builder_(_fbb);
+  return builder_.Finish();
+}
+
+struct VideoMetadata FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef VideoMetadataBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NAME = 4,
+    VT_NX = 6,
+    VT_NY = 8,
+    VT_NT = 10,
+    VT_NC = 12,
+    VT_CURRENT_FRAME = 14,
+    VT_VMIN = 16,
+    VT_VMAX = 18,
+    VT_COLORMAP = 20,
+    VT_BITRANGE = 22,
+    VT_METADATA = 24
+  };
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  }
+  int32_t nx() const {
+    return GetField<int32_t>(VT_NX, 0);
+  }
+  int32_t ny() const {
+    return GetField<int32_t>(VT_NY, 0);
+  }
+  int32_t nt() const {
+    return GetField<int32_t>(VT_NT, 0);
+  }
+  int32_t nc() const {
+    return GetField<int32_t>(VT_NC, 0);
+  }
+  int32_t current_frame() const {
+    return GetField<int32_t>(VT_CURRENT_FRAME, 0);
+  }
+  float vmin() const {
+    return GetField<float>(VT_VMIN, 0.0f);
+  }
+  float vmax() const {
+    return GetField<float>(VT_VMAX, 0.0f);
+  }
+  fbs::ColorMap colormap() const {
+    return static_cast<fbs::ColorMap>(GetField<int32_t>(VT_COLORMAP, 0));
+  }
+  fbs::BitRange bitrange() const {
+    return static_cast<fbs::BitRange>(GetField<int32_t>(VT_BITRANGE, 0));
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>> *>(VT_METADATA);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyField<int32_t>(verifier, VT_NX, 4) &&
+           VerifyField<int32_t>(verifier, VT_NY, 4) &&
+           VerifyField<int32_t>(verifier, VT_NT, 4) &&
+           VerifyField<int32_t>(verifier, VT_NC, 4) &&
+           VerifyField<int32_t>(verifier, VT_CURRENT_FRAME, 4) &&
+           VerifyField<float>(verifier, VT_VMIN, 4) &&
+           VerifyField<float>(verifier, VT_VMAX, 4) &&
+           VerifyField<int32_t>(verifier, VT_COLORMAP, 4) &&
+           VerifyField<int32_t>(verifier, VT_BITRANGE, 4) &&
+           VerifyOffset(verifier, VT_METADATA) &&
+           verifier.VerifyVector(metadata()) &&
+           verifier.VerifyVectorOfTables(metadata()) &&
+           verifier.EndTable();
+  }
+};
+
+struct VideoMetadataBuilder {
+  typedef VideoMetadata Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
+    fbb_.AddOffset(VideoMetadata::VT_NAME, name);
+  }
+  void add_nx(int32_t nx) {
+    fbb_.AddElement<int32_t>(VideoMetadata::VT_NX, nx, 0);
+  }
+  void add_ny(int32_t ny) {
+    fbb_.AddElement<int32_t>(VideoMetadata::VT_NY, ny, 0);
+  }
+  void add_nt(int32_t nt) {
+    fbb_.AddElement<int32_t>(VideoMetadata::VT_NT, nt, 0);
+  }
+  void add_nc(int32_t nc) {
+    fbb_.AddElement<int32_t>(VideoMetadata::VT_NC, nc, 0);
+  }
+  void add_current_frame(int32_t current_frame) {
+    fbb_.AddElement<int32_t>(VideoMetadata::VT_CURRENT_FRAME, current_frame, 0);
+  }
+  void add_vmin(float vmin) {
+    fbb_.AddElement<float>(VideoMetadata::VT_VMIN, vmin, 0.0f);
+  }
+  void add_vmax(float vmax) {
+    fbb_.AddElement<float>(VideoMetadata::VT_VMAX, vmax, 0.0f);
+  }
+  void add_colormap(fbs::ColorMap colormap) {
+    fbb_.AddElement<int32_t>(VideoMetadata::VT_COLORMAP, static_cast<int32_t>(colormap), 0);
+  }
+  void add_bitrange(fbs::BitRange bitrange) {
+    fbb_.AddElement<int32_t>(VideoMetadata::VT_BITRANGE, static_cast<int32_t>(bitrange), 0);
+  }
+  void add_metadata(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata) {
+    fbb_.AddOffset(VideoMetadata::VT_METADATA, metadata);
+  }
+  explicit VideoMetadataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<VideoMetadata> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<VideoMetadata>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<VideoMetadata> CreateVideoMetadata(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    int32_t nx = 0,
+    int32_t ny = 0,
+    int32_t nt = 0,
+    int32_t nc = 0,
+    int32_t current_frame = 0,
+    float vmin = 0.0f,
+    float vmax = 0.0f,
+    fbs::ColorMap colormap = fbs::ColorMap_DEFAULT,
+    fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::DictEntry>>> metadata = 0) {
+  VideoMetadataBuilder builder_(_fbb);
+  builder_.add_metadata(metadata);
+  builder_.add_bitrange(bitrange);
+  builder_.add_colormap(colormap);
+  builder_.add_vmax(vmax);
+  builder_.add_vmin(vmin);
+  builder_.add_current_frame(current_frame);
+  builder_.add_nc(nc);
+  builder_.add_nt(nt);
+  builder_.add_ny(ny);
+  builder_.add_nx(nx);
+  builder_.add_name(name);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<VideoMetadata> CreateVideoMetadataDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *name = nullptr,
+    int32_t nx = 0,
+    int32_t ny = 0,
+    int32_t nt = 0,
+    int32_t nc = 0,
+    int32_t current_frame = 0,
+    float vmin = 0.0f,
+    float vmax = 0.0f,
+    fbs::ColorMap colormap = fbs::ColorMap_DEFAULT,
+    fbs::BitRange bitrange = fbs::BitRange_AUTODETECT,
+    const std::vector<::flatbuffers::Offset<fbs::DictEntry>> *metadata = nullptr) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto metadata__ = metadata ? _fbb.CreateVector<::flatbuffers::Offset<fbs::DictEntry>>(*metadata) : 0;
+  return fbs::CreateVideoMetadata(
+      _fbb,
+      name__,
+      nx,
+      ny,
+      nt,
+      nc,
+      current_frame,
+      vmin,
+      vmax,
+      colormap,
+      bitrange,
+      metadata__);
+}
+
+struct MetadataResponse FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MetadataResponseBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_VIDEOS = 4
+  };
+  const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::VideoMetadata>> *videos() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::VideoMetadata>> *>(VT_VIDEOS);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_VIDEOS) &&
+           verifier.VerifyVector(videos()) &&
+           verifier.VerifyVectorOfTables(videos()) &&
+           verifier.EndTable();
+  }
+};
+
+struct MetadataResponseBuilder {
+  typedef MetadataResponse Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_videos(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::VideoMetadata>>> videos) {
+    fbb_.AddOffset(MetadataResponse::VT_VIDEOS, videos);
+  }
+  explicit MetadataResponseBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<MetadataResponse> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<MetadataResponse>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<MetadataResponse> CreateMetadataResponse(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::VideoMetadata>>> videos = 0) {
+  MetadataResponseBuilder builder_(_fbb);
+  builder_.add_videos(videos);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<MetadataResponse> CreateMetadataResponseDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<::flatbuffers::Offset<fbs::VideoMetadata>> *videos = nullptr) {
+  auto videos__ = videos ? _fbb.CreateVector<::flatbuffers::Offset<fbs::VideoMetadata>>(*videos) : 0;
+  return fbs::CreateMetadataResponse(
+      _fbb,
+      videos__);
+}
+
 struct Quit FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef QuitBuilder Builder;
   bool Verify(::flatbuffers::Verifier &verifier) const {
@@ -1977,6 +2255,12 @@ struct Root FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::TracesResponse *data_as_TracesResponse() const {
     return data_type() == fbs::Data_TracesResponse ? static_cast<const fbs::TracesResponse *>(data()) : nullptr;
   }
+  const fbs::GetMetadata *data_as_GetMetadata() const {
+    return data_type() == fbs::Data_GetMetadata ? static_cast<const fbs::GetMetadata *>(data()) : nullptr;
+  }
+  const fbs::MetadataResponse *data_as_MetadataResponse() const {
+    return data_type() == fbs::Data_MetadataResponse ? static_cast<const fbs::MetadataResponse *>(data()) : nullptr;
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_DATA_TYPE, 1) &&
@@ -2052,6 +2336,14 @@ template<> inline const fbs::GetTraces *Root::data_as<fbs::GetTraces>() const {
 
 template<> inline const fbs::TracesResponse *Root::data_as<fbs::TracesResponse>() const {
   return data_as_TracesResponse();
+}
+
+template<> inline const fbs::GetMetadata *Root::data_as<fbs::GetMetadata>() const {
+  return data_as_GetMetadata();
+}
+
+template<> inline const fbs::MetadataResponse *Root::data_as<fbs::MetadataResponse>() const {
+  return data_as_MetadataResponse();
 }
 
 struct RootBuilder {
@@ -2156,6 +2448,14 @@ inline bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data 
     }
     case Data_TracesResponse: {
       auto ptr = reinterpret_cast<const fbs::TracesResponse *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_GetMetadata: {
+      auto ptr = reinterpret_cast<const fbs::GetMetadata *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Data_MetadataResponse: {
+      auto ptr = reinterpret_cast<const fbs::MetadataResponse *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;

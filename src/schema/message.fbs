@@ -117,6 +117,27 @@ table TracesResponse {
   recordings:[RecordingTraces];
 }
 
+table GetMetadata {
+}
+
+table VideoMetadata {
+  name:string;
+  nx:int;
+  ny:int;
+  nt:int;
+  nc:int;
+  current_frame:int;
+  vmin:float;
+  vmax:float;
+  colormap:ColorMap;
+  bitrange:BitRange;
+  metadata:[DictEntry];
+}
+
+table MetadataResponse {
+  videos:[VideoMetadata];
+}
+
 table Quit {
 }
 
@@ -134,7 +155,7 @@ table PointsVideo {
   point_size:float;
 }
 
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed, Play, Pause, SetFrame, GetTraces, TracesResponse }
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed, Play, Pause, SetFrame, GetTraces, TracesResponse, GetMetadata, MetadataResponse }
 
 table Root {
     data:Data;

@@ -80,6 +80,7 @@ mc.show_layer(overlay, parent="Second Video", cmap='PRGn', opacity='centered')
 # mc.pause() to pause playback
 # mc.set_frame() to jump to a specific frame index
 # mc.get_traces() to get the current signal traces
+# mc.get_metadata() to get metadata for all open videos
 # mc.close_video() to close a video/layer/image
 # mc.close_all_videos() to close all currently open videos
 # mc.export_video() export a window (video+layers+...) as a MP4 video

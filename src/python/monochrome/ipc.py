@@ -19,16 +19,19 @@ from .fbs import (
     CloseVideo,
     CloseAllVideos,
     Filepaths,
+    GetMetadata,
     GetTraces,
     Pause,
     Play,
     PointsVideo,
     RecordingTrace,
     RecordingTraces,
+    MetadataResponse,
     Root,
     SetFrame,
     SetPlaybackSpeed,
     TracesResponse,
+    VideoMetadata,
     VideoExport,
 )
 from .fbs.ArrayDataType import ArrayDataType
@@ -794,6 +797,67 @@ def get_traces() -> Dict[str, List[Dict]]:
                 "data": t.DataAsNumpy()
             })
         result[name] = traces
+
+    return result
+
+def get_metadata() -> List[Dict]:
+    """Get metadata for all open videos in Monochrome.
+
+    Returns
+    -------
+    list of dict
+        A list of dictionaries, one for each open video.
+        Each dictionary contains:
+        - 'name' (str)
+        - 'shape' (tuple of T, H, W, C)
+        - 'current_frame' (int)
+        - 'vmin' (float)
+        - 'vmax' (float)
+        - 'colormap' (str)
+        - 'bitrange' (str)
+        - 'fps' (float)
+        - 'duration' (float)
+        - 'filepath' (str)
+    """
+    s = create_socket()
+    builder = flatbuffers.Builder(512)
+
+    GetMetadata.Start(builder)
+    fp = GetMetadata.End(builder)
+    root = build_root(builder, Data.GetMetadata, fp)
+    builder.FinishSizePrefixed(root)
+    buf = builder.Output()
+    s.sendall(buf)
+
+    root_msg = await_response(s)
+    if root_msg is None or root_msg.DataType() != Data.MetadataResponse:
+        return []
+
+    resp = MetadataResponse.MetadataResponse()
+    resp.Init(root_msg.Data().Bytes, root_msg.Data().Pos)
+
+    result = []
+    for i in range(resp.VideosLength()):
+        v = resp.Videos(i)
+
+        metadata = {}
+        for j in range(v.MetadataLength()):
+            entry = v.Metadata(j)
+            metadata[entry.Key().decode("utf-8")] = entry.Val().decode("utf-8")
+
+        filepath = metadata.pop("filepath", None)
+        Nc = max(v.Nc(), 1)
+        result.append({
+            "name": v.Name().decode("utf-8"),
+            "shape": (v.Nt() // Nc, v.Ny(), v.Nx(), Nc),
+            "current_frame": v.CurrentFrame(),
+            "vmin": v.Vmin(),
+            "vmax": v.Vmax(),
+            "colormap": ColorMap(v.Colormap()),
+            "bitrange": BitRange(v.Bitrange()),
+            "metadata": metadata,
+            "filepath": filepath
+        })
 
     return result
 

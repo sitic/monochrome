@@ -175,6 +175,27 @@ def test_get_traces():
         traces = mc.get_traces()
         assert isinstance(traces, dict)
 
+def test_get_metadata():
+    mc.close_all_videos()
+
+    shape = (10, 64, 64)
+    arr = np.random.rand(*shape).astype(dtype=np.float32)
+    mc.show_video(arr, 'TestMetadata', cmap='viridis')
+    
+    # Wait for video to load
+    sleep(0.5)
+    
+    metadata = mc.get_metadata()
+    assert len(metadata) > 0
+    assert 'current_frame' in metadata[0]
+    
+    if not HEADLESS_TEST:
+        v = metadata[0]
+        assert v['name'] == 'TestMetadata'
+        assert v['shape'] == (10, 64, 64, 1)
+        assert v['colormap'] == mc.ColorMap.VIRIDIS
+        assert v['bitrange'] == mc.BitRange.MINMAX
+
 def test_quit():
     mc.quit()
     if not HEADLESS_TEST:
@@ -203,6 +224,8 @@ if __name__ == "__main__":
     test_playback()
     print("Testing get traces...")
     test_get_traces()
+    print("Testing get metadata...")
+    test_get_metadata()
     print("Quitting...")
     if not HEADLESS_TEST:
         input("\n\n\nPress ENTER to quit Monochrome...\n")

@@ -186,6 +186,23 @@ namespace global {
     void execute() override;
   };
 
+  struct VideoMetadataResult {
+    std::string name;
+    int nx, ny, nt, nc;
+    int current_frame;
+    float vmin, vmax;
+    ColorMap colormap;
+    BitRange bitrange;
+    std::vector<std::pair<std::string, std::string>> metadata;
+  };
+  using MetadataResult = std::vector<VideoMetadataResult>;
+
+  struct GetMetadataCommand : RemoteCommand {
+    std::shared_ptr<std::promise<MetadataResult>> response_promise;
+    GetMetadataCommand() : response_promise(std::make_shared<std::promise<MetadataResult>>()) {}
+    void execute() override;
+  };
+
   class Subprocess {
     private:
       std::unique_ptr<subprocess::Popen> popen = nullptr;

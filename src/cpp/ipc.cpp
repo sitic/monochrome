@@ -226,6 +226,49 @@ namespace {
             }
             break;
           }
+          case fbs::Data_GetMetadata: {
+            auto cmd    = std::make_shared<global::GetMetadataCommand>();
+            auto future = cmd->response_promise->get_future();
+
+            if (global::unit_test_mode) {
+              cmd->response_promise->set_value({{{}, {}}});
+            } else {
+              global::add_remote_command(cmd);
+            }
+
+            if (future.wait_for(std::chrono::seconds(2)) == std::future_status::ready) {
+              auto result = future.get();
+
+              flatbuffers::FlatBufferBuilder builder(1024);
+              std::vector<flatbuffers::Offset<fbs::VideoMetadata>> videos_fb;
+
+              for (const auto &v : result) {
+                std::vector<flatbuffers::Offset<fbs::DictEntry>> metadata_fb;
+                for (const auto &entry : v.metadata) {
+                  auto key_fb = builder.CreateString(entry.first);
+                  auto val_fb = builder.CreateString(entry.second);
+                  metadata_fb.push_back(fbs::CreateDictEntry(builder, key_fb, val_fb));
+                }
+                auto name_fb     = builder.CreateString(v.name);
+                auto metadata_vec = builder.CreateVector(metadata_fb);
+
+                videos_fb.push_back(fbs::CreateVideoMetadata(
+                    builder, name_fb, v.nx, v.ny, v.nt, v.nc, v.current_frame, v.vmin, v.vmax,
+                    static_cast<fbs::ColorMap>(static_cast<int>(v.colormap) + 1),
+                    static_cast<fbs::BitRange>(static_cast<int>(v.bitrange) + 1), metadata_vec));
+              }
+
+              auto videos_vec_fb = builder.CreateVector(videos_fb);
+              auto resp          = fbs::CreateMetadataResponse(builder, videos_vec_fb);
+              auto root_resp     = fbs::CreateRoot(builder, fbs::Data_MetadataResponse, resp.Union());
+              builder.FinishSizePrefixed(root_resp);
+
+              auto buf  = builder.GetBufferPointer();
+              auto size = builder.GetSize();
+              response.assign(buf, buf + size);
+            }
+            break;
+          }
           case fbs::Data_Quit:
             fmt::print("Received quit command. Initiating shutdown sequence...\n");
             global::quit();
