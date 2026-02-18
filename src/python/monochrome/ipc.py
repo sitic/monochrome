@@ -139,6 +139,26 @@ def create_socket():
     return s
 
 
+def await_response(s):
+    size_data = s.recv(4)
+    if not size_data:
+        return None
+
+    size = struct.unpack("<I", size_data)[0]
+    data = b""
+    while len(data) < size:
+        chunk = s.recv(size - len(data))
+        if not chunk:
+            break
+        data += chunk
+
+    if len(data) < size:
+        return None
+
+    root_msg = Root.Root.GetRootAsRoot(data, 0)
+    return root_msg
+
+
 def get_color(builder, color):
     if color is None:
         return None
@@ -754,25 +774,8 @@ def get_traces() -> Dict[str, List[Dict]]:
     buf = builder.Output()
     s.sendall(buf)
 
-    # Read response
-    size_data = s.recv(4)
-    if not size_data:
-        return {}
-
-    size = struct.unpack("<I", size_data)[0]
-    data = b""
-    while len(data) < size:
-        chunk = s.recv(size - len(data))
-        if not chunk:
-            break
-        data += chunk
-
-    if len(data) < size:
-        return {}
-
-    # Parse response
-    root_msg = Root.Root.GetRootAsRoot(data, 0)
-    if root_msg.DataType() != Data.TracesResponse:
+    root_msg = await_response(s)
+    if root_msg is None or root_msg.DataType() != Data.TracesResponse:
         return {}
 
     resp = TracesResponse.TracesResponse()
