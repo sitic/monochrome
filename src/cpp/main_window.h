@@ -191,7 +191,7 @@ namespace global {
                              name);
     }
   }
-  void GetTracePosCommand::execute() {
+  void GetTracesCommand::execute() {
     TracesResult result;
     for (const auto &rec : prm::recordings) {
       RecordingTracesResult r;

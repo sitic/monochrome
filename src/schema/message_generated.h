@@ -59,8 +59,8 @@ struct PauseBuilder;
 struct SetFrame;
 struct SetFrameBuilder;
 
-struct GetTracePos;
-struct GetTracePosBuilder;
+struct GetTraces;
+struct GetTracesBuilder;
 
 struct RecordingTrace;
 struct RecordingTraceBuilder;
@@ -328,7 +328,7 @@ enum Data : uint8_t {
   Data_Play = 13,
   Data_Pause = 14,
   Data_SetFrame = 15,
-  Data_GetTracePos = 16,
+  Data_GetTraces = 16,
   Data_TracesResponse = 17,
   Data_MIN = Data_NONE,
   Data_MAX = Data_TracesResponse
@@ -352,7 +352,7 @@ inline const Data (&EnumValuesData())[18] {
     Data_Play,
     Data_Pause,
     Data_SetFrame,
-    Data_GetTracePos,
+    Data_GetTraces,
     Data_TracesResponse
   };
   return values;
@@ -376,7 +376,7 @@ inline const char * const *EnumNamesData() {
     "Play",
     "Pause",
     "SetFrame",
-    "GetTracePos",
+    "GetTraces",
     "TracesResponse",
     nullptr
   };
@@ -453,8 +453,8 @@ template<> struct DataTraits<fbs::SetFrame> {
   static const Data enum_value = Data_SetFrame;
 };
 
-template<> struct DataTraits<fbs::GetTracePos> {
-  static const Data enum_value = Data_GetTracePos;
+template<> struct DataTraits<fbs::GetTraces> {
+  static const Data enum_value = Data_GetTraces;
 };
 
 template<> struct DataTraits<fbs::TracesResponse> {
@@ -1533,32 +1533,32 @@ inline ::flatbuffers::Offset<SetFrame> CreateSetFrameDirect(
       name__);
 }
 
-struct GetTracePos FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef GetTracePosBuilder Builder;
+struct GetTraces FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef GetTracesBuilder Builder;
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
   }
 };
 
-struct GetTracePosBuilder {
-  typedef GetTracePos Table;
+struct GetTracesBuilder {
+  typedef GetTraces Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  explicit GetTracePosBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit GetTracesBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<GetTracePos> Finish() {
+  ::flatbuffers::Offset<GetTraces> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<GetTracePos>(end);
+    auto o = ::flatbuffers::Offset<GetTraces>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<GetTracePos> CreateGetTracePos(
+inline ::flatbuffers::Offset<GetTraces> CreateGetTraces(
     ::flatbuffers::FlatBufferBuilder &_fbb) {
-  GetTracePosBuilder builder_(_fbb);
+  GetTracesBuilder builder_(_fbb);
   return builder_.Finish();
 }
 
@@ -1971,8 +1971,8 @@ struct Root FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::SetFrame *data_as_SetFrame() const {
     return data_type() == fbs::Data_SetFrame ? static_cast<const fbs::SetFrame *>(data()) : nullptr;
   }
-  const fbs::GetTracePos *data_as_GetTracePos() const {
-    return data_type() == fbs::Data_GetTracePos ? static_cast<const fbs::GetTracePos *>(data()) : nullptr;
+  const fbs::GetTraces *data_as_GetTraces() const {
+    return data_type() == fbs::Data_GetTraces ? static_cast<const fbs::GetTraces *>(data()) : nullptr;
   }
   const fbs::TracesResponse *data_as_TracesResponse() const {
     return data_type() == fbs::Data_TracesResponse ? static_cast<const fbs::TracesResponse *>(data()) : nullptr;
@@ -2046,8 +2046,8 @@ template<> inline const fbs::SetFrame *Root::data_as<fbs::SetFrame>() const {
   return data_as_SetFrame();
 }
 
-template<> inline const fbs::GetTracePos *Root::data_as<fbs::GetTracePos>() const {
-  return data_as_GetTracePos();
+template<> inline const fbs::GetTraces *Root::data_as<fbs::GetTraces>() const {
+  return data_as_GetTraces();
 }
 
 template<> inline const fbs::TracesResponse *Root::data_as<fbs::TracesResponse>() const {
@@ -2150,8 +2150,8 @@ inline bool VerifyData(::flatbuffers::Verifier &verifier, const void *obj, Data 
       auto ptr = reinterpret_cast<const fbs::SetFrame *>(obj);
       return verifier.VerifyTable(ptr);
     }
-    case Data_GetTracePos: {
-      auto ptr = reinterpret_cast<const fbs::GetTracePos *>(obj);
+    case Data_GetTraces: {
+      auto ptr = reinterpret_cast<const fbs::GetTraces *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case Data_TracesResponse: {

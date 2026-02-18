@@ -98,7 +98,7 @@ table SetFrame {
   name:string;
 }
 
-table GetTracePos {
+table GetTraces {
 }
 
 table RecordingTrace {
@@ -134,7 +134,7 @@ table PointsVideo {
   point_size:float;
 }
 
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed, Play, Pause, SetFrame, GetTracePos, TracesResponse }
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed, Play, Pause, SetFrame, GetTraces, TracesResponse }
 
 table Root {
     data:Data;

@@ -187,8 +187,8 @@ namespace {
                 std::make_shared<global::SetFrameCommand>(req->frame(), req->name()->str()));
             break;
           }
-          case fbs::Data_GetTracePos: {
-            auto cmd    = std::make_shared<global::GetTracePosCommand>();
+          case fbs::Data_GetTraces: {
+            auto cmd    = std::make_shared<global::GetTracesCommand>();
             auto future = cmd->response_promise->get_future();
 
             if (global::unit_test_mode) {

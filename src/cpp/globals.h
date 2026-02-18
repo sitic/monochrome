@@ -180,9 +180,9 @@ namespace global {
   };
   using TracesResult = std::vector<RecordingTracesResult>;
 
-  struct GetTracePosCommand : RemoteCommand {
+  struct GetTracesCommand : RemoteCommand {
     std::shared_ptr<std::promise<TracesResult>> response_promise;
-    GetTracePosCommand() : response_promise(std::make_shared<std::promise<TracesResult>>()) {}
+    GetTracesCommand() : response_promise(std::make_shared<std::promise<TracesResult>>()) {}
     void execute() override;
   };
 

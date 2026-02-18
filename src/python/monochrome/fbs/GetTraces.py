@@ -7,32 +7,32 @@ from flatbuffers.compat import import_numpy
 from typing import Any
 np = import_numpy()
 
-class GetTracePos(object):
+class GetTraces(object):
     __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
-        x = GetTracePos()
+        x = GetTraces()
         x.Init(buf, n + offset)
         return x
 
     @classmethod
-    def GetRootAsGetTracePos(cls, buf, offset=0):
+    def GetRootAsGetTraces(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-    # GetTracePos
+    # GetTraces
     def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-def GetTracePosStart(builder: flatbuffers.Builder):
+def GetTracesStart(builder: flatbuffers.Builder):
     builder.StartObject(0)
 
 def Start(builder: flatbuffers.Builder):
-    GetTracePosStart(builder)
+    GetTracesStart(builder)
 
-def GetTracePosEnd(builder: flatbuffers.Builder) -> int:
+def GetTracesEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
 def End(builder: flatbuffers.Builder) -> int:
-    return GetTracePosEnd(builder)
+    return GetTracesEnd(builder)
