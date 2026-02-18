@@ -23,11 +23,12 @@ from .fbs import (
     Pause,
     Play,
     PointsVideo,
-    RecordingTracePos,
+    RecordingTrace,
+    RecordingTraces,
     Root,
     SetFrame,
     SetPlaybackSpeed,
-    TracePosResponse,
+    TracesResponse,
     VideoExport,
 )
 from .fbs.ArrayDataType import ArrayDataType
@@ -734,13 +735,14 @@ def set_frame(frame: int, name: str = ""):
     buf = builder.Output()
     s.sendall(buf)
 
-def get_trace_positions() -> Dict[str, List[tuple]]:
-    """Get the current trace positions for all videos in Monochrome.
+def get_traces() -> Dict[str, List[Dict]]:
+    """Get the current signal traces for all videos in Monochrome.
 
     Returns
     -------
     dict
-        A dictionary where keys are video names and values are lists of (x, y) tuples.
+        A dictionary where keys are video names and values are lists of trace dictionaries.
+        Each trace dictionary contains 'pos' (x, y), 'width', and 'data' (numpy array).
     """
     s = create_socket()
     builder = flatbuffers.Builder(512)
@@ -757,6 +759,7 @@ def get_trace_positions() -> Dict[str, List[tuple]]:
     if not size_data:
         return {}
 
+    import struct
     size = struct.unpack("<I", size_data)[0]
     data = b""
     while len(data) < size:
@@ -769,20 +772,26 @@ def get_trace_positions() -> Dict[str, List[tuple]]:
         return {}
 
     # Parse response
-    root = Root.Root.GetRootAsRoot(data, 0)
-    if root.DataType() != Data.TracePosResponse:
+    root_msg = Root.Root.GetRootAsRoot(data, 0)
+    if root_msg.DataType() != Data.TracesResponse:
         return {}
 
-    resp = TracePosResponse.TracePosResponse()
-    resp.Init(root.Data().Bytes, root.Data().Pos)
+    resp = TracesResponse.TracesResponse()
+    resp.Init(root_msg.Data().Bytes, root_msg.Data().Pos)
 
     result = {}
     for i in range(resp.RecordingsLength()):
         rec = resp.Recordings(i)
         name = rec.Name().decode("utf-8")
-        posx = rec.PosxAsNumpy()
-        posy = rec.PosyAsNumpy()
-        result[name] = list(zip(posx, posy))
+        traces = []
+        for j in range(rec.TracesLength()):
+            t = rec.Traces(j)
+            traces.append({
+                "pos": (t.Posx(), t.Posy()),
+                "width": t.Width(),
+                "data": t.DataAsNumpy()
+            })
+        result[name] = traces
 
     return result
 

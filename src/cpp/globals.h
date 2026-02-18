@@ -168,16 +168,21 @@ namespace global {
     void execute() override;
   };
 
-  struct RecordingTracePosResult {
-    std::string name;
-    std::vector<int> posx;
-    std::vector<int> posy;
+  struct TraceResult {
+    int posx;
+    int posy;
+    int width;
+    std::vector<float> data;
   };
-  using TracePosResult = std::vector<RecordingTracePosResult>;
+  struct RecordingTracesResult {
+    std::string name;
+    std::vector<TraceResult> traces;
+  };
+  using TracesResult = std::vector<RecordingTracesResult>;
 
   struct GetTracePosCommand : RemoteCommand {
-    std::shared_ptr<std::promise<TracePosResult>> response_promise;
-    GetTracePosCommand() : response_promise(std::make_shared<std::promise<TracePosResult>>()) {}
+    std::shared_ptr<std::promise<TracesResult>> response_promise;
+    GetTracePosCommand() : response_promise(std::make_shared<std::promise<TracesResult>>()) {}
     void execute() override;
   };
 

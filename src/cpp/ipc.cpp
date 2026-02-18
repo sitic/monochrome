@@ -201,18 +201,23 @@ namespace {
               auto result = future.get();
 
               flatbuffers::FlatBufferBuilder builder(1024);
-              std::vector<flatbuffers::Offset<fbs::RecordingTracePos>> recordings_fb;
+              std::vector<flatbuffers::Offset<fbs::RecordingTraces>> recordings_fb;
 
               for (const auto &rec : result) {
-                auto name_fb = builder.CreateString(rec.name);
-                auto posx_fb = builder.CreateVector(rec.posx);
-                auto posy_fb = builder.CreateVector(rec.posy);
-                recordings_fb.push_back(fbs::CreateRecordingTracePos(builder, name_fb, posx_fb, posy_fb));
+                std::vector<flatbuffers::Offset<fbs::RecordingTrace>> traces_fb;
+                for (const auto &trace : rec.traces) {
+                  auto data_fb = builder.CreateVector(trace.data);
+                  traces_fb.push_back(
+                      fbs::CreateRecordingTrace(builder, trace.posx, trace.posy, trace.width, data_fb));
+                }
+                auto name_fb   = builder.CreateString(rec.name);
+                auto traces_vec = builder.CreateVector(traces_fb);
+                recordings_fb.push_back(fbs::CreateRecordingTraces(builder, name_fb, traces_vec));
               }
 
               auto recordings_vec_fb = builder.CreateVector(recordings_fb);
-              auto resp              = fbs::CreateTracePosResponse(builder, recordings_vec_fb);
-              auto root_resp         = fbs::CreateRoot(builder, fbs::Data_TracePosResponse, resp.Union());
+              auto resp              = fbs::CreateTracesResponse(builder, recordings_vec_fb);
+              auto root_resp         = fbs::CreateRoot(builder, fbs::Data_TracesResponse, resp.Union());
               builder.FinishSizePrefixed(root_resp);
 
               auto buf  = builder.GetBufferPointer();

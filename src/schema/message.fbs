@@ -101,14 +101,20 @@ table SetFrame {
 table GetTracePos {
 }
 
-table RecordingTracePos {
-  name:string;
-  posx:[int];
-  posy:[int];
+table RecordingTrace {
+  posx:int;
+  posy:int;
+  width:int;
+  data:[float];
 }
 
-table TracePosResponse {
-  recordings:[RecordingTracePos];
+table RecordingTraces {
+  name:string;
+  traces:[RecordingTrace];
+}
+
+table TracesResponse {
+  recordings:[RecordingTraces];
 }
 
 table Quit {
@@ -117,16 +123,6 @@ table Quit {
 //table VideoID {
 //  id:string;
 //  error:string;
-//}
-//
-//table RecordingTracePos {
-//  name:string;
-//  posx:[uint];
-//  posy:[uint];
-//}
-//
-//table ResponseTracePos {
-//  recordings:[RecordingTracePos];
 //}
 
 table PointsVideo {
@@ -138,7 +134,7 @@ table PointsVideo {
   point_size:float;
 }
 
-union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed, Play, Pause, SetFrame, GetTracePos, TracePosResponse }
+union Data { Filepaths, Array3Meta, Array3MetaFlow, Array3DataChunkf, Array3DataChunku8, Array3DataChunku16, VideoExport, PointsVideo, CloseVideo, Quit, CloseAllVideos, SetPlaybackSpeed, Play, Pause, SetFrame, GetTracePos, TracesResponse }
 
 table Root {
     data:Data;

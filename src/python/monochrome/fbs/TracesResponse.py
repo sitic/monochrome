@@ -5,72 +5,72 @@
 import flatbuffers
 from flatbuffers.compat import import_numpy
 from typing import Any
-from .RecordingTracePos import RecordingTracePos
+from .RecordingTraces import RecordingTraces
 from typing import Optional
 np = import_numpy()
 
-class TracePosResponse(object):
+class TracesResponse(object):
     __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset: int = 0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
-        x = TracePosResponse()
+        x = TracesResponse()
         x.Init(buf, n + offset)
         return x
 
     @classmethod
-    def GetRootAsTracePosResponse(cls, buf, offset=0):
+    def GetRootAsTracesResponse(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-    # TracePosResponse
+    # TracesResponse
     def Init(self, buf: bytes, pos: int):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-    # TracePosResponse
-    def Recordings(self, j: int) -> Optional[RecordingTracePos]:
+    # TracesResponse
+    def Recordings(self, j: int) -> Optional[RecordingTraces]:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            obj = RecordingTracePos()
+            obj = RecordingTraces()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-    # TracePosResponse
+    # TracesResponse
     def RecordingsLength(self) -> int:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
-    # TracePosResponse
+    # TracesResponse
     def RecordingsIsNone(self) -> bool:
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
-def TracePosResponseStart(builder: flatbuffers.Builder):
+def TracesResponseStart(builder: flatbuffers.Builder):
     builder.StartObject(1)
 
 def Start(builder: flatbuffers.Builder):
-    TracePosResponseStart(builder)
+    TracesResponseStart(builder)
 
-def TracePosResponseAddRecordings(builder: flatbuffers.Builder, recordings: int):
+def TracesResponseAddRecordings(builder: flatbuffers.Builder, recordings: int):
     builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(recordings), 0)
 
 def AddRecordings(builder: flatbuffers.Builder, recordings: int):
-    TracePosResponseAddRecordings(builder, recordings)
+    TracesResponseAddRecordings(builder, recordings)
 
-def TracePosResponseStartRecordingsVector(builder, numElems: int) -> int:
+def TracesResponseStartRecordingsVector(builder, numElems: int) -> int:
     return builder.StartVector(4, numElems, 4)
 
 def StartRecordingsVector(builder, numElems: int) -> int:
-    return TracePosResponseStartRecordingsVector(builder, numElems)
+    return TracesResponseStartRecordingsVector(builder, numElems)
 
-def TracePosResponseEnd(builder: flatbuffers.Builder) -> int:
+def TracesResponseEnd(builder: flatbuffers.Builder) -> int:
     return builder.EndObject()
 
 def End(builder: flatbuffers.Builder) -> int:
-    return TracePosResponseEnd(builder)
+    return TracesResponseEnd(builder)

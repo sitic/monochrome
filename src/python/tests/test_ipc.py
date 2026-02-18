@@ -159,17 +159,20 @@ def test_playback():
         mc.set_frame(10)
         mc.play()
 
-def test_get_trace_positions():
+def test_get_traces():
     shape = (100, 64, 64)
     arr = np.random.rand(*shape).astype(dtype=np.float32)
     mc.show_video(arr, 'TestTraces')
 
     if not HEADLESS_TEST:
         input("Please add some traces by clicking in the video, then press ENTER...")
-        traces = mc.get_trace_positions()
-        print(f"Traces after manual input: {traces}")
+        traces = mc.get_traces()
+        for name, video_traces in traces.items():
+            print(f"Traces for {name}:")
+            for t in video_traces:
+                print(f"  Pos: {t['pos']}, Width: {t['width']}, Data shape: {t['data'].shape}")
     else:
-        traces = mc.get_trace_positions()
+        traces = mc.get_traces()
         assert isinstance(traces, dict)
 
 def test_quit():
@@ -198,8 +201,8 @@ if __name__ == "__main__":
     test_speed()
     print("Testing playback controls...")
     test_playback()
-    print("Testing get trace positions...")
-    test_get_trace_positions()
+    print("Testing get traces...")
+    test_get_traces()
     print("Quitting...")
     if not HEADLESS_TEST:
         input("\n\n\nPress ENTER to quit Monochrome...\n")

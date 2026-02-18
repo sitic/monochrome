@@ -192,13 +192,17 @@ namespace global {
     }
   }
   void GetTracePosCommand::execute() {
-    TracePosResult result;
+    TracesResult result;
     for (const auto &rec : prm::recordings) {
-      RecordingTracePosResult r;
+      RecordingTracesResult r;
       r.name = rec->name();
       for (const auto &trace : rec->traces) {
-        r.posx.push_back(trace.pos[0]);
-        r.posy.push_back(trace.pos[1]);
+        TraceResult t;
+        t.posx  = trace.pos[0];
+        t.posy  = trace.pos[1];
+        t.width = Trace::width();
+        t.data  = trace.data;
+        r.traces.push_back(std::move(t));
       }
       result.push_back(std::move(r));
     }
