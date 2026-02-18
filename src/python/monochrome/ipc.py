@@ -19,7 +19,7 @@ from .fbs import (
     CloseVideo,
     CloseAllVideos,
     Filepaths,
-    GetTracePos,
+    GetTraces,
     Pause,
     Play,
     PointsVideo,
@@ -747,9 +747,9 @@ def get_traces() -> Dict[str, List[Dict]]:
     s = create_socket()
     builder = flatbuffers.Builder(512)
 
-    GetTracePos.Start(builder)
-    fp = GetTracePos.End(builder)
-    root = build_root(builder, Data.GetTracePos, fp)
+    GetTraces.Start(builder)
+    fp = GetTraces.End(builder)
+    root = build_root(builder, Data.GetTraces, fp)
     builder.FinishSizePrefixed(root)
     buf = builder.Output()
     s.sendall(buf)
@@ -759,7 +759,6 @@ def get_traces() -> Dict[str, List[Dict]]:
     if not size_data:
         return {}
 
-    import struct
     size = struct.unpack("<I", size_data)[0]
     data = b""
     while len(data) < size:
