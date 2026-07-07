@@ -42,9 +42,6 @@ class CollageFile : public AbstractFile {
     init(std::move(tiles), std::move(opts));
   }
 
-  bool good() const final { return _good; }
-  std::string error_msg() final { return _error_msg; }
-
   int Nx() const final { return _nx; }
   int Ny() const final { return _ny; }
   int Nc() const final { return 1; }
@@ -243,17 +240,7 @@ class CollageFile : public AbstractFile {
 
     // Gap pixels are only written once, tiles always overwrite the same blocks
     _collage.setConstant(_nx, _ny, _opts.gap_value);
-    _good = true;
-  }
-
-  void set_error(std::string msg) {
-    _good      = false;
-    _error_msg = std::move(msg);
-  }
-
-  void append_warning(const std::string &msg) {
-    if (!_error_msg.empty()) _error_msg += "\n";
-    _error_msg += msg;
+    set_good();
   }
 
  private:
@@ -297,6 +284,4 @@ class CollageFile : public AbstractFile {
   Options _opts;
   Eigen::MatrixXf _collage;
   long _cached_t = -1;
-  bool _good = false;
-  std::string _error_msg;
 };

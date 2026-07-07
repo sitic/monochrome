@@ -6,10 +6,6 @@
 #include "globals.h"
 
 class InMemoryFile : public AbstractFile {
-  bool _good = false;
-
-  std::string _error_msg = "";
-
   std::shared_ptr<global::RawArray3> _data;
   Eigen::MatrixXf _frame;
   std::size_t _frame_size;
@@ -30,11 +26,11 @@ class InMemoryFile : public AbstractFile {
  public:
   InMemoryFile(std::shared_ptr<global::RawArray3> data)
       : AbstractFile(InMemoryFile::get_filepath(data)), _data(data) {
-    _good = static_cast<bool>(_data);
-    if (!_good) {
-      _error_msg = "Empty array loaded";
+    if (!_data) {
+      set_error("Empty array loaded");
       return;
     }
+    set_good();
 
     _frame_size = Nx() * Ny();
     _frame.setZero(Nx(), Ny());
@@ -47,9 +43,6 @@ class InMemoryFile : public AbstractFile {
           _data->data);
     }
   }
-
-  bool good() const final { return _good; };
-  std::string error_msg() final { return _error_msg; };
 
   int Nx() const final { return _data->meta.nx; };
   int Ny() const final { return _data->meta.ny; };

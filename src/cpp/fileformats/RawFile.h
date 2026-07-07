@@ -8,13 +8,11 @@
 
 class RawFile : public AbstractFile {
   mio::mmap_source _mmap;
-  int _nx       = 0;
-  int _ny       = 0;
-  int _nt       = 0;
-  bool _good    = false;
+  int _nx = 0;
+  int _ny = 0;
+  int _nt = 0;
 
   std::size_t _frame_size = 0;
-  std::string _error_msg  = "";
 
   Eigen::MatrixXf _frame;
   std::optional<BitRange> _bitrange;
@@ -50,21 +48,20 @@ class RawFile : public AbstractFile {
   RawFile(const fs::path &path, int nx, int ny, int nt)
       : AbstractFile(path), _nx(nx), _ny(ny), _nt(nt), _frame_size(nx * ny) {
     if (_nx <= 0 || _ny <= 0 || _nt <= 0) {
-      _error_msg = "Unable to determine dimensions from file name";
+      set_error("Unable to determine dimensions from file name");
       return;
     }
 
     std::error_code error;
     _mmap.map(path.string(), error);
     if (error) {
-      _good      = false;
-      _error_msg = error.message();
+      set_error(error.message());
       return;
     }
     auto l               = _mmap.length();
     auto bytes_per_frame = _frame_size * sizeof(float);
     if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt) {
-      _error_msg = "File size does not match expected dimensions";
+      set_error("File size does not match expected dimensions");
       return;
     }
 
@@ -78,18 +75,16 @@ class RawFile : public AbstractFile {
       _nt = l / bytes_per_frame;
     }
 
-    _good = true;
+    set_good();
 
     _frame.setZero(_nx, _ny);
     _bitrange = utils::detect_bitrange(get_data_ptr(0), get_data_ptr(1));
   }
 
-  bool good() const final { return _good; };
   int Nx() const final { return _nx; };
   int Ny() const final { return _ny; };
   int Nc() const final { return 1; };
   int length() const final { return _nt; };
-  std::string error_msg() final { return _error_msg; };
   std::string date() const final { return ""; };
   std::string comment() const final { return ""; };
   std::chrono::duration<float> duration() const final { return 0s; };

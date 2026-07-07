@@ -6,8 +6,6 @@
 
 class TiffFolder : public AbstractFile {
  private:
-  bool _good = true;
-  std::string _error_msg;
   std::vector<std::shared_ptr<TiffFile>> _files;
 
   int _nx = 0, _ny = 0, _nc = 0, _nt = 0;
@@ -17,6 +15,7 @@ class TiffFolder : public AbstractFile {
 
  public:
   TiffFolder(fs::path path) : AbstractFile(path) {
+    set_good();  // reset by the error checks below
     std::vector<fs::path> tiff_files;
     const std::unordered_set<std::string> extensions = {".tif", ".tiff", ".TIF", ".TIFF"};
     for (const auto& entry : fs::directory_iterator(path)) {
@@ -33,18 +32,16 @@ class TiffFolder : public AbstractFile {
       auto file = std::make_shared<TiffFile>(entry, true);
       _files.push_back(file);
       if (!file->good()) {
-        _error_msg = "Failed to load TIFF file: " + entry.string();
-        _good      = false;
+        set_error("Failed to load TIFF file: " + entry.string());
         break;
       }
       if (file->length() != 1) {
-        _error_msg = "Image folder contains multiple frames per file";
-        _good      = false;
+        set_error("Image folder contains multiple frames per file");
         break;
       }
     }
 
-    if (_good) {
+    if (good()) {
       _nx      = _files[0]->Nx();
       _ny      = _files[0]->Ny();
       _nc      = _files[0]->Nc();
@@ -54,22 +51,15 @@ class TiffFolder : public AbstractFile {
     }
     for (const auto& file : _files) {
       if (file->length() != 1) {
-        _error_msg = "Image folder contains multiple frames per file";
-        _good      = false;
+        set_error("Image folder contains multiple frames per file");
         break;
       }
       if (file->Nx() != _nx || file->Ny() != _ny || file->Nc() != _nc) {
-        _error_msg = "Inconsistent dimensions in TIFF files";
-        _good      = false;
+        set_error("Inconsistent dimensions in TIFF files");
         break;
       }
     }
   }
-
-
-  bool good() const final { return _good; }
-
-  std::string error_msg() final { return _error_msg; }
 
   int Nx() const final { return _nx; }
   int Ny() const final { return _ny; }
@@ -104,8 +94,7 @@ class TiffFolder : public AbstractFile {
 
   Eigen::MatrixXf read_frame(long t, long c) final {
     if (t < 0 || t >= length()) {
-      _error_msg = "Time index out of range";
-      _good      = false;
+      set_error("Time index out of range");
       return Eigen::MatrixXf();
     }
     return _files[t]->read_frame(0, c);
@@ -113,8 +102,7 @@ class TiffFolder : public AbstractFile {
 
   float get_pixel(long t, long x, long y) final {
     if (t < 0 || t >= length()) {
-      _error_msg = "Time index out of range";
-      _good      = false;
+      set_error("Time index out of range");
       return 0;
     }
     return _files[t]->get_pixel(0, x, y);

@@ -32,9 +32,11 @@ static int tiffErrorHandler(TIFF* tiff, void* user_data, const char* module, con
 
 class TiffFile : public AbstractFile {
  private:
-  bool _good = true;
-  std::string _error_msg;
   std::mutex _mutex;
+
+  // libtiff stores this pointer for the lifetime of the TIFF handle, it has to
+  // outlive the constructor
+  TiffErrorData error_data;
 
   TIFF* tif;
 
@@ -139,8 +141,7 @@ class TiffFile : public AbstractFile {
       try {
         TIFFClose(tif);
       } catch (std::exception& e) {
-        _error_msg = fmt::format("Failed to close TIFF file: {}", e.what());
-        _good      = false;
+        set_error(fmt::format("Failed to close TIFF file: {}", e.what()));
         fmt::print("Failed to close TIFF file: {}\n", e.what());
       }
       tif = nullptr;
@@ -150,27 +151,22 @@ class TiffFile : public AbstractFile {
  public:
   TiffFile(fs::path path, bool fast_init_check = false) : AbstractFile(path) {
     // Setup error handler
-    TiffErrorData error_data;
+    set_good();  // may be reset by the error handler or parse_tiff()
     error_data.good = &_good;
     error_data.error_msg = &_error_msg;
     TIFFOpenOptions* opts = TIFFOpenOptionsAlloc();
     TIFFOpenOptionsSetErrorHandlerExtR(opts, tiffErrorHandler, &error_data);
-    
+
     // Open TIFF file
     tif = TIFFOpenExt(path.string().c_str(), "r", opts);
     TIFFOpenOptionsFree(opts);
-    
+
     if (!parse_tiff(fast_init_check)) {
       _good = false;
       close();
     };
   }
   ~TiffFile() { close(); }
-
-
-  bool good() const final { return _good; }
-
-  std::string error_msg() final { return _error_msg; }
 
   int Nx() const final { return _nx; }
   int Ny() const final { return _ny; }
@@ -228,8 +224,7 @@ class TiffFile : public AbstractFile {
 
   bool add_frame_to_cache(long t, bool init_check = false) {
     if (t < 0 || t >= length()) {
-      _error_msg = "Time index out of range";
-      _good      = false;
+      set_error("Time index out of range");
       return false;
     }
     if (length() != 1) {
@@ -239,15 +234,13 @@ class TiffFile : public AbstractFile {
       if (planarconfig == PLANARCONFIG_CONTIG) {
         uint64_t row_size = _nx * _nc * (_bits / 8);
         if (row_size != TIFFScanlineSize(tif)) {
-          _error_msg = "Buffer size mismatch";
-          _good      = false;
+          set_error("Buffer size mismatch");
           return false;
         }
         auto cache_ptr = cache.data() + t * frame_size;
         for (uint32_t row = 0; row < _ny; row++) {
           if (!TIFFReadScanline(tif, cache_ptr, row, 0)) {
-            _error_msg = "Failed to read scanline";
-            _good      = false;
+            set_error("Failed to read scanline");
             return false;
           }
           cache_ptr += row_size;
@@ -256,16 +249,14 @@ class TiffFile : public AbstractFile {
       } else if (planarconfig == PLANARCONFIG_SEPARATE) {
         uint64_t row_size = _nx * (_bits / 8);
         if (row_size != TIFFScanlineSize(tif)) {
-          _error_msg = "Buffer size mismatch";
-          _good      = false;
+          set_error("Buffer size mismatch");
           return false;
         }
         auto cache_ptr = cache.data() + t * frame_size;
         for (uint32_t c = 0; c < _nc; c++) {
           for (uint32_t row = 0; row < _ny; row++) {
             if (!TIFFReadScanline(tif, cache_ptr, row, c)) {
-              _error_msg = "Failed to read scanline";
-              _good      = false;
+              set_error("Failed to read scanline");
               return false;
             }
             cache_ptr += row_size;
@@ -274,8 +265,7 @@ class TiffFile : public AbstractFile {
         }
       }
     } catch (const std::exception& e) {
-      _error_msg = fmt::format("Error reading TIFF file: {}", e.what());
-      _good      = false;
+      set_error(fmt::format("Error reading TIFF file: {}", e.what()));
       return false;
     }
     frames_in_cache[t] = true;
@@ -301,13 +291,11 @@ class TiffFile : public AbstractFile {
     std::lock_guard<std::mutex> lock(_mutex);
 
     if (t < 0 || t >= length()) {
-      _error_msg = "Time index out of range";
-      _good      = false;
+      set_error("Time index out of range");
       return _frame;
     }
     if (c < 0 || c >= Nc()) {
-      _error_msg = "Channel index out of range";
-      _good      = false;
+      set_error("Channel index out of range");
       return _frame;
     }
 
@@ -330,8 +318,7 @@ class TiffFile : public AbstractFile {
         _copy_frame<float>(t, c);
         break;
       default:
-        _error_msg = "Unsupported bits per sample";
-        _good      = false;
+        set_error("Unsupported bits per sample");
     }
 
     if (t == length() - 1 &&
@@ -371,8 +358,7 @@ class TiffFile : public AbstractFile {
       case 32:
         return _get_pixel<float>(t, x, y, c);
       default:
-        _error_msg = "Unsupported bits per sample";
-        _good      = false;
+        set_error("Unsupported bits per sample");
     }
     return 0;
   }

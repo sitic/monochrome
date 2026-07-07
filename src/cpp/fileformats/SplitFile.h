@@ -8,21 +8,21 @@
 class SplitFile : public AbstractFile {
     std::shared_ptr<AbstractFile> _file;
     int _t = 0;
-    bool _good = true;
-
 
  public:
  SplitFile(std::shared_ptr<AbstractFile> file, int t)
-      : AbstractFile(file? file->path(): ""), _file(file) {
-    _file = file;
-    _t = t;
+      : AbstractFile(file? file->path(): ""), _file(file), _t(t) {
     if (!_file || _t >= _file->length()) {
-      _good = false;
+      set_error("Invalid file or frame index");
+      return;
     }
+    set_good();
   }
 
-  bool good() const final { return _good && _file->good(); };
-  std::string error_msg() final { return _file->error_msg(); };
+  bool good() const final { return AbstractFile::good() && _file->good(); };
+  std::string error_msg() final {
+    return _file ? _file->error_msg() : AbstractFile::error_msg();
+  };
 
   int Nx() const final { return _file->Nx(); };
   int Ny() const final { return _file->Ny(); };

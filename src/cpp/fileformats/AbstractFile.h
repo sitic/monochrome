@@ -21,15 +21,35 @@ class AbstractFile {
  private:
   fs::path _path;
 
+ protected:
+  // Error/warning state shared by all file loaders. Semantics (relied on by
+  // file_factory()):
+  //  - !good(): loading failed, error_msg() is shown as an error in the UI
+  //  - good() with non-empty error_msg(): loaded with non-fatal warnings,
+  //    which are still shown in the UI
+  // Files start out !good(); constructors call set_good() on success.
+  bool _good             = false;
+  std::string _error_msg = "";
+
+  void set_good() { _good = true; }
+  void set_error(std::string msg) {
+    _good      = false;
+    _error_msg = std::move(msg);
+  }
+  void append_warning(const std::string &msg) {
+    if (!_error_msg.empty()) _error_msg += "\n";
+    _error_msg += msg;
+  }
+
  public:
   AbstractFile(fs::path path) : _path(std::move(path)) {};
   virtual ~AbstractFile() = default;
   fs::path path() const { return _path; };
 
   // Is the file loaded correctly and no errors so far?
-  virtual bool good() const = 0;
-  // If good() == false, an error message may be requested here
-  virtual std::string error_msg() = 0;
+  virtual bool good() const { return _good; }
+  // Error or warning messages, see above
+  virtual std::string error_msg() { return _error_msg; }
 
   // Metadata
   virtual int Nx() const     = 0;  // width

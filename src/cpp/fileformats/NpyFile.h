@@ -20,14 +20,12 @@ class NpyFile : public AbstractFile {
   };
 
   mio::mmap_source _mmap;
-  int _nx       = 0;
-  int _ny       = 0;
-  int _nt       = 0;
-  int _nc       = 0;
-  bool _good    = false;
+  int _nx = 0;
+  int _ny = 0;
+  int _nt = 0;
+  int _nc = 0;
 
   std::size_t _frame_size = 0;
-  std::string _error_msg  = "";
 
   Eigen::MatrixXf _frame;
   std::optional<BitRange> _bitrange;
@@ -72,7 +70,7 @@ class NpyFile : public AbstractFile {
       std::error_code error;
       _mmap.map(path.string(), in.tellg(), mio::map_entire_file, error);
       if (error) {
-        _error_msg = error.message();
+        set_error(error.message());
         return;
       }
 
@@ -91,9 +89,9 @@ class NpyFile : public AbstractFile {
       } else if (get_dtype<bool>().str() == header.dtype.str()) {
         dataType = PixelDataFormat::BOOL;
       } else {
-        _error_msg = fmt::format(
+        set_error(fmt::format(
             "numpy dtype {} is unsupported. Supported datatypes are: bool, uint8, int8, uint16, int16, float32 and float64",
-            header.dtype.str());
+            header.dtype.str()));
         return;
       }
       if (header.shape.size() == 2) {
@@ -114,32 +112,32 @@ class NpyFile : public AbstractFile {
           _nt      = header.shape[0];
           _nc      = 3;
         } else {
-          _error_msg = fmt::format("Unsupported array dimensions ({}, {}, {}, {})", header.shape[0],
-                                   header.shape[1], header.shape[2], header.shape[3]);
+          set_error(fmt::format("Unsupported array dimensions ({}, {}, {}, {})", header.shape[0],
+                                header.shape[1], header.shape[2], header.shape[3]));
           return;
         }
         _ny      = header.shape[1];
         _nx      = header.shape[2];
       } else {
-        _error_msg = fmt::format("found {}D array, which are unsupported", header.shape.size());
+        set_error(fmt::format("found {}D array, which are unsupported", header.shape.size()));
         return;
       }
       _frame_size = _nx * _ny;
       if (_nx < 1 || _ny < 1 || _nt < 1) {
-        _error_msg = fmt::format("Invalid array dimensions ({}, {}, {})", _nt, _ny, _nx);
+        set_error(fmt::format("Invalid array dimensions ({}, {}, {})", _nt, _ny, _nx));
         return;
       }
 
       auto l               = _mmap.length();
       auto bytes_per_frame = _frame_size * pixel_size[dataType];
       if (l % bytes_per_frame != 0 || l / bytes_per_frame < _nt * _nc) {
-        _error_msg = "File size does not match expected dimensions";
+        set_error("File size does not match expected dimensions");
         return;
       }
 
       if (l / bytes_per_frame > _nt * _nc) {
         if (_nt * _nc != _nt) {
-          _error_msg = "File appears to be corrupted";
+          set_error("File appears to be corrupted");
           return;
         } else if (_nt != 1) {
           fmt::print(
@@ -150,7 +148,7 @@ class NpyFile : public AbstractFile {
         _nt = l / bytes_per_frame;
       }
 
-      _good = true;
+      set_good();
 
       _frame.setZero(_nx, _ny);
       if (Nc() != 2) {
@@ -184,17 +182,15 @@ class NpyFile : public AbstractFile {
         }
       }
     } catch (const std::runtime_error &e) {
-      _error_msg = e.what();
+      set_error(e.what());
       return;
     }
   }
 
-  bool good() const final { return _good; };
   int Nx() const final { return _nx; };
   int Ny() const final { return _ny; };
   int Nc() const final { return _nc; };
   int length() const final { return _nt; };
-  std::string error_msg() final { return _error_msg; };
   std::string date() const final { return ""; };
   std::string comment() const final { return ""; };
   std::chrono::duration<float> duration() const final { return 0s; };
