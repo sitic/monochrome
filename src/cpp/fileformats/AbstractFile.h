@@ -65,7 +65,7 @@ class AbstractFile {
   [[nodiscard]] virtual std::vector<float> get_trace(Vec2i start, Vec2i size) {
     std::vector<float> trace(length());
     for (int t = 0; t < length(); t++) {
-      trace[t] = trace[t] = get_block(t, start, size);
+      trace[t] = get_block(t, start, size);
     }
     return trace;
   }

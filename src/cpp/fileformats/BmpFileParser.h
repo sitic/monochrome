@@ -7,6 +7,7 @@
 
 #include <fmt/format.h>
 #include <ghc/fs_std_fwd.hpp>
+#include <nlohmann/json.hpp>
 
 #include "mio/mio.hpp"
 #include "pugixml.hpp"
@@ -93,10 +94,20 @@ class BmpFileParser {
       mNumFrames = num_frames;
     }
 
-    mRecordingLength = std::chrono::milliseconds(mLastFrameTime - mFirstFrameTime);
-    mFPS             = mNumFrames / mRecordingLength.count();
+    // MultiRecorder writes ms-since-epoch in the per-frame tail, OmniRecorder writes
+    // ns-since-epoch (same byte layout). Disambiguate by magnitude: ms-since-epoch is
+    // ~1.7e12 today, ns-since-epoch ~1.7e18; 1e15 as ms would be the year ~33658.
+    const uint64 ts_delta = mLastFrameTime - mFirstFrameTime;
+    if (mFirstFrameTime > 1'000'000'000'000'000ULL) {
+      mRecordingLength = std::chrono::nanoseconds(ts_delta);
+    } else {
+      mRecordingLength = std::chrono::milliseconds(ts_delta);
+    }
+    mFPS = mRecordingLength.count() > 0 ? mNumFrames / mRecordingLength.count() : 0;
 
-    parse_xml(path);
+    if (!parse_omni(path)) {
+      parse_xml(path);
+    }
 
     std::error_code error;
     _mmap.map(path.string(), HeaderLength, mio::map_entire_file, error);
@@ -236,12 +247,10 @@ class BmpFileParser {
 
     char data;
     std::vector<char> vec;
-    do {
-      _in.read(&data, sizeof(char));
-      if (data != '\0') {
-        vec.push_back(data);
-      }
-    } while (data != '\0');
+    while (_in.read(&data, sizeof(char)) && data != '\0') {
+      vec.push_back(data);
+      if (vec.size() > HeaderLength) break;  // corrupt header guard
+    }
     return std::string(vec.begin(), vec.end());
   }
 
@@ -280,6 +289,52 @@ class BmpFileParser {
     }
 
     return output;
+  }
+
+  // OmniRecorder writes a per-recording `.omni` JSON sidecar instead of the
+  // MultiRecorder `.xml`. Returns true if one was found and parsed, in which case the
+  // `.xml` lookup should be skipped.
+  bool parse_omni(const fs::path &dat_path) {
+    auto parts = split_string(dat_path.stem().string(), "_");
+    if (parts.size() <= 3) return false;
+    auto omni_path =
+        dat_path.parent_path() / fmt::format("{}_{}_{}.omni", parts[0], parts[1], parts[2]);
+    if (!fs::is_regular_file(omni_path)) return false;
+
+    try {
+      std::ifstream in(omni_path.string(), std::ios::in | std::ios::binary);
+      if (!in.good()) return false;
+      auto j = nlohmann::json::parse(in);
+
+      // sometimes the comment is not saved in the .dat file, only the sidecar
+      if (mComment.empty() && j.contains("meta")) {
+        mComment = j["meta"].value("comment", "");
+      }
+
+      if (j.contains("frames")) {
+        const float duration_s = j["frames"].value("duration_s", 0.0f);
+        if (duration_s > 0) {
+          mRecordingLength = std::chrono::duration<float>(duration_s);
+          mFPS             = mNumFrames / mRecordingLength.count();
+        }
+      }
+
+      if (j.contains("settings")) {
+        const auto &settings = j["settings"];
+        const float fps      = settings.value("fps", 0.0f);
+        if (fps > 0) mFPS = fps;
+        if (settings.contains("gain")) {
+          mMetadata.emplace_back("Gain", fmt::format("{}", settings["gain"].get<float>()));
+        }
+        if (settings.contains("exposure_us")) {
+          mMetadata.emplace_back("Exposure",
+                                 fmt::format("{} µs", settings["exposure_us"].get<float>()));
+        }
+      }
+    } catch (const nlohmann::json::exception &) {
+      return false;
+    }
+    return true;
   }
 
   void parse_xml(const fs::path &dat_path) {

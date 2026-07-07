@@ -10,6 +10,7 @@
 #include "BmpFile.h"
 #include "RawFile.h"
 #include "NpyFile.h"
+#include "OmniFile.h"
 #include "TiffFile.h"
 #include "TiffFolder.h"
 
@@ -96,6 +97,8 @@ std::shared_ptr<AbstractFile> file_factory(const fs::path& path) {
   // Native file handlers
   if (extension == ".npy") {
     file = std::make_shared<NpyFile>(path);
+  } else if (extension == ".omni") {
+    file = std::make_shared<OmniFile>(path);
   } else if (extension == ".dat") {
     file = std::make_shared<RawFile>(path);
     if (!file->good()) {

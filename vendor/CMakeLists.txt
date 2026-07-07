@@ -63,6 +63,9 @@ target_include_directories(Eigen INTERFACE Eigen)
 add_library(mio INTERFACE)
 target_include_directories(mio INTERFACE mio/single_include)
 
+add_library(nlohmann_json INTERFACE)
+target_include_directories(nlohmann_json INTERFACE json/include)
+
 add_library(libnpy INTERFACE)
 target_include_directories(libnpy INTERFACE libnpy)
 

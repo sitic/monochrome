@@ -2,7 +2,7 @@
 
 #include <strnatcmp.h>
 
-#include "TiffFolder.h"
+#include "TiffFile.h"
 
 class TiffFolder : public AbstractFile {
  private:
