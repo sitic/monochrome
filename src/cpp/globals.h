@@ -21,8 +21,9 @@ namespace global {
   class Message;
   class Subprocess;
 
-  // List of messages to be displayed in the UI
+  // List of messages to be displayed in the UI, protected by messages_mutex
   extern std::vector<Message> messages;
+  extern std::mutex messages_mutex;
   // List of subprocesses to be managed
   extern std::vector<std::shared_ptr<Subprocess>> subprocesses;
   // Thread pool for executing tasks in the background
@@ -234,12 +235,16 @@ namespace global {
    template <typename... Args>
    inline void new_ui_message(const char *fmt, Args &&...args) {
      const std::string msg = fmt::format(fmt, std::forward<Args>(args)...);
-     messages.emplace_back(msg);
+     {
+       // may be called from worker threads while the UI thread iterates messages
+       std::lock_guard<std::mutex> lock(messages_mutex);
+       messages.emplace_back(msg);
+     }
      std::string prefix("ERROR");
-     if (msg.compare(0, prefix.size(), prefix)) {
-       fmt::print(stderr, msg + "\n");
+     if (msg.compare(0, prefix.size(), prefix) == 0) {
+       fmt::print(stderr, "{}\n", msg);
      } else {
-       fmt::print(msg + "\n");
+       fmt::print("{}\n", msg);
      }
    }
  

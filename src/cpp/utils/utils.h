@@ -70,9 +70,17 @@ class Shader {
   Shader()                          = default;
   Shader(const Shader &)            = delete;
   Shader &operator=(Shader const &) = delete;
-  Shader(Shader &&other) noexcept { ID = other.ID; }
+  Shader(Shader &&other) noexcept {
+    ID       = other.ID;
+    other.ID = GL_FALSE;
+  }
   Shader &operator=(Shader &&other) noexcept {
-    ID = other.ID;
+    if (this != &other) {
+      // requires the owning GL context to be current, like remove()
+      if (ID) glDeleteProgram(ID);
+      ID       = other.ID;
+      other.ID = GL_FALSE;
+    }
     return *this;
   }
 

@@ -10,8 +10,9 @@
 
 namespace {
   SharedRecordingPtr rec_from_window_ptr(GLFWwindow *_window) {
-    return *std::find_if(prm::recordings.begin(), prm::recordings.end(),
-                         [_window](const auto &r) { return r->window == _window; });
+    auto it = std::find_if(prm::recordings.begin(), prm::recordings.end(),
+                           [_window](const auto &r) { return r->window == _window; });
+    return it != prm::recordings.end() ? *it : nullptr;
   }
 
   Shader create_frame_shader() {
@@ -164,7 +165,8 @@ void RecordingWindow::open_window() {
   glfwSwapInterval(0);
 
   add_window_icon(window);
-  glfwSetWindowCloseCallback(window, RecordingWindow::close_callback);
+  // No window close callback: glfwWindowShouldClose() is checked in the display loop,
+  // destroying the window from inside a GLFW callback is not allowed
   glfwSetKeyCallback(window, RecordingWindow::key_callback);
   glfwSetWindowSizeCallback(window, RecordingWindow::reshape_callback);
   glfwSetCursorPosCallback(window, RecordingWindow::cursor_position_callback);
@@ -186,6 +188,9 @@ void RecordingWindow::set_context(GLFWwindow *new_context) {
   if (glcontext && frame_shader) clear_gl_memory();
 
   glcontext = new_context;
+  // Detached child overlay (no own window), marked for deletion. Don't issue GL calls
+  // without a current context.
+  if (!glcontext) return;
   glfwMakeContextCurrent(glcontext);
   frame_shader                              = create_frame_shader();
   std::tie(frame_vao, frame_vbo, frame_ebo) = create_frame_vaovboebo();
@@ -263,11 +268,14 @@ void RecordingWindow::clear_gl_memory() {
     ctexturediff = GL_FALSE;
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteVertexArrays(1, &trace_vao);
+    glDeleteVertexArrays(1, &points_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ebo);
     glDeleteBuffers(1, &trace_vbo);
+    glDeleteBuffers(1, &points_vbo);
     frame_shader.remove();
     trace_shader.remove();
+    points_shader.remove();
   }
   glfwMakeContextCurrent(prev_window);
 }
@@ -489,6 +497,7 @@ fs::path RecordingWindow::save_snapshot(std::string output_png_path_template) {
 void RecordingWindow::scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
   // if traces shown, change trace width, else window width
   auto rec = rec_from_window_ptr(window);
+  if (!rec) return;
   if (!rec->traces.empty()) {
     auto w    = Trace::width();
     int new_w = (yoffset < 0) ? 0.95f * w : 1.05f * w;
@@ -505,7 +514,8 @@ void RecordingWindow::scroll_callback(GLFWwindow *window, double xoffset, double
 }
 
 void RecordingWindow::cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
-  auto rec      = rec_from_window_ptr(window);
+  auto rec = rec_from_window_ptr(window);
+  if (!rec) return;
   rec->mousepos = {xpos, ypos};
   if (rec->mousebutton.holding_left) {
     int w, h;
@@ -532,6 +542,7 @@ void RecordingWindow::cursor_position_callback(GLFWwindow *window, double xpos, 
 
 void RecordingWindow::mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
   auto rec = rec_from_window_ptr(window);
+  if (!rec) return;
   if (button == GLFW_MOUSE_BUTTON_LEFT) {
     if (action == GLFW_PRESS) {
       rec->mousebutton.holding_left  = true;
@@ -555,12 +566,7 @@ void RecordingWindow::mouse_button_callback(GLFWwindow *window, int button, int 
 
 void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
   auto rec = rec_from_window_ptr(window);
-
-  if (!rec) {
-    throw std::runtime_error(
-        "Error in RecordingWindow::reshape_callback, "
-        "could not find associated recording");
-  }
+  if (!rec) return;
 
   glfwMakeContextCurrent(window);
   glViewport(0, 0, w, h);
@@ -570,12 +576,6 @@ void RecordingWindow::reshape_callback(GLFWwindow *window, int w, int h) {
   glBlendEquation(GL_FUNC_ADD);
 
   glfwMakeContextCurrent(prm::main_window);
-}
-
-void RecordingWindow::close_callback(GLFWwindow *window) {
-  prm::recordings.erase(std::remove_if(prm::recordings.begin(), prm::recordings.end(),
-                                       [window](auto r) { return r->window == window; }),
-                        prm::recordings.end());
 }
 
 void RecordingWindow::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {

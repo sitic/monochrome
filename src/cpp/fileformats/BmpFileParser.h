@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <numeric>
@@ -264,6 +265,8 @@ class BmpFileParser {
 
   template <typename Scalar>
   const Scalar *get_data_ptr(long t) const {
+    // clamp to valid frames to avoid reads past the end of the memory-mapped file
+    t        = std::clamp(t, 0L, static_cast<long>(mNumFrames) - 1);
     auto ptr = _mmap.data() + t * (mFrameBytes + FrameTailLength);
     return reinterpret_cast<const Scalar *>(ptr);
   }

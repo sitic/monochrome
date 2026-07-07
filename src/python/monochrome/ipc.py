@@ -85,10 +85,11 @@ def start_monochrome(speed: Optional[float] = None,
         args.append("--flipv")
     kwargs = {**MONOCHROME_DEFAULT_ARGS, **kwargs}
     for key, val in kwargs.items():
-        args.append(f"--{key}")
         if isinstance(val, bool):
-            pass
+            if val:
+                args.append(f"--{key}")
         else:
+            args.append(f"--{key}")
             args.append(str(val))
 
     if sys.platform == "darwin" and '--unit-test-mode' in args:
@@ -136,16 +137,19 @@ def create_socket():
                 s = _create_socket()
                 waiting = False
             except ConnectionRefusedError:
-                pass
+                time.sleep(0.1)
         if waiting:
             raise ConnectionRefusedError("Could not connect to Monochrome")
     return s
 
 
 def await_response(s):
-    size_data = s.recv(4)
-    if not size_data:
-        return None
+    size_data = b""
+    while len(size_data) < 4:
+        chunk = s.recv(4 - len(size_data))
+        if not chunk:
+            return None
+        size_data += chunk
 
     size = struct.unpack("<I", size_data)[0]
     data = b""

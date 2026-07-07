@@ -21,6 +21,7 @@ namespace global {
   asio::thread_pool thread_pool(2);
   
   std::vector<Message> messages = {};
+  std::mutex messages_mutex;
   std::vector<std::shared_ptr<Subprocess>> subprocesses = {};
 
   Message::Message(std::string msg) : msg(std::move(msg)) {
@@ -117,7 +118,9 @@ namespace global {
       // Start a thread to continuously read output
       reader_thread = std::thread([this]() {
         try {
-          constexpr int buf_size = 8;
+          // pipe_read() blocks until data is available, no sleep needed; a small
+          // buffer with a sleep would stall output-heavy subprocesses
+          constexpr int buf_size = 4096;
           uint8_t buf[buf_size];
 
           while (running && popen) {
@@ -128,8 +131,6 @@ namespace global {
             } else {
               break;
             }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
           }
           subprocess::pipe_close(popen->cout);
           popen->cout = subprocess::kBadPipeValue;

@@ -190,7 +190,8 @@ void Recording::load_frame(long t, long c) {
 
 bool Recording::export_ROI(
     fs::path path, Vec2i start, Vec2i size, Vec2i t0tmax, ExportFileType exportType, Vec2f minmax) {
-  if (start[0] < 0 || start[1] < 0 || start[0] + size[0] > Nx() || start[1] + size[1] > Ny()) {
+  if (start[0] < 0 || start[1] < 0 || size[0] <= 0 || size[1] <= 0 ||
+      start[0] + size[0] > Nx() || start[1] + size[1] > Ny()) {
     global::new_ui_message("ERROR: export_ROI() called with invalid array sizes, start={}, size={}",
                            start, size);
     return false;

@@ -5,6 +5,7 @@
 void RGBRecordingWindow::set_context(GLFWwindow *new_context) {
   auto *prev_window = glfwGetCurrentContext();
   RecordingWindow::set_context(new_context);
+  if (!glcontext) return;  // detached child overlay, no context to work with
   glfwMakeContextCurrent(glcontext);
   frame_shader.remove();
   frame_shader = Shader::create(utils::get_rc_text_file("src/shaders/frame.vert.glsl"),

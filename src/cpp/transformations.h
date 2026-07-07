@@ -84,12 +84,19 @@ namespace Transformation {
 
     void allocate(Recording &rec) final {
       prev_frames = std::queue<QueueEntry>();
+      frame.setZero(rec.Nx(), rec.Ny());
 
-      rec.load_frame(rec.length() / 2);
-      compute(rec.frame, rec.length() / 2);
+      // Estimate min/max from two frames in the middle of the recording, clamped for
+      // recordings with only a few frames
+      const long t0 = rec.length() / 2;
+      const long t1 = std::min<long>(t0 + 2, rec.length() - 1);
+      rec.load_frame(t0);
+      compute(rec.frame, t0);
 
-      rec.load_frame(rec.length() / 2 + 2);
-      compute(rec.frame, rec.length() / 2 + 2);
+      if (t1 != t0) {
+        rec.load_frame(t1);
+        compute(rec.frame, t1);
+      }
       max = std::max(std::abs(frame.minCoeff()), std::abs(frame.maxCoeff()));
       min = -max;
 

@@ -17,8 +17,8 @@ namespace global {
     } else if (callback_rec && (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) &&
                action == GLFW_PRESS) {
       // ESC or Q: close focused recording
-      // Don't call RecordingWindow::close_callback() directly here,
-      // causes a segfault in glfw
+      // The window is closed in the display loop, destroying it from a
+      // callback causes a segfault in glfw
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_O && action == GLFW_PRESS) {
       // CTRL + O: open file dialog

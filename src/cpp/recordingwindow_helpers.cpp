@@ -19,7 +19,11 @@ std::pair<int, float> RecordingPlaybackCtrl::next_timestep(float speed_) const {
   return {t, tf};
 }
 RecordingPlaybackCtrl &RecordingPlaybackCtrl::operator=(RecordingPlaybackCtrl &&other) {
-  synchronize_with(other, false);
+  // Fully replace the state, including the length (in contrast to copy assignment,
+  // which only synchronizes the playback position)
+  t_      = other.t_;
+  tf_     = other.tf_;
+  length_ = other.length_;
   return *this;
 }
 RecordingPlaybackCtrl &RecordingPlaybackCtrl::operator=(const RecordingPlaybackCtrl &other) {
@@ -47,7 +51,7 @@ int RecordingPlaybackCtrl::next_t(int iterations) const {
   return next_timestep(iterations * prm::playbackCtrl.val).first;
 }
 float RecordingPlaybackCtrl::progress() const {
-  return t_ / static_cast<float>(length_ - 1);
+  return length_ > 1 ? t_ / static_cast<float>(length_ - 1) : 1.f;
 }
 void RecordingPlaybackCtrl::set(int t) {
   t_  = t;
@@ -58,8 +62,9 @@ void RecordingPlaybackCtrl::set_next(int t) {
     t = 0;
   }
 
+  // step() returns floor(tf_) before advancing, so the next displayed frame is t
   t_  = std::numeric_limits<int>::lowest();
-  tf_ = t - prm::playbackCtrl.val;
+  tf_ = t;
 }
 void RecordingPlaybackCtrl::restart() {
   t_  = std::numeric_limits<int>::lowest();

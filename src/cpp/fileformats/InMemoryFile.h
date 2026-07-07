@@ -87,19 +87,23 @@ class InMemoryFile : public AbstractFile {
   };
 
   float get_pixel(long t, long x, long y) final {
+    // Multi-channel data is channel-interleaved (shape (T, H, W, C)), return channel 0
     return std::visit(
         [this, t, x, y](const auto& data) {
-          return static_cast<float>(data[_frame_size * t + y * Nx() + x]);
+          return static_cast<float>(
+              data[_frame_size * (t * Nc()) + (static_cast<long>(y) * Nx() + x) * Nc()]);
         },
         _data->data);
   }
 
   // MSVC compiler faults when implementing this function in the lambda with std::remove_reference for some reason
   template <typename T>
-  Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> get_frame_map(std::vector<T>& data, long t) {
-    return Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>(
-      data.data() + _frame_size * t, Nx(), Ny()
-    );
+  auto get_frame_map(std::vector<T>& data, long t) {
+    // Stride over the interleaved channels (channel 0 only)
+    using StrideT = Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>;
+    return Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>, 0, StrideT>(
+        data.data() + _frame_size * (t * Nc()), Nx(), Ny(),
+        StrideT(static_cast<Eigen::Index>(Nx()) * Nc(), Nc()));
   }
   float get_block(long t, const Vec2i& start, const Vec2i& size) final {
       return std::visit(

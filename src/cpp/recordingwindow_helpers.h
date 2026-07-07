@@ -36,12 +36,13 @@ class RecordingPlaybackCtrl {
  private:
   int t_    = 0;
   float tf_ = 0;
-  const int length_;
+  int length_;
 
   std::pair<int, float> next_timestep(float speed_) const;
 
  public:
   RecordingPlaybackCtrl(int length) : length_(length) {}
+  // Fully replaces the state, including the length
   RecordingPlaybackCtrl &operator=(RecordingPlaybackCtrl &&other);
   // Copies the current playback position
   RecordingPlaybackCtrl &operator=(const RecordingPlaybackCtrl &other);

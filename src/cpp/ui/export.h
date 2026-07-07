@@ -87,8 +87,10 @@ void show_export_recording_ui(const SharedRecordingPtr &recording) {
         recording->start_recording(fs::path(export_dir) / ctrl.filename, fps, ctrl.description);
       }
     } else {
-      int cur_frame    = recording->current_frame() / prm::playbackCtrl.val + 1;
-      int total_frames = recording->length() / prm::playbackCtrl.val;
+      // playback speed can be 0 if the user pauses during the export
+      float speed      = prm::playbackCtrl.val > 0 ? prm::playbackCtrl.val : 1;
+      int cur_frame    = recording->current_frame() / speed + 1;
+      int total_frames = recording->length() / speed;
       auto label       = fmt::format("Exporting frame {:d}/{:d}", cur_frame, total_frames);
       ImGui::ProgressBar(ctrl.progress, ImVec2(-1, 0), label.c_str());
 

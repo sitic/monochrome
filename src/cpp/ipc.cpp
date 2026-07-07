@@ -85,6 +85,9 @@ namespace {
     }
   };
 
+  // Optional flatbuffer strings are null when absent
+  std::string fb_str(const flatbuffers::String* s) { return s ? s->str() : std::string(); }
+
   struct Array3Msg {
     std::size_t counter = 0;
     std::shared_ptr<global::RawArray3> array;
@@ -113,7 +116,7 @@ namespace {
 
     uint8_t* body() { return data_.data(); }
 
-    [[nodiscard]] std::size_t header_size() const { return data_.size(); }
+    [[nodiscard]] std::size_t header_size() const { return header_data_.size(); }
 
     [[nodiscard]] std::size_t body_size() const { return data_.size(); }
 
@@ -184,7 +187,7 @@ namespace {
           case fbs::Data_SetFrame: {
             auto req = root->data_as_SetFrame();
             global::add_remote_command(
-                std::make_shared<global::SetFrameCommand>(req->frame(), req->name()->str()));
+                std::make_shared<global::SetFrameCommand>(req->frame(), fb_str(req->name())));
             break;
           }
           case fbs::Data_GetTraces: {
@@ -289,6 +292,9 @@ namespace {
       }
 
       auto filepaths = raw->file();
+      if (!filepaths) {
+        return;
+      }
       for (unsigned int i = 0; i < filepaths->size(); i++) {
         auto file = filepaths->Get(i)->str();
         global::add_file_to_load(file);
@@ -315,8 +321,9 @@ namespace {
         pv->point_size = raw->point_size();
       }
       if (!raw->points_data() || !raw->time_idxs()) {
-        fmt::print("EROOR: parsing PointsVideo IPC packet failed!\n");
-      };
+        fmt::print("ERROR: parsing PointsVideo IPC packet failed!\n");
+        return;
+      }
 
       std::vector<std::size_t> idxs(raw->time_idxs()->begin(), raw->time_idxs()->end());
       auto data_fb         = raw->points_data()->data();
@@ -362,11 +369,11 @@ namespace {
           raw->ny(),
           raw->nt(),
           flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_NC)? raw->nc() : 1,
-          raw->name()->str(),
+          fb_str(raw->name()),
           raw->duration(),
           raw->fps(),
-          raw->date()->str(),
-          raw->comment()->str(),
+          fb_str(raw->date()),
+          fb_str(raw->comment()),
           bitrange < 0 ? std::nullopt : std::optional<BitRange>(static_cast<BitRange>(bitrange)),
           cmap < 0 ? std::nullopt : std::optional<ColorMap>(static_cast<ColorMap>(cmap)),
           flatbuffers::IsFieldPresent(raw, fbs::Array3Meta::VT_VMIN)
@@ -407,7 +414,7 @@ namespace {
       }
 
       int nc = 2;
-      global::RawArray3MetaData meta{raw->nx(), raw->ny(), raw->nt(), nc, raw->name()->str()};
+      global::RawArray3MetaData meta{raw->nx(), raw->ny(), raw->nt(), nc, fb_str(raw->name())};
       if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_PARENT_NAME))
         meta.parentName = raw->parent_name()->str();
       if (flatbuffers::IsFieldPresent(raw, fbs::Array3MetaFlow::VT_COLOR)) {
@@ -454,9 +461,9 @@ namespace {
       }
 
       auto obj = std::make_shared<global::ExportVideoCommand>();
-      obj->recording = raw->recording()->str();
-      obj->filename = raw->filepath()->str();
-      obj->description = raw->description()->str();
+      obj->recording = fb_str(raw->recording());
+      obj->filename = fb_str(raw->filepath());
+      obj->description = fb_str(raw->description());
       obj->t_start = raw->t_start();
       obj->t_end = raw->t_end();
       obj->fps = raw->fps();
@@ -476,7 +483,7 @@ namespace {
         return;
       }
 
-      auto obj = std::make_shared<global::CloseVideoCommand>(raw->name()->str());
+      auto obj = std::make_shared<global::CloseVideoCommand>(fb_str(raw->name()));
       global::add_remote_command(obj);
     }
 
@@ -508,12 +515,20 @@ namespace {
       asio::async_read(socket_, asio::buffer(msg_.body(), msg_.body_size()),
                        [this, self](std::error_code ec, std::size_t /*length*/) {
                          if (!ec) {
-                           auto resp = msg_.verify_and_deliver();
-                           if (!resp.empty()) {
-                             auto data_ptr  = resp.data();
-                             auto data_size = resp.size();
+                           // A malformed message must not tear down the IPC thread
+                           std::shared_ptr<std::vector<uint8_t>> resp;
+                           try {
+                             resp = std::make_shared<std::vector<uint8_t>>(
+                                 msg_.verify_and_deliver());
+                           } catch (const std::exception &e) {
+                             fmt::print("ERROR: Failed to handle IPC message: {}\n", e.what());
+                             return;
+                           }
+                           if (!resp->empty()) {
+                             // resp is captured by the completion handler to keep the
+                             // buffer alive until the write has finished
                              asio::async_write(
-                                 socket_, asio::buffer(data_ptr, data_size),
+                                 socket_, asio::buffer(*resp),
                                  [this, self, resp](std::error_code ec, std::size_t /*length*/) {
                                    if (!ec) {
                                      do_read_header();

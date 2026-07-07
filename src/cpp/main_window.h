@@ -102,8 +102,8 @@ void load_new_file(std::shared_ptr<AbstractFile> file,
     if (!parent) {
       std::string err_msg =
           prm::recordings.empty()
-              ? "ERROR: Failed to add flow to recording, no recording with name \"{}\" exists!"
-              : "ERROR: Failed to add flow to recording, you need to load a recording first!";
+              ? "ERROR: Failed to add flow to recording, you need to load a recording first!"
+              : "ERROR: Failed to add flow to recording, no recording with name \"{}\" exists!";
       global::new_ui_message(err_msg, parentName.value());
       return;
     }
@@ -266,6 +266,8 @@ void load_from_queue() {
 }
 
 void show_messages() {
+  // messages may be appended from worker threads
+  std::lock_guard<std::mutex> lock(global::messages_mutex);
   // Check if message window should be cleared
   global::messages.erase(std::remove_if(global::messages.begin(), global::messages.end(),
                                         [](const auto &msg) -> bool { return !msg.show; }),

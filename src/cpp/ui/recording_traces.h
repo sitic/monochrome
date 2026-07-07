@@ -84,6 +84,9 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
     }
     ImGui::Spacing();
     ImGui::SeparatorText("Individual Trace Settings");
+    // Deleting a trace while iterating over rec->traces would invalidate the loop
+    // iterators, collect the positions and remove them after the loop
+    std::vector<Vec2i> traces_to_remove;
     for (auto &trace : rec->traces) {
       ImGui::PushID(trace.id);
       auto title = "Position " + trace.original_position.to_string();
@@ -95,14 +98,14 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
                                   ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
         if (ImGui::Button(u8"Close " ICON_FA_TRASH_ALT, ImVec2(ImGui::GetContentRegionAvail().x * 0.3f, 0))) {
-          rec->remove_trace(trace.pos);
+          traces_to_remove.push_back(trace.pos);
         }
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
         if (ImGui::InputInt2("Center position", trace.original_position.data())) {
           trace.original_position[0] = std::clamp(trace.original_position[0], 0, rec->file()->Nx() - 1);
           trace.original_position[1] = std::clamp(trace.original_position[1], 0, rec->file()->Ny() - 1);
-          trace.pos = rec->inverse_transformation(trace.original_position);
+          trace.pos = rec->apply_transformation(trace.original_position);
         }
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.3f);
@@ -118,9 +121,12 @@ void show_traces_ui(const SharedRecordingPtr &rec) {
         ImGui::ColorEdit3("Color", trace.color.data());
         ImGui::Unindent();
       }
-      if (!dont_delete_trace) rec->remove_trace(trace.pos);
+      if (!dont_delete_trace) traces_to_remove.push_back(trace.pos);
       ImGui::PopStyleColor(2);
       ImGui::PopID();
+    }
+    for (const auto &pos : traces_to_remove) {
+      rec->remove_trace(pos);
     }
     ImGui::EndTabItem();
   }

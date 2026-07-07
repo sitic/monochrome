@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include "mio/mio.hpp"
 #include "npy.hpp"
 #include "AbstractFile.h"
@@ -34,6 +36,9 @@ class NpyFile : public AbstractFile {
 
   template <typename Scalar>
   const Scalar *get_data_ptr(long t) const {
+    // t is in units of _frame_size (i.e. frame * channel index); clamp to the mapped
+    // data to avoid reads past the end of the file
+    t        = std::clamp(t, 0L, static_cast<long>(_nt) * _nc - 1);
     auto ptr = _mmap.data() + t * _frame_size * sizeof(Scalar);
     return reinterpret_cast<const Scalar *>(ptr);
   }
@@ -149,24 +154,29 @@ class NpyFile : public AbstractFile {
 
       _frame.setZero(_nx, _ny);
       if (Nc() != 2) {
+        auto detect = [this](auto scalar_tag) {
+          using Scalar = decltype(scalar_tag);
+          auto begin   = get_data_ptr<Scalar>(0);
+          return utils::detect_bitrange(begin, begin + _frame_size);
+        };
         switch (dataType) {
           case PixelDataFormat::UINT8:
-            _bitrange = utils::detect_bitrange(get_data_ptr<uint8_t>(0), get_data_ptr<uint8_t>(1));
+            _bitrange = detect(uint8_t{});
             break;
           case PixelDataFormat::UINT16:
-            _bitrange = utils::detect_bitrange(get_data_ptr<uint16_t>(0), get_data_ptr<uint16_t>(1));
+            _bitrange = detect(uint16_t{});
             break;
           case PixelDataFormat::INT8:
-            _bitrange = utils::detect_bitrange(get_data_ptr<int8_t>(0), get_data_ptr<int8_t>(1));
+            _bitrange = detect(int8_t{});
             break;
           case PixelDataFormat::INT16:
-            _bitrange = utils::detect_bitrange(get_data_ptr<int16_t>(0), get_data_ptr<int16_t>(1));
+            _bitrange = detect(int16_t{});
             break;
           case PixelDataFormat::FLOAT:
-            _bitrange = utils::detect_bitrange(get_data_ptr<float>(0), get_data_ptr<float>(1));
+            _bitrange = detect(float{});
             break;
           case PixelDataFormat::DOUBLE:
-            _bitrange = utils::detect_bitrange(get_data_ptr<double>(0), get_data_ptr<double>(1));
+            _bitrange = detect(double{});
             break;
           case PixelDataFormat::BOOL:
             _bitrange = BitRange::FLOAT;
@@ -225,21 +235,23 @@ class NpyFile : public AbstractFile {
   };
 
   float get_pixel(long t, long x, long y) final {
+    // Multi-channel data is channel-interleaved (shape (T, H, W, C)), return channel 0
+    const long idx = (static_cast<long>(y) * Nx() + x) * Nc();
     switch (dataType) {
       case PixelDataFormat::FLOAT:
-        return get_data_ptr<float>(t)[y * Nx() + x];
+        return get_data_ptr<float>(t * Nc())[idx];
       case PixelDataFormat::DOUBLE:
-        return get_data_ptr<double>(t)[y * Nx() + x];
+        return get_data_ptr<double>(t * Nc())[idx];
       case PixelDataFormat::UINT16:
-        return get_data_ptr<uint16_t>(t)[y * Nx() + x];
+        return get_data_ptr<uint16_t>(t * Nc())[idx];
       case PixelDataFormat::UINT8:
-        return get_data_ptr<uint8_t>(t)[y * Nx() + x];
+        return get_data_ptr<uint8_t>(t * Nc())[idx];
       case PixelDataFormat::INT16:
-        return get_data_ptr<int16_t>(t)[y * Nx() + x];
+        return get_data_ptr<int16_t>(t * Nc())[idx];
       case PixelDataFormat::INT8:
-        return get_data_ptr<int8_t>(t)[y * Nx() + x];
+        return get_data_ptr<int8_t>(t * Nc())[idx];
       case PixelDataFormat::BOOL:
-        return get_data_ptr<bool>(t)[y * Nx() + x];
+        return get_data_ptr<bool>(t * Nc())[idx];
       default:
         throw std::logic_error("This line should never be reached");
     }
@@ -247,7 +259,11 @@ class NpyFile : public AbstractFile {
 
   template <typename T>
   float compute_mean(long t, const Vec2i &start, const Vec2i &size) {
-    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> frame(get_data_ptr<T>(t), Nx(), Ny());
+    // Stride over the interleaved channels (channel 0 only)
+    using StrideT = Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>;
+    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>, 0, StrideT> frame(
+        get_data_ptr<T>(t * Nc()), Nx(), Ny(),
+        StrideT(static_cast<Eigen::Index>(Nx()) * Nc(), Nc()));
     auto block = frame.block(start[0], start[1], size[0], size[1]);
     return static_cast<float>(block.template cast<float>().mean());
   }
