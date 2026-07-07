@@ -32,6 +32,30 @@ namespace {
 #endif
   }
 
+  // Username for per-user port derivation. Reads the same environment variables as
+  // Python's getpass.getuser() so both sides agree.
+  std::string get_username() {
+    for (const char* var : {"LOGNAME", "USER", "LNAME", "USERNAME"}) {
+      if (const char* val = std::getenv(var); val && *val) {
+        return val;
+      }
+    }
+    return "";
+  }
+
+  // Stable per-user TCP port so multiple users/sessions on one machine don't collide.
+  // Must match _user_tcp_port() in src/python/monochrome/ipc.py exactly.
+  unsigned short user_tcp_port() {
+    const std::string user = get_username();
+    uint32_t hash          = 2166136261u;  // FNV-1a, 32 bit
+    for (const unsigned char c : user) {
+      if (c >= 128) continue;  // skip non-ASCII, encoding differs between C++ and Python
+      hash ^= c;
+      hash *= 16777619u;
+    }
+    return static_cast<unsigned short>(global::tcp_port + hash % 1024);
+  }
+
 #if defined(ASIO_HAS_LOCAL_SOCKETS) && !defined(MC_FORCE_TCP_IPC)
 #define MC_USE_LOCAL_SOCKETS
   using IpcProtocol = asio::local::stream_protocol;
@@ -48,7 +72,7 @@ namespace {
 #endif
     return IpcProtocol::endpoint(ep);
 #else
-    return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+    return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), user_tcp_port());
 #endif
   }
 
@@ -77,10 +101,10 @@ namespace {
       return ipc_client_endpoint();
 #else
       // accept connections from all hosts
-      //return IpcProtocol::endpoint(IpcProtocol::v4(), global::tcp_port);
+      //return IpcProtocol::endpoint(IpcProtocol::v4(), user_tcp_port());
 
       // accept connections from localhost
-      return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), global::tcp_port);
+      return IpcProtocol::endpoint(asio::ip::make_address(global::tcp_host), user_tcp_port());
 #endif
     }
   };

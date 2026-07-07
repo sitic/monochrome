@@ -51,7 +51,28 @@ else:
     MONOCHROME_BIN_PATH = Path(__file__).parent / "data" / "bin" / "Monochrome"
 
 USE_TCP = sys.platform in ["win32", "cygwin"]
-TCP_IP, TCP_PORT = "127.0.0.1", 4864
+
+
+def _user_tcp_port(base=4864):
+    """Stable per-user TCP port so multiple users/sessions on one machine don't
+    collide. Must match user_tcp_port() in src/cpp/ipc.cpp exactly."""
+    try:
+        import getpass
+        user = getpass.getuser()
+    except Exception:
+        user = ""
+    h = 2166136261  # FNV-1a, 32 bit
+    for c in user.encode("utf-8", errors="ignore"):
+        if c >= 128:  # skip non-ASCII, encoding differs between C++ and Python
+            continue
+        h = ((h ^ c) * 16777619) & 0xFFFFFFFF
+    return base + h % 1024
+
+
+TCP_IP = "127.0.0.1"
+# Fixed port used by Monochrome versions before the per-user derivation
+TCP_BASE_PORT = 4864
+TCP_PORT = _user_tcp_port(TCP_BASE_PORT)
 # OSX doesn't support abstract UNIX domain sockets
 ABSTRACT_DOMAIN_SOCKET_SUPPORTED = sys.platform != "darwin"
 if sys.platform != "win32":
@@ -110,10 +131,10 @@ def console_entrypoint():
     subprocess.Popen(args).wait()
 
 
-def _create_socket():
+def _create_socket(port: int = None):
     if USE_TCP:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((TCP_IP, TCP_PORT))
+        s.connect((TCP_IP, port if port is not None else TCP_PORT))
     else:
         if not ABSTRACT_DOMAIN_SOCKET_SUPPORTED and not Path(SOCK_PATH).exists():
             raise ConnectionRefusedError("No socket found, please start Monochrome")
@@ -123,24 +144,29 @@ def _create_socket():
 
 
 def create_socket():
-    s = None
     try:
-        s = _create_socket()
+        return _create_socket()
     except ConnectionRefusedError:
-        if not USE_TCP and not ABSTRACT_DOMAIN_SOCKET_SUPPORTED:
-            Path(SOCK_PATH).unlink(missing_ok=True)
-        start_monochrome()
-        waiting = True
-        timeout = time.time() + 5
-        while waiting and time.time() < timeout:
-            try:
-                s = _create_socket()
-                waiting = False
-            except ConnectionRefusedError:
-                time.sleep(0.1)
-        if waiting:
-            raise ConnectionRefusedError("Could not connect to Monochrome")
-    return s
+        pass
+
+    # An older Monochrome build might still be listening on the fixed port
+    if USE_TCP and TCP_PORT != TCP_BASE_PORT:
+        try:
+            return _create_socket(TCP_BASE_PORT)
+        except ConnectionRefusedError:
+            pass
+
+    # Monochrome is not running, start it
+    if not USE_TCP and not ABSTRACT_DOMAIN_SOCKET_SUPPORTED:
+        Path(SOCK_PATH).unlink(missing_ok=True)
+    start_monochrome()
+    timeout = time.time() + 5
+    while time.time() < timeout:
+        try:
+            return _create_socket()
+        except ConnectionRefusedError:
+            time.sleep(0.1)
+    raise ConnectionRefusedError("Could not connect to Monochrome")
 
 
 def await_response(s):
