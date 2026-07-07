@@ -142,7 +142,7 @@ jobs:
 
     - name: Configure and build
       run: |
-        cmake -Bbuild -G "Visual Studio 17 2022" -DCMAKE_GENERATOR_PLATFORM="x64" -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET="x64-windows-static-md-release" -Wdev .
+        cmake -Bbuild -DCMAKE_GENERATOR_PLATFORM="x64" -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET="x64-windows-static-md-release" -Wdev .
         cd build
         cmake --build . --config "Release" --parallel 4
 
